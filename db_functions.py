@@ -63,11 +63,18 @@ def get_menu_items_options(menu_item_id):
 
     return size_to_default_options_map, size_to_available_options
 
-def get_menu_item_id_from_name(menu_item_name):
+@dataclass
+class MenuItem:
+    name: str
+    description: str
+    group: str
+
+def get_menu_item_from_name(menu_item_name):
     response = (    
             supabase.table("menu_item")
             .select("id, name, group")
             .text_search("name", menu_item_name)
             .execute()
         )
-    return response.data[0]
+    item =  response.data[0]
+    return MenuItem(item["name"], item["description"], item['group'])
