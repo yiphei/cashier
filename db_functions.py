@@ -6,7 +6,11 @@ from typing import List
 
 url: str = os.environ.get("SUPABASE_URL")
 key: str = os.environ.get("SUPABASE_KEY")
-supabase: Client = create_client(url, key)
+supabase: Client = None
+
+def create_client():
+    global supabase
+    supabase = create_client(url, key)
 
 @dataclass
 class OptionValue:

@@ -2,9 +2,10 @@ from openai import OpenAI
 from db_functions import get_menu_items_options, get_menu_item_from_name
 import json
 from dataclasses import asdict
-client = OpenAI(
-    # Defaults to os.environ.get("OPENAI_API_KEY")
-)
+from dotenv import load_dotenv  # Add this import
+
+# Load environment variables from .env file
+load_dotenv()
 
 SYSTEM_PROMPT = "You are a cashier working for the coffee shop Heaven Coffee. Customers come to you to place orders. " \
                 "Your job is to take their orders, answer reasonable questions about the shop & menu only, and assist " \
@@ -53,7 +54,7 @@ tools = [
 ]
 
 if __name__ == "__main__":
-
+    client = OpenAI()
     messages = [{"role": "system", "content": SYSTEM_PROMPT},
                 {"role": "assistant", "content": "hi, welcome to Heaven Coffee"}],
     print("Assistant: hi, welcome to Heaven Coffee")
