@@ -74,7 +74,7 @@ class MenuItem:
 def get_menu_item_from_name(menu_item_name):
     response = (    
             supabase.table("menu_item")
-            .select("id, name, group")
+            .select("id, name, description, group")
             .text_search("name", menu_item_name)
             .execute()
         )
