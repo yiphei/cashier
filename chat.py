@@ -1,5 +1,5 @@
 from openai import OpenAI
-from db_functions import get_menu_items_options, get_menu_item_from_name
+from db_functions import get_menu_items_options, get_menu_item_from_name, create_client
 import json
 from dataclasses import asdict
 from dotenv import load_dotenv  # Add this import
@@ -55,6 +55,7 @@ tools = [
 
 if __name__ == "__main__":
     client = OpenAI()
+    create_client()
     messages = [{"role": "system", "content": SYSTEM_PROMPT},
                 {"role": "assistant", "content": "hi, welcome to Heaven Coffee"}]
     print("Assistant: hi, welcome to Heaven Coffee")
