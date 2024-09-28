@@ -1,16 +1,14 @@
 import os
-from supabase import create_client, Client
+from supabase import create_client as create_supabase_client, Client
 from dataclasses import dataclass
 from collections import defaultdict
 from typing import List
 
-url: str = os.environ.get("SUPABASE_URL")
-key: str = os.environ.get("SUPABASE_KEY")
 supabase: Client = None
 
 def create_client():
     global supabase
-    supabase = create_client(url, key)
+    supabase = create_supabase_client(os.environ.get("SUPABASE_URL"), os.environ.get("SUPABASE_KEY"))
 
 @dataclass
 class OptionValue:
