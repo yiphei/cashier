@@ -56,7 +56,7 @@ tools = [
 if __name__ == "__main__":
     client = OpenAI()
     messages = [{"role": "system", "content": SYSTEM_PROMPT},
-                {"role": "assistant", "content": "hi, welcome to Heaven Coffee"}],
+                {"role": "assistant", "content": "hi, welcome to Heaven Coffee"}]
     print("Assistant: hi, welcome to Heaven Coffee")
     need_user_input = True
 
