@@ -8,6 +8,8 @@ import inspect
 
 supabase: Client = None
 
+OPENAI_TOOLS = []
+
 def create_client():
     global supabase
     supabase = create_supabase_client(os.environ.get("SUPABASE_URL"), os.environ.get("SUPABASE_KEY"))
@@ -30,6 +32,98 @@ class DefaultOption:
 class Option:
     name: str
     option_values: List[str]
+
+
+def python_type_to_json_schema(py_type):
+    """Map Python types to JSON Schema types."""
+    mapping = {
+        int: "integer",
+        float: "number",
+        str: "string",
+        bool: "boolean",
+        list: "array",
+        dict: "object",
+        None: "null",
+    }
+
+    # Handle Optional types (Union[SomeType, None])
+    if hasattr(py_type, "__origin__") and py_type.__origin__ is list:
+        return "array"
+    elif hasattr(py_type, "__origin__") and py_type.__origin__ is dict:
+        return "object"
+    elif hasattr(py_type, "__args__") and type(None) in py_type.__args__:
+        return "null"
+    else:
+        return mapping.get(py_type, "object")  # Default to "object" if type not found
+
+def openai_tool_decorator(func, tool_instructions=None):
+    docstring = inspect.getdoc(func)
+
+    description = ''
+    args = defaultdict(dict)
+    returns = ''
+
+    if 'Args:' in docstring:
+        description = docstring.split('Args:')[0].strip()
+    else:
+        description = docstring.strip()
+    
+    # Regex patterns to capture Args and Returns sections
+    args_pattern = re.compile(r"Args:\n(.*?)\n\n", re.DOTALL)
+    returns_pattern = re.compile(r"Returns:\n(.*)", re.DOTALL)
+
+   # Find args section
+    args_match = args_pattern.search(docstring)
+    if args_match:
+        args_section = args_match.group(1).strip()
+        for line in args_section.splitlines():
+            # Split by the first colon to separate the argument name from its description
+            arg_name, arg_description = line.split(":", 1)
+            args[arg_name.strip()]['description'] = arg_description.strip()
+
+    signature = inspect.signature(func)
+    for param_name, param in signature.parameters.items():
+        if param_name in args:
+            # Update type annotations if available
+            if param.annotation == inspect.Parameter.empty:
+                assert False, "Type annotation is required for all parameters"
+            args[param_name]['type_annotation'] = python_type_to_json_schema(param.annotation)
+
+    # Find return section
+    returns_match = returns_pattern.search(docstring)
+    if returns_match:
+        returns = returns_match.group(1).strip()
+
+    func_params = {
+                    arg_name: {
+                        "type": arg_dict['type_annotation'],
+                        "description": arg_dict['description']
+                    }
+
+                    for arg_name, arg_dict in args.items()
+                }
+
+    full_description = description
+    if tool_instructions is not None:
+        if description[-1] != ".":
+            full_description += "."
+        full_description += " " + tool_instructions.strip()
+    
+    OPENAI_TOOLS.append({
+        "type": "function",
+        "function": {
+            "name": func.__name__,
+            "description": full_description,
+            "parameters": {
+                "type": "object",
+                "properties": func_params,
+                "required": list(args.keys()),
+                "additionalProperties": False
+            }
+        }
+    })
+
+
 
 def get_menu_items_options(menu_item_id):
     response = (    
@@ -74,48 +168,13 @@ class MenuItem:
     description: str
     group: str
 
-def openai_tool_decorator(func, tool_instructions=None):
-    docstring = inspect.getdoc(func)
-
-    description = ''
-    args = {}
-    returns = ''
-
-    if 'Args:' in docstring:
-        description = docstring.split('Args:')[0].strip()
-    else:
-        description = docstring
-    
-    # Regex patterns to capture Args and Returns sections
-    args_pattern = re.compile(r"Args:\n(.*?)\n\n", re.DOTALL)
-    returns_pattern = re.compile(r"Returns:\n(.*)", re.DOTALL)
-
-   # Find args section
-    args_match = args_pattern.search(docstring)
-    if args_match:
-        args_section = args_match.group(1).strip()
-        for line in args_section.splitlines():
-            # Split by the first colon to separate the argument name from its description
-            arg_name, arg_description = line.split(":", 1)
-            args[arg_name.strip()] = arg_description.strip()
-
-    # Find return section
-    returns_match = returns_pattern.search(docstring)
-    if returns_match:
-        returns = returns_match.group(1).strip()
-
-    print(f"description: {description}")
-    print(f"args: {args}")
-    print(f"returns: {returns}")
-
-
-def get_menu_item_from_name(menu_item_name, dummy_arg=None):
+@openai_tool_decorator
+def get_menu_item_from_name(menu_item_name:str):
     """
-    Get all the options available for the menu item.
+    Get the menu item given the name string of the menu item.
     
     Args:
-        menu_item_name: The name of the menu item.
-        dummy_arg: This is a dummy argument to demonstrate how to add more arguments to the function.
+        menu_item_name: The menu item name.
 
     Returns:
         A MenuItem object.
