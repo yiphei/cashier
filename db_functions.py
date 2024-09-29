@@ -128,8 +128,19 @@ def openai_tool_decorator(tool_instructions=None):
         return func
     return decorator_fn
 
-
+@openai_tool_decorator("Most customers either don't provide a complete order (i.e. not specifying required options like size)" \
+                        "or are not aware of all the options available for a menu item. It is your job to help them with both cases.")
 def get_menu_items_options(menu_item_id):
+    """
+    Get all the options available for the menu item.
+    
+    Args:
+        menu_item_id: The menu item id used in the db.
+
+    Returns:
+        A MenuItem object.
+    """
+
     response = (    
                 supabase.table("menu_item_to_options_map")
                 .select("*, option(name, type, value_type, num_unit), option_type_config(default_num_value, default_bool_value, default_discrete_value_id, discrete_option_value(name))")
