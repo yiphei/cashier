@@ -16,17 +16,12 @@ def create_client():
     global supabase
     supabase = create_supabase_client(os.environ.get("SUPABASE_URL"), os.environ.get("SUPABASE_KEY"))
 
-class OptionValue(BaseModel):
-    default_num_value: int
-    default_bool_value: bool 
-    discrete_discrete_value: str
-
 class DefaultOption(BaseModel):
     option_name: str
     option_type: str
     value_type: str
     num_unit: str
-    default_value: OptionValue
+    default_value: int | bool | str
 
 class Option(BaseModel):
     name: str
@@ -183,7 +178,7 @@ def get_menu_items_options(menu_item_id: int) -> Tuple[Dict[str, List[DefaultOpt
         option = item["option"]
         option_type_config = item["option_type_config"]
         do = DefaultOption(option["name"], option["type"], option["value_type"], option["num_unit"], 
-                        OptionValue(option_type_config["default_num_value"], option_type_config["default_bool_value"], option_type_config["discrete_option_value"]["name"] if option_type_config["discrete_option_value"] is not None else None))
+                        default_value = (option_type_config["default_num_value"] or option_type_config["default_bool_value"] or (option_type_config["discrete_option_value"]["name"] if option_type_config["discrete_option_value"] is not None else None)))
 
         size_to_default_options_map[item["cup_size"]].append(do)
 
