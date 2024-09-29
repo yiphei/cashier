@@ -130,7 +130,7 @@ def openai_tool_decorator(tool_instructions=None):
 
 @openai_tool_decorator("Most customers either don't provide a complete order (i.e. not specifying required options like size)" \
                         "or are not aware of all the options available for a menu item. It is your job to help them with both cases.")
-def get_menu_items_options(menu_item_id):
+def get_menu_items_options(menu_item_id: int):
     """
     Get all the options available for the menu item.
     

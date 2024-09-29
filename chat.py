@@ -1,5 +1,5 @@
 from openai import OpenAI
-from db_functions import get_menu_items_options, get_menu_item_from_name, create_client
+from db_functions import get_menu_items_options, get_menu_item_from_name, create_client, OPENAI_TOOLS
 import json
 from dataclasses import asdict
 from dotenv import load_dotenv  # Add this import
@@ -11,47 +11,6 @@ SYSTEM_PROMPT = "You are a cashier working for the coffee shop Heaven Coffee. Cu
                 "Your job is to take their orders, answer reasonable questions about the shop & menu only, and assist " \
                 "them with any issues they may have about their orders. You are not responsible for anything else, " \
                 "so you must refuse to engage in anything unrelated"
-
-tools = [
-    {
-        "type": "function",
-        "function": {
-            "name": "get_menu_items_options",
-            "description": "Get all the options available for the menu item. " \
-                            "Most customers either don't provide a complete order (i.e. not specifying required options like size)" \
-                            "or are not aware of all the options available for a menu item. It is your job to help them with both cases.",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "menu_item_id": {
-                        "type": "number",
-                        "description": "The menu item id used in the db."
-                    }
-                },
-                "required": ["menu_item_id"],
-                "additionalProperties": False
-            }
-        }
-    },
-        {
-        "type": "function",
-        "function": {
-            "name": "get_menu_item_from_name",
-            "description": "Get the menu item given the name string of the menu item.",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "menu_item_name": {
-                        "type": "string",
-                        "description": "The menu item name"
-                    }
-                },
-                "required": ["menu_item_name"],
-                "additionalProperties": False
-            }
-        }
-    }
-]
 
 if __name__ == "__main__":
     client = OpenAI()
@@ -75,7 +34,7 @@ if __name__ == "__main__":
         chat_completion = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=messages,
-            tools=tools
+            tools=OPENAI_TOOLS
         )
     
         response = chat_completion.choices[0]
