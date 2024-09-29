@@ -1,5 +1,5 @@
 from openai import OpenAI
-from db_functions import get_menu_items_options, get_menu_item_from_name, create_client, OPENAI_TOOLS
+from db_functions import get_menu_items_options, get_menu_item_from_name, create_client, OPENAI_TOOLS, OPENAI_TOOLS_RETUN_DESCRIPTION
 import json
 from dataclasses import asdict
 from dotenv import load_dotenv  # Add this import

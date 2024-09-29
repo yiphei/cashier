@@ -5,11 +5,13 @@ from collections import defaultdict
 from typing import List
 import re
 import inspect
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 supabase: Client = None
 
 OPENAI_TOOLS = []
+
+OPENAI_TOOLS_RETUN_DESCRIPTION = []
 
 def create_client():
     global supabase
@@ -46,6 +48,10 @@ def python_type_to_json_schema(py_type):
         dict: "object",
         None: "null",
     }
+
+    if isinstance(py_type, type) and issubclass(py_type, BaseModel):
+        # Generate JSON Schema for the BaseModel
+        return py_type.model_json_schema()
 
     # Handle Optional types (Union[SomeType, None])
     if hasattr(py_type, "__origin__") and py_type.__origin__ is list:
@@ -96,6 +102,10 @@ def openai_tool_decorator(tool_instructions=None):
         if returns_match:
             returns = returns_match.group(1).strip()
 
+        return_annotation = signature.return_annotation
+        returns_type_annotation = return_annotation if return_annotation != inspect.Signature.empty else 'No annotation'
+        returns_json_schema_type = python_type_to_json_schema(return_annotation)
+
         func_params = {
                         arg_name: {
                             "type": arg_dict['type_annotation'],
@@ -126,11 +136,17 @@ def openai_tool_decorator(tool_instructions=None):
             }
         })
 
+        global OPENAI_TOOLS_RETUN_DESCRIPTION
+        OPENAI_TOOLS_RETUN_DESCRIPTION.append({
+            "description": returns,
+            **returns_json_schema_type
+        })
+
         return func
     return decorator_fn
 
-@openai_tool_decorator("Most customers either don't provide a complete order (i.e. not specifying required options like size)" \
-                        "or are not aware of all the options available for a menu item. It is your job to help them with both cases.")
+# @openai_tool_decorator("Most customers either don't provide a complete order (i.e. not specifying required options like size)" \
+#                         "or are not aware of all the options available for a menu item. It is your job to help them with both cases.")
 def get_menu_items_options(menu_item_id: int):
     """
     Get all the options available for the menu item.
@@ -178,13 +194,13 @@ def get_menu_items_options(menu_item_id: int):
     return size_to_default_options_map, size_to_available_options
 
 class MenuItem(BaseModel):
-    id: int
+    id: int = Field(description="db id")
     name: str
     description: str
-    group: str
+    group: str = Field(description="the menu category it belongs to")
 
 @openai_tool_decorator()
-def get_menu_item_from_name(menu_item_name:str):
+def get_menu_item_from_name(menu_item_name:str) -> MenuItem:
     """
     Get the menu item given the name string of the menu item.
     
