@@ -56,73 +56,77 @@ def python_type_to_json_schema(py_type):
     else:
         return mapping.get(py_type, "object")  # Default to "object" if type not found
 
-def openai_tool_decorator(func, tool_instructions=None):
-    docstring = inspect.getdoc(func)
+def openai_tool_decorator(tool_instructions=None):
+    def decorator_fn(func):
+        docstring = inspect.getdoc(func)
 
-    description = ''
-    args = defaultdict(dict)
-    returns = ''
+        description = ''
+        args = defaultdict(dict)
+        returns = ''
 
-    if 'Args:' in docstring:
-        description = docstring.split('Args:')[0].strip()
-    else:
-        description = docstring.strip()
-    
-    # Regex patterns to capture Args and Returns sections
-    args_pattern = re.compile(r"Args:\n(.*?)\n\n", re.DOTALL)
-    returns_pattern = re.compile(r"Returns:\n(.*)", re.DOTALL)
+        if 'Args:' in docstring:
+            description = docstring.split('Args:')[0].strip()
+        else:
+            description = docstring.strip()
+        
+        # Regex patterns to capture Args and Returns sections
+        args_pattern = re.compile(r"Args:\n(.*?)\n\n", re.DOTALL)
+        returns_pattern = re.compile(r"Returns:\n(.*)", re.DOTALL)
 
-   # Find args section
-    args_match = args_pattern.search(docstring)
-    if args_match:
-        args_section = args_match.group(1).strip()
-        for line in args_section.splitlines():
-            # Split by the first colon to separate the argument name from its description
-            arg_name, arg_description = line.split(":", 1)
-            args[arg_name.strip()]['description'] = arg_description.strip()
+    # Find args section
+        args_match = args_pattern.search(docstring)
+        if args_match:
+            args_section = args_match.group(1).strip()
+            for line in args_section.splitlines():
+                # Split by the first colon to separate the argument name from its description
+                arg_name, arg_description = line.split(":", 1)
+                args[arg_name.strip()]['description'] = arg_description.strip()
 
-    signature = inspect.signature(func)
-    for param_name, param in signature.parameters.items():
-        if param_name in args:
-            # Update type annotations if available
-            if param.annotation == inspect.Parameter.empty:
-                assert False, "Type annotation is required for all parameters"
-            args[param_name]['type_annotation'] = python_type_to_json_schema(param.annotation)
+        signature = inspect.signature(func)
+        for param_name, param in signature.parameters.items():
+            if param_name in args:
+                # Update type annotations if available
+                if param.annotation == inspect.Parameter.empty:
+                    assert False, "Type annotation is required for all parameters"
+                args[param_name]['type_annotation'] = python_type_to_json_schema(param.annotation)
 
-    # Find return section
-    returns_match = returns_pattern.search(docstring)
-    if returns_match:
-        returns = returns_match.group(1).strip()
+        # Find return section
+        returns_match = returns_pattern.search(docstring)
+        if returns_match:
+            returns = returns_match.group(1).strip()
 
-    func_params = {
-                    arg_name: {
-                        "type": arg_dict['type_annotation'],
-                        "description": arg_dict['description']
+        func_params = {
+                        arg_name: {
+                            "type": arg_dict['type_annotation'],
+                            "description": arg_dict['description']
+                        }
+
+                        for arg_name, arg_dict in args.items()
                     }
 
-                    for arg_name, arg_dict in args.items()
+        full_description = description
+        if tool_instructions is not None:
+            if description[-1] != ".":
+                full_description += "."
+            full_description += " " + tool_instructions.strip()
+        
+        global OPENAI_TOOLS
+        OPENAI_TOOLS.append({
+            "type": "function",
+            "function": {
+                "name": func.__name__,
+                "description": full_description,
+                "parameters": {
+                    "type": "object",
+                    "properties": func_params,
+                    "required": list(args.keys()),
+                    "additionalProperties": False
                 }
-
-    full_description = description
-    if tool_instructions is not None:
-        if description[-1] != ".":
-            full_description += "."
-        full_description += " " + tool_instructions.strip()
-    
-    OPENAI_TOOLS.append({
-        "type": "function",
-        "function": {
-            "name": func.__name__,
-            "description": full_description,
-            "parameters": {
-                "type": "object",
-                "properties": func_params,
-                "required": list(args.keys()),
-                "additionalProperties": False
             }
-        }
-    })
+        })
 
+        return func
+    return decorator_fn
 
 
 def get_menu_items_options(menu_item_id):
@@ -168,7 +172,7 @@ class MenuItem:
     description: str
     group: str
 
-@openai_tool_decorator
+@openai_tool_decorator()
 def get_menu_item_from_name(menu_item_name:str):
     """
     Get the menu item given the name string of the menu item.
