@@ -5,6 +5,7 @@ from collections import defaultdict
 from typing import List
 import re
 import inspect
+from pydantic import BaseModel
 
 supabase: Client = None
 
@@ -176,8 +177,7 @@ def get_menu_items_options(menu_item_id: int):
 
     return size_to_default_options_map, size_to_available_options
 
-@dataclass
-class MenuItem:
+class MenuItem(BaseModel):
     id: int
     name: str
     description: str
@@ -202,4 +202,4 @@ def get_menu_item_from_name(menu_item_name:str):
             .execute()
         )
     item =  response.data[0]
-    return MenuItem(item['id'], item["name"], item["description"], item['group'])
+    return MenuItem(id= item['id'], name = item["name"],description= item["description"], group=item['group'])
