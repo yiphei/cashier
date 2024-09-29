@@ -101,12 +101,14 @@ if __name__ == "__main__":
                     "size_to_default_options_map": {k: [asdict(sub_v) for sub_v in v] for k, v in size_to_default_options_map.items()},
                     "size_to_available_options": {k: [asdict(sub_v) for sub_v in v] for k, v in size_to_available_options.items()}
                 }
-
+            
             function_call_result_msg = {
                 "role": "tool",
                 "content": json.dumps(content),
                 "tool_call_id": tool_call_id
             }
+            print(f"[CALLING DONE] {function_name} with output {content}")
+
             messages.append(tool_call_message)
             messages.append(function_call_result_msg)
 
