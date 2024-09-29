@@ -24,7 +24,7 @@ tools = [
                 "type": "object",
                 "properties": {
                     "menu_item_id": {
-                        "type": "string",
+                        "type": "number",
                         "description": "The menu item id used in the db."
                     }
                 },
