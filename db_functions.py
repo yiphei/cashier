@@ -103,7 +103,8 @@ def openai_tool_decorator(tool_instructions=None):
             returns = returns_match.group(1).strip()
 
         return_annotation = signature.return_annotation
-        returns_type_annotation = return_annotation if return_annotation != inspect.Signature.empty else 'No annotation'
+        if return_annotation == inspect.Signature.empty:
+            assert False, "Type annotation is required for all parameters"
         returns_json_schema_type = python_type_to_json_schema(return_annotation)
 
         func_params = {
