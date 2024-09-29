@@ -16,17 +16,13 @@ def create_client():
     global supabase
     supabase = create_supabase_client(os.environ.get("SUPABASE_URL"), os.environ.get("SUPABASE_KEY"))
 
-class DefaultOption(BaseModel):
+class Option(BaseModel):
     name: str
     type: str
     value_type: str
     num_unit: Optional[str]
     default_value: int | bool | str
-
-class Option(BaseModel):
-    name: str
-    option_values: List[str]
-
+    str_option_values: Optional[List[str]] = None
 
 def python_type_to_json_schema(py_type):
     """Map Python types to JSON Schema types."""
@@ -154,7 +150,7 @@ def openai_tool_decorator(tool_instructions=None):
 
 @openai_tool_decorator("Most customers either don't provide a complete order (i.e. not specifying required options like size)" \
                         "or are not aware of all the options available for a menu item. It is your job to help them with both cases.")
-def get_menu_items_options(menu_item_id: int) -> Tuple[Dict[str, List[DefaultOption]], Dict[str, List[Option]]]:
+def get_menu_items_options(menu_item_id: int) -> Dict[str, List[Option]]:
     """
     Get all the options available for the menu item.
     
@@ -177,7 +173,7 @@ def get_menu_items_options(menu_item_id: int) -> Tuple[Dict[str, List[DefaultOpt
     for item in data:
         option = item["option"]
         option_type_config = item["option_type_config"]
-        do = DefaultOption(
+        do = Option(
             name = option["name"], 
             type = option["type"], 
             value_type = option["value_type"], 
@@ -196,15 +192,14 @@ def get_menu_items_options(menu_item_id: int) -> Tuple[Dict[str, List[DefaultOpt
 
     # currently, this only supports discrete options that have default value.
     # Therefore, assume that other discrete options are not available for this menu item.
-    size_to_available_options = defaultdict(list)
     for item in response.data:
         option = item["option"]
         option_values = [obj["discrete_option_value"]["name"] for obj in item["menu_item_to_option_values_map"]]
-        size_to_available_options[item["cup_size"]].append(Option(
-            name=option["name"],
-             option_values= option_values))
+    
+        target_option = next((obj for obj in size_to_default_options_map[item["cup_size"]] if obj.name == option["name"]), None)
+        target_option.str_option_values = option_values
 
-    return size_to_default_options_map, size_to_available_options
+    return size_to_default_options_map
 
 class MenuItem(BaseModel):
     id: int = Field(description="db id")

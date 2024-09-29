@@ -53,13 +53,10 @@ if __name__ == "__main__":
             print(f"[CALLING] {function_name} with args {fuction_args}")
             if function_name == "get_menu_item_from_name":
                 menu_item = get_menu_item_from_name(**fuction_args)
-                content = menu_item.model_dump_json()
+                content = menu_item.model_dump()
             else:
-                size_to_default_options_map, size_to_available_options = get_menu_items_options(**fuction_args)
-                content = {
-                    "size_to_default_options_map": {k: [sub_v.model_dump_json() for sub_v in v] for k, v in size_to_default_options_map.items()},
-                    "size_to_available_options": {k: [sub_v.model_dump_json() for sub_v in v] for k, v in size_to_available_options.items()}
-                }
+                mapping = get_menu_items_options(**fuction_args)
+                content = {k: [sub_v.model_dump() for sub_v in v] for k, v in mapping.items()}
             
             function_call_result_msg = {
                 "role": "tool",
