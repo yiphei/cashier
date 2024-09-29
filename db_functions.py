@@ -67,6 +67,7 @@ def get_menu_items_options(menu_item_id):
 
 @dataclass
 class MenuItem:
+    id: int
     name: str
     description: str
     group: str
@@ -80,4 +81,4 @@ def get_menu_item_from_name(menu_item_name):
             .execute()
         )
     item =  response.data[0]
-    return MenuItem(item["name"], item["description"], item['group'])
+    return MenuItem(item['id'], item["name"], item["description"], item['group'])
