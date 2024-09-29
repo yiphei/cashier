@@ -1,22 +1,32 @@
-from openai import OpenAI
-from db_functions import get_menu_items_options, get_menu_item_from_name, create_client, OPENAI_TOOLS, OPENAI_TOOLS_RETUN_DESCRIPTION
 import json
-from dataclasses import asdict
+
 from dotenv import load_dotenv  # Add this import
+from openai import OpenAI
+
+from db_functions import (
+    OPENAI_TOOLS,
+    create_client,
+    get_menu_item_from_name,
+    get_menu_items_options,
+)
 
 # Load environment variables from .env file
 load_dotenv()
 
-SYSTEM_PROMPT = "You are a cashier working for the coffee shop Heaven Coffee. Customers come to you to place orders. " \
-                "Your job is to take their orders, answer reasonable questions about the shop & menu only, and assist " \
-                "them with any issues they may have about their orders. You are not responsible for anything else, " \
-                "so you must refuse to engage in anything unrelated"
+SYSTEM_PROMPT = (
+    "You are a cashier working for the coffee shop Heaven Coffee. Customers come to you to place orders. "
+    "Your job is to take their orders, answer reasonable questions about the shop & menu only, and assist "
+    "them with any issues they may have about their orders. You are not responsible for anything else, "
+    "so you must refuse to engage in anything unrelated"
+)
 
 if __name__ == "__main__":
     client = OpenAI()
     create_client()
-    messages = [{"role": "system", "content": SYSTEM_PROMPT},
-                {"role": "assistant", "content": "hi, welcome to Heaven Coffee"}]
+    messages = [
+        {"role": "system", "content": SYSTEM_PROMPT},
+        {"role": "assistant", "content": "hi, welcome to Heaven Coffee"},
+    ]
     print("Assistant: hi, welcome to Heaven Coffee")
     need_user_input = True
 
@@ -25,25 +35,23 @@ if __name__ == "__main__":
             # Read user input from stdin
             user_input = input("You: ")
             # If user types 'exit', break the loop and end the program
-            if user_input.lower() == 'exit':
+            if user_input.lower() == "exit":
                 print("Exiting chatbot. Goodbye!")
                 break
 
             messages.append({"role": "user", "content": user_input})
 
         chat_completion = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=messages,
-            tools=OPENAI_TOOLS
+            model="gpt-4o-mini", messages=messages, tools=OPENAI_TOOLS
         )
-    
+
         response = chat_completion.choices[0]
         finish_reason = response.finish_reason
         if finish_reason == "stop":
             response_msg = response.message.content
             print("Assistant: ", response_msg)
             messages.append({"role": "assistant", "content": response_msg})
-            
+
             need_user_input = True
         elif finish_reason == "tool_calls":
             tool_call_message = response.message
@@ -56,12 +64,14 @@ if __name__ == "__main__":
                 content = menu_item.model_dump()
             else:
                 mapping = get_menu_items_options(**fuction_args)
-                content = {k: [sub_v.model_dump() for sub_v in v] for k, v in mapping.items()}
-            
+                content = {
+                    k: [sub_v.model_dump() for sub_v in v] for k, v in mapping.items()
+                }
+
             function_call_result_msg = {
                 "role": "tool",
                 "content": json.dumps(content),
-                "tool_call_id": tool_call_id
+                "tool_call_id": tool_call_id,
             }
             print(f"[CALLING DONE] {function_name} with output {content}")
 
