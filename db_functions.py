@@ -1,8 +1,7 @@
 import os
 from supabase import create_client as create_supabase_client, Client
-from dataclasses import dataclass
 from collections import defaultdict
-from typing import List
+from typing import List, Tuple, Dict, get_args
 import re
 import inspect
 from pydantic import BaseModel, Field
@@ -11,28 +10,25 @@ supabase: Client = None
 
 OPENAI_TOOLS = []
 
-OPENAI_TOOLS_RETUN_DESCRIPTION = []
+OPENAI_TOOLS_RETUN_DESCRIPTION = {}
 
 def create_client():
     global supabase
     supabase = create_supabase_client(os.environ.get("SUPABASE_URL"), os.environ.get("SUPABASE_KEY"))
 
-@dataclass
-class OptionValue:
+class OptionValue(BaseModel):
     default_num_value: int
     default_bool_value: bool 
     discrete_discrete_value: str
 
-@dataclass
-class DefaultOption:
+class DefaultOption(BaseModel):
     option_name: str
     option_type: str
     value_type: str
     num_unit: str
     default_value: OptionValue
 
-@dataclass
-class Option:
+class Option(BaseModel):
     name: str
     option_values: List[str]
 
@@ -55,9 +51,24 @@ def python_type_to_json_schema(py_type):
 
     # Handle Optional types (Union[SomeType, None])
     if hasattr(py_type, "__origin__") and py_type.__origin__ is list:
-        return "array"
+        element_type = get_args(py_type)[0]
+        return {
+            "type": "array",
+            "items": python_type_to_json_schema(element_type)
+        }
     elif hasattr(py_type, "__origin__") and py_type.__origin__ is dict:
-        return "object"
+        key_type, value_type = get_args(py_type)
+        if key_type is not str:
+            raise TypeError("JSON object keys must be strings")
+        return {
+            "type": "object",
+            "additionalProperties": python_type_to_json_schema(value_type)
+        }
+    elif hasattr(py_type, "__origin__") and py_type.__origin__ is tuple:
+        return {
+            "type": "array",
+            "items": [python_type_to_json_schema(arg) for arg in get_args(py_type)]
+        }
     elif hasattr(py_type, "__args__") and type(None) in py_type.__args__:
         return "null"
     else:
@@ -138,17 +149,17 @@ def openai_tool_decorator(tool_instructions=None):
         })
 
         global OPENAI_TOOLS_RETUN_DESCRIPTION
-        OPENAI_TOOLS_RETUN_DESCRIPTION.append({
+        OPENAI_TOOLS_RETUN_DESCRIPTION[func.__name__] = {
             "description": returns,
             **returns_json_schema_type
-        })
+        }
 
         return func
     return decorator_fn
 
-# @openai_tool_decorator("Most customers either don't provide a complete order (i.e. not specifying required options like size)" \
-#                         "or are not aware of all the options available for a menu item. It is your job to help them with both cases.")
-def get_menu_items_options(menu_item_id: int):
+@openai_tool_decorator("Most customers either don't provide a complete order (i.e. not specifying required options like size)" \
+                        "or are not aware of all the options available for a menu item. It is your job to help them with both cases.")
+def get_menu_items_options(menu_item_id: int) -> Tuple[Dict[str, List[DefaultOption]], Dict[str, List[Option]]]:
     """
     Get all the options available for the menu item.
     

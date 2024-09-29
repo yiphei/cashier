@@ -13,6 +13,7 @@ SYSTEM_PROMPT = "You are a cashier working for the coffee shop Heaven Coffee. Cu
                 "so you must refuse to engage in anything unrelated"
 
 if __name__ == "__main__":
+    print(OPENAI_TOOLS_RETUN_DESCRIPTION)
     client = OpenAI()
     create_client()
     messages = [{"role": "system", "content": SYSTEM_PROMPT},
