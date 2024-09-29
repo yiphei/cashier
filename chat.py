@@ -5,6 +5,7 @@ from openai import OpenAI
 
 from db_functions import (
     OPENAI_TOOLS,
+    OPENAI_TOOLS_RETUN_DESCRIPTION,
     create_client,
     get_menu_item_from_name,
     get_menu_items_options,
@@ -17,8 +18,18 @@ SYSTEM_PROMPT = (
     "You are a cashier working for the coffee shop Heaven Coffee. Customers come to you to place orders. "
     "Your job is to take their orders, answer reasonable questions about the shop & menu only, and assist "
     "them with any issues they may have about their orders. You are not responsible for anything else, "
-    "so you must refuse to engage in anything unrelated"
+    "so you must refuse to engage in anything unrelated."
 )
+
+
+def get_system_return_type_prompt(fn_name):
+    description = OPENAI_TOOLS_RETUN_DESCRIPTION[fn_name]
+    msg = {
+        "role": "system",
+        "content": f"This is the JSON Schema of {fn_name}'s return type: {json.dumps(description)}",
+    }
+    return msg
+
 
 if __name__ == "__main__":
     client = OpenAI()
@@ -77,5 +88,6 @@ if __name__ == "__main__":
 
             messages.append(tool_call_message)
             messages.append(function_call_result_msg)
+            messages.append(get_system_return_type_prompt(function_name))
 
             need_user_input = False
