@@ -177,8 +177,12 @@ def get_menu_items_options(menu_item_id: int) -> Tuple[Dict[str, List[DefaultOpt
     for item in data:
         option = item["option"]
         option_type_config = item["option_type_config"]
-        do = DefaultOption(option["name"], option["type"], option["value_type"], option["num_unit"], 
-                        default_value = (option_type_config["default_num_value"] or option_type_config["default_bool_value"] or (option_type_config["discrete_option_value"]["name"] if option_type_config["discrete_option_value"] is not None else None)))
+        do = DefaultOption(
+            name = option["name"], 
+            type = option["type"], 
+            value_type = option["value_type"], 
+            num_unit = option["num_unit"], 
+            default_value = (option_type_config["default_num_value"] or option_type_config["default_bool_value"] or (option_type_config["discrete_option_value"]["name"] if option_type_config["discrete_option_value"] is not None else None)))
 
         size_to_default_options_map[item["cup_size"]].append(do)
 
@@ -196,7 +200,9 @@ def get_menu_items_options(menu_item_id: int) -> Tuple[Dict[str, List[DefaultOpt
     for item in response.data:
         option = item["option"]
         option_values = [obj["discrete_option_value"]["name"] for obj in item["menu_item_to_option_values_map"]]
-        size_to_available_options[item["cup_size"]].append(Option(option["name"], option_values))
+        size_to_available_options[item["cup_size"]].append(Option(
+            name=option["name"],
+             option_values= option_values))
 
     return size_to_default_options_map, size_to_available_options
 
