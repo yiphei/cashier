@@ -98,8 +98,8 @@ if __name__ == "__main__":
             else:
                 size_to_default_options_map, size_to_available_options = get_menu_items_options(**fuction_args)
                 content = {
-                    "size_to_default_options_map": size_to_default_options_map,
-                    "size_to_available_options": size_to_available_options
+                    "size_to_default_options_map": {k: [asdict(sub_v) for sub_v in v] for k, v in size_to_default_options_map.items()},
+                    "size_to_available_options": {k: [asdict(sub_v) for sub_v in v] for k, v in size_to_available_options.items()}
                 }
 
             function_call_result_msg = {
