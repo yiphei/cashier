@@ -72,10 +72,11 @@ class MenuItem:
     group: str
 
 def get_menu_item_from_name(menu_item_name):
+    formatted_menu_item_name = menu_item_name.replace(" ", "&")
     response = (    
             supabase.table("menu_item")
             .select("id, name, description, group")
-            .text_search("name", menu_item_name)
+            .text_search("name", formatted_menu_item_name)
             .execute()
         )
     item =  response.data[0]
