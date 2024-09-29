@@ -1,7 +1,7 @@
 import os
 from supabase import create_client as create_supabase_client, Client
 from collections import defaultdict
-from typing import List, Tuple, Dict, get_args
+from typing import List, Tuple, Dict, get_args, Optional
 import re
 import inspect
 from pydantic import BaseModel, Field
@@ -17,10 +17,10 @@ def create_client():
     supabase = create_supabase_client(os.environ.get("SUPABASE_URL"), os.environ.get("SUPABASE_KEY"))
 
 class DefaultOption(BaseModel):
-    option_name: str
-    option_type: str
+    name: str
+    type: str
     value_type: str
-    num_unit: str
+    num_unit: Optional[str]
     default_value: int | bool | str
 
 class Option(BaseModel):
