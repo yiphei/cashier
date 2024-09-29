@@ -170,7 +170,7 @@ def get_menu_items_options(menu_item_id: int) -> Dict[str, List[Option]]:
         menu_item_id: The menu item id used in the db.
 
     Returns:
-        A MenuItem object.
+        A mapping of cup size to the list of options available for that size.
     """
 
     response = (
