@@ -3,6 +3,8 @@ from supabase import create_client as create_supabase_client, Client
 from dataclasses import dataclass
 from collections import defaultdict
 from typing import List
+import re
+import inspect
 
 supabase: Client = None
 
@@ -72,7 +74,52 @@ class MenuItem:
     description: str
     group: str
 
-def get_menu_item_from_name(menu_item_name):
+def openai_tool_decorator(func, tool_instructions=None):
+    docstring = inspect.getdoc(func)
+
+    description = ''
+    args = {}
+    returns = ''
+
+    if 'Args:' in docstring:
+        description = docstring.split('Args:')[0].strip()
+    else:
+        description = docstring
+    
+    # Regex patterns to capture Args and Returns sections
+    args_pattern = re.compile(r"Args:\n(.*?)\n\n", re.DOTALL)
+    returns_pattern = re.compile(r"Returns:\n(.*)", re.DOTALL)
+
+   # Find args section
+    args_match = args_pattern.search(docstring)
+    if args_match:
+        args_section = args_match.group(1).strip()
+        for line in args_section.splitlines():
+            # Split by the first colon to separate the argument name from its description
+            arg_name, arg_description = line.split(":", 1)
+            args[arg_name.strip()] = arg_description.strip()
+
+    # Find return section
+    returns_match = returns_pattern.search(docstring)
+    if returns_match:
+        returns = returns_match.group(1).strip()
+
+    print(f"description: {description}")
+    print(f"args: {args}")
+    print(f"returns: {returns}")
+
+
+def get_menu_item_from_name(menu_item_name, dummy_arg=None):
+    """
+    Get all the options available for the menu item.
+    
+    Args:
+        menu_item_name: The name of the menu item.
+        dummy_arg: This is a dummy argument to demonstrate how to add more arguments to the function.
+
+    Returns:
+        A MenuItem object.
+    """
     formatted_menu_item_name = menu_item_name.replace(" ", "&")
     response = (    
             supabase.table("menu_item")
