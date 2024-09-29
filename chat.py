@@ -91,7 +91,7 @@ if __name__ == "__main__":
             function_name = response.message.tool_calls[0].function.name
             fuction_args = json.loads(response.message.tool_calls[0].function.arguments)
             tool_call_id = response.message.tool_calls[0].id
-
+            print(f"[CALLING] {function_name} with args {fuction_args}")
             if function_name == "get_menu_item_from_name":
                 menu_item = get_menu_item_from_name(**fuction_args)
                 content = asdict(menu_item)
