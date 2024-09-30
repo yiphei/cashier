@@ -35,7 +35,7 @@ SYSTEM_PROMPT = (
 )
 
 
-class StreamChatCompletionIterator(Iterator):
+class ChatCompletionIterator(Iterator):
     def __init__(self, chat_stream):
         self.chat_stream = chat_stream
         self.full_msg = ""  # Initialize full message
@@ -95,11 +95,12 @@ def get_speech_from_text(text, client):
 
 
 if __name__ == "__main__":
-    client = OpenAI()
+    openai_client = OpenAI()
     elevenlabs_client = ElevenLabs(
         api_key=os.getenv("ELEVENLABS_API_KEY"),
     )
     create_client()
+
     messages = [
         {"role": "system", "content": SYSTEM_PROMPT},
         {"role": "assistant", "content": "hi, welcome to Heaven Coffee"},
@@ -111,27 +112,28 @@ if __name__ == "__main__":
         if need_user_input:
             # Read user input from stdin
 
-            audio_data = get_audio_input()
-            user_input = get_text_from_speech(audio_data, client)
-            print(f"You: {user_input}")
+            audio_input = get_audio_input()
+            text_input = get_text_from_speech(audio_input, openai_client)
+            print(f"You: {text_input}")
             # If user types 'exit', break the loop and end the program
-            if user_input.lower() == "exit":
+            if text_input.lower() == "exit":
                 print("Exiting chatbot. Goodbye!")
                 break
 
-            messages.append({"role": "user", "content": user_input})
+            messages.append({"role": "user", "content": text_input})
 
-        chat_completion = client.chat.completions.create(
+        chat_completion = openai_client.chat.completions.create(
             model="gpt-4o-mini", messages=messages, tools=OPENAI_TOOLS, stream=True
         )
         first_chunk = next(chat_completion)
         is_tool_call = first_chunk.choices[0].delta.tool_calls
+
         if not is_tool_call:
             print("Assistant: ", end="")
-            stream_state = StreamChatCompletionIterator(chat_completion)
-            get_speech_from_text(stream_state, elevenlabs_client)
-            print(stream_state.full_msg)
-            messages.append({"role": "assistant", "content": stream_state.full_msg})
+            chat_stream_iterator = ChatCompletionIterator(chat_completion)
+            get_speech_from_text(chat_stream_iterator, elevenlabs_client)
+            print(chat_stream_iterator.full_msg)
+            messages.append({"role": "assistant", "content": chat_stream_iterator.full_msg})
             need_user_input = True
         elif is_tool_call:
             function_name = first_chunk.choices[0].delta.tool_calls[0].function.name
