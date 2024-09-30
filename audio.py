@@ -40,7 +40,7 @@ def record_audio(stream):
 
 def process_audio():
     frames = []
-    is_first_silence = True
+    has_spoken = False
     silence_start = None
 
     while True:
@@ -52,10 +52,7 @@ def process_audio():
                 # If silence starts, note the time
                 if silence_start is None:
                     silence_start = time.time()
-                elif (
-                    time.time() - silence_start > SILENCE_DURATION
-                    and not is_first_silence
-                ):
+                elif time.time() - silence_start > SILENCE_DURATION and has_spoken:
                     # If silence has lasted long enough, stop recording
                     print("Silence detected, stopping recording.")
                     stop_recording_event.set()  # Signal the recording thread to stop
@@ -63,7 +60,7 @@ def process_audio():
             else:
                 # If non-silent data, reset silence timer
                 silence_start = None
-                is_first_silence = False
+                has_spoken = True
 
     print("Finished recording.")
     return b"".join(frames)  # Return raw audio data
@@ -94,7 +91,7 @@ def get_audio_input():
 def save_audio_to_wav(audio_data, file_path):
     """Save raw audio data to a .wav file."""
     with wave.open(file_path, "wb") as wf:
-        wf.setnchannels(CHANNELS)  # Mono
-        wf.setsampwidth(2)  # 2 bytes for paInt16 (16-bit audio)
-        wf.setframerate(RATE)  # Sampling rate
+        wf.setnchannels(CHANNELS)
+        wf.setsampwidth(2)
+        wf.setframerate(RATE)
         wf.writeframes(audio_data)
