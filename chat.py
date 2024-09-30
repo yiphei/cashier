@@ -79,7 +79,7 @@ def get_text_from_speech(audio_data, client):
     return transcription.text
 
 
-def get_speech_from_text(text, client):
+def get_speech_from_text(text_iterator, client):
     audio = client.generate(
         voice=Voice(
             voice_id="cgSgspJ2msm6clMCkdW9",
@@ -87,7 +87,7 @@ def get_speech_from_text(text, client):
                 stability=0.71, similarity_boost=0.5, style=0.0, use_speaker_boost=True
             ),
         ),
-        text=text,
+        text=text_iterator,
         model="eleven_multilingual_v2",
         stream=True,
     )
