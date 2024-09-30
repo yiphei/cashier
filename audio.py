@@ -40,6 +40,7 @@ def record_audio(stream):
 
 def process_audio():
     frames = []
+    is_first_silence = True
     silence_start = None
 
     while True:
@@ -51,7 +52,10 @@ def process_audio():
                 # If silence starts, note the time
                 if silence_start is None:
                     silence_start = time.time()
-                elif time.time() - silence_start > SILENCE_DURATION:
+                elif (
+                    time.time() - silence_start > SILENCE_DURATION
+                    and not is_first_silence
+                ):
                     # If silence has lasted long enough, stop recording
                     print("Silence detected, stopping recording.")
                     stop_recording_event.set()  # Signal the recording thread to stop
@@ -59,6 +63,7 @@ def process_audio():
             else:
                 # If non-silent data, reset silence timer
                 silence_start = None
+                is_first_silence = False
 
     print("Finished recording.")
     return b"".join(frames)  # Return raw audio data
@@ -81,6 +86,8 @@ def get_audio_input():
     stream.stop_stream()
     stream.close()
     audio.terminate()
+    audio_queue.queue.clear()
+    stop_recording_event.clear()
     return audio_data
 
 

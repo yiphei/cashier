@@ -65,9 +65,7 @@ if __name__ == "__main__":
 
             audio_data = get_audio_input()
             user_input = get_text_from_speech(audio_data, client)
-            print(user_input)
-            print("DONEEEE")
-            user_input = input("You: ")
+            print(f"You: {user_input}")
             # If user types 'exit', break the loop and end the program
             if user_input.lower() == "exit":
                 print("Exiting chatbot. Goodbye!")
