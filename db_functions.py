@@ -22,15 +22,6 @@ def create_client():
     )
 
 
-class Option(BaseModel):
-    name: str
-    type: str
-    value_type: str
-    num_unit: Optional[str]
-    default_value: int | bool | str
-    str_option_values: Optional[List[str]] = None
-
-
 def python_type_to_json_schema(py_type):
     """Map Python types to JSON Schema types."""
     mapping = {
@@ -158,6 +149,15 @@ def openai_tool_decorator(tool_instructions=None):
     return decorator_fn
 
 
+class Option(BaseModel):
+    name: str
+    type: str
+    value_type: str
+    num_unit: Optional[str]
+    default_value: int | bool | str
+    str_option_values: Optional[List[str]] = None
+
+
 @openai_tool_decorator(
     "Most customers either don't provide a complete order (i.e. not specifying required options like size)"
     "or are not aware of all the options available for a menu item. It is your job to help them with both cases."
@@ -167,7 +167,7 @@ def get_menu_items_options(menu_item_id: int) -> Dict[str, List[Option]]:
     Get all the options available for the menu item.
 
     Args:
-        menu_item_id: The menu item id used in the db.
+        menu_item_id: The menu item id.
 
     Returns:
         A mapping of cup size to the list of options available for that size.
@@ -183,12 +183,12 @@ def get_menu_items_options(menu_item_id: int) -> Dict[str, List[Option]]:
     )
     data = response.data
 
-    size_to_default_options_map = defaultdict(list)
+    size_to_options_map = defaultdict(list)
     for item in data:
         option = item["option"]
         option_type_config = item["option_type_config"]
         str_option_values_map = item["menu_item_to_option_values_map"]
-        do = Option(
+        option = Option(
             name=option["name"],
             type=option["type"],
             value_type=option["value_type"],
@@ -210,9 +210,9 @@ def get_menu_items_options(menu_item_id: int) -> Dict[str, List[Option]]:
             else None,
         )
 
-        size_to_default_options_map[item["cup_size"]].append(do)
+        size_to_options_map[item["cup_size"]].append(option)
 
-    return size_to_default_options_map
+    return size_to_options_map
 
 
 class MenuItem(BaseModel):
@@ -225,7 +225,7 @@ class MenuItem(BaseModel):
 @openai_tool_decorator()
 def get_menu_item_from_name(menu_item_name: str) -> MenuItem:
     """
-    Get the menu item given the name string of the menu item.
+    Get the menu item given the name of the menu item.
 
     Args:
         menu_item_name: The menu item name.
