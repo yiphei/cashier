@@ -1,9 +1,10 @@
 import json
 import os
 import tempfile
+from collections.abc import Iterator
 
 from dotenv import load_dotenv  # Add this import
-from elevenlabs import ElevenLabs, Voice, VoiceSettings, play
+from elevenlabs import ElevenLabs, Voice, VoiceSettings, stream
 from openai import OpenAI
 
 from audio import get_audio_input, save_audio_to_wav
@@ -32,6 +33,27 @@ SYSTEM_PROMPT = (
     "If they dont work, then you can progressively refuse more firmly."
     "Overall, be professional, polite, and friendly."
 )
+
+
+class StreamChatCompletionIterator(Iterator):
+    def __init__(self, chat_stream):
+        self.chat_stream = chat_stream
+        self.full_msg = ""  # Initialize full message
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        try:
+            chunk = next(self.chat_stream)  # Get the next chunk
+            msg = chunk.choices[0].delta.content
+            finish_reason = chunk.choices[0].finish_reason
+            if finish_reason is not None:
+                raise StopIteration
+            self.full_msg += msg  # Append the message to full_msg
+            return msg  # Return the message
+        except StopIteration:
+            raise StopIteration  # Signal end of iteration
 
 
 def get_system_return_type_prompt(fn_name):
@@ -67,8 +89,9 @@ def get_speech_from_text(text, client):
         ),
         text=text,
         model="eleven_multilingual_v2",
+        stream=True,
     )
-    play(audio)
+    stream(audio)
 
 
 if __name__ == "__main__":
@@ -99,23 +122,30 @@ if __name__ == "__main__":
             messages.append({"role": "user", "content": user_input})
 
         chat_completion = client.chat.completions.create(
-            model="gpt-4o-mini", messages=messages, tools=OPENAI_TOOLS
+            model="gpt-4o-mini", messages=messages, tools=OPENAI_TOOLS, stream=True
         )
-
-        response = chat_completion.choices[0]
-        finish_reason = response.finish_reason
-        if finish_reason == "stop":
-            response_msg = response.message.content
-            print("Assistant: ", response_msg)
-            get_speech_from_text(response_msg, elevenlabs_client)
-            messages.append({"role": "assistant", "content": response_msg})
-
+        first_chunk = next(chat_completion)
+        is_tool_call = first_chunk.choices[0].delta.tool_calls
+        if not is_tool_call:
+            print("Assistant: ", end="")
+            stream_state = StreamChatCompletionIterator(chat_completion)
+            get_speech_from_text(stream_state, elevenlabs_client)
+            print(stream_state.full_msg)
+            messages.append({"role": "assistant", "content": stream_state.full_msg})
             need_user_input = True
-        elif finish_reason == "tool_calls":
-            tool_call_message = response.message
-            function_name = response.message.tool_calls[0].function.name
-            fuction_args = json.loads(response.message.tool_calls[0].function.arguments)
-            tool_call_id = response.message.tool_calls[0].id
+        elif is_tool_call:
+            function_name = first_chunk.choices[0].delta.tool_calls[0].function.name
+            tool_call_id = first_chunk.choices[0].delta.tool_calls[0].id
+            function_args_json = ""
+            for chunk in chat_completion:
+                finish_reason = chunk.choices[0].finish_reason
+                if finish_reason is not None:
+                    break
+                function_args_json += (
+                    chunk.choices[0].delta.tool_calls[0].function.arguments
+                )
+
+            fuction_args = json.loads(function_args_json)
             print(f"[CALLING] {function_name} with args {fuction_args}")
             if function_name == "get_menu_item_from_name":
                 menu_item = get_menu_item_from_name(**fuction_args)
@@ -132,6 +162,20 @@ if __name__ == "__main__":
                 "tool_call_id": tool_call_id,
             }
             print(f"[CALLING DONE] {function_name} with output {content}")
+
+            tool_call_message = {
+                "role": "assistant",
+                "tool_calls": [
+                    {
+                        "id": tool_call_id,
+                        "type": "function",
+                        "function": {
+                            "arguments": function_args_json,
+                            "name": function_name,
+                        },
+                    }
+                ],
+            }
 
             messages.append(tool_call_message)
             messages.append(function_call_result_msg)
