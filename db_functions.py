@@ -176,7 +176,7 @@ def get_menu_items_options(menu_item_id: int) -> Dict[str, List[Option]]:
     response = (
         supabase.table("menu_item_to_options_map")
         .select(
-            "*, option(name, type, value_type, num_unit), option_type_config(default_num_value, default_bool_value, default_discrete_value_id, discrete_option_value(name))"
+            "*, option(name, type, value_type, num_unit), option_type_config(default_num_value, default_bool_value, default_discrete_value_id, discrete_option_value(name)), menu_item_to_option_values_map(discrete_option_value(name))"
         )
         .eq("menu_item_id", menu_item_id)
         .execute()
@@ -187,6 +187,7 @@ def get_menu_items_options(menu_item_id: int) -> Dict[str, List[Option]]:
     for item in data:
         option = item["option"]
         option_type_config = item["option_type_config"]
+        str_option_values_map = item["menu_item_to_option_values_map"]
         do = Option(
             name=option["name"],
             type=option["type"],
@@ -201,38 +202,15 @@ def get_menu_items_options(menu_item_id: int) -> Dict[str, List[Option]]:
                     else None
                 )
             ),
+            str_option_values=[
+                map_obj["discrete_option_value"]["name"]
+                for map_obj in str_option_values_map
+            ]
+            if str_option_values_map
+            else None,
         )
 
         size_to_default_options_map[item["cup_size"]].append(do)
-
-    response = (
-        supabase.table("menu_item_to_options_map")
-        .select(
-            "*, option(name), menu_item_to_option_values_map!inner(discrete_option_value(name))"
-        )
-        .eq("menu_item_id", menu_item_id)
-        .order("id")
-        .execute()
-    )
-
-    # currently, this only supports discrete options that have default value.
-    # Therefore, assume that other discrete options are not available for this menu item.
-    for item in response.data:
-        option = item["option"]
-        option_values = [
-            obj["discrete_option_value"]["name"]
-            for obj in item["menu_item_to_option_values_map"]
-        ]
-
-        target_option = next(
-            (
-                obj
-                for obj in size_to_default_options_map[item["cup_size"]]
-                if obj.name == option["name"]
-            ),
-            None,
-        )
-        target_option.str_option_values = option_values
 
     return size_to_default_options_map
 
