@@ -1,6 +1,7 @@
 import queue
 import threading
 import time
+import wave
 
 import numpy as np
 import pyaudio
@@ -81,3 +82,12 @@ def get_audio_input():
     stream.close()
     audio.terminate()
     return audio_data
+
+
+def save_audio_to_wav(audio_data, file_path):
+    """Save raw audio data to a .wav file."""
+    with wave.open(file_path, "wb") as wf:
+        wf.setnchannels(CHANNELS)  # Mono
+        wf.setsampwidth(2)  # 2 bytes for paInt16 (16-bit audio)
+        wf.setframerate(RATE)  # Sampling rate
+        wf.writeframes(audio_data)

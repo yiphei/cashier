@@ -1,9 +1,10 @@
 import json
+import tempfile
 
 from dotenv import load_dotenv  # Add this import
 from openai import OpenAI
 
-from audio import get_audio_input
+from audio import get_audio_input, save_audio_to_wav
 from db_functions import (
     OPENAI_TOOLS,
     OPENAI_TOOLS_RETUN_DESCRIPTION,
@@ -34,6 +35,20 @@ def get_system_return_type_prompt(fn_name):
     return msg
 
 
+def get_text_from_speech(audio_data, client):
+    with tempfile.NamedTemporaryFile(suffix=".wav", delete=True) as temp_wav_file:
+        # Save the audio data as a WAV file
+        save_audio_to_wav(audio_data, temp_wav_file.name)
+
+        # Use OpenAI's API to transcribe the saved WAV file
+        transcription = client.audio.transcriptions.create(
+            model="whisper-1",
+            language="en",
+            file=open(temp_wav_file.name, "rb"),  # Open the saved WAV file for reading
+        )
+    return transcription.text
+
+
 if __name__ == "__main__":
     client = OpenAI()
     create_client()
@@ -49,6 +64,8 @@ if __name__ == "__main__":
             # Read user input from stdin
 
             audio_data = get_audio_input()
+            user_input = get_text_from_speech(audio_data, client)
+            print(user_input)
             print("DONEEEE")
             user_input = input("You: ")
             # If user types 'exit', break the loop and end the program
