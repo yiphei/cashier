@@ -3,6 +3,7 @@ import json
 from dotenv import load_dotenv  # Add this import
 from openai import OpenAI
 
+from audio import get_audio_input
 from db_functions import (
     OPENAI_TOOLS,
     OPENAI_TOOLS_RETUN_DESCRIPTION,
@@ -46,6 +47,9 @@ if __name__ == "__main__":
     while True:
         if need_user_input:
             # Read user input from stdin
+
+            audio_data = get_audio_input()
+            print("DONEEEE")
             user_input = input("You: ")
             # If user types 'exit', break the loop and end the program
             if user_input.lower() == "exit":
