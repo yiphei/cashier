@@ -4,21 +4,28 @@ repos:
     rev: v4.4.0  # Updated from v3.4.0
     hooks:
     -   id: trailing-whitespace
+        stages: [push]
     -   id: end-of-file-fixer
+        stages: [push]
     -   id: check-yaml
+        stages: [push]
     -   id: check-added-large-files
+        stages: [push]
 -   repo: https://github.com/psf/black
     rev: 23.3.0  # Updated from 22.3.0
     hooks:
     -   id: black
+        stages: [push]
 -   repo: https://github.com/PyCQA/isort
     rev: 5.12.0  # Updated from 5.10.1
     hooks:
     -   id: isort
+        stages: [push]
 -   repo: https://github.com/pycqa/flake8
     rev: 6.0.0  # Updated from 4.0.1
     hooks:
     -   id: flake8
+        stages: [push]
 # -   repo: https://github.com/pre-commit/mirrors-mypy
 #     rev: v1.4.1  # Updated from v0.910
 #     hooks:
