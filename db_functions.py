@@ -66,8 +66,8 @@ def openai_tool_decorator(tool_instructions=None):
         docstring = inspect.getdoc(func)
 
         description = ""
-        args = defaultdict(dict)
-        returns = ""
+        args_json_schema = defaultdict(dict)
+        return_description = ""
 
         if "Args:" in docstring:
             description = docstring.split("Args:")[0].strip()
@@ -85,35 +85,31 @@ def openai_tool_decorator(tool_instructions=None):
             for line in args_section.splitlines():
                 # Split by the first colon to separate the argument name from its description
                 arg_name, arg_description = line.split(":", 1)
-                args[arg_name.strip()]["description"] = arg_description.strip()
+                args_json_schema[arg_name.strip()][
+                    "description"
+                ] = arg_description.strip()
 
         signature = inspect.signature(func)
         for param_name, param in signature.parameters.items():
-            if param_name in args:
+            if param_name in args_json_schema:
                 # Update type annotations if available
                 if param.annotation == inspect.Parameter.empty:
-                    assert False, "Type annotation is required for all parameters"
-                args[param_name]["type_annotation"] = python_type_to_json_schema(
+                    raise Exception("Type annotation is required for all parameters")
+                args_json_schema[param_name]["type"] = python_type_to_json_schema(
                     param.annotation
                 )
+            else:
+                raise Exception(f"Parameter {param_name} is not found in the docstring")
 
         # Find return section
         returns_match = returns_pattern.search(docstring)
         if returns_match:
-            returns = returns_match.group(1).strip()
+            return_description = returns_match.group(1).strip()
 
         return_annotation = signature.return_annotation
         if return_annotation == inspect.Signature.empty:
-            assert False, "Type annotation is required for all parameters"
+            raise Exception("Type annotation is required for return type")
         returns_json_schema_type = python_type_to_json_schema(return_annotation)
-
-        func_params = {
-            arg_name: {
-                "type": arg_dict["type_annotation"],
-                "description": arg_dict["description"],
-            }
-            for arg_name, arg_dict in args.items()
-        }
 
         full_description = description
         if tool_instructions is not None:
@@ -130,8 +126,8 @@ def openai_tool_decorator(tool_instructions=None):
                     "description": full_description,
                     "parameters": {
                         "type": "object",
-                        "properties": func_params,
-                        "required": list(args.keys()),
+                        "properties": args_json_schema,
+                        "required": list(args_json_schema.keys()),
                         "additionalProperties": False,
                     },
                 },
@@ -140,7 +136,7 @@ def openai_tool_decorator(tool_instructions=None):
 
         global OPENAI_TOOLS_RETUN_DESCRIPTION
         OPENAI_TOOLS_RETUN_DESCRIPTION[func.__name__] = {
-            "description": returns,
+            "description": return_description,
             **returns_json_schema_type,
         }
 
