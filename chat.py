@@ -133,7 +133,9 @@ if __name__ == "__main__":
             chat_stream_iterator = ChatCompletionIterator(chat_completion)
             get_speech_from_text(chat_stream_iterator, elevenlabs_client)
             print(chat_stream_iterator.full_msg)
-            messages.append({"role": "assistant", "content": chat_stream_iterator.full_msg})
+            messages.append(
+                {"role": "assistant", "content": chat_stream_iterator.full_msg}
+            )
             need_user_input = True
         elif is_tool_call:
             function_name = first_chunk.choices[0].delta.tool_calls[0].function.name
