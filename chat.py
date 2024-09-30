@@ -1,7 +1,9 @@
 import json
+import os
 import tempfile
 
 from dotenv import load_dotenv  # Add this import
+from elevenlabs import ElevenLabs, Voice, VoiceSettings, play
 from openai import OpenAI
 
 from audio import get_audio_input, save_audio_to_wav
@@ -49,8 +51,25 @@ def get_text_from_speech(audio_data, client):
     return transcription.text
 
 
+def get_speech_from_text(text, client):
+    audio = client.generate(
+        voice=Voice(
+            voice_id="cgSgspJ2msm6clMCkdW9",
+            settings=VoiceSettings(
+                stability=0.71, similarity_boost=0.5, style=0.0, use_speaker_boost=True
+            ),
+        ),
+        text=text,
+        model="eleven_multilingual_v2",
+    )
+    play(audio)
+
+
 if __name__ == "__main__":
     client = OpenAI()
+    elevenlabs_client = ElevenLabs(
+        api_key=os.getenv("ELEVENLABS_API_KEY"),
+    )
     create_client()
     messages = [
         {"role": "system", "content": SYSTEM_PROMPT},
@@ -82,6 +101,7 @@ if __name__ == "__main__":
         if finish_reason == "stop":
             response_msg = response.message.content
             print("Assistant: ", response_msg)
+            get_speech_from_text(response_msg, elevenlabs_client)
             messages.append({"role": "assistant", "content": response_msg})
 
             need_user_input = True
