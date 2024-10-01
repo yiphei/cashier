@@ -90,7 +90,7 @@ def get_speech_from_text(text_iterator, client):
         text=text_iterator,
         model="eleven_multilingual_v2",
         stream=True,
-        optimize_streaming_latency=3
+        optimize_streaming_latency=3,
     )
     stream(audio)
 
