@@ -13,8 +13,6 @@ from db_functions import (
     OPENAI_TOOLS,
     OPENAI_TOOLS_RETUN_DESCRIPTION,
     create_client,
-    get_menu_item_from_name,
-    get_menu_items_options,
     obj_to_dict,
 )
 
