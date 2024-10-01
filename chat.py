@@ -82,6 +82,10 @@ class ChatCompletionIterator(Iterator):
             finish_reason = chunk.choices[0].finish_reason
             if finish_reason is not None:
                 raise StopIteration
+            if msg is None:
+                print("WARNING: msg is None")
+                print(chunk)
+                raise StopIteration
             self.full_msg += msg  # Append the message to full_msg
             return msg  # Return the message
         except StopIteration:
