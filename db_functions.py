@@ -56,9 +56,9 @@ def python_type_to_json_schema(py_type):
             "items": [python_type_to_json_schema(arg) for arg in get_args(py_type)],
         }
     elif hasattr(py_type, "__args__") and type(None) in py_type.__args__:
-        return "null"
+        return {"type": "null"}
     else:
-        return mapping.get(py_type, "object")  # Default to "object" if type not found
+        return {"type": mapping.get(py_type, "object")}  # Default to "object" if type not found
 
 
 def openai_tool_decorator(tool_instructions=None):
@@ -95,9 +95,9 @@ def openai_tool_decorator(tool_instructions=None):
                 # Update type annotations if available
                 if param.annotation == inspect.Parameter.empty:
                     raise Exception("Type annotation is required for all parameters")
-                args_json_schema[param_name]["type"] = python_type_to_json_schema(
+                args_json_schema[param_name].update(python_type_to_json_schema(
                     param.annotation
-                )
+                ))
             else:
                 raise Exception(f"Parameter {param_name} is not found in the docstring")
 
@@ -243,3 +243,71 @@ def get_menu_item_from_name(menu_item_name: str) -> MenuItem:
         description=item["description"],
         group=item["group"],
     )
+
+class OptionOrder(BaseModel):
+    name: str
+    value: str | int | bool
+
+class ItemOrder(BaseModel):
+    name: str
+    options: List[OptionOrder]    
+
+class Order(BaseModel):
+    item_orders: List[ItemOrder] = []
+
+order = Order()
+
+@openai_tool_decorator()
+def get_current_order() -> Order:
+    """
+    Get the current order.
+
+    Returns:
+        The current order.
+    """
+    return order
+
+@openai_tool_decorator("As soon as all the required options have been provided for a single item, add it to the order.")
+def add_to_order(item_order: ItemOrder) -> None:
+    """
+    Add an item order to the current order.
+
+    Args:
+        item_order: the ItemOrder to add.
+
+    Returns:
+        None
+    """
+    global order
+    order.item_orders.append(item_order)
+
+@openai_tool_decorator()
+def upsert_to_order(item_name: str, new_options: List[OptionOrder]) -> None:
+    """
+    Update the options of an item order in the current order.
+
+    Args:
+        item_name: the name of the item to update.
+        new_options: the new options to set.
+
+    Returns:
+        None
+    """
+    global order
+    item_order = next(item_order for item_order in order.item_orders if item_order.name == item_name)
+    item_order.options = new_options
+
+@openai_tool_decorator()
+def remove_from_order(item_name: str) -> None:
+    """
+    Remove an item order from the current order.
+
+    Args:
+        item_name: the name of the item to remove.
+
+    Returns:
+        None
+    """
+    global order
+    item_order = next(item_order for item_order in order.item_orders if item_order.name == item_name)
+    order.item_orders.remove(item_order)
