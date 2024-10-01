@@ -2,9 +2,8 @@ import inspect
 import os
 import re
 from collections import defaultdict
-from typing import Dict, List, Optional, get_args
+from typing import Dict, List, Optional, get_args, get_origin
 from functools import wraps
-import json
 
 from pydantic import BaseModel, Field
 from supabase import Client
@@ -161,15 +160,19 @@ def openai_tool_decorator(tool_instructions=None):
             # Iterate over the parameters and check for dict-to-BaseModel conversion
             for param_name, param_value in bound_args.arguments.items():
                 param = signature.parameters[param_name]
-
                 # Check if the type annotation is a subclass of pydantic.BaseModel
-                if (
-                    isinstance(param.annotation, type)
-                    and issubclass(param.annotation, BaseModel)
-                    and isinstance(param_value, dict)
-                ):
-                    # Convert the dict to a BaseModel instance
-                    bound_args.arguments[param_name] = param.annotation(**param_value)
+                if isinstance(param.annotation, type):
+                    # Case 1: Single BaseModel
+                    if issubclass(param.annotation, BaseModel) and isinstance(param_value, dict):
+                        # Convert the dict to a BaseModel instance
+                        bound_args.arguments[param_name] = param.annotation(**param_value)
+                    
+                # Case 2: List[BaseModel]
+                elif get_origin(param.annotation) is list:
+                    list_type = get_args(param.annotation)[0]
+                    if issubclass(list_type, BaseModel) and isinstance(param_value, list):
+                        # Convert each dict in the list to a BaseModel instance
+                        bound_args.arguments[param_name] = [list_type(**item) if isinstance(item, dict) else item for item in param_value]
 
             # Call the original function with the modified arguments
             return func(*bound_args.args, **bound_args.kwargs)
