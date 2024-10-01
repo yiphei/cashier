@@ -128,7 +128,7 @@ if __name__ == "__main__":
             messages.append({"role": "user", "content": text_input})
 
         chat_completion = openai_client.chat.completions.create(
-            model="gpt-4o", messages=messages, tools=OPENAI_TOOLS, stream=True
+            model="gpt-4o-mini", messages=messages, tools=OPENAI_TOOLS, stream=True
         )
         first_chunk = next(chat_completion)
         is_tool_call = first_chunk.choices[0].delta.tool_calls
