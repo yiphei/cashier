@@ -153,9 +153,6 @@ def openai_tool_decorator(tool_instructions=None):
             **returns_json_schema_type,
         }
 
-        global FN_NAME_TO_FN
-        FN_NAME_TO_FN[func.__name__] = func
-
         @wraps(func)
         def wrapper(*args, **kwargs):
             bound_args = signature.bind(*args, **kwargs)
@@ -176,6 +173,9 @@ def openai_tool_decorator(tool_instructions=None):
 
             # Call the original function with the modified arguments
             return func(*bound_args.args, **bound_args.kwargs)
+        
+        global FN_NAME_TO_FN
+        FN_NAME_TO_FN[func.__name__] = wrapper
 
         return wrapper
 
