@@ -3,6 +3,7 @@ import os
 import re
 from collections import defaultdict
 from typing import Dict, List, Optional, get_args
+from functools import wraps
 import json
 
 from pydantic import BaseModel, Field
@@ -155,7 +156,28 @@ def openai_tool_decorator(tool_instructions=None):
         global FN_NAME_TO_FN
         FN_NAME_TO_FN[func.__name__] = func
 
-        return func
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            bound_args = signature.bind(*args, **kwargs)
+            bound_args.apply_defaults()
+
+            # Iterate over the parameters and check for dict-to-BaseModel conversion
+            for param_name, param_value in bound_args.arguments.items():
+                param = signature.parameters[param_name]
+
+                # Check if the type annotation is a subclass of pydantic.BaseModel
+                if (
+                    isinstance(param.annotation, type)
+                    and issubclass(param.annotation, BaseModel)
+                    and isinstance(param_value, dict)
+                ):
+                    # Convert the dict to a BaseModel instance
+                    bound_args.arguments[param_name] = param.annotation(**param_value)
+
+            # Call the original function with the modified arguments
+            return func(*bound_args.args, **bound_args.kwargs)
+
+        return wrapper
 
     return decorator_fn
 
