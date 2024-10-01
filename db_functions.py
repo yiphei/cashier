@@ -2,8 +2,8 @@ import inspect
 import os
 import re
 from collections import defaultdict
-from typing import Dict, List, Optional, get_args, get_origin
 from functools import wraps
+from typing import Dict, List, Optional, get_args, get_origin
 
 from pydantic import BaseModel, Field
 from supabase import Client
@@ -59,7 +59,9 @@ def python_type_to_json_schema(py_type):
     elif hasattr(py_type, "__args__") and type(None) in py_type.__args__:
         return {"type": "null"}
     else:
-        return {"type": mapping.get(py_type, "object")}  # Default to "object" if type not found
+        return {
+            "type": mapping.get(py_type, "object")
+        }  # Default to "object" if type not found
 
 
 def obj_to_dict(obj):
@@ -67,11 +69,12 @@ def obj_to_dict(obj):
     if issubclass(obj_type, BaseModel):
         return obj.model_dump()
     elif isinstance(obj, (dict, defaultdict)):
-        return {obj_to_dict(k): obj_to_dict(v) for k,v in obj.items()}
+        return {obj_to_dict(k): obj_to_dict(v) for k, v in obj.items()}
     elif isinstance(obj, (list, tuple)):
         return [obj_to_dict(item) for item in obj]
     else:
         return obj  # Default to "object" if type not found
+
 
 def openai_tool_decorator(tool_instructions=None):
     def decorator_fn(func):
@@ -107,9 +110,9 @@ def openai_tool_decorator(tool_instructions=None):
                 # Update type annotations if available
                 if param.annotation == inspect.Parameter.empty:
                     raise Exception("Type annotation is required for all parameters")
-                args_json_schema[param_name].update(python_type_to_json_schema(
-                    param.annotation
-                ))
+                args_json_schema[param_name].update(
+                    python_type_to_json_schema(param.annotation)
+                )
             else:
                 raise Exception(f"Parameter {param_name} is not found in the docstring")
 
@@ -163,20 +166,29 @@ def openai_tool_decorator(tool_instructions=None):
                 # Check if the type annotation is a subclass of pydantic.BaseModel
                 if isinstance(param.annotation, type):
                     # Case 1: Single BaseModel
-                    if issubclass(param.annotation, BaseModel) and isinstance(param_value, dict):
+                    if issubclass(param.annotation, BaseModel) and isinstance(
+                        param_value, dict
+                    ):
                         # Convert the dict to a BaseModel instance
-                        bound_args.arguments[param_name] = param.annotation(**param_value)
-                    
+                        bound_args.arguments[param_name] = param.annotation(
+                            **param_value
+                        )
+
                 # Case 2: List[BaseModel]
                 elif get_origin(param.annotation) is list:
                     list_type = get_args(param.annotation)[0]
-                    if issubclass(list_type, BaseModel) and isinstance(param_value, list):
+                    if issubclass(list_type, BaseModel) and isinstance(
+                        param_value, list
+                    ):
                         # Convert each dict in the list to a BaseModel instance
-                        bound_args.arguments[param_name] = [list_type(**item) if isinstance(item, dict) else item for item in param_value]
+                        bound_args.arguments[param_name] = [
+                            list_type(**item) if isinstance(item, dict) else item
+                            for item in param_value
+                        ]
 
             # Call the original function with the modified arguments
             return func(*bound_args.args, **bound_args.kwargs)
-        
+
         global FN_NAME_TO_FN
         FN_NAME_TO_FN[func.__name__] = wrapper
 
@@ -284,18 +296,23 @@ def get_menu_item_from_name(menu_item_name: str) -> MenuItem:
         group=item["group"],
     )
 
+
 class OptionOrder(BaseModel):
     name: str
     value: str | int | bool
 
+
 class ItemOrder(BaseModel):
     name: str
-    options: List[OptionOrder]    
+    options: List[OptionOrder]
+
 
 class Order(BaseModel):
     item_orders: List[ItemOrder] = []
 
+
 order = Order()
+
 
 @openai_tool_decorator()
 def get_current_order() -> Order:
@@ -307,7 +324,10 @@ def get_current_order() -> Order:
     """
     return order
 
-@openai_tool_decorator("As soon as all the required options have been provided for a single item, add it to the order.")
+
+@openai_tool_decorator(
+    "As soon as all the required options have been provided for a single item, add it to the order."
+)
 def add_to_order(item_order: ItemOrder) -> None:
     """
     Add an item order to the current order.
@@ -320,6 +340,7 @@ def add_to_order(item_order: ItemOrder) -> None:
     """
     global order
     order.item_orders.append(item_order)
+
 
 @openai_tool_decorator()
 def upsert_to_order(item_name: str, new_options: List[OptionOrder]) -> None:
@@ -334,8 +355,11 @@ def upsert_to_order(item_name: str, new_options: List[OptionOrder]) -> None:
         None
     """
     global order
-    item_order = next(item_order for item_order in order.item_orders if item_order.name == item_name)
+    item_order = next(
+        item_order for item_order in order.item_orders if item_order.name == item_name
+    )
     item_order.options = new_options
+
 
 @openai_tool_decorator()
 def remove_from_order(item_name: str) -> None:
@@ -349,5 +373,7 @@ def remove_from_order(item_name: str) -> None:
         None
     """
     global order
-    item_order = next(item_order for item_order in order.item_orders if item_order.name == item_name)
+    item_order = next(
+        item_order for item_order in order.item_orders if item_order.name == item_name
+    )
     order.item_orders.remove(item_order)

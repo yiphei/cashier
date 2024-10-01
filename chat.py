@@ -52,7 +52,6 @@ SYSTEM_PROMPT = (
     "9. Closing greeting"
     "  a. Thank you for coming in!"
     "  b. Have a good one!"
-    
     "Because you are conversing, keep your responses generally concise and brief; and "
     "do not provide unrequested information. "
     "If a response to a request is naturally long, then either ask claryfing questions to further refine the request, "
