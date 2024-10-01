@@ -3,6 +3,7 @@ import os
 import re
 from collections import defaultdict
 from typing import Dict, List, Optional, get_args
+import json
 
 from pydantic import BaseModel, Field
 from supabase import Client
@@ -60,6 +61,17 @@ def python_type_to_json_schema(py_type):
     else:
         return {"type": mapping.get(py_type, "object")}  # Default to "object" if type not found
 
+
+def obj_to_dict(obj):
+    obj_type = type(obj)
+    if issubclass(obj_type, BaseModel):
+        return obj.model_dump()
+    elif isinstance(obj, (dict, defaultdict)):
+        return {obj_to_dict(k): obj_to_dict(v) for k,v in obj.items()}
+    elif isinstance(obj, (list, tuple)):
+        return [obj_to_dict(item) for item in obj]
+    else:
+        return obj  # Default to "object" if type not found
 
 def openai_tool_decorator(tool_instructions=None):
     def decorator_fn(func):

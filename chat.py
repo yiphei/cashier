@@ -14,6 +14,7 @@ from db_functions import (
     create_client,
     get_menu_item_from_name,
     get_menu_items_options,
+    obj_to_dict,
 )
 
 # Load environment variables from .env file
@@ -183,20 +184,18 @@ if __name__ == "__main__":
             fuction_args = json.loads(function_args_json)
             print(f"[CALLING] {function_name} with args {fuction_args}")
             if function_name == "get_menu_item_from_name":
-                menu_item = get_menu_item_from_name(**fuction_args)
-                content = menu_item.model_dump()
+                fn_output = get_menu_item_from_name(**fuction_args)
+                fn_output = obj_to_dict(fn_output)
             else:
-                mapping = get_menu_items_options(**fuction_args)
-                content = {
-                    k: [sub_v.model_dump() for sub_v in v] for k, v in mapping.items()
-                }
+                fn_output = get_menu_items_options(**fuction_args)
+                fn_output = obj_to_dict(fn_output)
 
             function_call_result_msg = {
                 "role": "tool",
-                "content": json.dumps(content),
+                "content": json.dumps(fn_output),
                 "tool_call_id": tool_call_id,
             }
-            print(f"[CALLING DONE] {function_name} with output {content}")
+            print(f"[CALLING DONE] {function_name} with output {fn_output}")
 
             tool_call_message = {
                 "role": "assistant",
