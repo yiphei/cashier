@@ -12,7 +12,7 @@ from supabase import create_client as create_supabase_client
 supabase: Client = None
 
 OPENAI_TOOLS = []
-
+FN_NAME_TO_FN = {}
 OPENAI_TOOLS_RETUN_DESCRIPTION = {}
 
 
@@ -151,6 +151,9 @@ def openai_tool_decorator(tool_instructions=None):
             "description": return_description,
             **returns_json_schema_type,
         }
+
+        global FN_NAME_TO_FN
+        FN_NAME_TO_FN[func.__name__] = func
 
         return func
 

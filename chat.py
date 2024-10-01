@@ -9,6 +9,7 @@ from openai import OpenAI
 
 from audio import get_audio_input, save_audio_to_wav
 from db_functions import (
+    FN_NAME_TO_FN,
     OPENAI_TOOLS,
     OPENAI_TOOLS_RETUN_DESCRIPTION,
     create_client,
@@ -183,12 +184,10 @@ if __name__ == "__main__":
 
             fuction_args = json.loads(function_args_json)
             print(f"[CALLING] {function_name} with args {fuction_args}")
-            if function_name == "get_menu_item_from_name":
-                fn_output = get_menu_item_from_name(**fuction_args)
-                fn_output = obj_to_dict(fn_output)
-            else:
-                fn_output = get_menu_items_options(**fuction_args)
-                fn_output = obj_to_dict(fn_output)
+
+            fn = FN_NAME_TO_FN[function_name]
+            fn_output = fn(**fuction_args)
+            fn_output = obj_to_dict(fn_output)
 
             function_call_result_msg = {
                 "role": "tool",
