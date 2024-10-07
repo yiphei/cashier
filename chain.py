@@ -1,3 +1,6 @@
+from pydantic import BaseModel, Field
+from db_functions import Order
+
 class NodeSchema:
     def __init__(
         self, node_prompt, tool_fns, input_pydantic_model, state_pydantic_model
@@ -70,12 +73,7 @@ class EdgeSchema:
     def check_state_condition(self, state):
         return self.state_condition_fn(state)
 
-
-from pydantic import BaseModel, Field
-
 ## Chain ##
-from db_functions import Order
-
 
 class TakeOrderState(BaseModel):
     order: Order
