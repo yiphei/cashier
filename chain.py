@@ -60,7 +60,7 @@ class NodeSchema:
             ),
         )
 
-    def generate_system_prompt(self, has_input, kwargs):
+    def generate_system_prompt(self, has_input, **kwargs):
         NODE_PROMPT = """
             You are now in the next stage of the conversation. In this stage, the main expectation is the following:
             ```
