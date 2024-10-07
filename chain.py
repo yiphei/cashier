@@ -129,3 +129,24 @@ take_to_confirm_edge_schema = EdgeSchema(
     state_condition_fn=lambda state: state.has_finished_ordering,
     new_input_from_state_fn=lambda state: state.order,
 )
+
+class TerminalOrderState(BaseModel):
+    has_confirmed_order: bool = Field(
+        description="whether the customer has said goodbye"
+    )
+
+terminal_order_node_schema = NodeSchema(
+    node_prompt=(
+        "Order has been successfully placed. Thank the customer."
+    ),
+    tool_fns=[],
+    input_pydantic_model=None,
+    state_pydantic_model=TerminalOrderState,
+)
+
+confirm_to_terminal_edge_schema = EdgeSchema(
+    from_node_schema=confirm_order_node_schema,
+    to_node_schema=terminal_order_node_schema,
+    state_condition_fn=lambda state: state.has_confirmed_order,
+    new_input_from_state_fn=lambda state: None,
+)
