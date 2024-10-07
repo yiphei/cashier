@@ -1,10 +1,13 @@
+from typing import Optional
+
 from pydantic import BaseModel, Field
 
 from db_functions import OPENAI_TOOL_NAME_TO_TOOL_DEF, Order
-from typing import Optional
+
 
 class NodeSchema:
     _counter = 0
+
     def __init__(
         self, node_prompt, tool_fns, input_pydantic_model, state_pydantic_model
     ):
@@ -15,34 +18,41 @@ class NodeSchema:
         self.is_initialized = False
         self.input_pydantic_model = input_pydantic_model
         self.state_pydantic_model = state_pydantic_model
-        self.tool_fns.extend([            {
-                "type": "function",
-                "function": {
-                    "name": "update_state",
-                    "description": "Function to update the state",
-                    "parameters": {
-                        "type": "object",
-                        "properties": {"updated_state": {"description": "the update state",**self.state_pydantic_model.model_json_schema()}},
-                        "required": ["updated_state"],
-                        "additionalProperties": False,
+        self.tool_fns.extend(
+            [
+                {
+                    "type": "function",
+                    "function": {
+                        "name": "update_state",
+                        "description": "Function to update the state",
+                        "parameters": {
+                            "type": "object",
+                            "properties": {
+                                "updated_state": {
+                                    "description": "the update state",
+                                    **self.state_pydantic_model.model_json_schema(),
+                                }
+                            },
+                            "required": ["updated_state"],
+                            "additionalProperties": False,
+                        },
                     },
                 },
-            },
-            {
-                "type": "function",
-                "function": {
-                    "name": "get_state",
-                    "description": "Function to get the current state",
-                    "parameters": {
-                        "type": "object",
-                        "properties": {},
-                        "required": [],
-                        "additionalProperties": False,
+                {
+                    "type": "function",
+                    "function": {
+                        "name": "get_state",
+                        "description": "Function to get the current state",
+                        "parameters": {
+                            "type": "object",
+                            "properties": {},
+                            "required": [],
+                            "additionalProperties": False,
+                        },
                     },
                 },
-            },
-            
-            ])
+            ]
+        )
 
     def run(self, input):
         self.is_initialized = True
@@ -98,6 +108,7 @@ class NodeSchema:
 
 class EdgeSchema:
     _counter = 0
+
     def __init__(
         self,
         from_node_schema,
@@ -126,7 +137,8 @@ class TakeOrderState(BaseModel):
             "whether the customer has finished ordering. This can only be true after"
             " you have explicitly confirmed with them that they have finished ordering,"
             " by asking questions like 'Anything else?'."
-        ), default=False
+        ),
+        default=False,
     )
 
 
@@ -139,7 +151,10 @@ take_order_node_schema = NodeSchema(
         " small talk but you need to steer the conversation back to ordering after 4"
         " back-and-forths."
     ),
-    tool_fns=[OPENAI_TOOL_NAME_TO_TOOL_DEF["get_menu_items_options"],OPENAI_TOOL_NAME_TO_TOOL_DEF["get_menu_item_from_name"]],
+    tool_fns=[
+        OPENAI_TOOL_NAME_TO_TOOL_DEF["get_menu_items_options"],
+        OPENAI_TOOL_NAME_TO_TOOL_DEF["get_menu_item_from_name"],
+    ],
     input_pydantic_model=None,
     state_pydantic_model=TakeOrderState,
 )
@@ -164,19 +179,20 @@ confirm_order_node_schema = NodeSchema(
 take_to_confirm_edge_schema = EdgeSchema(
     from_node_schema=take_order_node_schema,
     to_node_schema=confirm_order_node_schema,
-    state_condition_fn=lambda state: state.has_finished_ordering and state.order is not None,
+    state_condition_fn=lambda state: state.has_finished_ordering
+    and state.order is not None,
     new_input_from_state_fn=lambda state: state.order,
 )
+
 
 class TerminalOrderState(BaseModel):
     has_said_goodbye: bool = Field(
         description="whether the customer has said goodbye", default=False
     )
 
+
 terminal_order_node_schema = NodeSchema(
-    node_prompt=(
-        "Order has been successfully placed. Thank the customer."
-    ),
+    node_prompt=("Order has been successfully placed. Thank the customer."),
     tool_fns=[],
     input_pydantic_model=None,
     state_pydantic_model=TerminalOrderState,

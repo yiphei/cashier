@@ -133,21 +133,19 @@ def openai_tool_decorator(tool_instructions=None):
             full_description += " " + tool_instructions.strip()
 
         global OPENAI_TOOL_NAME_TO_TOOL_DEF
-        OPENAI_TOOL_NAME_TO_TOOL_DEF[func.__name__] = (
-            {
-                "type": "function",
-                "function": {
-                    "name": func.__name__,
-                    "description": full_description,
-                    "parameters": {
-                        "type": "object",
-                        "properties": args_json_schema,
-                        "required": list(args_json_schema.keys()),
-                        "additionalProperties": False,
-                    },
+        OPENAI_TOOL_NAME_TO_TOOL_DEF[func.__name__] = {
+            "type": "function",
+            "function": {
+                "name": func.__name__,
+                "description": full_description,
+                "parameters": {
+                    "type": "object",
+                    "properties": args_json_schema,
+                    "required": list(args_json_schema.keys()),
+                    "additionalProperties": False,
                 },
-            }
-        )
+            },
+        }
 
         global OPENAI_TOOLS_RETUN_DESCRIPTION
         OPENAI_TOOLS_RETUN_DESCRIPTION[func.__name__] = {
@@ -250,12 +248,14 @@ def get_menu_items_options(menu_item_id: int) -> Dict[str, List[Option]]:
                     else None
                 )
             ),
-            str_option_values=[
-                map_obj["discrete_option_value"]["name"]
-                for map_obj in str_option_values_map
-            ]
-            if str_option_values_map
-            else None,
+            str_option_values=(
+                [
+                    map_obj["discrete_option_value"]["name"]
+                    for map_obj in str_option_values_map
+                ]
+                if str_option_values_map
+                else None
+            ),
         )
 
         size_to_options_map[item["cup_size"]].append(option)

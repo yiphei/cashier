@@ -8,6 +8,7 @@ from elevenlabs import ElevenLabs, Voice, VoiceSettings, stream
 from openai import OpenAI
 
 from audio import get_audio_input, save_audio_to_wav
+from chain import FROM_NODE_ID_TO_EDGE_SCHEMA, take_order_node_schema
 from db_functions import (
     FN_NAME_TO_FN,
     OPENAI_TOOL_NAME_TO_TOOL_DEF,
@@ -15,7 +16,6 @@ from db_functions import (
     create_client,
     obj_to_dict,
 )
-from chain import FROM_NODE_ID_TO_EDGE_SCHEMA, take_order_node_schema
 
 # Load environment variables from .env file
 load_dotenv()
@@ -137,7 +137,10 @@ if __name__ == "__main__":
             messages.append({"role": "user", "content": text_input})
 
         chat_completion = openai_client.chat.completions.create(
-            model="gpt-4o-mini", messages=messages, tools=current_node_schema.tool_fns, stream=True
+            model="gpt-4o-mini",
+            messages=messages,
+            tools=current_node_schema.tool_fns,
+            stream=True,
         )
         first_chunk = next(chat_completion)
         is_tool_call = first_chunk.choices[0].delta.tool_calls
@@ -168,19 +171,31 @@ if __name__ == "__main__":
             if function_name in ["get_state", "update_state"]:
                 fn_output = getattr(current_node_schema, function_name)(**fuction_args)
                 if function_name == "update_state":
-                    state_condition_results = [edge_schema.state_condition_fn(current_node_schema.state) for edge_schema in current_edge_schemas]
-                    if any([edge_schema.state_condition_fn(current_node_schema.state) for edge_schema in current_edge_schemas]):
-                        first_true_index =state_condition_results.index(True)
+                    state_condition_results = [
+                        edge_schema.state_condition_fn(current_node_schema.state)
+                        for edge_schema in current_edge_schemas
+                    ]
+                    if any(
+                        [
+                            edge_schema.state_condition_fn(current_node_schema.state)
+                            for edge_schema in current_edge_schemas
+                        ]
+                    ):
+                        first_true_index = state_condition_results.index(True)
                         first_true_edge_schema = current_edge_schemas[first_true_index]
-                        
-                        new_node_input = first_true_edge_schema.new_input_from_state_fn(current_node_schema.state)
+
+                        new_node_input = first_true_edge_schema.new_input_from_state_fn(
+                            current_node_schema.state
+                        )
                         current_node_schema = first_true_edge_schema.to_node_schema
-                        current_edge_schemas = FROM_NODE_ID_TO_EDGE_SCHEMA.get(current_node_schema.id, [])
+                        current_edge_schemas = FROM_NODE_ID_TO_EDGE_SCHEMA.get(
+                            current_node_schema.id, []
+                        )
 
             else:
                 fn = FN_NAME_TO_FN[function_name]
                 fn_output = fn(**fuction_args)
-            
+
             fn_output = obj_to_dict(fn_output)
             function_call_result_msg = {
                 "role": "tool",
