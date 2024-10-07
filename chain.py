@@ -1,7 +1,7 @@
 from pydantic import BaseModel, Field
 
 from db_functions import OPENAI_TOOL_NAME_TO_TOOL_DEF, Order
-
+from typing import Optional
 
 class NodeSchema:
     _counter = 0
@@ -118,13 +118,13 @@ class EdgeSchema:
 
 
 class TakeOrderState(BaseModel):
-    order: Order
+    order: Optional[Order] = None
     has_finished_ordering: bool = Field(
         description=(
             "whether the customer has finished ordering. This can only be true after"
             " you have explicitly confirmed with them that they have finished ordering,"
             " by asking questions like 'Anything else?'."
-        )
+        ), default=False
     )
 
 
