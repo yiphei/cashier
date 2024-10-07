@@ -20,9 +20,11 @@ class NodeSchema:
         self.prompt = self.generate_system_prompt(
             self.input_pydantic_model is not None,
             node_prompt=self.node_prompt,
-            node_input=self.input.model_dump_json()
-            if self.input_pydantic_model is not None
-            else None,
+            node_input=(
+                self.input.model_dump_json()
+                if self.input_pydantic_model is not None
+                else None
+            ),
         )
 
     def generate_system_prompt(self, has_input, kwargs):
@@ -82,14 +84,23 @@ class EdgeSchema:
 class TakeOrderState(BaseModel):
     order: Order
     has_finished_ordering: bool = Field(
-        description="whether the customer has finished ordering. This can only be true after you have explicitly confirmed with them that they have finished ordering, by asking questions like 'Anything else?'."
+        description=(
+            "whether the customer has finished ordering. This can only be true after"
+            " you have explicitly confirmed with them that they have finished ordering,"
+            " by asking questions like 'Anything else?'."
+        )
     )
 
 
 take_order_node_schema = NodeSchema(
-    node_prompt="First, greet the customer. Then, your main job is to take their orders, which also includes answering reasonable questions about the shop & menu only"
-    " and assisting them with any issues they may have about their orders. If they are not immediately ready to order after the greeting, you may engage in some small talk"
-    " but you need to steer the conversation back to ordering after 4 back-and-forths.",
+    node_prompt=(
+        "First, greet the customer. Then, your main job is to take their orders, which"
+        " also includes answering reasonable questions about the shop & menu only and"
+        " assisting them with any issues they may have about their orders. If they are"
+        " not immediately ready to order after the greeting, you may engage in some"
+        " small talk but you need to steer the conversation back to ordering after 4"
+        " back-and-forths."
+    ),
     tool_fns=[],
     input_pydantic_model=None,
     state_pydantic_model=TakeOrderState,
@@ -103,7 +114,10 @@ class ConfirmOrderState(BaseModel):
 
 
 confirm_order_node_schema = NodeSchema(
-    node_prompt="Your main job is to confirm the order with the customer. You do this by repeating the order back to them and get their confirmation.",
+    node_prompt=(
+        "Your main job is to confirm the order with the customer. You do this by"
+        " repeating the order back to them and get their confirmation."
+    ),
     tool_fns=[],
     input_pydantic_model=Order,
     state_pydantic_model=ConfirmOrderState,
