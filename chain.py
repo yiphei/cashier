@@ -1,5 +1,5 @@
 NODE_PROMPT = """
-You are now in the next stage of the conversation. In this stage, the main expectation is the following: 
+You are now in the next stage of the conversation. In this stage, the main expectation is the following:
 ```
 {node_prompt}
 ```
@@ -13,10 +13,9 @@ valuable information that helps you accomplish the main expectation. The input i
 During this stage, you must use function calls whenever possible and as soon as possible. If there is
 a user input that has an associated function, you must call it immediately because it will help you with
 accomplishing the user input. When in doubt, use the function/s. In conjunction, you must update a state object whenever possible.
-The state update function is update_state and getting the state function is get_state. 
+The state update function is update_state and getting the state function is get_state.
 You cannot proceed to the next stage without updating the state.
 """
-
 
 
 class PromptContainer:
@@ -26,6 +25,7 @@ class PromptContainer:
 
     def format(self, **kwargs):
         return self.base_prompt.format(**kwargs)
+
 
 class NodeSchema:
     def __init__(self, prompt_container, tool_fns, state_pydantic_model):
