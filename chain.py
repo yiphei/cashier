@@ -54,7 +54,7 @@ class NodeSchema:
             self.input_pydantic_model is not None,
             node_prompt=self.node_prompt,
             node_input=(
-                self.input.model_dump_json()
+                input.model_dump_json()
                 if self.input_pydantic_model is not None
                 else None
             ),
@@ -87,8 +87,10 @@ class NodeSchema:
 
         return NODE_PROMPT.format(**kwargs)
 
-    def update_state(self, state_update):
-        self.state = self.state.model_copy(update=state_update)
+    def update_state(self, updated_state):
+        old_state = self.state.model_dump()
+        new_state = old_state | updated_state
+        self.state = self.state_pydantic_model(**new_state)
 
     def get_state(self):
         return self.state.model_dump_json()
@@ -145,7 +147,7 @@ take_order_node_schema = NodeSchema(
 
 class ConfirmOrderState(BaseModel):
     has_confirmed_order: bool = Field(
-        description="whether the customer has confirmed their order"
+        description="whether the customer has confirmed their order", default=False
     )
 
 
@@ -167,8 +169,8 @@ take_to_confirm_edge_schema = EdgeSchema(
 )
 
 class TerminalOrderState(BaseModel):
-    has_confirmed_order: bool = Field(
-        description="whether the customer has said goodbye"
+    has_said_goodbye: bool = Field(
+        description="whether the customer has said goodbye", default=False
     )
 
 terminal_order_node_schema = NodeSchema(

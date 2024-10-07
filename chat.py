@@ -119,6 +119,7 @@ if __name__ == "__main__":
 
     while True:
         if not current_node_schema.is_initialized:
+            print(f"CURRENT_NODE_SCHEMA: {current_node_schema.id}")
             current_node_schema.run(new_node_input)
             messages.append({"role": "system", "content": current_node_schema.prompt})
 
@@ -136,7 +137,7 @@ if __name__ == "__main__":
             messages.append({"role": "user", "content": text_input})
 
         chat_completion = openai_client.chat.completions.create(
-            model="gpt-4o-mini", messages=messages, tools=OPENAI_TOOL_NAME_TO_TOOL_DEF.values(), stream=True
+            model="gpt-4o-mini", messages=messages, tools=current_node_schema.tool_fns, stream=True
         )
         first_chunk = next(chat_completion)
         is_tool_call = first_chunk.choices[0].delta.tool_calls
