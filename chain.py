@@ -4,11 +4,15 @@ from db_functions import OPENAI_TOOL_NAME_TO_TOOL_DEF, Order
 
 
 class NodeSchema:
+    _counter = 0
     def __init__(
         self, node_prompt, tool_fns, input_pydantic_model, state_pydantic_model
     ):
+        NodeSchema._counter += 1
+        self.id = NodeSchema._counter
         self.node_prompt = node_prompt
         self.tool_fns = tool_fns
+        self.is_initialized = False
         self.tool_fn.extend([            {
                 "type": "function",
                 "function": {
@@ -41,6 +45,7 @@ class NodeSchema:
         self.state_pydantic_model = state_pydantic_model
 
     def run(self, input):
+        self.is_initialized = True
         if input is not None:
             assert isinstance(input, self.input_pydantic_model)
 
@@ -90,6 +95,7 @@ class NodeSchema:
 
 
 class EdgeSchema:
+    _counter = 0
     def __init__(
         self,
         from_node_schema,
@@ -97,6 +103,8 @@ class EdgeSchema:
         state_condition_fn,
         new_input_from_state_fn,
     ):
+        EdgeSchema._counter += 1
+        self.id = EdgeSchema._counter
         self.from_node_schema = from_node_schema
         self.to_node_schema = to_node_schema
         self.state_condition_fn = state_condition_fn
@@ -178,3 +186,8 @@ confirm_to_terminal_edge_schema = EdgeSchema(
     state_condition_fn=lambda state: state.has_confirmed_order,
     new_input_from_state_fn=lambda state: None,
 )
+
+FROM_NODE_ID_TO_EDGE_SCHEMA = {
+    take_order_node_schema.id: [take_to_confirm_edge_schema],
+    confirm_order_node_schema.id: [confirm_to_terminal_edge_schema],
+}

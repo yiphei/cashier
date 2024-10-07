@@ -15,6 +15,7 @@ from db_functions import (
     create_client,
     obj_to_dict,
 )
+from chain import FROM_NODE_ID_TO_EDGE_SCHEMA, take_order_node_schema
 
 # Load environment variables from .env file
 load_dotenv()
@@ -112,8 +113,15 @@ if __name__ == "__main__":
     ]
     print("Assistant: hi, welcome to Heaven Coffee")
     need_user_input = True
+    current_node_schema = take_order_node_schema
+    current_edge_schemas = FROM_NODE_ID_TO_EDGE_SCHEMA[current_node_schema.id]
+    new_node_input = None
 
     while True:
+        if not current_node_schema.is_initialized:
+            current_node_schema.run(new_node_input)
+            messages.append({"role": "system", "content": current_node_schema.prompt})
+
         if need_user_input:
             # Read user input from stdin
 
@@ -156,11 +164,23 @@ if __name__ == "__main__":
 
             fuction_args = json.loads(function_args_json)
             print(f"[CALLING] {function_name} with args {fuction_args}")
+            if function_name in ["get_state", "update_state"]:
+                fn_output = getattr(current_node_schema, function_name)(**fuction_args)
+                if function_name == "update_state":
+                    state_condition_results = [edge_schema.state_condition_fn(current_node_schema.state) for edge_schema in current_edge_schemas]
+                    if any([edge_schema.state_condition_fn(current_node_schema.state) for edge_schema in current_edge_schemas]):
+                        first_true_index =state_condition_results.index(True)
+                        first_true_edge_schema = current_edge_schemas[first_true_index]
+                        
+                        new_node_input = first_true_edge_schema.new_input_from_state_fn(current_node_schema.state)
+                        current_node_schema = first_true_edge_schema.to_node_schema
+                        current_edge_schemas = FROM_NODE_ID_TO_EDGE_SCHEMA.get(current_node_schema.id, [])
 
-            fn = FN_NAME_TO_FN[function_name]
-            fn_output = fn(**fuction_args)
+            else:
+                fn = FN_NAME_TO_FN[function_name]
+                fn_output = fn(**fuction_args)
+            
             fn_output = obj_to_dict(fn_output)
-
             function_call_result_msg = {
                 "role": "tool",
                 "content": json.dumps(fn_output),
@@ -184,6 +204,7 @@ if __name__ == "__main__":
 
             messages.append(tool_call_message)
             messages.append(function_call_result_msg)
-            messages.append(get_system_return_type_prompt(function_name))
+            if function_name not in ["get_state", "update_state"]:
+                messages.append(get_system_return_type_prompt(function_name))
 
             need_user_input = False
