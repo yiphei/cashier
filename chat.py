@@ -11,7 +11,6 @@ from audio import get_audio_input, save_audio_to_wav
 from chain import FROM_NODE_ID_TO_EDGE_SCHEMA, take_order_node_schema
 from db_functions import (
     FN_NAME_TO_FN,
-    OPENAI_TOOL_NAME_TO_TOOL_DEF,
     OPENAI_TOOLS_RETUN_DESCRIPTION,
     create_client,
     obj_to_dict,
