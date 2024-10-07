@@ -120,6 +120,7 @@ if __name__ == "__main__":
         if not current_node_schema.is_initialized:
             print(f"CURRENT_NODE_SCHEMA: {current_node_schema.id}")
             current_node_schema.run(new_node_input)
+            print(current_node_schema.prompt)
             messages.append({"role": "system", "content": current_node_schema.prompt})
 
         if need_user_input:
