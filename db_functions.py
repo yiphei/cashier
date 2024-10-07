@@ -11,7 +11,7 @@ from supabase import create_client as create_supabase_client
 
 supabase: Client = None
 
-OPENAI_TOOL_NAME_TO_TOOL_DEF = []
+OPENAI_TOOL_NAME_TO_TOOL_DEF = {}
 FN_NAME_TO_FN = {}
 OPENAI_TOOLS_RETUN_DESCRIPTION = {}
 
@@ -133,7 +133,7 @@ def openai_tool_decorator(tool_instructions=None):
             full_description += " " + tool_instructions.strip()
 
         global OPENAI_TOOL_NAME_TO_TOOL_DEF
-        OPENAI_TOOL_NAME_TO_TOOL_DEF.append(
+        OPENAI_TOOL_NAME_TO_TOOL_DEF[func.__name__] = (
             {
                 "type": "function",
                 "function": {

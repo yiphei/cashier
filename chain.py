@@ -13,7 +13,9 @@ class NodeSchema:
         self.node_prompt = node_prompt
         self.tool_fns = tool_fns
         self.is_initialized = False
-        self.tool_fn.extend([            {
+        self.input_pydantic_model = input_pydantic_model
+        self.state_pydantic_model = state_pydantic_model
+        self.tool_fns.extend([            {
                 "type": "function",
                 "function": {
                     "name": "update_state",
@@ -41,8 +43,6 @@ class NodeSchema:
             },
             
             ])
-        self.input_pydantic_model = input_pydantic_model
-        self.state_pydantic_model = state_pydantic_model
 
     def run(self, input):
         self.is_initialized = True
