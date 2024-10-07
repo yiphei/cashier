@@ -10,7 +10,7 @@ from openai import OpenAI
 from audio import get_audio_input, save_audio_to_wav
 from db_functions import (
     FN_NAME_TO_FN,
-    OPENAI_TOOLS,
+    OPENAI_TOOL_NAME_TO_TOOL_DEF,
     OPENAI_TOOLS_RETUN_DESCRIPTION,
     create_client,
     obj_to_dict,
@@ -128,7 +128,7 @@ if __name__ == "__main__":
             messages.append({"role": "user", "content": text_input})
 
         chat_completion = openai_client.chat.completions.create(
-            model="gpt-4o-mini", messages=messages, tools=OPENAI_TOOLS, stream=True
+            model="gpt-4o-mini", messages=messages, tools=OPENAI_TOOL_NAME_TO_TOOL_DEF.values(), stream=True
         )
         first_chunk = next(chat_completion)
         is_tool_call = first_chunk.choices[0].delta.tool_calls

@@ -11,7 +11,7 @@ from supabase import create_client as create_supabase_client
 
 supabase: Client = None
 
-OPENAI_TOOLS = []
+OPENAI_TOOL_NAME_TO_TOOL_DEF = []
 FN_NAME_TO_FN = {}
 OPENAI_TOOLS_RETUN_DESCRIPTION = {}
 
@@ -132,8 +132,8 @@ def openai_tool_decorator(tool_instructions=None):
                 full_description += "."
             full_description += " " + tool_instructions.strip()
 
-        global OPENAI_TOOLS
-        OPENAI_TOOLS.append(
+        global OPENAI_TOOL_NAME_TO_TOOL_DEF
+        OPENAI_TOOL_NAME_TO_TOOL_DEF.append(
             {
                 "type": "function",
                 "function": {
@@ -314,66 +314,65 @@ class Order(BaseModel):
 order = Order()
 
 
-@openai_tool_decorator()
-def get_current_order() -> Order:
-    """
-    Get the current order.
+# @openai_tool_decorator()
+# def get_current_order() -> Order:
+#     """
+#     Get the current order.
 
-    Returns:
-        The current order.
-    """
-    return order
+#     Returns:
+#         The current order.
+#     """
+#     return order
 
+# @openai_tool_decorator(
+#     "As soon as all the required options have been provided for a single item, add it to the order."
+# )
+# def add_to_order(item_order: ItemOrder) -> None:
+#     """
+#     Add an item order to the current order.
 
-@openai_tool_decorator(
-    "As soon as all the required options have been provided for a single item, add it to the order."
-)
-def add_to_order(item_order: ItemOrder) -> None:
-    """
-    Add an item order to the current order.
+#     Args:
+#         item_order: the ItemOrder to add.
 
-    Args:
-        item_order: the ItemOrder to add.
-
-    Returns:
-        None
-    """
-    global order
-    order.item_orders.append(item_order)
-
-
-@openai_tool_decorator()
-def upsert_to_order(item_name: str, new_options: List[OptionOrder]) -> None:
-    """
-    Update the options of an item order in the current order.
-
-    Args:
-        item_name: the name of the item to update.
-        new_options: the new options to set.
-
-    Returns:
-        None
-    """
-    global order
-    item_order = next(
-        item_order for item_order in order.item_orders if item_order.name == item_name
-    )
-    item_order.options = new_options
+#     Returns:
+#         None
+#     """
+#     global order
+#     order.item_orders.append(item_order)
 
 
-@openai_tool_decorator()
-def remove_from_order(item_name: str) -> None:
-    """
-    Remove an item order from the current order.
+# @openai_tool_decorator()
+# def upsert_to_order(item_name: str, new_options: List[OptionOrder]) -> None:
+#     """
+#     Update the options of an item order in the current order.
 
-    Args:
-        item_name: the name of the item to remove.
+#     Args:
+#         item_name: the name of the item to update.
+#         new_options: the new options to set.
 
-    Returns:
-        None
-    """
-    global order
-    item_order = next(
-        item_order for item_order in order.item_orders if item_order.name == item_name
-    )
-    order.item_orders.remove(item_order)
+#     Returns:
+#         None
+#     """
+#     global order
+#     item_order = next(
+#         item_order for item_order in order.item_orders if item_order.name == item_name
+#     )
+#     item_order.options = new_options
+
+
+# @openai_tool_decorator()
+# def remove_from_order(item_name: str) -> None:
+#     """
+#     Remove an item order from the current order.
+
+#     Args:
+#         item_name: the name of the item to remove.
+
+#     Returns:
+#         None
+#     """
+#     global order
+#     item_order = next(
+#         item_order for item_order in order.item_orders if item_order.name == item_name
+#     )
+#     order.item_orders.remove(item_order)

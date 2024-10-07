@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field
 
-from db_functions import Order
+from db_functions import OPENAI_TOOL_NAME_TO_TOOL_DEF, Order
 
 
 class NodeSchema:
@@ -9,6 +9,34 @@ class NodeSchema:
     ):
         self.node_prompt = node_prompt
         self.tool_fns = tool_fns
+        self.tool_fn.extend([            {
+                "type": "function",
+                "function": {
+                    "name": "update_state",
+                    "description": "Function to update the state",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {"updated_state": {"description": "the update state",**self.state_pydantic_model.model_json_schema()}},
+                        "required": ["updated_state"],
+                        "additionalProperties": False,
+                    },
+                },
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "get_state",
+                    "description": "Function to get the current state",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {},
+                        "required": [],
+                        "additionalProperties": False,
+                    },
+                },
+            },
+            
+            ])
         self.input_pydantic_model = input_pydantic_model
         self.state_pydantic_model = state_pydantic_model
 
@@ -101,7 +129,7 @@ take_order_node_schema = NodeSchema(
         " small talk but you need to steer the conversation back to ordering after 4"
         " back-and-forths."
     ),
-    tool_fns=[],
+    tool_fns=[OPENAI_TOOL_NAME_TO_TOOL_DEF["get_menu_items_options"],OPENAI_TOOL_NAME_TO_TOOL_DEF["get_menu_item_from_name"]],
     input_pydantic_model=None,
     state_pydantic_model=TakeOrderState,
 )
