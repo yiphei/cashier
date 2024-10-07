@@ -12,7 +12,7 @@ repos:
     -   id: check-added-large-files
         stages: [push]
 -   repo: https://github.com/psf/black
-    rev: 23.3.0  # Updated from 22.3.0
+    rev: 24.8.0
     hooks:
     -   id: black
         stages: [push]
