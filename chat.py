@@ -1,8 +1,8 @@
+import argparse
 import json
 import os
 import tempfile
 from collections.abc import Iterator
-import argparse
 from distutils.util import strtobool
 
 from dotenv import load_dotenv  # Add this import
@@ -103,10 +103,16 @@ def get_speech_from_text(text_iterator, client):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--audio_input",type=lambda v: bool(strtobool(v)),
-        default=False,)
-    parser.add_argument("--audio_output",type=lambda v: bool(strtobool(v)),
-        default=False,)
+    parser.add_argument(
+        "--audio_input",
+        type=lambda v: bool(strtobool(v)),
+        default=False,
+    )
+    parser.add_argument(
+        "--audio_output",
+        type=lambda v: bool(strtobool(v)),
+        default=False,
+    )
     args = parser.parse_args()
 
     openai_client = OpenAI()
