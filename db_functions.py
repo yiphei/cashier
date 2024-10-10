@@ -5,9 +5,10 @@ from collections import defaultdict
 from functools import wraps
 from typing import Dict, List, Optional, get_args, get_origin
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, create_model
 from supabase import Client
 from supabase import create_client as create_supabase_client
+from openai import pydantic_function_tool
 
 supabase: Client = None
 
@@ -81,8 +82,8 @@ def openai_tool_decorator(tool_instructions=None):
         docstring = inspect.getdoc(func)
 
         description = ""
-        args_json_schema = defaultdict(dict)
         return_description = ""
+        field_name_to_field = defaultdict(lambda: [None, Field()])
 
         if "Args:" in docstring:
             description = docstring.split("Args:")[0].strip()
@@ -100,19 +101,15 @@ def openai_tool_decorator(tool_instructions=None):
             for line in args_section.splitlines():
                 # Split by the first colon to separate the argument name from its description
                 arg_name, arg_description = line.split(":", 1)
-                args_json_schema[arg_name.strip()][
-                    "description"
-                ] = arg_description.strip()
+                field_name_to_field[arg_name.strip()][1].description = arg_description.strip()
 
         signature = inspect.signature(func)
         for param_name, param in signature.parameters.items():
-            if param_name in args_json_schema:
+            if param_name in field_name_to_field:
                 # Update type annotations if available
                 if param.annotation == inspect.Parameter.empty:
                     raise Exception("Type annotation is required for all parameters")
-                args_json_schema[param_name].update(
-                    python_type_to_json_schema(param.annotation)
-                )
+                field_name_to_field[param_name][0] = param.annotation
             else:
                 raise Exception(f"Parameter {param_name} is not found in the docstring")
 
@@ -133,19 +130,10 @@ def openai_tool_decorator(tool_instructions=None):
             full_description += " " + tool_instructions.strip()
 
         global OPENAI_TOOL_NAME_TO_TOOL_DEF
-        OPENAI_TOOL_NAME_TO_TOOL_DEF[func.__name__] = {
-            "type": "function",
-            "function": {
-                "name": func.__name__,
-                "description": full_description,
-                "parameters": {
-                    "type": "object",
-                    "properties": args_json_schema,
-                    "required": list(args_json_schema.keys()),
-                    "additionalProperties": False,
-                },
-            },
-        }
+
+        formatted_field_name_to_field = {k: tuple(v) for k, v in field_name_to_field.items()}
+        fn_pydantic_model = create_model(func.__name__ + "_parameters", **formatted_field_name_to_field)
+        OPENAI_TOOL_NAME_TO_TOOL_DEF[func.__name__] = pydantic_function_tool(fn_pydantic_model, name=func.__name__, description=full_description)
 
         global OPENAI_TOOLS_RETUN_DESCRIPTION
         OPENAI_TOOLS_RETUN_DESCRIPTION[func.__name__] = {
