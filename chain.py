@@ -1,9 +1,39 @@
 from typing import Optional
-
 from pydantic import BaseModel, Field
+from pydantic.json_schema import GenerateJsonSchema
 
 from db_functions import OPENAI_TOOL_NAME_TO_TOOL_DEF, Order
 
+from openai.lib._pydantic import to_strict_json_schema
+import json
+
+from openai import pydantic_function_tool
+
+class OAIToolGenerateJsonSchema(GenerateJsonSchema):
+    def default_schema(self, schema):
+        return self.generate_inner(schema['schema'])
+
+
+DICTTT = {
+  "properties": {
+    "order": {
+      "$ref": "#/$defs/Order"
+    },
+    "has_finished_ordering": {
+      "default": False,
+      "description": "whether the customer has finished ordering. This can only be true after you have explicitly confirmed with them that they have finished ordering, by asking questions like 'Anything else?'.",
+      "title": "Has Finished Ordering",
+      "type": "boolean"
+    }
+  },
+  "title": "TakeOrderState",
+  "type": "object",
+  "additionalProperties": False,
+  "required": [
+    "order",
+    "has_finished_ordering"
+  ]
+}
 
 class NodeSchema:
     _counter = 0
@@ -18,23 +48,101 @@ class NodeSchema:
         self.is_initialized = False
         self.input_pydantic_model = input_pydantic_model
         self.state_pydantic_model = state_pydantic_model
+        print("AAAA")
+        print(json.dumps(to_strict_json_schema(self.state_pydantic_model)))
+        print("AAAA")
         self.tool_fns.extend(
             [
                 {
                     "type": "function",
                     "function": {
                         "name": "update_state",
+                        "strict": True,
                         "description": "Function to update the state",
                         "parameters": {
                             "type": "object",
                             "properties": {
                                 "updated_state": {
                                     "description": "the update state",
-                                    **self.state_pydantic_model.model_json_schema(),
+                                    # **self.state_pydantic_model.model_json_schema(schema_generator=OAIToolGenerateJsonSchema),
+                                    **DICTTT,
                                 }
                             },
                             "required": ["updated_state"],
                             "additionalProperties": False,
+                              "$defs": {
+                                    "ItemOrder": {
+                                    "properties": {
+                                        "name": {
+                                        "title": "Name",
+                                        "type": "string"
+                                        },
+                                        "options": {
+                                        "items": {
+                                            "$ref": "#/$defs/OptionOrder"
+                                        },
+                                        "title": "Options",
+                                        "type": "array"
+                                        }
+                                    },
+                                    "required": [
+                                        "name",
+                                        "options"
+                                    ],
+                                    "title": "ItemOrder",
+                                    "type": "object",
+                                    "additionalProperties": False
+                                    },
+                                    "OptionOrder": {
+                                    "properties": {
+                                        "name": {
+                                        "title": "Name",
+                                        "type": "string"
+                                        },
+                                        "value": {
+                                        "anyOf": [
+                                            {
+                                            "type": "string"
+                                            },
+                                            {
+                                            "type": "integer"
+                                            },
+                                            {
+                                            "type": "boolean"
+                                            }
+                                        ],
+                                        "title": "Value"
+                                        }
+                                    },
+                                    "required": [
+                                        "name",
+                                        "value"
+                                    ],
+                                    "title": "OptionOrder",
+                                    "type": "object",
+                                    "additionalProperties": False
+                                    },
+                                    "Order": {
+                                    "properties": {
+                                        "item_orders": {
+                                        #   "default": [
+                                            
+                                        #   ],
+                                        "items": {
+                                            "$ref": "#/$defs/ItemOrder"
+                                        },
+                                        "title": "Item Orders",
+                                        "type": "array"
+                                        }
+                                    },
+                                    "title": "Order",
+                                    "type": "object",
+                                    "additionalProperties": False,
+                                    "required": [
+                                        "item_orders"
+                                    ]
+                                    }
+                                },
                         },
                     },
                 },
@@ -42,6 +150,7 @@ class NodeSchema:
                     "type": "function",
                     "function": {
                         "name": "get_state",
+                        "strict": True,
                         "description": "Function to get the current state",
                         "parameters": {
                             "type": "object",
@@ -97,9 +206,21 @@ class NodeSchema:
         return NODE_PROMPT.format(**kwargs)
 
     def update_state(self, updated_state):
+        print("AAAA")
+        print("old state")
+        print(self.state)
+        print("updated state")
+        print(updated_state)
         old_state = self.state.model_dump()
         new_state = old_state | updated_state
+        print("new state dict")
+        print(new_state)
         self.state = self.state_pydantic_model(**new_state)
+        print("new state")
+        print(self.state)
+        print("test")
+        print(self.state_pydantic_model(**new_state))
+        print("BBBB")
 
     def get_state(self):
         return self.state.model_dump_json()
