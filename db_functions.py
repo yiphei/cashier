@@ -121,7 +121,6 @@ def openai_tool_decorator(tool_instructions=None):
         return_annotation = signature.return_annotation
         if return_annotation == inspect.Signature.empty:
             raise Exception("Type annotation is required for return type")
-        returns_json_schema_type = python_type_to_json_schema(return_annotation)
 
         full_description = description
         if tool_instructions is not None:
@@ -136,10 +135,14 @@ def openai_tool_decorator(tool_instructions=None):
         OPENAI_TOOL_NAME_TO_TOOL_DEF[func.__name__] = pydantic_function_tool(fn_pydantic_model, name=func.__name__, description=full_description)
 
         global OPENAI_TOOLS_RETUN_DESCRIPTION
-        OPENAI_TOOLS_RETUN_DESCRIPTION[func.__name__] = {
-            "description": return_description,
-            **returns_json_schema_type,
-        }
+
+        fn_return_type_model = create_model(func.__name__ + "_return", return_obj=(return_annotation, Field(description=return_description)))
+        return_json_schema = fn_return_type_model.model_json_schema()
+        actual_return_json_schema =return_json_schema["properties"]["return_obj"]
+        if "$defs" in return_json_schema:
+            actual_return_json_schema["$defs"] = return_json_schema["$defs"]
+
+        OPENAI_TOOLS_RETUN_DESCRIPTION[func.__name__] = actual_return_json_schema
 
         @wraps(func)
         def wrapper(*args, **kwargs):
