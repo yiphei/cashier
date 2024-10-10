@@ -1,39 +1,35 @@
+import json
 from typing import Optional
+
+from openai import pydantic_function_tool
+from openai.lib._pydantic import to_strict_json_schema
 from pydantic import BaseModel, Field
 from pydantic.json_schema import GenerateJsonSchema
 
 from db_functions import OPENAI_TOOL_NAME_TO_TOOL_DEF, Order
 
-from openai.lib._pydantic import to_strict_json_schema
-import json
-
-from openai import pydantic_function_tool
 
 class OAIToolGenerateJsonSchema(GenerateJsonSchema):
     def default_schema(self, schema):
-        return self.generate_inner(schema['schema'])
+        return self.generate_inner(schema["schema"])
 
 
 DICTTT = {
-  "properties": {
-    "order": {
-      "$ref": "#/$defs/Order"
+    "properties": {
+        "order": {"$ref": "#/$defs/Order"},
+        "has_finished_ordering": {
+            "default": False,
+            "description": "whether the customer has finished ordering. This can only be true after you have explicitly confirmed with them that they have finished ordering, by asking questions like 'Anything else?'.",
+            "title": "Has Finished Ordering",
+            "type": "boolean",
+        },
     },
-    "has_finished_ordering": {
-      "default": False,
-      "description": "whether the customer has finished ordering. This can only be true after you have explicitly confirmed with them that they have finished ordering, by asking questions like 'Anything else?'.",
-      "title": "Has Finished Ordering",
-      "type": "boolean"
-    }
-  },
-  "title": "TakeOrderState",
-  "type": "object",
-  "additionalProperties": False,
-  "required": [
-    "order",
-    "has_finished_ordering"
-  ]
+    "title": "TakeOrderState",
+    "type": "object",
+    "additionalProperties": False,
+    "required": ["order", "has_finished_ordering"],
 }
+
 
 class NodeSchema:
     _counter = 0
@@ -70,79 +66,54 @@ class NodeSchema:
                             },
                             "required": ["updated_state"],
                             "additionalProperties": False,
-                              "$defs": {
-                                    "ItemOrder": {
+                            "$defs": {
+                                "ItemOrder": {
                                     "properties": {
-                                        "name": {
-                                        "title": "Name",
-                                        "type": "string"
-                                        },
+                                        "name": {"title": "Name", "type": "string"},
                                         "options": {
-                                        "items": {
-                                            "$ref": "#/$defs/OptionOrder"
+                                            "items": {"$ref": "#/$defs/OptionOrder"},
+                                            "title": "Options",
+                                            "type": "array",
                                         },
-                                        "title": "Options",
-                                        "type": "array"
-                                        }
                                     },
-                                    "required": [
-                                        "name",
-                                        "options"
-                                    ],
+                                    "required": ["name", "options"],
                                     "title": "ItemOrder",
                                     "type": "object",
-                                    "additionalProperties": False
-                                    },
-                                    "OptionOrder": {
+                                    "additionalProperties": False,
+                                },
+                                "OptionOrder": {
                                     "properties": {
-                                        "name": {
-                                        "title": "Name",
-                                        "type": "string"
-                                        },
+                                        "name": {"title": "Name", "type": "string"},
                                         "value": {
-                                        "anyOf": [
-                                            {
-                                            "type": "string"
-                                            },
-                                            {
-                                            "type": "integer"
-                                            },
-                                            {
-                                            "type": "boolean"
-                                            }
-                                        ],
-                                        "title": "Value"
-                                        }
+                                            "anyOf": [
+                                                {"type": "string"},
+                                                {"type": "integer"},
+                                                {"type": "boolean"},
+                                            ],
+                                            "title": "Value",
+                                        },
                                     },
-                                    "required": [
-                                        "name",
-                                        "value"
-                                    ],
+                                    "required": ["name", "value"],
                                     "title": "OptionOrder",
                                     "type": "object",
-                                    "additionalProperties": False
-                                    },
-                                    "Order": {
+                                    "additionalProperties": False,
+                                },
+                                "Order": {
                                     "properties": {
                                         "item_orders": {
-                                        #   "default": [
-                                            
-                                        #   ],
-                                        "items": {
-                                            "$ref": "#/$defs/ItemOrder"
-                                        },
-                                        "title": "Item Orders",
-                                        "type": "array"
+                                            #   "default": [
+                                            #   ],
+                                            "items": {"$ref": "#/$defs/ItemOrder"},
+                                            "title": "Item Orders",
+                                            "type": "array",
                                         }
                                     },
                                     "title": "Order",
                                     "type": "object",
                                     "additionalProperties": False,
-                                    "required": [
-                                        "item_orders"
-                                    ]
-                                    }
+                                    "required": ["item_orders"],
                                 },
+                            },
                         },
                     },
                 },
