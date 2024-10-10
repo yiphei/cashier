@@ -152,7 +152,8 @@ def openai_tool_decorator(tool_instructions=None):
         actual_return_json_schema = return_json_schema["properties"]["return_obj"]
         if "$defs" in return_json_schema:
             actual_return_json_schema["$defs"] = return_json_schema["$defs"]
-        actual_return_json_schema.pop("title")
+        if "title" in actual_return_json_schema:
+            actual_return_json_schema.pop("title")
 
         OPENAI_TOOLS_RETUN_DESCRIPTION[func.__name__] = actual_return_json_schema
 

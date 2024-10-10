@@ -1,9 +1,9 @@
 from typing import Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, create_model
 
 from db_functions import OPENAI_TOOL_NAME_TO_TOOL_DEF, Order
-
+from openai import pydantic_function_tool
 
 class NodeSchema:
     _counter = 0
@@ -18,30 +18,37 @@ class NodeSchema:
         self.is_initialized = False
         self.input_pydantic_model = input_pydantic_model
         self.state_pydantic_model = state_pydantic_model
+
+        fn_pydantic_model = create_model(
+            "update_state_parameters", updated_state=(self.state_pydantic_model, Field(description="the updated state"))
+        )
+        update_state_json_schema = pydantic_function_tool(
+            fn_pydantic_model, name="update_state", description="Function to update the state"
+        )
+        def remove_default(schema):
+            found_key = False
+            for key, value in schema.items():
+                if key == "default":
+                    found_key = True
+                elif isinstance(value, dict):
+                    remove_default(value)
+                elif isinstance(value, list):
+                    for item in value:
+                        if isinstance(item, dict):
+                            remove_default(item)
+            if found_key:
+                schema.pop("default")
+
+        remove_default(update_state_json_schema)
+
         self.tool_fns.extend(
             [
-                {
-                    "type": "function",
-                    "function": {
-                        "name": "update_state",
-                        "description": "Function to update the state",
-                        "parameters": {
-                            "type": "object",
-                            "properties": {
-                                "updated_state": {
-                                    "description": "the update state",
-                                    **self.state_pydantic_model.model_json_schema(),
-                                }
-                            },
-                            "required": ["updated_state"],
-                            "additionalProperties": False,
-                        },
-                    },
-                },
+                update_state_json_schema, 
                 {
                     "type": "function",
                     "function": {
                         "name": "get_state",
+                        "strict": True,
                         "description": "Function to get the current state",
                         "parameters": {
                             "type": "object",
