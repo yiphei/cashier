@@ -1,9 +1,10 @@
 from typing import Optional
 
+from openai import pydantic_function_tool
 from pydantic import BaseModel, Field, create_model
 
 from db_functions import OPENAI_TOOL_NAME_TO_TOOL_DEF, Order
-from openai import pydantic_function_tool
+
 
 class NodeSchema:
     _counter = 0
@@ -20,11 +21,18 @@ class NodeSchema:
         self.state_pydantic_model = state_pydantic_model
 
         fn_pydantic_model = create_model(
-            "update_state_parameters", updated_state=(self.state_pydantic_model, Field(description="the updated state"))
+            "update_state_parameters",
+            updated_state=(
+                self.state_pydantic_model,
+                Field(description="the updated state"),
+            ),
         )
         update_state_json_schema = pydantic_function_tool(
-            fn_pydantic_model, name="update_state", description="Function to update the state"
+            fn_pydantic_model,
+            name="update_state",
+            description="Function to update the state",
         )
+
         def remove_default(schema):
             found_key = False
             for key, value in schema.items():
@@ -43,7 +51,7 @@ class NodeSchema:
 
         self.tool_fns.extend(
             [
-                update_state_json_schema, 
+                update_state_json_schema,
                 {
                     "type": "function",
                     "function": {
