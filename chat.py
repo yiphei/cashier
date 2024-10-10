@@ -135,7 +135,8 @@ if __name__ == "__main__":
                 break
 
             messages.append({"role": "user", "content": text_input})
-
+        # print("TOOLS")
+        # print(json.dumps(current_node_schema.tool_fns))
         chat_completion = openai_client.chat.completions.create(
             model="gpt-4o-mini",
             messages=messages,
