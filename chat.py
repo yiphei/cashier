@@ -2,6 +2,8 @@ import json
 import os
 import tempfile
 from collections.abc import Iterator
+import argparse
+from distutils.util import strtobool
 
 from dotenv import load_dotenv  # Add this import
 from elevenlabs import ElevenLabs, Voice, VoiceSettings, stream
@@ -100,6 +102,13 @@ def get_speech_from_text(text_iterator, client):
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--audio_input",type=lambda v: bool(strtobool(v)),
+        default=False,)
+    parser.add_argument("--audio_output",type=lambda v: bool(strtobool(v)),
+        default=False,)
+    args = parser.parse_args()
+
     openai_client = OpenAI()
     elevenlabs_client = ElevenLabs(
         api_key=os.getenv("ELEVENLABS_API_KEY"),
@@ -125,10 +134,12 @@ if __name__ == "__main__":
 
         if need_user_input:
             # Read user input from stdin
-
-            audio_input = get_audio_input()
-            text_input = get_text_from_speech(audio_input, openai_client)
-            print(f"You: {text_input}")
+            if args.audio_input:
+                audio_input = get_audio_input()
+                text_input = get_text_from_speech(audio_input, openai_client)
+                print(f"You: {text_input}")
+            else:
+                text_input = input("You: ")
             # If user types 'exit', break the loop and end the program
             if text_input.lower() == "exit":
                 print("Exiting chatbot. Goodbye!")
@@ -148,8 +159,16 @@ if __name__ == "__main__":
         if not is_tool_call:
             print("Assistant: ", end="")
             chat_stream_iterator = ChatCompletionIterator(chat_completion)
-            get_speech_from_text(chat_stream_iterator, elevenlabs_client)
-            print(chat_stream_iterator.full_msg)
+            if args.audio_output:
+                get_speech_from_text(chat_stream_iterator, elevenlabs_client)
+                print(chat_stream_iterator.full_msg)
+            else:
+                try:
+                    while True:
+                        print(next(chat_stream_iterator), end="")
+                except StopIteration:
+                    pass
+                print()
             messages.append(
                 {"role": "assistant", "content": chat_stream_iterator.full_msg}
             )
