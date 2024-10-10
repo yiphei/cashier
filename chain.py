@@ -87,15 +87,15 @@ class NodeSchema:
 
     def generate_system_prompt(self, has_input, **kwargs):
         NODE_PROMPT = (
-            "You are now in the next stage of the conversation. In this stage, the main expectation is the following:\n"
+            "You are now in the next stage of the conversation. The description and main expectation for this stage is the following:\n"
             "```\n"
             "{node_prompt}\n"
             "```\n\n"
         )
         if has_input:
             NODE_PROMPT += (
-                "There is an input to this stage, which is the output of the previous stage. The input contains "
-                "valuable information that helps you accomplish the main expectation. The input is in JSON format and is the following:\n"
+                "There is an input to this stage. It contains "
+                "valuable information that help you accomplish the main expectation. The input is the following in JSON format:\n"
                 "```\n"
                 "{node_input}\n"
                 "```\n\n"
@@ -104,8 +104,8 @@ class NodeSchema:
         NODE_PROMPT += (
             "During this stage, you must use function calls whenever possible and as soon as possible. "
             "This is because there usually is an associated function for every user input and that function will help you with the user input. "
-            "When in doubt, use the function/s. In conjunction, you must update a state object whenever possible. "
-            "The state update function is update_state and getting the cuurrent state function is get_state. "
+            "When in doubt, use the function/s. In conjunction, you must update the state object whenever possible. "
+            "The state update function is update_state and getting the current state function is get_state. "
             "You cannot proceed to the next stage without updating the state."
         )
 
