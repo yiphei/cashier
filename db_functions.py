@@ -5,10 +5,10 @@ from collections import defaultdict
 from functools import wraps
 from typing import Dict, List, Optional, get_args, get_origin
 
+from openai import pydantic_function_tool
 from pydantic import BaseModel, Field, create_model
 from supabase import Client
 from supabase import create_client as create_supabase_client
-from openai import pydantic_function_tool
 
 supabase: Client = None
 
@@ -101,7 +101,9 @@ def openai_tool_decorator(tool_instructions=None):
             for line in args_section.splitlines():
                 # Split by the first colon to separate the argument name from its description
                 arg_name, arg_description = line.split(":", 1)
-                field_name_to_field[arg_name.strip()][1].description = arg_description.strip()
+                field_name_to_field[arg_name.strip()][
+                    1
+                ].description = arg_description.strip()
 
         signature = inspect.signature(func)
         for param_name, param in signature.parameters.items():
@@ -130,15 +132,24 @@ def openai_tool_decorator(tool_instructions=None):
 
         global OPENAI_TOOL_NAME_TO_TOOL_DEF
 
-        formatted_field_name_to_field = {k: tuple(v) for k, v in field_name_to_field.items()}
-        fn_pydantic_model = create_model(func.__name__ + "_parameters", **formatted_field_name_to_field)
-        OPENAI_TOOL_NAME_TO_TOOL_DEF[func.__name__] = pydantic_function_tool(fn_pydantic_model, name=func.__name__, description=full_description)
+        formatted_field_name_to_field = {
+            k: tuple(v) for k, v in field_name_to_field.items()
+        }
+        fn_pydantic_model = create_model(
+            func.__name__ + "_parameters", **formatted_field_name_to_field
+        )
+        OPENAI_TOOL_NAME_TO_TOOL_DEF[func.__name__] = pydantic_function_tool(
+            fn_pydantic_model, name=func.__name__, description=full_description
+        )
 
         global OPENAI_TOOLS_RETUN_DESCRIPTION
 
-        fn_return_type_model = create_model(func.__name__ + "_return", return_obj=(return_annotation, Field(description=return_description)))
+        fn_return_type_model = create_model(
+            func.__name__ + "_return",
+            return_obj=(return_annotation, Field(description=return_description)),
+        )
         return_json_schema = fn_return_type_model.model_json_schema()
-        actual_return_json_schema =return_json_schema["properties"]["return_obj"]
+        actual_return_json_schema = return_json_schema["properties"]["return_obj"]
         if "$defs" in return_json_schema:
             actual_return_json_schema["$defs"] = return_json_schema["$defs"]
         actual_return_json_schema.pop("title")

@@ -135,8 +135,7 @@ if __name__ == "__main__":
                 break
 
             messages.append({"role": "user", "content": text_input})
-        import json
-        print(json.dumps(OPENAI_TOOLS_RETUN_DESCRIPTION["get_menu_items_options"]))
+
         chat_completion = openai_client.chat.completions.create(
             model="gpt-4o-mini",
             messages=messages,
