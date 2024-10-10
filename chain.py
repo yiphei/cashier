@@ -79,11 +79,11 @@ class NodeSchema:
         )
         if has_input:
             NODE_PROMPT += (
-            "There is an input to this stage, which is the output of the previous stage. The input contains "
-            "valuable information that helps you accomplish the main expectation. The input is in JSON format and is the following:\n"
-            "```\n"
-            "{node_input}\n"
-            "```\n\n"
+                "There is an input to this stage, which is the output of the previous stage. The input contains "
+                "valuable information that helps you accomplish the main expectation. The input is in JSON format and is the following:\n"
+                "```\n"
+                "{node_input}\n"
+                "```\n\n"
             )
 
         NODE_PROMPT += (
@@ -92,7 +92,7 @@ class NodeSchema:
             "When in doubt, use the function/s. In conjunction, you must update a state object whenever possible. "
             "The state update function is update_state and getting the cuurrent state function is get_state. "
             "You cannot proceed to the next stage without updating the state."
-                        )
+        )
 
         return NODE_PROMPT.format(**kwargs)
 
