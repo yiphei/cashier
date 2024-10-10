@@ -8,6 +8,7 @@ from distutils.util import strtobool
 from dotenv import load_dotenv  # Add this import
 from elevenlabs import ElevenLabs, Voice, VoiceSettings, stream
 from openai import OpenAI
+from pydantic import BaseModel
 
 from audio import get_audio_input, save_audio_to_wav
 from chain import FROM_NODE_ID_TO_EDGE_SCHEMA, take_order_node_schema
@@ -101,6 +102,47 @@ def get_speech_from_text(text_iterator, client):
     stream(audio)
 
 
+class FunctionCall(BaseModel):
+    function_name: str
+    tool_call_id: str
+    function_args_json: str
+
+def get_first_usable_chunk(chat_completion_stream):
+    chunk = next(chat_completion_stream)
+    while not (has_function_call_id(chunk) or has_msg_content(chunk)):
+        chunk = next(chat_completion_stream)
+    return chunk
+
+def has_msg_content(chunk):
+    return chunk.choices[0].delta.content is not None
+
+def has_function_call_id(chunk):
+    return chunk.choices[0].delta.tool_calls is not None and chunk.choices[0].delta.tool_calls[0].id is not None
+
+def extract_fns_from_chat(chat_completion_stream, first_chunk):
+    function_name = first_chunk.choices[0].delta.tool_calls[0].function.name
+    tool_call_id = first_chunk.choices[0].delta.tool_calls[0].id
+    function_args_json = ""
+    function_calls = []
+
+    for chunk in chat_completion_stream:
+        finish_reason = chunk.choices[0].finish_reason
+        if finish_reason is not None:
+            break
+        elif has_function_call_id(chunk):
+            function_calls.append(FunctionCall(function_name= function_name, tool_call_id=tool_call_id, function_args_json=function_args_json))
+
+            function_name = chunk.choices[0].delta.tool_calls[0].function.name
+            tool_call_id = chunk.choices[0].delta.tool_calls[0].id
+            function_args_json = ""
+        else:
+            function_args_json += (
+                chunk.choices[0].delta.tool_calls[0].function.arguments
+            )
+
+    function_calls.append(FunctionCall(function_name= function_name, tool_call_id=tool_call_id, function_args_json=function_args_json))
+    return function_calls
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -159,8 +201,9 @@ if __name__ == "__main__":
             tools=current_node_schema.tool_fns,
             stream=True,
         )
-        first_chunk = next(chat_completion)
-        is_tool_call = first_chunk.choices[0].delta.tool_calls
+
+        first_chunk = get_first_usable_chunk(chat_completion)
+        is_tool_call = has_function_call_id(first_chunk)
 
         if not is_tool_call:
             print("Assistant: ", end="")
@@ -180,72 +223,64 @@ if __name__ == "__main__":
             )
             need_user_input = True
         elif is_tool_call:
-            function_name = first_chunk.choices[0].delta.tool_calls[0].function.name
-            tool_call_id = first_chunk.choices[0].delta.tool_calls[0].id
-            function_args_json = ""
-            for chunk in chat_completion:
-                finish_reason = chunk.choices[0].finish_reason
-                if finish_reason is not None:
-                    break
-                function_args_json += (
-                    chunk.choices[0].delta.tool_calls[0].function.arguments
-                )
+            function_calls = extract_fns_from_chat(chat_completion, first_chunk)
 
-            fuction_args = json.loads(function_args_json)
-            print(f"[CALLING] {function_name} with args {fuction_args}")
-            if function_name in ["get_state", "update_state"]:
-                fn_output = getattr(current_node_schema, function_name)(**fuction_args)
-                if function_name == "update_state":
-                    state_condition_results = [
-                        edge_schema.state_condition_fn(current_node_schema.state)
-                        for edge_schema in current_edge_schemas
-                    ]
-                    if any(
-                        [
+            for function_call in function_calls:
+
+                print(f"[CALLING] {function_call.function_name} with args {function_call.function_args_json}")
+                if function_call.function_name in ["get_state", "update_state"]:
+                    fn_output = getattr(current_node_schema, function_call.function_name)(**json.loads(function_call.function_args_json))
+                    if function_call.function_name == "update_state":
+                        state_condition_results = [
                             edge_schema.state_condition_fn(current_node_schema.state)
                             for edge_schema in current_edge_schemas
                         ]
-                    ):
-                        first_true_index = state_condition_results.index(True)
-                        first_true_edge_schema = current_edge_schemas[first_true_index]
+                        if any(
+                            [
+                                edge_schema.state_condition_fn(current_node_schema.state)
+                                for edge_schema in current_edge_schemas
+                            ]
+                        ):
+                            first_true_index = state_condition_results.index(True)
+                            first_true_edge_schema = current_edge_schemas[first_true_index]
 
-                        new_node_input = first_true_edge_schema.new_input_from_state_fn(
-                            current_node_schema.state
-                        )
-                        current_node_schema = first_true_edge_schema.to_node_schema
-                        current_edge_schemas = FROM_NODE_ID_TO_EDGE_SCHEMA.get(
-                            current_node_schema.id, []
-                        )
+                            new_node_input = first_true_edge_schema.new_input_from_state_fn(
+                                current_node_schema.state
+                            )
+                            current_node_schema = first_true_edge_schema.to_node_schema
+                            current_edge_schemas = FROM_NODE_ID_TO_EDGE_SCHEMA.get(
+                                current_node_schema.id, []
+                            )
 
-            else:
-                fn = FN_NAME_TO_FN[function_name]
-                fn_output = fn(**fuction_args)
+                else:
+                    fn = FN_NAME_TO_FN[function_call.function_name]
+                    fn_output = fn(**json.loads(function_call.function_args_json))
 
-            fn_output = obj_to_dict(fn_output)
-            function_call_result_msg = {
-                "role": "tool",
-                "content": json.dumps(fn_output),
-                "tool_call_id": tool_call_id,
-            }
-            print(f"[CALLING DONE] {function_name} with output {fn_output}")
+                fn_output = obj_to_dict(fn_output)
+                function_call_result_msg = {
+                    "role": "tool",
+                    "content": json.dumps(fn_output),
+                    "tool_call_id": function_call.tool_call_id,
+                }
+                print(f"[CALLING DONE] {function_call.function_name} with output {fn_output}")
 
-            tool_call_message = {
-                "role": "assistant",
-                "tool_calls": [
-                    {
-                        "id": tool_call_id,
-                        "type": "function",
-                        "function": {
-                            "arguments": function_args_json,
-                            "name": function_name,
-                        },
-                    }
-                ],
-            }
+                tool_call_message = {
+                    "role": "assistant",
+                    "tool_calls": [
+                        {
+                            "id": function_call.tool_call_id,
+                            "type": "function",
+                            "function": {
+                                "arguments": function_call.function_args_json,
+                                "name": function_call.function_name,
+                            },
+                        }
+                    ],
+                }
 
-            messages.append(tool_call_message)
-            messages.append(function_call_result_msg)
-            if function_name not in ["get_state", "update_state"]:
-                messages.append(get_system_return_type_prompt(function_name))
+                messages.append(tool_call_message)
+                messages.append(function_call_result_msg)
+                if function_call.function_name not in ["get_state", "update_state"]:
+                    messages.append(get_system_return_type_prompt(function_call.function_name))
 
-            need_user_input = False
+                need_user_input = False
