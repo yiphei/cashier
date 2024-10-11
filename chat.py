@@ -277,6 +277,7 @@ def run_chat(args, openai_client, elevenlabs_client):
 
     while True:
         if not current_node_schema.is_initialized:
+            logger.debug(f"Running node schema {current_node_schema.id}")
             current_node_schema.run(new_node_input)
             MM.add_system_message(current_node_schema.prompt)
             if current_node_schema.first_msg:
