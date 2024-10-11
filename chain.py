@@ -153,8 +153,12 @@ take_order_node_schema = NodeSchema(
     node_prompt=(
         "First, greet the customer. Then, your main job is to take their orders, which"
         " also includes answering reasonable questions about the shop & menu only and"
-        " assisting them with any issues they may have about their orders. If they are"
-        " not immediately ready to order after the greeting, you may engage in some"
+        " assisting them with any issues they may have about their orders. Things you"
+        " must keep in mind:\n"
+        "- never assume the drink size\n"
+        "- given a size, always assume the default option values of that size, unless the customer"
+        " explicitly specifies otherwise. But if an option does not have a default value, do not make any assumptions.\n\n"
+        " If they are not immediately ready to order after the greeting, you may engage in some"
         " small talk but you need to steer the conversation back to ordering after 4"
         " back-and-forths."
     ),
