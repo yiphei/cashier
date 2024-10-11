@@ -212,9 +212,11 @@ class MessageManager:
 
     def add_message_dict(self, msg_dict, print_msg=True):
         self.messages.append(msg_dict)
-        if print_msg and (
-            msg_dict["role"] != "system" or self.output_system_prompt
-        ) and not self.is_tool_message(msg_dict):
+        if (
+            print_msg
+            and (msg_dict["role"] != "system" or self.output_system_prompt)
+            and not self.is_tool_message(msg_dict)
+        ):
             self.print_msg(msg_dict["role"], msg_dict["content"])
 
     def add_user_message(self, msg):
@@ -256,23 +258,28 @@ class MessageManager:
         return (msg["role"] == "assistant" and msg.get("tool_calls") is not None) or (
             msg["role"] == "tool" and msg.get("tool_call_id") is not None
         )
-    
+
     def read_chat_completion_stream(self, chat_completion_stream):
         self.print_msg(role="assistant", msg=None, end="")
         try:
             while True:
                 msg_chunk = next(chat_completion_stream)
-                self.print_msg(role="assistant", msg=msg_chunk, add_role_prefix=False, end="")
+                self.print_msg(
+                    role="assistant", msg=msg_chunk, add_role_prefix=False, end=""
+                )
         except StopIteration:
             pass
 
-        self.add_message_dict({"role": "assistant", "content": chat_completion_stream.full_msg}, print_msg=False)
+        self.add_message_dict(
+            {"role": "assistant", "content": chat_completion_stream.full_msg},
+            print_msg=False,
+        )
         print("\n\n")
-    
+
     def get_role_prefix(self, role):
         return f"{Style.BRIGHT}{self.API_ROLE_TO_PREFIX[role]}: {Style.NORMAL}"
 
-    def print_msg(self, role,msg, add_role_prefix=True, end="\n\n"):
+    def print_msg(self, role, msg, add_role_prefix=True, end="\n\n"):
         formatted_msg = f"{self.API_ROLE_TO_COLOR[role]}"
         if add_role_prefix:
             formatted_msg += f"{self.get_role_prefix(role)}"
