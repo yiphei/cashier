@@ -183,36 +183,13 @@ def get_user_input(use_audio_input, openai_client):
     return text_input
 
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--audio_input",
-        type=lambda v: bool(strtobool(v)),
-        default=False,
-    )
-    parser.add_argument(
-        "--audio_output",
-        type=lambda v: bool(strtobool(v)),
-        default=False,
-    )
-    parser.add_argument(
-        "--model",
-        type=str,
-        default="gpt-4o-mini",
-    )
-    args = parser.parse_args()
-
-    openai_client = OpenAI()
-    elevenlabs_client = ElevenLabs(
-        api_key=os.getenv("ELEVENLABS_API_KEY"),
-    )
-    create_db_client()
-
+def run_chat(args, openai_client, elevenlabs_client):
     messages = [
         {"role": "system", "content": SYSTEM_PROMPT},
         {"role": "assistant", "content": "hi, welcome to Heaven Coffee"},
     ]
     print("Assistant: hi, welcome to Heaven Coffee")
+    
     need_user_input = True
     current_node_schema = take_order_node_schema
     current_edge_schemas = FROM_NODE_ID_TO_EDGE_SCHEMA[current_node_schema.id]
@@ -332,3 +309,31 @@ if __name__ == "__main__":
                     )
 
                 need_user_input = False
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--audio_input",
+        type=lambda v: bool(strtobool(v)),
+        default=False,
+    )
+    parser.add_argument(
+        "--audio_output",
+        type=lambda v: bool(strtobool(v)),
+        default=False,
+    )
+    parser.add_argument(
+        "--model",
+        type=str,
+        default="gpt-4o-mini",
+    )
+    args = parser.parse_args()
+
+    openai_client = OpenAI()
+    elevenlabs_client = ElevenLabs(
+        api_key=os.getenv("ELEVENLABS_API_KEY"),
+    )
+    create_db_client()
+
+    run_chat(args, openai_client, elevenlabs_client)
