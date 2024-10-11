@@ -2,17 +2,17 @@ import argparse
 import itertools
 import json
 import os
+import sys
 import tempfile
 from collections import defaultdict
 from collections.abc import Iterator
 from distutils.util import strtobool
-import sys
 
+from colorama import Fore, Style
 from dotenv import load_dotenv  # Add this import
 from elevenlabs import ElevenLabs, Voice, VoiceSettings, stream
 from openai import OpenAI
 from pydantic import BaseModel
-from colorama import Fore, Style
 
 from audio import get_audio_input, save_audio_to_wav
 from chain import FROM_NODE_ID_TO_EDGE_SCHEMA, take_order_node_schema
@@ -212,7 +212,9 @@ class MessageManager:
 
     def add_message_dict(self, msg_dict):
         self.messages.append(msg_dict)
-        if (msg_dict["role"] != "system" or self.output_system_prompt) and not self.is_tool_message(msg_dict):
+        if (
+            msg_dict["role"] != "system" or self.output_system_prompt
+        ) and not self.is_tool_message(msg_dict):
             self.print_msg(msg_dict["role"], msg_dict["content"])
 
     def add_user_message(self, msg):
@@ -258,7 +260,10 @@ class MessageManager:
         )
 
     def print_msg(self, role, msg):
-        print(f"{self.API_ROLE_TO_COLOR[role]}{Style.BRIGHT}{self.API_ROLE_TO_PREFIX[role]}:{Style.NORMAL} {msg}{Style.RESET_ALL}", end="\n\n")
+        print(
+            f"{self.API_ROLE_TO_COLOR[role]}{Style.BRIGHT}{self.API_ROLE_TO_PREFIX[role]}:{Style.NORMAL} {msg}{Style.RESET_ALL}",
+            end="\n\n",
+        )
 
 
 def run_chat(args, openai_client, elevenlabs_client):
