@@ -13,7 +13,7 @@ from pydantic import BaseModel
 
 from audio import get_audio_input, save_audio_to_wav
 from chain import FROM_NODE_ID_TO_EDGE_SCHEMA, take_order_node_schema
-from db_functions import FN_NAME_TO_FN, OPENAI_TOOLS_RETUN_DESCRIPTION, create_client
+from db_functions import FN_NAME_TO_FN, OPENAI_TOOLS_RETUN_DESCRIPTION, create_db_client
 
 # Load environment variables from .env file
 load_dotenv()
@@ -195,7 +195,7 @@ if __name__ == "__main__":
     elevenlabs_client = ElevenLabs(
         api_key=os.getenv("ELEVENLABS_API_KEY"),
     )
-    create_client()
+    create_db_client()
 
     messages = [
         {"role": "system", "content": SYSTEM_PROMPT},

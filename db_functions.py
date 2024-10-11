@@ -17,7 +17,7 @@ FN_NAME_TO_FN = {}
 OPENAI_TOOLS_RETUN_DESCRIPTION = {}
 
 
-def create_client():
+def create_db_client():
     global supabase
     supabase = create_supabase_client(
         os.environ.get("SUPABASE_URL"), os.environ.get("SUPABASE_KEY")
