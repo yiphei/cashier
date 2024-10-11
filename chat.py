@@ -75,7 +75,9 @@ class ChatCompletionIterator(Iterator):
 
 def get_system_return_type_prompt(fn_name):
     json_schema = OPENAI_TOOLS_RETUN_DESCRIPTION[fn_name]
-    return  f"This is the JSON Schema of {fn_name}'s return type: {json.dumps(json_schema)}"
+    return (
+        f"This is the JSON Schema of {fn_name}'s return type: {json.dumps(json_schema)}"
+    )
 
 
 def get_text_from_speech(audio_data, client):
@@ -177,6 +179,7 @@ def get_user_input(use_audio_input, openai_client):
 
     return text_input
 
+
 class MessageManager:
     API_ROLE_TO_PREFIX = {
         "system": "System",
@@ -185,7 +188,10 @@ class MessageManager:
     }
 
     def __init__(self, initial_system_prompt, initial_msg, output_system_prompt=False):
-        self.messages = [{"role": "system", "content": initial_system_prompt}, initial_msg]
+        self.messages = [
+            {"role": "system", "content": initial_system_prompt},
+            initial_msg,
+        ]
         self.output_system_prompt = output_system_prompt
 
     def add_user_message(self, msg):
@@ -198,26 +204,30 @@ class MessageManager:
         self.messages.append({"role": "system", "content": msg})
 
     def add_tool_call_message(self, tool_call_id, function_name, function_args_json):
-        self.messages.append({
-                    "role": "assistant",
-                    "tool_calls": [
-                        {
-                            "id": tool_call_id,
-                            "type": "function",
-                            "function": {
-                                "arguments": function_args_json,
-                                "name": function_name,
-                            },
-                        }
-                    ],
-                })
-        
-    def add_tool_call_response_message(self,tool_call_id, tool_call_result):
-        self.messages.append({
-                    "role": "tool",
-                    "content": tool_call_result,
-                    "tool_call_id": tool_call_id,
-                })
+        self.messages.append(
+            {
+                "role": "assistant",
+                "tool_calls": [
+                    {
+                        "id": tool_call_id,
+                        "type": "function",
+                        "function": {
+                            "arguments": function_args_json,
+                            "name": function_name,
+                        },
+                    }
+                ],
+            }
+        )
+
+    def add_tool_call_response_message(self, tool_call_id, tool_call_result):
+        self.messages.append(
+            {
+                "role": "tool",
+                "content": tool_call_result,
+                "tool_call_id": tool_call_id,
+            }
+        )
 
     def delete_message(self, index):
         del self.messages[index]
@@ -230,8 +240,13 @@ class MessageManager:
             msgs += f"{self.API_ROLE_TO_PREFIX[msg['role']]}: {msg['content']}\n"
         return msgs
 
+
 def run_chat(args, openai_client, elevenlabs_client):
-    MM = MessageManager(SYSTEM_PROMPT, {"role": "assistant", "content": "hi, welcome to Heaven Coffee"}, args.output_system_prompt)
+    MM = MessageManager(
+        SYSTEM_PROMPT,
+        {"role": "assistant", "content": "hi, welcome to Heaven Coffee"},
+        args.output_system_prompt,
+    )
     print("Assistant: hi, welcome to Heaven Coffee")
 
     need_user_input = True
@@ -321,13 +336,22 @@ def run_chat(args, openai_client, elevenlabs_client):
                 print(
                     f"[CALLING DONE] {function_call.function_name} with output {fn_output}"
                 )
-                MM.add_tool_call_message(function_call.tool_call_id, function_call.function_name, function_call.function_args_json)
-                MM.add_tool_call_response_message(function_call.tool_call_id, json.dumps(fn_output, cls=CustomJSONEncoder))
+                MM.add_tool_call_message(
+                    function_call.tool_call_id,
+                    function_call.function_name,
+                    function_call.function_args_json,
+                )
+                MM.add_tool_call_response_message(
+                    function_call.tool_call_id,
+                    json.dumps(fn_output, cls=CustomJSONEncoder),
+                )
 
                 if not function_call.function_name.startswith(
                     ("get_state", "update_state")
                 ):
-                    MM.add_system_message(get_system_return_type_prompt(function_call.function_name))
+                    MM.add_system_message(
+                        get_system_return_type_prompt(function_call.function_name)
+                    )
 
                 need_user_input = False
 
