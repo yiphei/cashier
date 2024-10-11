@@ -10,6 +10,7 @@ from dotenv import load_dotenv  # Add this import
 from elevenlabs import ElevenLabs, Voice, VoiceSettings, stream
 from openai import OpenAI
 from pydantic import BaseModel
+import itertools
 
 from audio import get_audio_input, save_audio_to_wav
 from chain import FROM_NODE_ID_TO_EDGE_SCHEMA, take_order_node_schema
@@ -136,23 +137,21 @@ def has_function_call_id(chunk):
 
 
 def extract_fns_from_chat(chat_completion_stream, first_chunk):
-    function_name = first_chunk.choices[0].delta.tool_calls[0].function.name
-    tool_call_id = first_chunk.choices[0].delta.tool_calls[0].id
-    function_args_json = ""
     function_calls = []
 
-    for chunk in chat_completion_stream:
+    for chunk in itertools.chain([first_chunk], chat_completion_stream):
         finish_reason = chunk.choices[0].finish_reason
         if finish_reason is not None:
             break
         elif has_function_call_id(chunk):
-            function_calls.append(
-                FunctionCall(
-                    function_name=function_name,
-                    tool_call_id=tool_call_id,
-                    function_args_json=function_args_json,
+            if first_chunk != chunk:
+                function_calls.append(
+                    FunctionCall(
+                        function_name=function_name,
+                        tool_call_id=tool_call_id,
+                        function_args_json=function_args_json,
+                    )
                 )
-            )
 
             function_name = chunk.choices[0].delta.tool_calls[0].function.name
             tool_call_id = chunk.choices[0].delta.tool_calls[0].id
@@ -189,7 +188,7 @@ def run_chat(args, openai_client, elevenlabs_client):
         {"role": "assistant", "content": "hi, welcome to Heaven Coffee"},
     ]
     print("Assistant: hi, welcome to Heaven Coffee")
-    
+
     need_user_input = True
     current_node_schema = take_order_node_schema
     current_edge_schemas = FROM_NODE_ID_TO_EDGE_SCHEMA[current_node_schema.id]
