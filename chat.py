@@ -343,10 +343,11 @@ def run_chat(args, openai_client, elevenlabs_client):
             function_calls = extract_fns_from_chat(chat_completion, first_chunk)
 
             for function_call in function_calls:
-                logger.debug(
-                    f"Function call: {function_call.function_name} with args: {function_call.function_args_json}"
-                )
                 function_args = json.loads(function_call.function_args_json)
+                logger.debug(
+                    f"[FUNCTION_CALL] name: {function_call.function_name}, id: {function_call.tool_call_id} with args:\n{json.dumps(function_args, indent=4)}"
+                )
+
                 if function_call.function_name.startswith("get_state"):
                     fn_output = getattr(
                         current_node_schema, function_call.function_name
@@ -378,7 +379,7 @@ def run_chat(args, openai_client, elevenlabs_client):
                     fn_output = fn(**function_args)
 
                 logger.debug(
-                    f"Function call response: {function_call.function_name} with output: {fn_output}"
+                    f"[FUNCTION_CALL] name: {function_call.function_name}, id: {function_call.tool_call_id} with output:\n{json.dumps(fn_output, cls=CustomJSONEncoder, indent=4)}"
                 )
                 MM.add_tool_call_message(
                     function_call.tool_call_id,
