@@ -7,7 +7,7 @@ logger = logging.getLogger("app_logger")
 logger.setLevel(logging.DEBUG)
 
 # Create formatters for different log levels
-formatter_debug = logging.Formatter('%(asctime)s - DEBUG - %(message)s')
+formatter_debug = logging.Formatter("%(asctime)s - DEBUG - %(message)s")
 
 # Handlers with different formatters
 debug_handler = logging.StreamHandler(sys.stdout)
