@@ -194,6 +194,9 @@ class MessageManager:
         ]
         self.output_system_prompt = output_system_prompt
 
+    def add_message_dict(self, msg_dict):
+        self.messages.append(msg_dict)
+
     def add_user_message(self, msg):
         self.messages.append({"role": "user", "content": msg})
 
@@ -269,6 +272,8 @@ def run_chat(args, openai_client, elevenlabs_client):
             current_node_schema.run(new_node_input)
             print(current_node_schema.prompt)
             MM.add_system_message(current_node_schema.prompt)
+            if current_node_schema.first_msg:
+                MM.add_message_dict(current_node_schema.first_msg)
 
         if need_user_input:
             # Read user input from stdin

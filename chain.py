@@ -10,7 +10,7 @@ class NodeSchema:
     _counter = 0
 
     def __init__(
-        self, node_prompt, tool_fns, input_pydantic_model, state_pydantic_model
+        self, node_prompt, tool_fns, input_pydantic_model, state_pydantic_model, first_msg=None
     ):
         NodeSchema._counter += 1
         self.id = NodeSchema._counter
@@ -19,7 +19,8 @@ class NodeSchema:
         self.is_initialized = False
         self.input_pydantic_model = input_pydantic_model
         self.state_pydantic_model = state_pydantic_model
-
+        self.first_msg = first_msg
+        
         def remove_default(schema):
             found_key = False
             for key, value in schema.items():
@@ -174,6 +175,7 @@ take_order_node_schema = NodeSchema(
     ],
     input_pydantic_model=None,
     state_pydantic_model=TakeOrderState,
+    first_msg={"role": "assistant", "content": "hi, welcome to Heaven Coffee"},
 )
 
 
