@@ -175,6 +175,11 @@ if __name__ == "__main__":
         type=lambda v: bool(strtobool(v)),
         default=False,
     )
+    parser.add_argument(
+        "--model",
+        type=str,
+        default="gpt-4o-mini",
+    )
     args = parser.parse_args()
 
     openai_client = OpenAI()
@@ -215,7 +220,7 @@ if __name__ == "__main__":
 
             messages.append({"role": "user", "content": text_input})
         chat_completion = openai_client.chat.completions.create(
-            model="gpt-4o-mini",
+            model=args.model,
             messages=messages,
             tools=current_node_schema.tool_fns,
             stream=True,
