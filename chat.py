@@ -2,11 +2,13 @@ import argparse
 import itertools
 import json
 import os
+import sys
 import tempfile
 from collections import defaultdict
 from collections.abc import Iterator
 from distutils.util import strtobool
 
+from colorama import Fore, Style
 from dotenv import load_dotenv  # Add this import
 from elevenlabs import ElevenLabs, Voice, VoiceSettings, stream
 from openai import OpenAI
@@ -15,6 +17,7 @@ from pydantic import BaseModel
 from audio import get_audio_input, save_audio_to_wav
 from chain import FROM_NODE_ID_TO_EDGE_SCHEMA, take_order_node_schema
 from db_functions import FN_NAME_TO_FN, OPENAI_TOOLS_RETUN_DESCRIPTION, create_db_client
+from logger import logger
 
 # Load environment variables from .env file
 load_dotenv()
@@ -64,8 +67,7 @@ class ChatCompletionIterator(Iterator):
             if finish_reason is not None:
                 raise StopIteration
             if msg is None:
-                print("WARNING: msg is None")
-                print(chunk)
+                logger.warning(f"msg is None with chunk {chunk}")
                 raise StopIteration
             self.full_msg += msg  # Append the message to full_msg
             return msg  # Return the message
@@ -173,9 +175,13 @@ def get_user_input(use_audio_input, openai_client):
     if use_audio_input:
         audio_input = get_audio_input()
         text_input = get_text_from_speech(audio_input, openai_client)
-        print(f"You: {text_input}")
     else:
         text_input = input("You: ")
+
+        erase_sequence = "\033[A" + "\033[2K"
+        # Erase the entire line "You: {text_input}"
+        sys.stdout.write(erase_sequence)
+        sys.stdout.flush()
 
     return text_input
 
@@ -187,6 +193,12 @@ class MessageManager:
         "assistant": "Assistant",
     }
 
+    API_ROLE_TO_COLOR = {
+        "system": Fore.GREEN,
+        "user": Fore.WHITE,
+        "assistant": Fore.BLUE,
+    }
+
     def __init__(
         self, initial_system_prompt, initial_msg=None, output_system_prompt=False
     ):
@@ -195,20 +207,29 @@ class MessageManager:
             self.messages.append(initial_msg)
         self.output_system_prompt = output_system_prompt
 
-    def add_message_dict(self, msg_dict):
+        for msg in self.messages:
+            self.print_msg(msg["role"], msg["content"])
+
+    def add_message_dict(self, msg_dict, print_msg=True):
         self.messages.append(msg_dict)
+        if (
+            print_msg
+            and (msg_dict["role"] != "system" or self.output_system_prompt)
+            and not self.is_tool_message(msg_dict)
+        ):
+            self.print_msg(msg_dict["role"], msg_dict["content"])
 
     def add_user_message(self, msg):
-        self.messages.append({"role": "user", "content": msg})
+        self.add_message_dict({"role": "user", "content": msg})
 
     def add_assistant_message(self, msg):
-        self.messages.append({"role": "assistant", "content": msg})
+        self.add_message_dict({"role": "assistant", "content": msg})
 
     def add_system_message(self, msg):
-        self.messages.append({"role": "system", "content": msg})
+        self.add_message_dict({"role": "system", "content": msg})
 
     def add_tool_call_message(self, tool_call_id, function_name, function_args_json):
-        self.messages.append(
+        self.add_message_dict(
             {
                 "role": "assistant",
                 "tool_calls": [
@@ -225,7 +246,7 @@ class MessageManager:
         )
 
     def add_tool_call_response_message(self, tool_call_id, tool_call_result):
-        self.messages.append(
+        self.add_message_dict(
             {
                 "role": "tool",
                 "content": tool_call_result,
@@ -234,24 +255,42 @@ class MessageManager:
         )
 
     def is_tool_message(self, msg):
-        return (
-            msg["role"] == "assistant"
-            and msg.get("tool_call_id") is not None
-            or msg.get("tool_calls") is not None
+        return (msg["role"] == "assistant" and msg.get("tool_calls") is not None) or (
+            msg["role"] == "tool" and msg.get("tool_call_id") is not None
         )
 
-    def delete_message(self, index):
-        del self.messages[index]
+    def read_chat_completion_stream(self, chat_completion_stream):
+        self.print_msg(role="assistant", msg=None, end="")
+        try:
+            while True:
+                msg_chunk = next(chat_completion_stream)
+                self.print_msg(
+                    role="assistant", msg=msg_chunk, add_role_prefix=False, end=""
+                )
+        except StopIteration:
+            pass
 
-    def get_formatted_messages(self):
-        msgs = ""
-        for msg in self.messages:
-            if (
-                not self.output_system_prompt and msg["role"] == "system"
-            ) or self.is_tool_message(msg):
-                continue
-            msgs += f"{self.API_ROLE_TO_PREFIX[msg['role']]}: {msg['content']}\n"
-        return msgs
+        self.add_message_dict(
+            {"role": "assistant", "content": chat_completion_stream.full_msg},
+            print_msg=False,
+        )
+        print("\n\n")
+
+    def get_role_prefix(self, role):
+        return f"{Style.BRIGHT}{self.API_ROLE_TO_PREFIX[role]}: {Style.NORMAL}"
+
+    def print_msg(self, role, msg, add_role_prefix=True, end="\n\n"):
+        formatted_msg = f"{self.API_ROLE_TO_COLOR[role]}"
+        if add_role_prefix:
+            formatted_msg += f"{self.get_role_prefix(role)}"
+        if msg is not None:
+            formatted_msg += f"{msg}"
+
+        formatted_msg += f"{Style.RESET_ALL}"
+        print(
+            formatted_msg,
+            end=end,
+        )
 
 
 def run_chat(args, openai_client, elevenlabs_client):
@@ -259,7 +298,6 @@ def run_chat(args, openai_client, elevenlabs_client):
         SYSTEM_PROMPT,
         output_system_prompt=args.output_system_prompt,
     )
-    print("Assistant: hi, welcome to Heaven Coffee")
 
     need_user_input = True
     current_node_schema = take_order_node_schema
@@ -268,9 +306,8 @@ def run_chat(args, openai_client, elevenlabs_client):
 
     while True:
         if not current_node_schema.is_initialized:
-            print(f"CURRENT_NODE_SCHEMA: {current_node_schema.id}")
+            logger.debug(f"Running node schema {current_node_schema.id}")
             current_node_schema.run(new_node_input)
-            print(current_node_schema.prompt)
             MM.add_system_message(current_node_schema.prompt)
             if current_node_schema.first_msg:
                 MM.add_message_dict(current_node_schema.first_msg)
@@ -295,28 +332,21 @@ def run_chat(args, openai_client, elevenlabs_client):
         is_tool_call = has_function_call_id(first_chunk)
 
         if not is_tool_call:
-            print("Assistant: ", end="")
             chat_stream_iterator = ChatCompletionIterator(chat_completion)
             if args.audio_output:
                 get_speech_from_text(chat_stream_iterator, elevenlabs_client)
-                print(chat_stream_iterator.full_msg)
+                MM.add_assistant_message(chat_stream_iterator.full_msg)
             else:
-                try:
-                    while True:
-                        print(next(chat_stream_iterator), end="")
-                except StopIteration:
-                    pass
-                print()
-            MM.add_assistant_message(chat_stream_iterator.full_msg)
+                MM.read_chat_completion_stream(chat_stream_iterator)
             need_user_input = True
         elif is_tool_call:
             function_calls = extract_fns_from_chat(chat_completion, first_chunk)
 
             for function_call in function_calls:
-                function_args = json.loads(function_call.function_args_json)
-                print(
-                    f"[CALLING] {function_call.function_name} with args {function_args}"
+                logger.debug(
+                    f"Function call: {function_call.function_name} with args: {function_call.function_args_json}"
                 )
+                function_args = json.loads(function_call.function_args_json)
                 if function_call.function_name.startswith("get_state"):
                     fn_output = getattr(
                         current_node_schema, function_call.function_name
@@ -347,8 +377,8 @@ def run_chat(args, openai_client, elevenlabs_client):
                     fn = FN_NAME_TO_FN[function_call.function_name]
                     fn_output = fn(**function_args)
 
-                print(
-                    f"[CALLING DONE] {function_call.function_name} with output {fn_output}"
+                logger.debug(
+                    f"Function call response: {function_call.function_name} with output: {fn_output}"
                 )
                 MM.add_tool_call_message(
                     function_call.tool_call_id,
