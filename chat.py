@@ -171,6 +171,15 @@ def extract_fns_from_chat(chat_completion_stream, first_chunk):
     )
     return function_calls
 
+def get_user_input(use_audio_input, openai_client):
+    if use_audio_input:
+        audio_input = get_audio_input()
+        text_input = get_text_from_speech(audio_input, openai_client)
+        print(f"You: {text_input}")
+    else:
+        text_input = input("You: ")
+
+    return text_input
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -216,12 +225,7 @@ if __name__ == "__main__":
 
         if need_user_input:
             # Read user input from stdin
-            if args.audio_input:
-                audio_input = get_audio_input()
-                text_input = get_text_from_speech(audio_input, openai_client)
-                print(f"You: {text_input}")
-            else:
-                text_input = input("You: ")
+            text_input = get_user_input(args.audio_input, openai_client)
             # If user types 'exit', break the loop and end the program
             if text_input.lower() == "exit":
                 print("Exiting chatbot. Goodbye!")
@@ -259,17 +263,17 @@ if __name__ == "__main__":
             function_calls = extract_fns_from_chat(chat_completion, first_chunk)
 
             for function_call in function_calls:
-
+                function_args = json.loads(function_call.function_args_json)
                 print(
-                    f"[CALLING] {function_call.function_name} with args {function_call.function_args_json}"
+                    f"[CALLING] {function_call.function_name} with args {function_args}"
                 )
                 if function_call.function_name.startswith("get_state"):
                     fn_output = getattr(
                         current_node_schema, function_call.function_name
-                    )(**json.loads(function_call.function_args_json))
+                    )(**function_args)
                 elif function_call.function_name.startswith("update_state"):
                     fn_output = current_node_schema.update_state(
-                        **json.loads(function_call.function_args_json)
+                        **function_args
                     )
                     state_condition_results = [
                         edge_schema.state_condition_fn(current_node_schema.state)
@@ -293,7 +297,7 @@ if __name__ == "__main__":
                         )
                 else:
                     fn = FN_NAME_TO_FN[function_call.function_name]
-                    fn_output = fn(**json.loads(function_call.function_args_json))
+                    fn_output = fn(**function_args)
 
                 function_call_result_msg = {
                     "role": "tool",
