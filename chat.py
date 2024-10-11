@@ -75,11 +75,7 @@ class ChatCompletionIterator(Iterator):
 
 def get_system_return_type_prompt(fn_name):
     json_schema = OPENAI_TOOLS_RETUN_DESCRIPTION[fn_name]
-    msg = {
-        "role": "system",
-        "content": f"This is the JSON Schema of {fn_name}'s return type: {json.dumps(json_schema)}",
-    }
-    return msg
+    return  f"This is the JSON Schema of {fn_name}'s return type: {json.dumps(json_schema)}"
 
 
 def get_text_from_speech(audio_data, client):
@@ -181,12 +177,61 @@ def get_user_input(use_audio_input, openai_client):
 
     return text_input
 
+class MessageManager:
+    API_ROLE_TO_PREFIX = {
+        "system": "System",
+        "user": "You",
+        "assistant": "Assistant",
+    }
+
+    def __init__(self, initial_system_prompt, initial_msg, output_system_prompt=False):
+        self.messages = [{"role": "system", "content": initial_system_prompt}, initial_msg]
+        self.output_system_prompt = output_system_prompt
+
+    def add_user_message(self, msg):
+        self.messages.append({"role": "user", "content": msg})
+
+    def add_assistant_message(self, msg):
+        self.messages.append({"role": "assistant", "content": msg})
+
+    def add_system_message(self, msg):
+        self.messages.append({"role": "system", "content": msg})
+
+    def add_tool_call_message(self, tool_call_id, function_name, function_args_json):
+        self.messages.append({
+                    "role": "assistant",
+                    "tool_calls": [
+                        {
+                            "id": tool_call_id,
+                            "type": "function",
+                            "function": {
+                                "arguments": function_args_json,
+                                "name": function_name,
+                            },
+                        }
+                    ],
+                })
+        
+    def add_tool_call_response_message(self,tool_call_id, tool_call_result):
+        self.messages.append({
+                    "role": "tool",
+                    "content": tool_call_result,
+                    "tool_call_id": tool_call_id,
+                })
+
+    def delete_message(self, index):
+        del self.messages[index]
+
+    def get_formatted_messages(self):
+        msgs = ""
+        for msg in self.messages:
+            if not self.output_system_prompt and msg["role"] == "system":
+                continue
+            msgs += f"{self.API_ROLE_TO_PREFIX[msg['role']]}: {msg['content']}\n"
+        return msgs
 
 def run_chat(args, openai_client, elevenlabs_client):
-    messages = [
-        {"role": "system", "content": SYSTEM_PROMPT},
-        {"role": "assistant", "content": "hi, welcome to Heaven Coffee"},
-    ]
+    MM = MessageManager(SYSTEM_PROMPT, {"role": "assistant", "content": "hi, welcome to Heaven Coffee"}, args.output_system_prompt)
     print("Assistant: hi, welcome to Heaven Coffee")
 
     need_user_input = True
@@ -199,7 +244,7 @@ def run_chat(args, openai_client, elevenlabs_client):
             print(f"CURRENT_NODE_SCHEMA: {current_node_schema.id}")
             current_node_schema.run(new_node_input)
             print(current_node_schema.prompt)
-            messages.append({"role": "system", "content": current_node_schema.prompt})
+            MM.add_system_message(current_node_schema.prompt)
 
         if need_user_input:
             # Read user input from stdin
@@ -209,10 +254,10 @@ def run_chat(args, openai_client, elevenlabs_client):
                 print("Exiting chatbot. Goodbye!")
                 break
 
-            messages.append({"role": "user", "content": text_input})
+            MM.add_user_message(text_input)
         chat_completion = openai_client.chat.completions.create(
             model=args.model,
-            messages=messages,
+            messages=MM.messages,
             tools=current_node_schema.tool_fns,
             stream=True,
         )
@@ -233,9 +278,7 @@ def run_chat(args, openai_client, elevenlabs_client):
                 except StopIteration:
                     pass
                 print()
-            messages.append(
-                {"role": "assistant", "content": chat_stream_iterator.full_msg}
-            )
+            MM.add_assistant_message(chat_stream_iterator.full_msg)
             need_user_input = True
         elif is_tool_call:
             function_calls = extract_fns_from_chat(chat_completion, first_chunk)
@@ -275,37 +318,16 @@ def run_chat(args, openai_client, elevenlabs_client):
                     fn = FN_NAME_TO_FN[function_call.function_name]
                     fn_output = fn(**function_args)
 
-                function_call_result_msg = {
-                    "role": "tool",
-                    "content": json.dumps(fn_output, cls=CustomJSONEncoder),
-                    "tool_call_id": function_call.tool_call_id,
-                }
                 print(
                     f"[CALLING DONE] {function_call.function_name} with output {fn_output}"
                 )
+                MM.add_tool_call_message(function_call.tool_call_id, function_call.function_name, function_call.function_args_json)
+                MM.add_tool_call_response_message(function_call.tool_call_id, json.dumps(fn_output, cls=CustomJSONEncoder))
 
-                tool_call_message = {
-                    "role": "assistant",
-                    "tool_calls": [
-                        {
-                            "id": function_call.tool_call_id,
-                            "type": "function",
-                            "function": {
-                                "arguments": function_call.function_args_json,
-                                "name": function_call.function_name,
-                            },
-                        }
-                    ],
-                }
-
-                messages.append(tool_call_message)
-                messages.append(function_call_result_msg)
                 if not function_call.function_name.startswith(
                     ("get_state", "update_state")
                 ):
-                    messages.append(
-                        get_system_return_type_prompt(function_call.function_name)
-                    )
+                    MM.add_system_message(get_system_return_type_prompt(function_call.function_name))
 
                 need_user_input = False
 
@@ -326,6 +348,11 @@ if __name__ == "__main__":
         "--model",
         type=str,
         default="gpt-4o-mini",
+    )
+    parser.add_argument(
+        "--output_system_prompt",
+        type=lambda v: bool(strtobool(v)),
+        default=True,
     )
     args = parser.parse_args()
 
