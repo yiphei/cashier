@@ -23,19 +23,6 @@ def create_client():
         os.environ.get("SUPABASE_URL"), os.environ.get("SUPABASE_KEY")
     )
 
-
-def obj_to_dict(obj):
-    obj_type = type(obj)
-    if issubclass(obj_type, BaseModel):
-        return obj.model_dump()
-    elif isinstance(obj, (dict, defaultdict)):
-        return {obj_to_dict(k): obj_to_dict(v) for k, v in obj.items()}
-    elif isinstance(obj, (list, tuple)):
-        return [obj_to_dict(item) for item in obj]
-    else:
-        return obj  # Default to "object" if type not found
-
-
 def get_description_from_docstring(docstring):
     if "Args:" in docstring:
         description = docstring.split("Args:")[0].strip()

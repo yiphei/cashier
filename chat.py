@@ -3,6 +3,7 @@ import json
 import os
 import tempfile
 from collections.abc import Iterator
+from collections import defaultdict
 from distutils.util import strtobool
 
 from dotenv import load_dotenv  # Add this import
@@ -16,7 +17,6 @@ from db_functions import (
     FN_NAME_TO_FN,
     OPENAI_TOOLS_RETUN_DESCRIPTION,
     create_client,
-    obj_to_dict,
 )
 
 # Load environment variables from .env file
@@ -37,6 +37,17 @@ SYSTEM_PROMPT = (
     "If they dont provide the information you need, just say you do not know."
 )
 
+class CustomJSONEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, BaseModel):
+            return obj.model_dump()
+        elif isinstance(obj, (defaultdict, dict)):
+            return {self.default(k): self.default(v) for k, v in obj.items()}
+        elif isinstance(obj, (list, tuple)):
+            return [self.default(item) for item in obj]
+        elif isinstance(obj, (str, int, float, bool, type(None))):
+            return obj
+        return super().default(obj)
 
 class ChatCompletionIterator(Iterator):
     def __init__(self, chat_stream):
@@ -286,10 +297,9 @@ if __name__ == "__main__":
                     fn = FN_NAME_TO_FN[function_call.function_name]
                     fn_output = fn(**json.loads(function_call.function_args_json))
 
-                fn_output = obj_to_dict(fn_output)
                 function_call_result_msg = {
                     "role": "tool",
-                    "content": json.dumps(fn_output),
+                    "content": json.dumps(fn_output, cls=CustomJSONEncoder),
                     "tool_call_id": function_call.tool_call_id,
                 }
                 print(
