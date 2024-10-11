@@ -7,6 +7,7 @@ import tempfile
 from collections import defaultdict
 from collections.abc import Iterator
 from distutils.util import strtobool
+import logging
 
 from colorama import Fore, Style
 from dotenv import load_dotenv  # Add this import
@@ -254,9 +255,8 @@ class MessageManager:
 
     def is_tool_message(self, msg):
         return (
-            msg["role"] == "assistant"
-            and msg.get("tool_call_id") is not None
-            or msg.get("tool_calls") is not None
+            (msg["role"] == "assistant" and msg.get("tool_calls") is not None)
+            or (msg["role"] == "tool" and msg.get("tool_call_id") is not None)
         )
 
     def print_msg(self, role, msg):
@@ -267,6 +267,7 @@ class MessageManager:
 
 
 def run_chat(args, openai_client, elevenlabs_client):
+    logger = logging.getLogger("app_logger")
     MM = MessageManager(
         SYSTEM_PROMPT,
         output_system_prompt=args.output_system_prompt,
@@ -319,6 +320,7 @@ def run_chat(args, openai_client, elevenlabs_client):
             function_calls = extract_fns_from_chat(chat_completion, first_chunk)
 
             for function_call in function_calls:
+                logger.debug(f"Function call: {function_call.function_name}")
                 function_args = json.loads(function_call.function_args_json)
                 if function_call.function_name.startswith("get_state"):
                     fn_output = getattr(
