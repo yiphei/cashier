@@ -5,6 +5,7 @@ import wave
 
 import numpy as np
 import pyaudio
+from logger import logger
 
 # Settings for audio recording
 FORMAT = pyaudio.paInt16  # Audio format (16-bit)
@@ -54,7 +55,7 @@ def process_audio():
                     silence_start = time.time()
                 elif time.time() - silence_start > SILENCE_DURATION and has_spoken:
                     # If silence has lasted long enough, stop recording
-                    print("Silence detected, stopping recording.")
+                    logger.debug("Silence detected, stopping recording.")
                     stop_recording_event.set()  # Signal the recording thread to stop
                     break
             else:
@@ -62,7 +63,7 @@ def process_audio():
                 silence_start = None
                 has_spoken = True
 
-    print("Finished recording.")
+    logger.debug("Finished recording.")
     return b"".join(frames)  # Return raw audio data
 
 
