@@ -3,7 +3,7 @@ import os
 import re
 from collections import defaultdict
 from functools import wraps
-from typing import Dict, List, Optional, get_args, get_origin
+from typing import Dict, List, Optional
 
 from openai import pydantic_function_tool
 from pydantic import BaseModel, Field, create_model
@@ -259,70 +259,3 @@ class ItemOrder(BaseModel):
 
 class Order(BaseModel):
     item_orders: List[ItemOrder] = []
-
-
-order = Order()
-
-
-# @openai_tool_decorator()
-# def get_current_order() -> Order:
-#     """
-#     Get the current order.
-
-#     Returns:
-#         The current order.
-#     """
-#     return order
-
-# @openai_tool_decorator(
-#     "As soon as all the required options have been provided for a single item, add it to the order."
-# )
-# def add_to_order(item_order: ItemOrder) -> None:
-#     """
-#     Add an item order to the current order.
-
-#     Args:
-#         item_order: the ItemOrder to add.
-
-#     Returns:
-#         None
-#     """
-#     global order
-#     order.item_orders.append(item_order)
-
-
-# @openai_tool_decorator()
-# def upsert_to_order(item_name: str, new_options: List[OptionOrder]) -> None:
-#     """
-#     Update the options of an item order in the current order.
-
-#     Args:
-#         item_name: the name of the item to update.
-#         new_options: the new options to set.
-
-#     Returns:
-#         None
-#     """
-#     global order
-#     item_order = next(
-#         item_order for item_order in order.item_orders if item_order.name == item_name
-#     )
-#     item_order.options = new_options
-
-
-# @openai_tool_decorator()
-# def remove_from_order(item_name: str) -> None:
-#     """
-#     Remove an item order from the current order.
-
-#     Args:
-#         item_name: the name of the item to remove.
-
-#     Returns:
-#         None
-#     """
-#     global order
-#     item_order = next(
-#         item_order for item_order in order.item_orders if item_order.name == item_name
-#     )
-#     order.item_orders.remove(item_order)
