@@ -19,7 +19,7 @@ class NodeSchema:
         self.is_initialized = False
         self.input_pydantic_model = input_pydantic_model
         self.state_pydantic_model = state_pydantic_model
-        
+
         def remove_default(schema):
             found_key = False
             for key, value in schema.items():
@@ -36,10 +36,7 @@ class NodeSchema:
 
         for field_name, field_info in self.state_pydantic_model.model_fields.items():
             field_args = {field_name: (field_info.annotation, field_info)}
-            fn_pydantic_model = create_model(
-                f"update_state_{field_name}",
-                **field_args
-            )
+            fn_pydantic_model = create_model(f"update_state_{field_name}", **field_args)
             update_state_json_schema = pydantic_function_tool(
                 fn_pydantic_model,
                 name=f"update_state_{field_name}",
@@ -49,20 +46,20 @@ class NodeSchema:
             self.tool_fns.append(update_state_json_schema)
 
         self.tool_fns.append(
-                {
-                    "type": "function",
-                    "function": {
-                        "name": "get_state",
-                        "strict": True,
-                        "description": "Function to get the current state",
-                        "parameters": {
-                            "type": "object",
-                            "properties": {},
-                            "required": [],
-                            "additionalProperties": False,
-                        },
+            {
+                "type": "function",
+                "function": {
+                    "name": "get_state",
+                    "strict": True,
+                    "description": "Function to get the current state",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {},
+                        "required": [],
+                        "additionalProperties": False,
                     },
-                }
+                },
+            }
         )
 
     def run(self, input):
