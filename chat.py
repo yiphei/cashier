@@ -254,9 +254,8 @@ class MessageManager:
         )
 
     def is_tool_message(self, msg):
-        return (
-            (msg["role"] == "assistant" and msg.get("tool_calls") is not None)
-            or (msg["role"] == "tool" and msg.get("tool_call_id") is not None)
+        return (msg["role"] == "assistant" and msg.get("tool_calls") is not None) or (
+            msg["role"] == "tool" and msg.get("tool_call_id") is not None
         )
 
     def print_msg(self, role, msg):
@@ -319,7 +318,9 @@ def run_chat(args, openai_client, elevenlabs_client):
             function_calls = extract_fns_from_chat(chat_completion, first_chunk)
 
             for function_call in function_calls:
-                logger.debug(f"Function call: {function_call.function_name} with args: {function_call.function_args_json}")
+                logger.debug(
+                    f"Function call: {function_call.function_name} with args: {function_call.function_args_json}"
+                )
                 function_args = json.loads(function_call.function_args_json)
                 if function_call.function_name.startswith("get_state"):
                     fn_output = getattr(
@@ -351,7 +352,9 @@ def run_chat(args, openai_client, elevenlabs_client):
                     fn = FN_NAME_TO_FN[function_call.function_name]
                     fn_output = fn(**function_args)
 
-                logger.debug(f"Function call response: {function_call.function_name} with output: {fn_output}")
+                logger.debug(
+                    f"Function call response: {function_call.function_name} with output: {fn_output}"
+                )
                 MM.add_tool_call_message(
                     function_call.tool_call_id,
                     function_call.function_name,
