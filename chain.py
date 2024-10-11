@@ -10,7 +10,12 @@ class NodeSchema:
     _counter = 0
 
     def __init__(
-        self, node_prompt, tool_fns, input_pydantic_model, state_pydantic_model, first_msg=None
+        self,
+        node_prompt,
+        tool_fns,
+        input_pydantic_model,
+        state_pydantic_model,
+        first_msg=None,
     ):
         NodeSchema._counter += 1
         self.id = NodeSchema._counter
@@ -20,7 +25,7 @@ class NodeSchema:
         self.input_pydantic_model = input_pydantic_model
         self.state_pydantic_model = state_pydantic_model
         self.first_msg = first_msg
-        
+
         def remove_default(schema):
             found_key = False
             for key, value in schema.items():

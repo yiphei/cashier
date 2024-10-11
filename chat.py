@@ -187,10 +187,10 @@ class MessageManager:
         "assistant": "Assistant",
     }
 
-    def __init__(self, initial_system_prompt, initial_msg=None, output_system_prompt=False):
-        self.messages = [
-            {"role": "system", "content": initial_system_prompt}
-        ]
+    def __init__(
+        self, initial_system_prompt, initial_msg=None, output_system_prompt=False
+    ):
+        self.messages = [{"role": "system", "content": initial_system_prompt}]
         if initial_msg:
             self.messages.append(initial_msg)
         self.output_system_prompt = output_system_prompt
