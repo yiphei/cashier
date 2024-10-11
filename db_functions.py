@@ -98,6 +98,7 @@ def openai_tool_decorator(tool_instructions=None):
         fn_signature_pydantic_model = create_model(
             func.__name__ + "_parameters", **field_map
         )
+        func.pydantic_model = fn_signature_pydantic_model
         global OPENAI_TOOL_NAME_TO_TOOL_DEF
         OPENAI_TOOL_NAME_TO_TOOL_DEF[func.__name__] = pydantic_function_tool(
             fn_signature_pydantic_model, name=func.__name__, description=description
@@ -129,31 +130,9 @@ def openai_tool_decorator(tool_instructions=None):
             bound_args = fn_signature.bind(*args, **kwargs)
             bound_args.apply_defaults()
 
-            # Iterate over the parameters and check for dict-to-BaseModel conversion
-            for param_name, param_value in bound_args.arguments.items():
-                param = fn_signature.parameters[param_name]
-                # Check if the type annotation is a subclass of pydantic.BaseModel
-                if isinstance(param.annotation, type):
-                    # Case 1: Single BaseModel
-                    if issubclass(param.annotation, BaseModel) and isinstance(
-                        param_value, dict
-                    ):
-                        # Convert the dict to a BaseModel instance
-                        bound_args.arguments[param_name] = param.annotation(
-                            **param_value
-                        )
-
-                # Case 2: List[BaseModel]
-                elif get_origin(param.annotation) is list:
-                    list_type = get_args(param.annotation)[0]
-                    if issubclass(list_type, BaseModel) and isinstance(
-                        param_value, list
-                    ):
-                        # Convert each dict in the list to a BaseModel instance
-                        bound_args.arguments[param_name] = [
-                            list_type(**item) if isinstance(item, dict) else item
-                            for item in param_value
-                        ]
+            pydantic_obj = func.pydantic_model(**bound_args.arguments)
+            for field_name in pydantic_obj.model_fields.keys():
+                bound_args.arguments[field_name] = getattr(pydantic_obj, field_name)
 
             # Call the original function with the modified arguments
             return func(*bound_args.args, **bound_args.kwargs)
