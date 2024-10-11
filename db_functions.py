@@ -23,48 +23,6 @@ def create_client():
         os.environ.get("SUPABASE_URL"), os.environ.get("SUPABASE_KEY")
     )
 
-
-def python_type_to_json_schema(py_type):
-    """Map Python types to JSON Schema types."""
-    mapping = {
-        int: "integer",
-        float: "number",
-        str: "string",
-        bool: "boolean",
-        list: "array",
-        dict: "object",
-        None: "null",
-    }
-
-    if isinstance(py_type, type) and issubclass(py_type, BaseModel):
-        # Generate JSON Schema for the BaseModel
-        return py_type.model_json_schema()
-
-    # Handle Optional types (Union[SomeType, None])
-    if hasattr(py_type, "__origin__") and py_type.__origin__ is list:
-        element_type = get_args(py_type)[0]
-        return {"type": "array", "items": python_type_to_json_schema(element_type)}
-    elif hasattr(py_type, "__origin__") and py_type.__origin__ is dict:
-        key_type, value_type = get_args(py_type)
-        if key_type is not str:
-            raise TypeError("JSON object keys must be strings")
-        return {
-            "type": "object",
-            "additionalProperties": python_type_to_json_schema(value_type),
-        }
-    elif hasattr(py_type, "__origin__") and py_type.__origin__ is tuple:
-        return {
-            "type": "array",
-            "items": [python_type_to_json_schema(arg) for arg in get_args(py_type)],
-        }
-    elif hasattr(py_type, "__args__") and type(None) in py_type.__args__:
-        return {"type": "null"}
-    else:
-        return {
-            "type": mapping.get(py_type, "object")
-        }  # Default to "object" if type not found
-
-
 def obj_to_dict(obj):
     obj_type = type(obj)
     if issubclass(obj_type, BaseModel):
