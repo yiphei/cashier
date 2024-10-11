@@ -1,4 +1,5 @@
 import argparse
+import itertools
 import json
 import os
 import tempfile
@@ -10,7 +11,6 @@ from dotenv import load_dotenv  # Add this import
 from elevenlabs import ElevenLabs, Voice, VoiceSettings, stream
 from openai import OpenAI
 from pydantic import BaseModel
-import itertools
 
 from audio import get_audio_input, save_audio_to_wav
 from chain import FROM_NODE_ID_TO_EDGE_SCHEMA, take_order_node_schema
@@ -147,9 +147,9 @@ def extract_fns_from_chat(chat_completion_stream, first_chunk):
             if first_chunk != chunk:
                 function_calls.append(
                     FunctionCall(
-                        function_name=function_name,
-                        tool_call_id=tool_call_id,
-                        function_args_json=function_args_json,
+                        function_name=function_name,  # noqa
+                        tool_call_id=tool_call_id,  # noqa
+                        function_args_json=function_args_json,  # noqa
                     )
                 )
 
