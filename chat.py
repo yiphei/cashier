@@ -171,6 +171,7 @@ def extract_fns_from_chat(chat_completion_stream, first_chunk):
     )
     return function_calls
 
+
 def get_user_input(use_audio_input, openai_client):
     if use_audio_input:
         audio_input = get_audio_input()
@@ -180,6 +181,7 @@ def get_user_input(use_audio_input, openai_client):
         text_input = input("You: ")
 
     return text_input
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -272,9 +274,7 @@ if __name__ == "__main__":
                         current_node_schema, function_call.function_name
                     )(**function_args)
                 elif function_call.function_name.startswith("update_state"):
-                    fn_output = current_node_schema.update_state(
-                        **function_args
-                    )
+                    fn_output = current_node_schema.update_state(**function_args)
                     state_condition_results = [
                         edge_schema.state_condition_fn(current_node_schema.state)
                         for edge_schema in current_edge_schemas
