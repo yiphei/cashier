@@ -258,7 +258,7 @@ class MessageManager:
         )
 
     def print_msg(self, role, msg):
-        print(f"{self.API_ROLE_TO_COLOR[role]}{self.API_ROLE_TO_PREFIX[role]}: {msg}{Style.RESET_ALL}")
+        print(f"{self.API_ROLE_TO_COLOR[role]}{Style.BRIGHT}{self.API_ROLE_TO_PREFIX[role]}:{Style.NORMAL} {msg}{Style.RESET_ALL}", end="\n\n")
 
 
 def run_chat(args, openai_client, elevenlabs_client):
