@@ -187,11 +187,12 @@ class MessageManager:
         "assistant": "Assistant",
     }
 
-    def __init__(self, initial_system_prompt, initial_msg, output_system_prompt=False):
+    def __init__(self, initial_system_prompt, initial_msg=None, output_system_prompt=False):
         self.messages = [
-            {"role": "system", "content": initial_system_prompt},
-            initial_msg,
+            {"role": "system", "content": initial_system_prompt}
         ]
+        if initial_msg:
+            self.messages.append(initial_msg)
         self.output_system_prompt = output_system_prompt
 
     def add_message_dict(self, msg_dict):
@@ -256,8 +257,7 @@ class MessageManager:
 def run_chat(args, openai_client, elevenlabs_client):
     MM = MessageManager(
         SYSTEM_PROMPT,
-        {"role": "assistant", "content": "hi, welcome to Heaven Coffee"},
-        args.output_system_prompt,
+        output_system_prompt=args.output_system_prompt,
     )
     print("Assistant: hi, welcome to Heaven Coffee")
 
