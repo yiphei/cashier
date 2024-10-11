@@ -229,13 +229,16 @@ class MessageManager:
             }
         )
 
+    def is_tool_message(self, msg):
+        return msg['role'] == "assistant" and msg.get("tool_call_id") is not None or msg.get("tool_calls") is not None
+
     def delete_message(self, index):
         del self.messages[index]
 
     def get_formatted_messages(self):
         msgs = ""
         for msg in self.messages:
-            if not self.output_system_prompt and msg["role"] == "system":
+            if (not self.output_system_prompt and msg["role"] == "system") or self.is_tool_message(msg):
                 continue
             msgs += f"{self.API_ROLE_TO_PREFIX[msg['role']]}: {msg['content']}\n"
         return msgs
