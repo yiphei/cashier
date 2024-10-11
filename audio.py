@@ -5,6 +5,7 @@ import wave
 
 import numpy as np
 import pyaudio
+
 from logger import logger
 
 # Settings for audio recording
