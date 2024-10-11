@@ -214,7 +214,6 @@ if __name__ == "__main__":
                 break
 
             messages.append({"role": "user", "content": text_input})
-
         chat_completion = openai_client.chat.completions.create(
             model="gpt-4o-mini",
             messages=messages,
@@ -250,38 +249,38 @@ if __name__ == "__main__":
                 print(
                     f"[CALLING] {function_call.function_name} with args {function_call.function_args_json}"
                 )
-                if function_call.function_name in ["get_state", "update_state"]:
+                if function_call.function_name.startswith("get_state"):
                     fn_output = getattr(
                         current_node_schema, function_call.function_name
-                    )(**json.loads(function_call.function_args_json))
-                    if function_call.function_name == "update_state":
-                        state_condition_results = [
-                            edge_schema.state_condition_fn(current_node_schema.state)
+                    )(**json.loads(function_call.function_args_json)) 
+                elif function_call.function_name.startswith("update_state"):
+                    fn_output = current_node_schema.update_state(**json.loads(function_call.function_args_json))
+                    state_condition_results = [
+                        edge_schema.state_condition_fn(current_node_schema.state)
+                        for edge_schema in current_edge_schemas
+                    ]
+                    if any(
+                        [
+                            edge_schema.state_condition_fn(
+                                current_node_schema.state
+                            )
                             for edge_schema in current_edge_schemas
                         ]
-                        if any(
-                            [
-                                edge_schema.state_condition_fn(
-                                    current_node_schema.state
-                                )
-                                for edge_schema in current_edge_schemas
-                            ]
-                        ):
-                            first_true_index = state_condition_results.index(True)
-                            first_true_edge_schema = current_edge_schemas[
-                                first_true_index
-                            ]
+                    ):
+                        first_true_index = state_condition_results.index(True)
+                        first_true_edge_schema = current_edge_schemas[
+                            first_true_index
+                        ]
 
-                            new_node_input = (
-                                first_true_edge_schema.new_input_from_state_fn(
-                                    current_node_schema.state
-                                )
+                        new_node_input = (
+                            first_true_edge_schema.new_input_from_state_fn(
+                                current_node_schema.state
                             )
-                            current_node_schema = first_true_edge_schema.to_node_schema
-                            current_edge_schemas = FROM_NODE_ID_TO_EDGE_SCHEMA.get(
-                                current_node_schema.id, []
-                            )
-
+                        )
+                        current_node_schema = first_true_edge_schema.to_node_schema
+                        current_edge_schemas = FROM_NODE_ID_TO_EDGE_SCHEMA.get(
+                            current_node_schema.id, []
+                        )
                 else:
                     fn = FN_NAME_TO_FN[function_call.function_name]
                     fn_output = fn(**json.loads(function_call.function_args_json))
@@ -312,7 +311,7 @@ if __name__ == "__main__":
 
                 messages.append(tool_call_message)
                 messages.append(function_call_result_msg)
-                if function_call.function_name not in ["get_state", "update_state"]:
+                if not function_call.function_name.startswith(("get_state", "update_state")):
                     messages.append(
                         get_system_return_type_prompt(function_call.function_name)
                     )

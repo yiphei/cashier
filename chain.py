@@ -19,20 +19,7 @@ class NodeSchema:
         self.is_initialized = False
         self.input_pydantic_model = input_pydantic_model
         self.state_pydantic_model = state_pydantic_model
-
-        fn_pydantic_model = create_model(
-            "update_state_parameters",
-            updated_state=(
-                self.state_pydantic_model,
-                Field(description="the updated state"),
-            ),
-        )
-        update_state_json_schema = pydantic_function_tool(
-            fn_pydantic_model,
-            name="update_state",
-            description="Function to update the state",
-        )
-
+        
         def remove_default(schema):
             found_key = False
             for key, value in schema.items():
@@ -47,11 +34,21 @@ class NodeSchema:
             if found_key:
                 schema.pop("default")
 
-        remove_default(update_state_json_schema)
+        for field_name, field_info in self.state_pydantic_model.model_fields.items():
+            field_args = {field_name: (field_info.annotation, field_info)}
+            fn_pydantic_model = create_model(
+                f"update_state_{field_name}",
+                **field_args
+            )
+            update_state_json_schema = pydantic_function_tool(
+                fn_pydantic_model,
+                name=f"update_state_{field_name}",
+                description=f"Function to update the `{field_name}` field in the state",
+            )
+            remove_default(update_state_json_schema)
+            self.tool_fns.append(update_state_json_schema)
 
-        self.tool_fns.extend(
-            [
-                update_state_json_schema,
+        self.tool_fns.append(
                 {
                     "type": "function",
                     "function": {
@@ -65,8 +62,7 @@ class NodeSchema:
                             "additionalProperties": False,
                         },
                     },
-                },
-            ]
+                }
         )
 
     def run(self, input):
@@ -105,15 +101,15 @@ class NodeSchema:
             "During this stage, you must use function calls whenever possible and as soon as possible. "
             "This is because there usually is an associated function for every user input and that function will help you with the user input. "
             "When in doubt, use the function/s. In conjunction, you must update the state object whenever possible. "
-            "The state update function is update_state and getting the current state function is get_state. "
+            "The state update function is `update_state_*` and getting the current state function is `get_state`. "
             "You cannot proceed to the next stage without updating the state."
         )
 
         return NODE_PROMPT.format(**kwargs)
 
-    def update_state(self, updated_state):
+    def update_state(self, **kwargs):
         old_state = self.state.model_dump()
-        new_state = old_state | updated_state
+        new_state = old_state | kwargs
         self.state = self.state_pydantic_model(**new_state)
 
     def get_state(self):
