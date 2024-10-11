@@ -7,7 +7,6 @@ import tempfile
 from collections import defaultdict
 from collections.abc import Iterator
 from distutils.util import strtobool
-import logging
 
 from colorama import Fore, Style
 from dotenv import load_dotenv  # Add this import
@@ -18,6 +17,7 @@ from pydantic import BaseModel
 from audio import get_audio_input, save_audio_to_wav
 from chain import FROM_NODE_ID_TO_EDGE_SCHEMA, take_order_node_schema
 from db_functions import FN_NAME_TO_FN, OPENAI_TOOLS_RETUN_DESCRIPTION, create_db_client
+from logger import logger
 
 # Load environment variables from .env file
 load_dotenv()
@@ -267,7 +267,6 @@ class MessageManager:
 
 
 def run_chat(args, openai_client, elevenlabs_client):
-    logger = logging.getLogger("app_logger")
     MM = MessageManager(
         SYSTEM_PROMPT,
         output_system_prompt=args.output_system_prompt,
@@ -320,7 +319,7 @@ def run_chat(args, openai_client, elevenlabs_client):
             function_calls = extract_fns_from_chat(chat_completion, first_chunk)
 
             for function_call in function_calls:
-                logger.debug(f"Function call: {function_call.function_name}")
+                logger.debug(f"Function call: {function_call.function_name} with args: {function_call.function_args_json}")
                 function_args = json.loads(function_call.function_args_json)
                 if function_call.function_name.startswith("get_state"):
                     fn_output = getattr(
@@ -352,6 +351,7 @@ def run_chat(args, openai_client, elevenlabs_client):
                     fn = FN_NAME_TO_FN[function_call.function_name]
                     fn_output = fn(**function_args)
 
+                logger.debug(f"Function call response: {function_call.function_name} with output: {fn_output}")
                 MM.add_tool_call_message(
                     function_call.tool_call_id,
                     function_call.function_name,
