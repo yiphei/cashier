@@ -6,11 +6,13 @@ import tempfile
 from collections import defaultdict
 from collections.abc import Iterator
 from distutils.util import strtobool
+import sys
 
 from dotenv import load_dotenv  # Add this import
 from elevenlabs import ElevenLabs, Voice, VoiceSettings, stream
 from openai import OpenAI
 from pydantic import BaseModel
+from colorama import Fore, Style
 
 from audio import get_audio_input, save_audio_to_wav
 from chain import FROM_NODE_ID_TO_EDGE_SCHEMA, take_order_node_schema
@@ -173,9 +175,13 @@ def get_user_input(use_audio_input, openai_client):
     if use_audio_input:
         audio_input = get_audio_input()
         text_input = get_text_from_speech(audio_input, openai_client)
-        print(f"You: {text_input}")
     else:
         text_input = input("You: ")
+
+        erase_sequence = "\033[A" + "\033[2K"
+        # Erase the entire line "You: {text_input}"
+        sys.stdout.write(erase_sequence)
+        sys.stdout.flush()
 
     return text_input
 
@@ -187,6 +193,12 @@ class MessageManager:
         "assistant": "Assistant",
     }
 
+    API_ROLE_TO_COLOR = {
+        "system": Fore.GREEN,
+        "user": Fore.WHITE,
+        "assistant": Fore.BLUE,
+    }
+
     def __init__(
         self, initial_system_prompt, initial_msg=None, output_system_prompt=False
     ):
@@ -195,20 +207,25 @@ class MessageManager:
             self.messages.append(initial_msg)
         self.output_system_prompt = output_system_prompt
 
+        for msg in self.messages:
+            self.print_msg(msg["role"], msg["content"])
+
     def add_message_dict(self, msg_dict):
         self.messages.append(msg_dict)
+        if (msg_dict["role"] != "system" or self.output_system_prompt) and not self.is_tool_message(msg_dict):
+            self.print_msg(msg_dict["role"], msg_dict["content"])
 
     def add_user_message(self, msg):
-        self.messages.append({"role": "user", "content": msg})
+        self.add_message_dict({"role": "user", "content": msg})
 
     def add_assistant_message(self, msg):
-        self.messages.append({"role": "assistant", "content": msg})
+        self.add_message_dict({"role": "assistant", "content": msg})
 
     def add_system_message(self, msg):
-        self.messages.append({"role": "system", "content": msg})
+        self.add_message_dict({"role": "system", "content": msg})
 
     def add_tool_call_message(self, tool_call_id, function_name, function_args_json):
-        self.messages.append(
+        self.add_message_dict(
             {
                 "role": "assistant",
                 "tool_calls": [
@@ -225,7 +242,7 @@ class MessageManager:
         )
 
     def add_tool_call_response_message(self, tool_call_id, tool_call_result):
-        self.messages.append(
+        self.add_message_dict(
             {
                 "role": "tool",
                 "content": tool_call_result,
@@ -240,18 +257,8 @@ class MessageManager:
             or msg.get("tool_calls") is not None
         )
 
-    def delete_message(self, index):
-        del self.messages[index]
-
-    def get_formatted_messages(self):
-        msgs = ""
-        for msg in self.messages:
-            if (
-                not self.output_system_prompt and msg["role"] == "system"
-            ) or self.is_tool_message(msg):
-                continue
-            msgs += f"{self.API_ROLE_TO_PREFIX[msg['role']]}: {msg['content']}\n"
-        return msgs
+    def print_msg(self, role, msg):
+        print(f"{self.API_ROLE_TO_COLOR[role]}{self.API_ROLE_TO_PREFIX[role]}: {msg}{Style.RESET_ALL}")
 
 
 def run_chat(args, openai_client, elevenlabs_client):
