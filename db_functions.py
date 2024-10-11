@@ -23,6 +23,7 @@ def create_client():
         os.environ.get("SUPABASE_URL"), os.environ.get("SUPABASE_KEY")
     )
 
+
 def obj_to_dict(obj):
     obj_type = type(obj)
     if issubclass(obj_type, BaseModel):
@@ -34,12 +35,14 @@ def obj_to_dict(obj):
     else:
         return obj  # Default to "object" if type not found
 
+
 def get_description_from_docstring(docstring):
     if "Args:" in docstring:
         description = docstring.split("Args:")[0].strip()
     else:
         description = docstring.strip()
     return description
+
 
 def get_field_map_from_docstring(docstring, func_signature):
     field_name_to_field = defaultdict(lambda: [None, Field()])
@@ -66,10 +69,9 @@ def get_field_map_from_docstring(docstring, func_signature):
             field_name_to_field[param_name][0] = param.annotation
         else:
             raise Exception(f"Parameter {param_name} is not found in the docstring")
-        
-    return {
-            k: tuple(v) for k, v in field_name_to_field.items()
-        }
+
+    return {k: tuple(v) for k, v in field_name_to_field.items()}
+
 
 def get_return_description_from_docstring(docstring):
     return_description = ""
@@ -78,6 +80,7 @@ def get_return_description_from_docstring(docstring):
     if returns_match:
         return_description = returns_match.group(1).strip()
     return return_description
+
 
 def openai_tool_decorator(tool_instructions=None):
     def decorator_fn(func):
@@ -110,7 +113,7 @@ def openai_tool_decorator(tool_instructions=None):
             return_obj=(return_annotation, Field(description=return_description)),
         )
         return_type_json_schema = fn_return_type_model.model_json_schema()
-        
+
         # Remove extra fields
         actual_return_json_schema = return_type_json_schema["properties"]["return_obj"]
         if "$defs" in return_type_json_schema:
