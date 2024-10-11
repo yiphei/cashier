@@ -2,8 +2,8 @@ import argparse
 import json
 import os
 import tempfile
-from collections.abc import Iterator
 from collections import defaultdict
+from collections.abc import Iterator
 from distutils.util import strtobool
 
 from dotenv import load_dotenv  # Add this import
@@ -13,11 +13,7 @@ from pydantic import BaseModel
 
 from audio import get_audio_input, save_audio_to_wav
 from chain import FROM_NODE_ID_TO_EDGE_SCHEMA, take_order_node_schema
-from db_functions import (
-    FN_NAME_TO_FN,
-    OPENAI_TOOLS_RETUN_DESCRIPTION,
-    create_client,
-)
+from db_functions import FN_NAME_TO_FN, OPENAI_TOOLS_RETUN_DESCRIPTION, create_client
 
 # Load environment variables from .env file
 load_dotenv()
@@ -37,6 +33,7 @@ SYSTEM_PROMPT = (
     "If they dont provide the information you need, just say you do not know."
 )
 
+
 class CustomJSONEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, BaseModel):
@@ -48,6 +45,7 @@ class CustomJSONEncoder(json.JSONEncoder):
         elif isinstance(obj, (str, int, float, bool, type(None))):
             return obj
         return super().default(obj)
+
 
 class ChatCompletionIterator(Iterator):
     def __init__(self, chat_stream):

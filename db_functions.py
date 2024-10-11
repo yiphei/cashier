@@ -23,6 +23,7 @@ def create_client():
         os.environ.get("SUPABASE_URL"), os.environ.get("SUPABASE_KEY")
     )
 
+
 def get_description_from_docstring(docstring):
     if "Args:" in docstring:
         description = docstring.split("Args:")[0].strip()
