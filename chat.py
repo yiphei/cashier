@@ -259,7 +259,6 @@ def run_chat(args, openai_client, elevenlabs_client):
         SYSTEM_PROMPT,
         output_system_prompt=args.output_system_prompt,
     )
-    print("Assistant: hi, welcome to Heaven Coffee")
 
     need_user_input = True
     current_node_schema = take_order_node_schema
@@ -268,9 +267,7 @@ def run_chat(args, openai_client, elevenlabs_client):
 
     while True:
         if not current_node_schema.is_initialized:
-            print(f"CURRENT_NODE_SCHEMA: {current_node_schema.id}")
             current_node_schema.run(new_node_input)
-            print(current_node_schema.prompt)
             MM.add_system_message(current_node_schema.prompt)
             if current_node_schema.first_msg:
                 MM.add_message_dict(current_node_schema.first_msg)
@@ -295,18 +292,15 @@ def run_chat(args, openai_client, elevenlabs_client):
         is_tool_call = has_function_call_id(first_chunk)
 
         if not is_tool_call:
-            print("Assistant: ", end="")
             chat_stream_iterator = ChatCompletionIterator(chat_completion)
             if args.audio_output:
                 get_speech_from_text(chat_stream_iterator, elevenlabs_client)
-                print(chat_stream_iterator.full_msg)
             else:
                 try:
                     while True:
-                        print(next(chat_stream_iterator), end="")
+                        next(chat_stream_iterator)
                 except StopIteration:
                     pass
-                print()
             MM.add_assistant_message(chat_stream_iterator.full_msg)
             need_user_input = True
         elif is_tool_call:
@@ -314,9 +308,6 @@ def run_chat(args, openai_client, elevenlabs_client):
 
             for function_call in function_calls:
                 function_args = json.loads(function_call.function_args_json)
-                print(
-                    f"[CALLING] {function_call.function_name} with args {function_args}"
-                )
                 if function_call.function_name.startswith("get_state"):
                     fn_output = getattr(
                         current_node_schema, function_call.function_name
@@ -347,9 +338,6 @@ def run_chat(args, openai_client, elevenlabs_client):
                     fn = FN_NAME_TO_FN[function_call.function_name]
                     fn_output = fn(**function_args)
 
-                print(
-                    f"[CALLING DONE] {function_call.function_name} with output {fn_output}"
-                )
                 MM.add_tool_call_message(
                     function_call.tool_call_id,
                     function_call.function_name,
