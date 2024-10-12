@@ -2,7 +2,6 @@ import argparse
 import itertools
 import json
 import os
-import sys
 import tempfile
 from collections import defaultdict
 from collections.abc import Iterator
@@ -17,8 +16,8 @@ from pydantic import BaseModel
 from audio import get_audio_input, save_audio_to_wav
 from chain import FROM_NODE_ID_TO_EDGE_SCHEMA, take_order_node_schema
 from db_functions import FN_NAME_TO_FN, OPENAI_TOOLS_RETUN_DESCRIPTION, create_db_client
-from logger import logger
 from gui import remove_previous_line
+from logger import logger
 
 # Load environment variables from .env file
 load_dotenv()
@@ -434,7 +433,7 @@ if __name__ == "__main__":
         api_key=os.getenv("ELEVENLABS_API_KEY"),
     )
     create_db_client()
-    
+
     if not args.enable_logging:
         logger.disabled = True
     run_chat(args, openai_client, elevenlabs_client)

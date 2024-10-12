@@ -6,8 +6,8 @@ import wave
 import numpy as np
 import pyaudio
 
-from logger import logger
 from gui import remove_previous_line
+from logger import logger
 
 # Settings for audio recording
 FORMAT = pyaudio.paInt16  # Audio format (16-bit)
