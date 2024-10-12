@@ -422,6 +422,11 @@ if __name__ == "__main__":
         type=lambda v: bool(strtobool(v)),
         default=True,
     )
+    parser.add_argument(
+        "--enable_logging",
+        type=lambda v: bool(strtobool(v)),
+        default=True,
+    )
     args = parser.parse_args()
 
     openai_client = OpenAI()
@@ -429,5 +434,7 @@ if __name__ == "__main__":
         api_key=os.getenv("ELEVENLABS_API_KEY"),
     )
     create_db_client()
-
+    
+    if not args.enable_logging:
+        logger.disabled = True
     run_chat(args, openai_client, elevenlabs_client)
