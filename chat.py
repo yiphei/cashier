@@ -18,6 +18,7 @@ from audio import get_audio_input, save_audio_to_wav
 from chain import FROM_NODE_ID_TO_EDGE_SCHEMA, take_order_node_schema
 from db_functions import FN_NAME_TO_FN, OPENAI_TOOLS_RETUN_DESCRIPTION, create_db_client
 from logger import logger
+from gui import remove_previous_line
 
 # Load environment variables from .env file
 load_dotenv()
@@ -177,11 +178,7 @@ def get_user_input(use_audio_input, openai_client):
         text_input = get_text_from_speech(audio_input, openai_client)
     else:
         text_input = input("You: ")
-
-        erase_sequence = "\033[A" + "\033[2K"
-        # Erase the entire line "You: {text_input}"
-        sys.stdout.write(erase_sequence)
-        sys.stdout.flush()
+        remove_previous_line()
 
     return text_input
 
