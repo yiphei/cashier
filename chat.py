@@ -204,7 +204,7 @@ class ListIndexTracker:
         for i in range(popped_idx_pos, len(self.idxs)):
             curr_idx = self.idxs[i]
             curr_named_idx = self.idx_to_named_idx[curr_idx]
-            
+
             self.idxs[i] -= 1
             self.idx_to_pos.pop(curr_idx)
             self.idx_to_pos[self.idxs[i]] = i
@@ -214,6 +214,7 @@ class ListIndexTracker:
             self.idx_to_named_idx[self.idxs[i]] = named_idx
 
         return popped_idx
+
 
 class MessageManager:
     API_ROLE_TO_PREFIX = {
@@ -434,7 +435,10 @@ def run_chat(args, openai_client, elevenlabs_client):
                 if not function_call.function_name.startswith(
                     ("get_state", "update_state")
                 ):
-                    MM.add_tool_return_schema_message(function_call.function_name, get_system_return_type_prompt(function_call.function_name))
+                    MM.add_tool_return_schema_message(
+                        function_call.function_name,
+                        get_system_return_type_prompt(function_call.function_name),
+                    )
 
                 need_user_input = False
 
