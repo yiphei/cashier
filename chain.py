@@ -86,7 +86,7 @@ class NodeSchema:
                 self.input_pydantic_model.model_json_schema()
                 if self.input_pydantic_model is not None
                 else None
-            )
+            ),
         )
 
     def generate_system_prompt(self, has_input, **kwargs):
