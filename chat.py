@@ -408,14 +408,11 @@ def run_chat(args, openai_client, elevenlabs_client):
                 elif function_call.function_name.startswith("update_state"):
                     fn_output = current_node_schema.update_state(**function_args)
                     state_condition_results = [
-                        edge_schema.state_condition_fn(current_node_schema.state)
+                        edge_schema.check_state_condition(current_node_schema.state)
                         for edge_schema in current_edge_schemas
                     ]
                     if any(
-                        [
-                            edge_schema.state_condition_fn(current_node_schema.state)
-                            for edge_schema in current_edge_schemas
-                        ]
+                        state_condition_results
                     ):
                         first_true_index = state_condition_results.index(True)
                         first_true_edge_schema = current_edge_schemas[first_true_index]
