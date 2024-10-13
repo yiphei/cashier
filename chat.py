@@ -241,11 +241,11 @@ class MessageManager:
             }
         )
 
-    def add_tool_call_response_message(self, tool_call_id, tool_call_result):
+    def add_tool_response_message(self, tool_call_id, tool_response):
         self.add_message_dict(
             {
                 "role": "tool",
-                "content": tool_call_result,
+                "content": tool_response,
                 "tool_call_id": tool_call_id,
             }
         )
@@ -384,7 +384,7 @@ def run_chat(args, openai_client, elevenlabs_client):
                     function_call.function_name,
                     function_call.function_args_json,
                 )
-                MM.add_tool_call_response_message(
+                MM.add_tool_response_message(
                     function_call.tool_call_id,
                     json.dumps(fn_output, cls=CustomJSONEncoder),
                 )
