@@ -22,7 +22,7 @@ from logger import logger
 # Load environment variables from .env file
 load_dotenv()
 
-SYSTEM_PROMPT = (
+GLOBAL_SYSTEM_PROMPT = (
     "You are a cashier working for the coffee shop Heaven Coffee, and you are physically embedded in it, "
     "meaning you will interact with real in-person customers. There is a microphone that transcribes customer's speech to text, "
     "and a speaker that outputs your text to speech. Because your responses will be converted to speech, "
@@ -82,13 +82,13 @@ def get_system_return_type_prompt(fn_name):
     )
 
 
-def get_text_from_speech(audio_data, client):
+def get_text_from_speech(audio_data, oai_client):
     with tempfile.NamedTemporaryFile(suffix=".wav", delete=True) as temp_wav_file:
         # Save the audio data as a WAV file
         save_audio_to_wav(audio_data, temp_wav_file.name)
 
         # Use OpenAI's API to transcribe the saved WAV file
-        transcription = client.audio.transcriptions.create(
+        transcription = oai_client.audio.transcriptions.create(
             model="whisper-1",
             language="en",
             file=open(temp_wav_file.name, "rb"),  # Open the saved WAV file for reading
@@ -96,8 +96,8 @@ def get_text_from_speech(audio_data, client):
     return transcription.text
 
 
-def get_speech_from_text(text_iterator, client):
-    audio = client.generate(
+def get_speech_from_text(text_iterator, elabs_client):
+    audio = elabs_client.generate(
         voice=Voice(
             voice_id="cgSgspJ2msm6clMCkdW9",
             settings=VoiceSettings(
@@ -118,10 +118,10 @@ class FunctionCall(BaseModel):
     function_args_json: str
 
 
-def get_first_usable_chunk(chat_completion_stream):
-    chunk = next(chat_completion_stream)
+def get_first_usable_chunk(chat_stream):
+    chunk = next(chat_stream)
     while not (has_function_call_id(chunk) or has_msg_content(chunk)):
-        chunk = next(chat_completion_stream)
+        chunk = next(chat_stream)
     return chunk
 
 
@@ -136,10 +136,10 @@ def has_function_call_id(chunk):
     )
 
 
-def extract_fns_from_chat(chat_completion_stream, first_chunk):
+def extract_fns_from_chat_stream(chat_stream, first_chunk):
     function_calls = []
 
-    for chunk in itertools.chain([first_chunk], chat_completion_stream):
+    for chunk in itertools.chain([first_chunk], chat_stream):
         finish_reason = chunk.choices[0].finish_reason
         if finish_reason is not None:
             break
@@ -308,11 +308,11 @@ class MessageManager:
             msg["role"] == "tool" and msg.get("tool_call_id") is not None
         )
 
-    def read_chat_completion_stream(self, chat_completion_stream):
+    def read_chat_stream(self, chat_stream):
         self.print_msg(role="assistant", msg=None, end="")
         try:
             while True:
-                msg_chunk = next(chat_completion_stream)
+                msg_chunk = next(chat_stream)
                 self.print_msg(
                     role="assistant", msg=msg_chunk, add_role_prefix=False, end=""
                 )
@@ -320,7 +320,7 @@ class MessageManager:
             pass
 
         self.add_message_dict(
-            {"role": "assistant", "content": chat_completion_stream.full_msg},
+            {"role": "assistant", "content": chat_stream.full_msg},
             print_msg=False,
         )
         print("\n\n")
@@ -344,7 +344,7 @@ class MessageManager:
 
 def run_chat(args, openai_client, elevenlabs_client):
     MM = MessageManager(
-        SYSTEM_PROMPT,
+        GLOBAL_SYSTEM_PROMPT,
         output_system_prompt=args.output_system_prompt,
     )
 
@@ -390,10 +390,10 @@ def run_chat(args, openai_client, elevenlabs_client):
                 get_speech_from_text(chat_stream_iterator, elevenlabs_client)
                 MM.add_assistant_message(chat_stream_iterator.full_msg)
             else:
-                MM.read_chat_completion_stream(chat_stream_iterator)
+                MM.read_chat_stream(chat_stream_iterator)
             need_user_input = True
         elif is_tool_call:
-            function_calls = extract_fns_from_chat(chat_completion, first_chunk)
+            function_calls = extract_fns_from_chat_stream(chat_completion, first_chunk)
 
             for function_call in function_calls:
                 function_args = json.loads(function_call.function_args_json)
