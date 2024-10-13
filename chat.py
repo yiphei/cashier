@@ -195,6 +195,9 @@ class ListIndexTracker:
         self.idxs.append(idx)
         self.idx_to_pos[idx] = len(self.idxs) - 1
 
+    def get_idx(self, named_idx):
+        return self.named_idx_to_idx[named_idx]
+
     def pop_idx(self, named_idx):
         popped_idx = self.named_idx_to_idx.pop(named_idx)
         popped_idx_pos = self.idx_to_pos.pop(popped_idx)
@@ -341,6 +344,12 @@ class MessageManager:
             end=end,
         )
 
+    def is_conversational_msg(self, msg):
+        return msg['role'] == 'user' or (msg['role'] == 'assistant' and not self.is_tool_message(msg))
+
+    def get_all_conversational_messages_of_current_node(self):
+        start_idx = self.list_index_tracker.get_idx(self.last_node_id)
+        return [msg for msg in self.messages[start_idx+1:] if self.is_conversational_msg(msg)]
 
 def run_chat(args, openai_client, elevenlabs_client):
     MM = MessageManager(
@@ -373,7 +382,34 @@ def run_chat(args, openai_client, elevenlabs_client):
                 print("Exiting chatbot. Goodbye!")
                 break
 
+
+            class Response(BaseModel):
+                unaddressable: bool
+
             MM.add_user_message(text_input)
+            conversational_msgs = MM.get_all_conversational_messages_of_current_node()
+            conversational_msgs.append({"role": "system", "content": (
+                "Given the previous conversation, determine if the last user message is unaddressable. "
+                "A user message is unaddressable when it cannot be strictly addressed by the main expectation "
+                "OR all the available function calls.\n\n"
+                "MAIN EXPECTATION:\n"
+                "```\n"
+                f"{current_node_schema.node_prompt}\n"
+                "```\n\n"
+                "FUNCTION CALLS:\n"
+                "```\n"
+                f"{current_node_schema.tool_fns}\n"
+                "```"
+                )})
+            print(conversational_msgs[:-1])
+            print(conversational_msgs[-1]['content'])
+            chat_completion = openai_client.beta.chat.completions.parse(
+                model="gpt-4o-mini",
+                messages=conversational_msgs,
+                response_format=Response
+            )
+            logger.debug(f"IS_OFF_TOPIC: {chat_completion.choices[0].message.parsed}")
+
         chat_completion = openai_client.chat.completions.create(
             model=args.model,
             messages=MM.messages,
