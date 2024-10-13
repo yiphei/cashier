@@ -43,13 +43,13 @@ class NodeSchema:
         for field_name, field_info in self.state_pydantic_model.model_fields.items():
             field_args = {field_name: (field_info.annotation, field_info)}
             fn_pydantic_model = create_model(f"update_state_{field_name}", **field_args)
-            update_state_json_schema = pydantic_function_tool(
+            update_state_fn_json_schema = pydantic_function_tool(
                 fn_pydantic_model,
                 name=f"update_state_{field_name}",
                 description=f"Function to update the `{field_name}` field in the state",
             )
-            remove_default(update_state_json_schema)
-            self.tool_fns.append(update_state_json_schema)
+            remove_default(update_state_fn_json_schema)
+            self.tool_fns.append(update_state_fn_json_schema)
 
         self.tool_fns.append(
             {
