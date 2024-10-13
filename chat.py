@@ -182,6 +182,39 @@ def get_user_input(use_audio_input, openai_client):
     return text_input
 
 
+class ListIndexTracker:
+    def __init__(self):
+        self.named_idx_to_idx = {}
+        self.idx_to_named_idx = {}
+        self.idxs = []
+        self.idx_to_pos = {}
+
+    def add_idx(self, named_idx, idx):
+        self.named_idx_to_idx[named_idx] = idx
+        self.idx_to_named_idx[idx] = named_idx
+        self.idxs.append(idx)
+        self.idx_to_pos[idx] = len(self.idxs) - 1
+
+    def pop_idx(self, named_idx):
+        popped_idx = self.named_idx_to_idx.pop(named_idx)
+        popped_idx_pos = self.idx_to_pos.pop(popped_idx)
+        self.idx_to_named_idx.pop(popped_idx)
+
+        del self.idxs[popped_idx_pos]
+        for i in range(popped_idx_pos, len(self.idxs)):
+            curr_idx = self.idxs[i]
+            curr_named_idx = self.idx_to_named_idx[curr_idx]
+            
+            self.idxs[i] -= 1
+            self.idx_to_pos.pop(curr_idx)
+            self.idx_to_pos[self.idxs[i]] = i
+
+            self.named_idx_to_idx[curr_named_idx] = self.idxs[i]
+            self.idx_to_named_idx.pop(curr_idx)
+            self.idx_to_named_idx[self.idxs[i]] = named_idx
+
+        return popped_idx
+
 class MessageManager:
     API_ROLE_TO_PREFIX = {
         "system": "System",
@@ -202,6 +235,7 @@ class MessageManager:
         if initial_msg:
             self.messages.append(initial_msg)
         self.output_system_prompt = output_system_prompt
+        self.list_index_tracker = ListIndexTracker()
 
         for msg in self.messages:
             self.print_msg(msg["role"], msg["content"])
@@ -249,6 +283,14 @@ class MessageManager:
                 "tool_call_id": tool_call_id,
             }
         )
+
+    def add_tool_return_schema_message(self, tool_name, msg):
+        if tool_name in self.list_index_tracker.named_idx_to_idx:
+            idx_to_remove = self.list_index_tracker.pop_idx(tool_name)
+            del self.messages[idx_to_remove]
+
+        self.add_system_message(msg)
+        self.list_index_tracker.add_idx(tool_name, len(self.messages) - 1)
 
     def is_tool_message(self, msg):
         return (msg["role"] == "assistant" and msg.get("tool_calls") is not None) or (
@@ -392,9 +434,7 @@ def run_chat(args, openai_client, elevenlabs_client):
                 if not function_call.function_name.startswith(
                     ("get_state", "update_state")
                 ):
-                    MM.add_system_message(
-                        get_system_return_type_prompt(function_call.function_name)
-                    )
+                    MM.add_tool_return_schema_message(function_call.function_name, get_system_return_type_prompt(function_call.function_name))
 
                 need_user_input = False
 
