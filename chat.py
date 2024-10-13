@@ -237,6 +237,7 @@ class MessageManager:
             self.messages.append(initial_msg)
         self.output_system_prompt = output_system_prompt
         self.list_index_tracker = ListIndexTracker()
+        self.last_node_id = None
 
         for msg in self.messages:
             self.print_msg(msg["role"], msg["content"])
@@ -292,6 +293,15 @@ class MessageManager:
 
         self.add_system_message(msg)
         self.list_index_tracker.add_idx(tool_name, len(self.messages) - 1)
+
+    def add_node_system_message(self, node_id, msg):
+        if self.last_node_id is not None:
+            idx_to_remove = self.list_index_tracker.pop_idx(self.last_node_id)
+            del self.messages[idx_to_remove]
+
+        self.add_system_message(msg)
+        self.list_index_tracker.add_idx(node_id, len(self.messages)-1)
+        self.last_node_id = node_id
 
     def is_tool_message(self, msg):
         return (msg["role"] == "assistant" and msg.get("tool_calls") is not None) or (
@@ -349,7 +359,7 @@ def run_chat(args, openai_client, elevenlabs_client):
                 f"[NODE_SCHEMA] Initializing {Style.BRIGHT}node_schema_id: {current_node_schema.id}{Style.NORMAL}"
             )
             current_node_schema.run(new_node_input)
-            MM.add_system_message(current_node_schema.prompt)
+            MM.add_node_system_message(current_node_schema.id, current_node_schema.prompt)
             if current_node_schema.first_msg:
                 MM.add_message_dict(current_node_schema.first_msg)
 
