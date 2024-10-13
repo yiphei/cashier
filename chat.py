@@ -200,7 +200,7 @@ class ListIndexTracker:
         popped_idx_pos = self.idx_to_pos.pop(popped_idx)
         self.idx_to_named_idx.pop(popped_idx)
         del self.idxs[popped_idx_pos]
-        
+
         for i in range(popped_idx_pos, len(self.idxs)):
             curr_idx = self.idxs[i]
             curr_named_idx = self.idx_to_named_idx[curr_idx]
