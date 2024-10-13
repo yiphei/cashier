@@ -113,7 +113,7 @@ class NodeSchema:
             "During this stage, you must use function calls whenever possible and as soon as possible. "
             "This is because there usually is an associated function for every user input and that function will help you with the user input. "
             "When in doubt, use the function/s. In conjunction, you must update the state object whenever possible. "
-            "The state update function is `update_state_*` and getting the current state function is `get_state`. "
+            "There is a specific update function for each state field, and all state update function names start with `update_state_*`. "
             "You cannot proceed to the next stage without updating the state."
         )
 
