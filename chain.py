@@ -82,6 +82,11 @@ class NodeSchema:
                 if self.input_pydantic_model is not None
                 else None
             ),
+            node_input_json_schema=(
+                self.input_pydantic_model.model_json_schema()
+                if self.input_pydantic_model is not None
+                else None
+            )
         )
 
     def generate_system_prompt(self, has_input, **kwargs):
@@ -97,6 +102,10 @@ class NodeSchema:
                 "valuable information that help you accomplish the main expectation. The input is the following in JSON format:\n"
                 "```\n"
                 "{node_input}\n"
+                "```\n"
+                "And the input's JSON schema is:\n"
+                "```\n"
+                "{node_input_json_schema}\n"
                 "```\n\n"
             )
 
