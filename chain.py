@@ -1,7 +1,7 @@
 from typing import Optional
 
 from openai import pydantic_function_tool
-from pydantic import BaseModel, Field, create_model
+from pydantic import BaseModel, Field, create_model, ConfigDict
 
 from db_functions import OPENAI_TOOL_NAME_TO_TOOL_DEF, Order
 
@@ -151,8 +151,10 @@ class EdgeSchema:
 
 ## Chain ##
 
+class BaseStateModel(BaseModel):
+    model_config = ConfigDict(extra='forbid')
 
-class TakeOrderState(BaseModel):
+class TakeOrderState(BaseStateModel):
     order: Optional[Order] = None
     has_finished_ordering: bool = Field(
         description=(
@@ -179,8 +181,8 @@ take_order_node_schema = NodeSchema(
         " you must restate the order back to the customer to ensure that it is correct. For the option values,"
         " only state those that were explicitly specified by the customer, so do not state default options"
         " assumed for the size but do state any other option, even default option values that were specified by the customer.\n\n"
-        "If they are not immediately ready to order after the greeting, you may engage in some"
-        " small talk but you need to steer the conversation back to ordering after 4"
+        "Lastly, if they are not immediately ready to order after the greeting, you can also engage in some"
+        " small talk about any topic, but you need to steer the conversation back to ordering after some"
         " back-and-forths."
     ),
     tool_fns=[
@@ -193,7 +195,7 @@ take_order_node_schema = NodeSchema(
 )
 
 
-class ConfirmOrderState(BaseModel):
+class ConfirmOrderState(BaseStateModel):
     has_confirmed_order: bool = Field(
         description="whether the customer has confirmed their order", default=False
     )
@@ -201,7 +203,7 @@ class ConfirmOrderState(BaseModel):
 
 confirm_order_node_schema = NodeSchema(
     node_prompt=(
-        "Your main job is to confirm the order with the customer. You do this by"
+        "Confirm the order with the customer. You do this by"
         " repeating the order back to them and get their confirmation."
     ),
     tool_fns=[],
@@ -218,7 +220,7 @@ take_to_confirm_edge_schema = EdgeSchema(
 )
 
 
-class TerminalOrderState(BaseModel):
+class TerminalOrderState(BaseStateModel):
     has_said_goodbye: bool = Field(
         description="whether the customer has said goodbye", default=False
     )
