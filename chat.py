@@ -396,10 +396,8 @@ def is_on_topic(MM, current_node_schema):
         logprobs=True,
         temperature=0,
     )
-    logger.debug(f"IS_OFF_TOPIC: {chat_completion.choices[0].message.parsed}")
-    logger.debug(
-        f"log probs of {chat_completion.choices[0].logprobs.content[-2].token} is {np.exp(chat_completion.choices[0].logprobs.content[-2].logprob)}"
-    )
+    is_on_topic = chat_completion.choices[0].message.parsed.output
+    logger.debug(f"IS_ON_TOPIC: {is_on_topic} with {np.exp(chat_completion.choices[0].logprobs.content[-2].logprob)}")
 
 
 def run_chat(args, openai_client, elevenlabs_client):
@@ -434,6 +432,7 @@ def run_chat(args, openai_client, elevenlabs_client):
                 break
 
             MM.add_user_message(text_input)
+            is_on_topic(MM, current_node_schema)
 
         chat_completion = openai_client.chat.completions.create(
             model=args.model,
