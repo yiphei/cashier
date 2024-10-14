@@ -91,7 +91,7 @@ class NodeSchema:
 
     def generate_system_prompt(self, has_input, **kwargs):
         NODE_PROMPT = (
-            "You are now in the next stage of the conversation. The description and main expectation for this stage is the following:\n"
+            "You have entered the next stage of the conversation. The description and main expectation for this stage is the following:\n"
             "```\n"
             "{node_prompt}\n"
             "```\n\n"
