@@ -1,7 +1,7 @@
 from typing import Optional
 
 from openai import pydantic_function_tool
-from pydantic import BaseModel, Field, create_model, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field, create_model
 
 from db_functions import OPENAI_TOOL_NAME_TO_TOOL_DEF, Order
 
@@ -151,8 +151,10 @@ class EdgeSchema:
 
 ## Chain ##
 
+
 class BaseStateModel(BaseModel):
-    model_config = ConfigDict(extra='forbid')
+    model_config = ConfigDict(extra="forbid")
+
 
 class TakeOrderState(BaseStateModel):
     order: Optional[Order] = None
