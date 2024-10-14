@@ -91,25 +91,28 @@ class NodeSchema:
 
     def generate_system_prompt(self, has_input, **kwargs):
         NODE_PROMPT = (
-            "You have entered the next stage of the conversation. The description and main expectation for this stage is the following:\n"
-            "```\n"
-            "{node_prompt}\n"
-            "```\n\n"
+            "You have entered the next stage of the conversation, so you now have new instructions.\n\n"
+            "# EXPECTATION\n\n"
+            "<!--- This section describes what the new stage is about and what you are expected to do --->\n"
+            "{node_prompt}\n\n"
         )
         if has_input:
             NODE_PROMPT += (
-                "There is an input to this stage. It contains "
-                "valuable information that help you accomplish the main expectation. The input is the following in JSON format:\n"
+                "# INPUT\n\n"
+                "<!--- This section provides the input to the new stage. The input contains valuable information that help you accomplish the expectation stated above. " 
+                "You will be provided both the input (in JSON format) and the input's JSON schema --->\n" 
+                "INPUT:\n"
                 "```\n"
                 "{node_input}\n"
                 "```\n"
-                "And the input's JSON schema is:\n"
+                "INPUT JSON SCHEMA:\n"
                 "```\n"
                 "{node_input_json_schema}\n"
                 "```\n\n"
             )
 
         NODE_PROMPT += (
+            "# IMPORTANT NOTES\n\n"
             "During this stage, you must use tools whenever possible and as soon as possible. "
             "This is because there usually is an associated tool for every user input and that tool will help you with the user input. "
             "When in doubt, use the tools. In conjunction, you must update the state object whenever possible. "
