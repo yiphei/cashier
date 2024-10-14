@@ -119,7 +119,8 @@ class NodeSchema:
             "- you must update the state object whenever possible. "
             "There is a specific update tool for each state field, and all state update tool names start with `update_state_*`. "
             "You cannot proceed to the next stage without updating the state.\n"
-            "- you cannot perform an explicit action without either using a tool or updating the state."
+            "- you must not state any action that you can perform if there are no associated tools or state updates.\n"
+            "- if you need to perform an action, you can only state to the customer that you performed it after the associated tool and/or state update calls have been successfull."
         )
 
         return NODE_PROMPT.format(**kwargs)
