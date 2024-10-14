@@ -385,30 +385,36 @@ def run_chat(args, openai_client, elevenlabs_client):
 
 
             class Response(BaseModel):
-                unaddressable: bool
+                output: bool
 
             MM.add_user_message(text_input)
             conversational_msgs = MM.get_all_conversational_messages_of_current_node()
             conversational_msgs.append({"role": "system", "content": (
-                "Given the previous conversation, determine if the last user message is unaddressable. "
-                "A user message is unaddressable when it cannot be strictly addressed by the main expectation "
-                "OR all the available function calls.\n\n"
-                "MAIN EXPECTATION:\n"
+                "You are an AI-agent orchestration engine. Each AI agent is defined by an expectation"
+                " and a set of tools (i.e. functions). Given the prior conversation, determine if the"
+                " last user message can be fully handled by the current AI agent. Return true if"
+                " the last user message is a case covered by the current AI agent's expectation OR "
+                "tools. Return false if otherwise, meaning that we should explore letting another AI agent take over.\n\n"
+                "LAST USER MESSAGE:\n"
+                "```\n"
+                f"{conversational_msgs[-1]['content']}\n"
+                "```\n\n"
+                "EXPECTATION:\n"
                 "```\n"
                 f"{current_node_schema.node_prompt}\n"
                 "```\n\n"
-                "FUNCTION CALLS:\n"
+                "TOOLS:\n"
                 "```\n"
                 f"{current_node_schema.tool_fns}\n"
                 "```"
                 )})
-            print(conversational_msgs[:-1])
             print(conversational_msgs[-1]['content'])
             chat_completion = openai_client.beta.chat.completions.parse(
                 model="gpt-4o",
                 messages=conversational_msgs,
                 response_format=Response,
                 logprobs=True,
+                temperature=0,
             )
             logger.debug(f"IS_OFF_TOPIC: {chat_completion.choices[0].message.parsed}")
             logger.debug(f"log probs of {chat_completion.choices[0].logprobs.content[-2].token} is {np.exp(chat_completion.choices[0].logprobs.content[-2].logprob)}")
