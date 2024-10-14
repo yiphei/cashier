@@ -397,7 +397,8 @@ def is_on_topic(MM, current_node_schema):
         temperature=0,
     )
     is_on_topic = chat_completion.choices[0].message.parsed.output
-    logger.debug(f"IS_ON_TOPIC: {is_on_topic} with {np.exp(chat_completion.choices[0].logprobs.content[-2].logprob)}")
+    prob = np.exp(chat_completion.choices[0].logprobs.content[-2].logprob)
+    logger.debug(f"IS_ON_TOPIC: {is_on_topic} with {prob}")
 
 
 def run_chat(args, openai_client, elevenlabs_client):
