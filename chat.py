@@ -7,12 +7,12 @@ from collections import defaultdict
 from collections.abc import Iterator
 from distutils.util import strtobool
 
+import numpy as np
 from colorama import Fore, Style
 from dotenv import load_dotenv  # Add this import
 from elevenlabs import ElevenLabs, Voice, VoiceSettings, stream
 from openai import OpenAI
 from pydantic import BaseModel
-import numpy as np
 
 from audio import get_audio_input, save_audio_to_wav
 from chain import FROM_NODE_ID_TO_EDGE_SCHEMA, take_order_node_schema
@@ -346,11 +346,18 @@ class MessageManager:
         )
 
     def is_conversational_msg(self, msg):
-        return msg['role'] == 'user' or (msg['role'] == 'assistant' and not self.is_tool_message(msg))
+        return msg["role"] == "user" or (
+            msg["role"] == "assistant" and not self.is_tool_message(msg)
+        )
 
     def get_all_conversational_messages_of_current_node(self):
         start_idx = self.list_index_tracker.get_idx(self.last_node_id)
-        return [msg for msg in self.messages[start_idx+1:] if self.is_conversational_msg(msg)]
+        return [
+            msg
+            for msg in self.messages[start_idx + 1 :]
+            if self.is_conversational_msg(msg)
+        ]
+
 
 def run_chat(args, openai_client, elevenlabs_client):
     MM = MessageManager(
@@ -383,32 +390,36 @@ def run_chat(args, openai_client, elevenlabs_client):
                 print("Exiting chatbot. Goodbye!")
                 break
 
-
             class Response(BaseModel):
                 output: bool
 
             MM.add_user_message(text_input)
             conversational_msgs = MM.get_all_conversational_messages_of_current_node()
-            conversational_msgs.append({"role": "system", "content": (
-                "You are an AI-agent orchestration engine. Each AI agent is defined by an expectation"
-                " and a set of tools (i.e. functions). Given the prior conversation, determine if the"
-                " last user message can be fully handled by the current AI agent. Return true if"
-                " the last user message is a case covered by the current AI agent's expectation OR "
-                "tools. Return false if otherwise, meaning that we should explore letting another AI agent take over.\n\n"
-                "LAST USER MESSAGE:\n"
-                "```\n"
-                f"{conversational_msgs[-1]['content']}\n"
-                "```\n\n"
-                "EXPECTATION:\n"
-                "```\n"
-                f"{current_node_schema.node_prompt}\n"
-                "```\n\n"
-                "TOOLS:\n"
-                "```\n"
-                f"{current_node_schema.tool_fns}\n"
-                "```"
-                )})
-            print(conversational_msgs[-1]['content'])
+            conversational_msgs.append(
+                {
+                    "role": "system",
+                    "content": (
+                        "You are an AI-agent orchestration engine. Each AI agent is defined by an expectation"
+                        " and a set of tools (i.e. functions). Given the prior conversation, determine if the"
+                        " last user message can be fully handled by the current AI agent. Return true if"
+                        " the last user message is a case covered by the current AI agent's expectation OR "
+                        "tools. Return false if otherwise, meaning that we should explore letting another AI agent take over.\n\n"
+                        "LAST USER MESSAGE:\n"
+                        "```\n"
+                        f"{conversational_msgs[-1]['content']}\n"
+                        "```\n\n"
+                        "EXPECTATION:\n"
+                        "```\n"
+                        f"{current_node_schema.node_prompt}\n"
+                        "```\n\n"
+                        "TOOLS:\n"
+                        "```\n"
+                        f"{current_node_schema.tool_fns}\n"
+                        "```"
+                    ),
+                }
+            )
+            print(conversational_msgs[-1]["content"])
             chat_completion = openai_client.beta.chat.completions.parse(
                 model="gpt-4o",
                 messages=conversational_msgs,
@@ -417,7 +428,9 @@ def run_chat(args, openai_client, elevenlabs_client):
                 temperature=0,
             )
             logger.debug(f"IS_OFF_TOPIC: {chat_completion.choices[0].message.parsed}")
-            logger.debug(f"log probs of {chat_completion.choices[0].logprobs.content[-2].token} is {np.exp(chat_completion.choices[0].logprobs.content[-2].logprob)}")
+            logger.debug(
+                f"log probs of {chat_completion.choices[0].logprobs.content[-2].token} is {np.exp(chat_completion.choices[0].logprobs.content[-2].logprob)}"
+            )
 
         chat_completion = openai_client.chat.completions.create(
             model=args.model,
