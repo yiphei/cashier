@@ -12,6 +12,7 @@ from dotenv import load_dotenv  # Add this import
 from elevenlabs import ElevenLabs, Voice, VoiceSettings, stream
 from openai import OpenAI
 from pydantic import BaseModel
+import numpy as np
 
 from audio import get_audio_input, save_audio_to_wav
 from chain import FROM_NODE_ID_TO_EDGE_SCHEMA, take_order_node_schema
@@ -404,11 +405,13 @@ def run_chat(args, openai_client, elevenlabs_client):
             print(conversational_msgs[:-1])
             print(conversational_msgs[-1]['content'])
             chat_completion = openai_client.beta.chat.completions.parse(
-                model="gpt-4o-mini",
+                model="gpt-4o",
                 messages=conversational_msgs,
-                response_format=Response
+                response_format=Response,
+                logprobs=True,
             )
             logger.debug(f"IS_OFF_TOPIC: {chat_completion.choices[0].message.parsed}")
+            logger.debug(f"log probs of {chat_completion.choices[0].logprobs.content[-2].token} is {np.exp(chat_completion.choices[0].logprobs.content[-2].logprob)}")
 
         chat_completion = openai_client.chat.completions.create(
             model=args.model,
