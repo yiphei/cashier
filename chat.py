@@ -15,7 +15,12 @@ from openai import OpenAI
 from pydantic import BaseModel
 
 from audio import get_audio_input, save_audio_to_wav
-from chain import FROM_NODE_ID_TO_EDGE_SCHEMA, take_order_node_schema, confirm_order_node_schema, terminal_order_node_schema
+from chain import (
+    FROM_NODE_ID_TO_EDGE_SCHEMA,
+    confirm_order_node_schema,
+    take_order_node_schema,
+    terminal_order_node_schema,
+)
 from db_functions import FN_NAME_TO_FN, OPENAI_TOOLS_RETUN_DESCRIPTION, create_db_client
 from gui import remove_previous_line
 from logger import logger
@@ -403,14 +408,14 @@ def is_on_topic(MM, current_node_schema, all_node_schemas):
         conversational_msgs.pop()
         prompt = (
             "You are an AI-agent orchestration engine. Each AI agent is defined by an expectation"
-            " and a set of tools (i.e. functions). An AI agent can handle a user message if it is " 
+            " and a set of tools (i.e. functions). An AI agent can handle a user message if it is "
             "a case covered by the AI agent's expectation OR tools. "
             "Given the prior conversation and a list of AI agents,"
             " determine which agent can best handle the last user message. "
             "Respond by returning the AI agent ID.\n\n"
         )
         for node_schema in all_node_schemas:
-            prompt += (                
+            prompt += (
                 f"## AGENT ID: {node_schema.id}\n\n"
                 "EXPECTATION:\n"
                 "```\n"
@@ -419,28 +424,28 @@ def is_on_topic(MM, current_node_schema, all_node_schemas):
                 "TOOLS:\n"
                 "```\n"
                 f"{json.dumps(node_schema.tool_fns)}\n"
-                "```\n\n")
-            
-        prompt+= (
-                "LAST USER MESSAGE:\n"
-                "```\n"
-                f"{conversational_msgs[-1]['content']}\n"
-                "```"
+                "```\n\n"
+            )
+
+        prompt += (
+            "LAST USER MESSAGE:\n"
+            "```\n"
+            f"{conversational_msgs[-1]['content']}\n"
+            "```"
         )
         conversational_msgs.append({"role": "system", "content": prompt})
 
         class Response2(BaseModel):
             agent_id: int
 
-
         chat_completion = openai_client.beta.chat.completions.parse(
-        model="gpt-4o",
-        messages=conversational_msgs,
-        response_format=Response2,
-        logprobs=True,
-        temperature=0,
-            )
-        
+            model="gpt-4o",
+            messages=conversational_msgs,
+            response_format=Response2,
+            logprobs=True,
+            temperature=0,
+        )
+
         agent_id = chat_completion.choices[0].message.parsed.agent_id
         prob = np.exp(chat_completion.choices[0].logprobs.content[-2].logprob)
         logger.debug(f"AGENT_ID: {agent_id} with {prob}")
@@ -478,7 +483,15 @@ def run_chat(args, openai_client, elevenlabs_client):
                 break
 
             MM.add_user_message(text_input)
-            is_on_topic(MM, current_node_schema, [take_order_node_schema, confirm_order_node_schema, terminal_order_node_schema])
+            is_on_topic(
+                MM,
+                current_node_schema,
+                [
+                    take_order_node_schema,
+                    confirm_order_node_schema,
+                    terminal_order_node_schema,
+                ],
+            )
 
         chat_completion = openai_client.chat.completions.create(
             model=args.model,
