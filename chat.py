@@ -388,6 +388,7 @@ def is_on_topic(MM, current_node_schema):
 
     class Response(BaseModel):
         output: bool
+
     chat_completion = openai_client.beta.chat.completions.parse(
         model="gpt-4o",
         messages=conversational_msgs,
@@ -399,6 +400,7 @@ def is_on_topic(MM, current_node_schema):
     logger.debug(
         f"log probs of {chat_completion.choices[0].logprobs.content[-2].token} is {np.exp(chat_completion.choices[0].logprobs.content[-2].logprob)}"
     )
+
 
 def run_chat(args, openai_client, elevenlabs_client):
     MM = MessageManager(
@@ -432,7 +434,6 @@ def run_chat(args, openai_client, elevenlabs_client):
                 break
 
             MM.add_user_message(text_input)
-
 
         chat_completion = openai_client.chat.completions.create(
             model=args.model,
