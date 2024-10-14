@@ -390,7 +390,7 @@ def is_on_topic(MM, current_node_schema, all_node_schemas):
         output: bool
 
     chat_completion = openai_client.beta.chat.completions.parse(
-        model="gpt-4o",
+        model="gpt-4o-mini",
         messages=conversational_msgs,
         response_format=Response1,
         logprobs=True,
