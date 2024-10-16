@@ -374,27 +374,29 @@ class MessageManager:
 
 
 def is_on_topic(MM, current_node_schema, all_node_schemas):
+    from chain import BACKGROUND
     conversational_msgs = MM.get_all_conversational_messages_of_current_node()
     conversational_msgs.append(
         {
             "role": "system",
             "content": (
-                "You are an AI-agent orchestration engine. Each AI agent is defined by an expectation"
-                " and a set of tools (i.e. functions). Given the prior conversation, determine if the"
-                " last user message can be fully handled by the current AI agent. Return true if"
-                " the last user message is a case covered by the current AI agent's expectation OR "
-                "tools. Return false if otherwise, meaning that we should explore letting another AI agent take over.\n\n"
-                "LAST USER MESSAGE:\n"
-                "```\n"
-                f"{conversational_msgs[-1]['content']}\n"
-                "```\n\n"
-                "EXPECTATION:\n"
-                "```\n"
-                f"{current_node_schema.node_prompt}\n"
-                "```\n\n"
-                "TOOLS:\n"
+                "You are an AI-agent orchestration engine. Each AI agent is defined by 2 unique properties: "
+                "expectation and a set of tools (i.e. functions). But agents share the same background info. Given the prior conversation, determine if the"
+                " last message (whether user's or the agent's (i.e. 'role' = 'assistant')) can be fully handled by the current AI agent's expectation OR tools. Specifically, return true if"
+                " the last message is a case strictly covered by the current AI agent's 2 properties, meaning that the case is either mentioned in the expectation or can be successfully addressed using the available tools. "
+                "Return false if otherwise, meaning that we should explore letting another AI agent take over.\n\n"
+                "# BACKGROUND\n\n"
+                f"{BACKGROUND}\n\n"
+                "# EXPECTATION\n\n"
+                "<!--- This section describes what the conversation will be about and what the agent is expected to do --->\n"
+                f"{current_node_schema.node_prompt}\n\n"
+                "# TOOLS:\n"
                 "```\n"
                 f"{json.dumps(current_node_schema.tool_fns)}\n"
+                "```\n\n"
+                "LAST MESSAGE:\n"
+                "```\n"
+                f"{conversational_msgs[-1]['content']}\n"
                 "```"
             ),
         }
