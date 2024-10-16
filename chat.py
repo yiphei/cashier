@@ -28,21 +28,6 @@ from logger import logger
 # Load environment variables from .env file
 load_dotenv()
 
-GLOBAL_SYSTEM_PROMPT = (
-    "You are a cashier working for the coffee shop Heaven Coffee. You are physically embedded inside the shop, "
-    "so you will interact with real in-person customers. There is a microphone that transcribes customer's speech to text, "
-    "and a speaker that outputs your text to speech. Because your responses will be converted to speech, "
-    "you must respond in a conversational way: natural, easy to understand when converted to speech, and generally concise and brief. DO NOT use "
-    "any rich text formatting like hashtags, bold, italic, bullet points, numbered points, headers, etc.\n\n"
-    "When responding to customers, DO NOT provide unrequested information. "
-    "If a response to a request is naturally long, then either ask claryfing questions to further refine the request, "
-    "summarize the response, or break down the response in many separate responses.\n\n"
-    "Minimize reliance on external knowledge. Always get information from the prompts and tools. "
-    "If they dont provide the information you need, just say you do not know.\n\n"
-    "Overall, be professional, polite, empathetic, and friendly."
-)
-
-
 class CustomJSONEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, BaseModel):
@@ -237,19 +222,14 @@ class MessageManager:
     }
 
     def __init__(
-        self, initial_system_prompt, initial_msg=None, output_system_prompt=False
+        self, output_system_prompt=False
     ):
-        self.messages = [{"role": "system", "content": initial_system_prompt}]
-        if initial_msg:
-            self.messages.append(initial_msg)
+        self.messages = []
         self.output_system_prompt = output_system_prompt
         self.list_index_tracker = ListIndexTracker()
         self.last_node_id = None
         self.tool_call_ids = []
         self.tool_return_schema = set()
-
-        for msg in self.messages:
-            self.print_msg(msg["role"], msg["content"])
 
     def add_message_dict(self, msg_dict, print_msg=True):
         self.messages.append(msg_dict)
@@ -471,7 +451,6 @@ def is_on_topic(MM, current_node_schema, all_node_schemas):
 
 def run_chat(args, openai_client, elevenlabs_client):
     MM = MessageManager(
-        GLOBAL_SYSTEM_PROMPT,
         output_system_prompt=args.output_system_prompt,
     )
 
