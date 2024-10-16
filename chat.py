@@ -7,6 +7,7 @@ from collections import defaultdict
 from collections.abc import Iterator
 from distutils.util import strtobool
 
+import numpy as np
 from colorama import Fore, Style
 from dotenv import load_dotenv  # Add this import
 from elevenlabs import ElevenLabs, Voice, VoiceSettings, stream
@@ -14,28 +15,18 @@ from openai import OpenAI
 from pydantic import BaseModel
 
 from audio import get_audio_input, save_audio_to_wav
-from chain import FROM_NODE_ID_TO_EDGE_SCHEMA, take_order_node_schema
+from chain import (
+    FROM_NODE_ID_TO_EDGE_SCHEMA,
+    confirm_order_node_schema,
+    take_order_node_schema,
+    terminal_order_node_schema,
+)
 from db_functions import FN_NAME_TO_FN, OPENAI_TOOLS_RETUN_DESCRIPTION, create_db_client
 from gui import remove_previous_line
 from logger import logger
 
 # Load environment variables from .env file
 load_dotenv()
-
-GLOBAL_SYSTEM_PROMPT = (
-    "You are a cashier working for the coffee shop Heaven Coffee, and you are physically embedded in it, "
-    "meaning you will interact with real in-person customers. There is a microphone that transcribes customer's speech to text, "
-    "and a speaker that outputs your text to speech. Because your responses will be converted to speech, "
-    "you must respond in a conversational way: natural and easy to understand when converted to speech. So do not use "
-    "any text formatting like hashtags, bold, italic, bullet points, etc.\n\n"
-    "Because you are conversing, keep your responses generally concise and brief, and "
-    "do not provide unrequested information. "
-    "If a response to a request is naturally long, then either ask claryfing questions to further refine the request, "
-    "or break down the response in many separate responses.\n\n"
-    "Overall, be professional, polite, empathetic, and friendly.\n\n"
-    "Lastly, minimize reliance on external knowledge. Always get information from the prompts and tools."
-    "If they dont provide the information you need, just say you do not know."
-)
 
 
 class CustomJSONEncoder(json.JSONEncoder):
@@ -195,6 +186,9 @@ class ListIndexTracker:
         self.idxs.append(idx)
         self.idx_to_pos[idx] = len(self.idxs) - 1
 
+    def get_idx(self, named_idx):
+        return self.named_idx_to_idx[named_idx]
+
     def pop_idx(self, named_idx):
         popped_idx = self.named_idx_to_idx.pop(named_idx)
         popped_idx_pos = self.idx_to_pos.pop(popped_idx)
@@ -211,8 +205,7 @@ class ListIndexTracker:
 
             self.named_idx_to_idx[curr_named_idx] = self.idxs[i]
             self.idx_to_named_idx.pop(curr_idx)
-            self.idx_to_named_idx[self.idxs[i]] = named_idx
-
+            self.idx_to_named_idx[self.idxs[i]] = curr_named_idx
         return popped_idx
 
 
@@ -229,18 +222,13 @@ class MessageManager:
         "assistant": Fore.BLUE,
     }
 
-    def __init__(
-        self, initial_system_prompt, initial_msg=None, output_system_prompt=False
-    ):
-        self.messages = [{"role": "system", "content": initial_system_prompt}]
-        if initial_msg:
-            self.messages.append(initial_msg)
+    def __init__(self, output_system_prompt=False):
+        self.messages = []
         self.output_system_prompt = output_system_prompt
         self.list_index_tracker = ListIndexTracker()
         self.last_node_id = None
-
-        for msg in self.messages:
-            self.print_msg(msg["role"], msg["content"])
+        self.tool_call_ids = []
+        self.tool_fn_return_names = set()
 
     def add_message_dict(self, msg_dict, print_msg=True):
         self.messages.append(msg_dict)
@@ -276,6 +264,8 @@ class MessageManager:
                 ],
             }
         )
+        self.list_index_tracker.add_idx(tool_call_id, len(self.messages) - 1)
+        self.tool_call_ids.append(tool_call_id)
 
     def add_tool_response_message(self, tool_call_id, tool_response):
         self.add_message_dict(
@@ -285,6 +275,7 @@ class MessageManager:
                 "tool_call_id": tool_call_id,
             }
         )
+        self.list_index_tracker.add_idx(tool_call_id + "return", len(self.messages) - 1)
 
     def add_tool_return_schema_message(self, tool_name, msg):
         if tool_name in self.list_index_tracker.named_idx_to_idx:
@@ -293,11 +284,38 @@ class MessageManager:
 
         self.add_system_message(msg)
         self.list_index_tracker.add_idx(tool_name, len(self.messages) - 1)
+        self.tool_fn_return_names.add(tool_name)
 
-    def add_node_system_message(self, node_id, msg):
+    def add_node_system_message(
+        self,
+        node_id,
+        msg,
+        remove_prev_tool_fn_return=None,
+        remove_prev_tool_calls=False,
+    ):
+        if remove_prev_tool_calls:
+            assert remove_prev_tool_fn_return is not False
+
         if self.last_node_id is not None:
             idx_to_remove = self.list_index_tracker.pop_idx(self.last_node_id)
             del self.messages[idx_to_remove]
+
+        if remove_prev_tool_fn_return is True or remove_prev_tool_calls:
+            for toll_return in self.tool_fn_return_names:
+                idx_to_remove = self.list_index_tracker.pop_idx(toll_return)
+                del self.messages[idx_to_remove]
+
+            self.tool_fn_return_names = set()
+
+        if remove_prev_tool_calls:
+            for tool_call_id in self.tool_call_ids:
+                idx_to_remove = self.list_index_tracker.pop_idx(tool_call_id)
+                del self.messages[idx_to_remove]
+
+                idx_to_remove = self.list_index_tracker.pop_idx(tool_call_id + "return")
+                del self.messages[idx_to_remove]
+
+            self.tool_call_ids = []
 
         self.add_system_message(msg)
         self.list_index_tracker.add_idx(node_id, len(self.messages) - 1)
@@ -341,10 +359,109 @@ class MessageManager:
             end=end,
         )
 
+    def is_conversational_msg(self, msg):
+        return msg["role"] == "user" or (
+            msg["role"] == "assistant" and not self.is_tool_message(msg)
+        )
+
+    def get_all_conversational_messages_of_current_node(self):
+        start_idx = self.list_index_tracker.get_idx(self.last_node_id)
+        return [
+            msg
+            for msg in self.messages[start_idx + 1 :]
+            if self.is_conversational_msg(msg)
+        ]
+
+
+def is_on_topic(MM, current_node_schema, all_node_schemas):
+    conversational_msgs = MM.get_all_conversational_messages_of_current_node()
+    conversational_msgs.append(
+        {
+            "role": "system",
+            "content": (
+                "You are an AI-agent orchestration engine. Each AI agent is defined by an expectation"
+                " and a set of tools (i.e. functions). Given the prior conversation, determine if the"
+                " last user message can be fully handled by the current AI agent. Return true if"
+                " the last user message is a case covered by the current AI agent's expectation OR "
+                "tools. Return false if otherwise, meaning that we should explore letting another AI agent take over.\n\n"
+                "LAST USER MESSAGE:\n"
+                "```\n"
+                f"{conversational_msgs[-1]['content']}\n"
+                "```\n\n"
+                "EXPECTATION:\n"
+                "```\n"
+                f"{current_node_schema.node_prompt}\n"
+                "```\n\n"
+                "TOOLS:\n"
+                "```\n"
+                f"{json.dumps(current_node_schema.tool_fns)}\n"
+                "```"
+            ),
+        }
+    )
+
+    class Response1(BaseModel):
+        output: bool
+
+    chat_completion = openai_client.beta.chat.completions.parse(
+        model="gpt-4o-mini",
+        messages=conversational_msgs,
+        response_format=Response1,
+        logprobs=True,
+        temperature=0,
+    )
+    is_on_topic = chat_completion.choices[0].message.parsed.output
+    prob = np.exp(chat_completion.choices[0].logprobs.content[-2].logprob)
+    logger.debug(f"IS_ON_TOPIC: {is_on_topic} with {prob}")
+    if not is_on_topic:
+        conversational_msgs.pop()
+        prompt = (
+            "You are an AI-agent orchestration engine. Each AI agent is defined by an expectation"
+            " and a set of tools (i.e. functions). An AI agent can handle a user message if it is "
+            "a case covered by the AI agent's expectation OR tools. "
+            "Given the prior conversation and a list of AI agents,"
+            " determine which agent can best handle the last user message. "
+            "Respond by returning the AI agent ID.\n\n"
+        )
+        for node_schema in all_node_schemas:
+            prompt += (
+                f"## AGENT ID: {node_schema.id}\n\n"
+                "EXPECTATION:\n"
+                "```\n"
+                f"{node_schema.node_prompt}\n"
+                "```\n\n"
+                "TOOLS:\n"
+                "```\n"
+                f"{json.dumps(node_schema.tool_fns)}\n"
+                "```\n\n"
+            )
+
+        prompt += (
+            "LAST USER MESSAGE:\n"
+            "```\n"
+            f"{conversational_msgs[-1]['content']}\n"
+            "```"
+        )
+        conversational_msgs.append({"role": "system", "content": prompt})
+
+        class Response2(BaseModel):
+            agent_id: int
+
+        chat_completion = openai_client.beta.chat.completions.parse(
+            model="gpt-4o",
+            messages=conversational_msgs,
+            response_format=Response2,
+            logprobs=True,
+            temperature=0,
+        )
+
+        agent_id = chat_completion.choices[0].message.parsed.agent_id
+        prob = np.exp(chat_completion.choices[0].logprobs.content[-2].logprob)
+        logger.debug(f"AGENT_ID: {agent_id} with {prob}")
+
 
 def run_chat(args, openai_client, elevenlabs_client):
     MM = MessageManager(
-        GLOBAL_SYSTEM_PROMPT,
         output_system_prompt=args.output_system_prompt,
     )
 
@@ -374,6 +491,16 @@ def run_chat(args, openai_client, elevenlabs_client):
                 break
 
             MM.add_user_message(text_input)
+            is_on_topic(
+                MM,
+                current_node_schema,
+                [
+                    take_order_node_schema,
+                    confirm_order_node_schema,
+                    terminal_order_node_schema,
+                ],
+            )
+
         chat_completion = openai_client.chat.completions.create(
             model=args.model,
             messages=MM.messages,

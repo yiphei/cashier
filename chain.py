@@ -1,7 +1,7 @@
 from typing import Optional
 
 from openai import pydantic_function_tool
-from pydantic import BaseModel, Field, create_model
+from pydantic import BaseModel, ConfigDict, Field, create_model
 
 from db_functions import OPENAI_TOOL_NAME_TO_TOOL_DEF, Order
 
@@ -91,31 +91,79 @@ class NodeSchema:
 
     def generate_system_prompt(self, has_input, **kwargs):
         NODE_PROMPT = (
-            "You are now in the next stage of the conversation. The description and main expectation for this stage is the following:\n"
-            "```\n"
-            "{node_prompt}\n"
-            "```\n\n"
+            "You are a cashier working for the coffee shop Heaven Coffee. You are physically embedded inside the shop, "
+            "so you will interact with real in-person customers. There is a microphone that transcribes customer's speech to text, "
+            "and a speaker that outputs your text to speech.\n\n"
+            "# EXPECTATION\n\n"
+            "<!--- This section describes what the conversation will be about and what you are expected to do --->\n"
+            "{node_prompt}\n\n"
+            "# GUIDELINES\n\n"
+            "<!--- This section enumerates important guidelines on how you should behave. These must be strictly followed --->\n"
+            "## Response\n\n"
+            "- because your responses will be converted to speech, "
+            "you must respond in a conversational way: natural, easy to understand when converted to speech, and generally concise and brief (no long responses).\n"
+            "- DO NOT use any rich text formatting like hashtags, bold, italic, bullet points, numbered points, headers, etc.\n"
+            "- When responding to customers, DO NOT provide unrequested information.\n"
+            "- If a response to a request is naturally long, then either ask claryfing questions to further refine the request, "
+            "summarize the response, or break down the response in many separate responses.\n"
+            "- Overall, try to be professional, polite, empathetic, and friendly\n\n"
+            "## Tools and state\n\n"
+            "- Minimize reliance on external knowledge. Always retrieve information from the prompts and tools. "
+            "If they dont provide the information you need, just say you do not know.\n"
+            "- Among the tools provided, there are state update functions, whose names start with `update_state_<field>` and where <field> is a state field. You must update the state object whenever applicable "
+            "and as soon as possible. You cannot proceed to the next stage of the conversation without updating the state.\n"
+            # "- you must not assume that tools and state updates used before this message are still available.\n"
+            "- you must not state/mention that you can/will perform an action if there are no tools (including state updates) associated with that action.\n"
+            "- if you need to perform an action, you can only state to the customer that you performed it after the associated tool (including state update) calls have been successfull.\n"
+            "- state updates can only happen in response to new messages, not messages prior to this message\n\n"
+            # "- you must use tools whenever possible and as soon as possible. "
+            # "This is because there usually is an associated tool for every user input and that tool will help you with the user input. "
+            # "When in doubt, use the tools.\n"
+            "## General\n\n"
+            "- think very hard before you respond.\n"
+            "- if there are messages before this message, consider those as part of the current conversation but treat them as references only.\n"
+            "- you must decline to do anything that is not explicitly covered by the EXPECTATION and IMPORTANT NOTES section.\n\n"
         )
         if has_input:
             NODE_PROMPT += (
-                "There is an input to this stage. It contains "
-                "valuable information that help you accomplish the main expectation. The input is the following in JSON format:\n"
+                "# INPUT\n\n"
+                "<!--- This section provides the input to the conversation. The input contains valuable information that help you accomplish the expectation stated above. "
+                "You will be provided both the input (in JSON format) and the input's JSON schema --->\n"
+                "INPUT:\n"
                 "```\n"
                 "{node_input}\n"
                 "```\n"
-                "And the input's JSON schema is:\n"
+                "INPUT JSON SCHEMA:\n"
                 "```\n"
                 "{node_input_json_schema}\n"
                 "```\n\n"
             )
 
-        NODE_PROMPT += (
-            "During this stage, you must use function calls whenever possible and as soon as possible. "
-            "This is because there usually is an associated function for every user input and that function will help you with the user input. "
-            "When in doubt, use the function/s. In conjunction, you must update the state object whenever possible. "
-            "There is a specific update function for each state field, and all state update function names start with `update_state_*`. "
-            "You cannot proceed to the next stage without updating the state."
-        )
+        # NODE_PROMPT += (
+        #     "# IMPORTANT NOTES\n\n"
+        #     "Treat these notes with the utmost importance:\n"
+        #     "- because your responses will be converted to speech, "
+        #     "you must respond in a conversational way: natural, easy to understand when converted to speech, and generally concise and brief\n"
+        #     "- DO NOT use any rich text formatting like hashtags, bold, italic, bullet points, numbered points, headers, etc.\n"
+        #     "- When responding to customers, DO NOT provide unrequested information.\n"
+        #     "- If a response to a request is naturally long, then either ask claryfing questions to further refine the request, "
+        #     "summarize the response, or break down the response in many separate responses.\n"
+        #     "- Minimize reliance on external knowledge. Always get information from the prompts and tools."
+        #     "If they dont provide the information you need, just say you do not know.\n"
+        #     "- Overall, be professional, polite, empathetic, and friendly.\n"
+        #     "- if there are messages before this stage, use them as a reference ONLY.\n"
+        #     "- you must decline to do anything that is not explicitly covered by EXPECTATION or BACKGROUND.\n"
+        #     "- you must not assume that tools and state updates used previously are still available.\n"
+        #     "- you must not state/mention that you can/will perform an action if there are no tools or state updates associated with that action.\n"
+        #     "- if you need to perform an action, you can only state to the customer that you performed it after the associated tool and/or state update calls have been successfull.\n"
+        #     "- you must update the state object whenever possible. "
+        #     "There is a specific update tool for each state field, and all state update tool names start with `update_state_*`. "
+        #     "You cannot proceed to the next stage without updating the state.\n"
+        #     "- state updates should only happen in response to new messages, not messages prior to this stage"
+        #     "- you must use tools whenever possible and as soon as possible. "
+        #     "This is because there usually is an associated tool for every user input and that tool will help you with the user input. "
+        #     "When in doubt, use the tools.\n"
+        # )
 
         return NODE_PROMPT.format(**kwargs)
 
@@ -152,7 +200,11 @@ class EdgeSchema:
 ## Chain ##
 
 
-class TakeOrderState(BaseModel):
+class BaseStateModel(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+
+class TakeOrderState(BaseStateModel):
     order: Optional[Order] = None
     has_finished_ordering: bool = Field(
         description=(
@@ -179,8 +231,8 @@ take_order_node_schema = NodeSchema(
         " you must restate the order back to the customer to ensure that it is correct. For the option values,"
         " only state those that were explicitly specified by the customer, so do not state default options"
         " assumed for the size but do state any other option, even default option values that were specified by the customer.\n\n"
-        "If they are not immediately ready to order after the greeting, you may engage in some"
-        " small talk but you need to steer the conversation back to ordering after 4"
+        "Lastly, if they are not immediately ready to order after the greeting, you can also engage in some"
+        " small talk about any topic, but you need to steer the conversation back to ordering after some"
         " back-and-forths."
     ),
     tool_fns=[
@@ -193,7 +245,7 @@ take_order_node_schema = NodeSchema(
 )
 
 
-class ConfirmOrderState(BaseModel):
+class ConfirmOrderState(BaseStateModel):
     has_confirmed_order: bool = Field(
         description="whether the customer has confirmed their order", default=False
     )
@@ -201,7 +253,7 @@ class ConfirmOrderState(BaseModel):
 
 confirm_order_node_schema = NodeSchema(
     node_prompt=(
-        "Your main job is to confirm the order with the customer. You do this by"
+        "Confirm the order with the customer. You do this by"
         " repeating the order back to them and get their confirmation."
     ),
     tool_fns=[],
@@ -218,7 +270,7 @@ take_to_confirm_edge_schema = EdgeSchema(
 )
 
 
-class TerminalOrderState(BaseModel):
+class TerminalOrderState(BaseStateModel):
     has_said_goodbye: bool = Field(
         description="whether the customer has said goodbye", default=False
     )
