@@ -6,6 +6,12 @@ from pydantic import BaseModel, ConfigDict, Field, create_model
 from db_functions import OPENAI_TOOL_NAME_TO_TOOL_DEF, Order
 
 
+BACKGROUND = (
+            "You are a cashier working for the coffee shop Heaven Coffee. You are physically embedded inside the shop, "
+            "so you will interact with real in-person customers. There is a microphone that transcribes customer's speech to text, "
+            "and a speaker that outputs your text to speech."
+)
+
 class NodeSchema:
     _counter = 0
 
@@ -91,9 +97,8 @@ class NodeSchema:
 
     def generate_system_prompt(self, has_input, **kwargs):
         NODE_PROMPT = (
-            "You are a cashier working for the coffee shop Heaven Coffee. You are physically embedded inside the shop, "
-            "so you will interact with real in-person customers. There is a microphone that transcribes customer's speech to text, "
-            "and a speaker that outputs your text to speech.\n\n"
+            BACKGROUND + 
+            "\n\n"
             "# EXPECTATION\n\n"
             "<!--- This section describes what the conversation will be about and what you are expected to do --->\n"
             "{node_prompt}\n\n"
