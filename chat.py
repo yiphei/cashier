@@ -228,7 +228,7 @@ class MessageManager:
         self.list_index_tracker = ListIndexTracker()
         self.last_node_id = None
         self.tool_call_ids = []
-        self.tool_return_schema = set()
+        self.tool_fn_return_names = set()
 
     def add_message_dict(self, msg_dict, print_msg=True):
         self.messages.append(msg_dict)
@@ -284,12 +284,22 @@ class MessageManager:
 
         self.add_system_message(msg)
         self.list_index_tracker.add_idx(tool_name, len(self.messages) - 1)
-        self.tool_return_schema.add(tool_name)
+        self.tool_fn_return_names.add(tool_name)
 
-    def add_node_system_message(self, node_id, msg, remove_prev_tool_calls=False):
+    def add_node_system_message(self, node_id, msg, remove_prev_tool_fn_return=None, remove_prev_tool_calls=False):
+        if remove_prev_tool_calls:
+            assert remove_prev_tool_fn_return is not False
+
         if self.last_node_id is not None:
             idx_to_remove = self.list_index_tracker.pop_idx(self.last_node_id)
             del self.messages[idx_to_remove]
+
+        if remove_prev_tool_fn_return is True or remove_prev_tool_calls:
+            for toll_return in self.tool_fn_return_names:
+                idx_to_remove = self.list_index_tracker.pop_idx(toll_return)
+                del self.messages[idx_to_remove]
+
+            self.tool_fn_return_names = set()
 
         if remove_prev_tool_calls:
             for tool_call_id in self.tool_call_ids:
@@ -298,13 +308,9 @@ class MessageManager:
 
                 idx_to_remove = self.list_index_tracker.pop_idx(tool_call_id + "return")
                 del self.messages[idx_to_remove]
-
-            for toll_return in self.tool_return_schema:
-                idx_to_remove = self.list_index_tracker.pop_idx(toll_return)
-                del self.messages[idx_to_remove]
-
+            
             self.tool_call_ids = []
-            self.tool_return_schema = set()
+
         self.add_system_message(msg)
         self.list_index_tracker.add_idx(node_id, len(self.messages) - 1)
         self.last_node_id = node_id
