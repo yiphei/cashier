@@ -286,7 +286,13 @@ class MessageManager:
         self.list_index_tracker.add_idx(tool_name, len(self.messages) - 1)
         self.tool_fn_return_names.add(tool_name)
 
-    def add_node_system_message(self, node_id, msg, remove_prev_tool_fn_return=None, remove_prev_tool_calls=False):
+    def add_node_system_message(
+        self,
+        node_id,
+        msg,
+        remove_prev_tool_fn_return=None,
+        remove_prev_tool_calls=False,
+    ):
         if remove_prev_tool_calls:
             assert remove_prev_tool_fn_return is not False
 
@@ -308,7 +314,7 @@ class MessageManager:
 
                 idx_to_remove = self.list_index_tracker.pop_idx(tool_call_id + "return")
                 del self.messages[idx_to_remove]
-            
+
             self.tool_call_ids = []
 
         self.add_system_message(msg)
