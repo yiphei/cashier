@@ -28,6 +28,7 @@ from logger import logger
 # Load environment variables from .env file
 load_dotenv()
 
+
 class CustomJSONEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, BaseModel):
@@ -221,9 +222,7 @@ class MessageManager:
         "assistant": Fore.BLUE,
     }
 
-    def __init__(
-        self, output_system_prompt=False
-    ):
+    def __init__(self, output_system_prompt=False):
         self.messages = []
         self.output_system_prompt = output_system_prompt
         self.list_index_tracker = ListIndexTracker()

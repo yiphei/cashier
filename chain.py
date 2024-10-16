@@ -122,7 +122,6 @@ class NodeSchema:
             "## General\n\n"
             "- if there are messages before this message, consider those as part of the current conversation but treat them as references only.\n"
             "- you must decline to do anything that is not explicitly covered by the EXPECTATION and IMPORTANT NOTES section.\n\n"
-
         )
         if has_input:
             NODE_PROMPT += (
@@ -249,6 +248,7 @@ class ConfirmOrderState(BaseStateModel):
     has_confirmed_order: bool = Field(
         description="whether the customer has confirmed their order", default=False
     )
+
 
 confirm_order_node_schema = NodeSchema(
     node_prompt=(
