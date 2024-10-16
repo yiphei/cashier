@@ -311,7 +311,7 @@ class MessageManager:
         if self.last_node_id is not None:
             idx_to_remove = self.list_index_tracker.pop_idx(self.last_node_id)
             del self.messages[idx_to_remove]
-        
+
         if remove_prev_tool_calls:
             for tool_call_id in self.tool_call_ids:
                 idx_to_remove = self.list_index_tracker.pop_idx(tool_call_id)
@@ -323,7 +323,7 @@ class MessageManager:
             for toll_return in self.tool_return_schema:
                 idx_to_remove = self.list_index_tracker.pop_idx(toll_return)
                 del self.messages[idx_to_remove]
-        
+
             self.tool_call_ids = []
             self.tool_return_schema = set()
         self.add_system_message(msg)

@@ -99,8 +99,8 @@ class NodeSchema:
         if has_input:
             NODE_PROMPT += (
                 "# INPUT\n\n"
-                "<!--- This section provides the input to the new stage. The input contains valuable information that help you accomplish the expectation stated above. " 
-                "You will be provided both the input (in JSON format) and the input's JSON schema --->\n" 
+                "<!--- This section provides the input to the new stage. The input contains valuable information that help you accomplish the expectation stated above. "
+                "You will be provided both the input (in JSON format) and the input's JSON schema --->\n"
                 "INPUT:\n"
                 "```\n"
                 "{node_input}\n"
