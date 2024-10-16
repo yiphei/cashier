@@ -120,6 +120,7 @@ class NodeSchema:
             # "This is because there usually is an associated tool for every user input and that tool will help you with the user input. "
             # "When in doubt, use the tools.\n"
             "## General\n\n"
+            "- think very hard before you respond.\n"
             "- if there are messages before this message, consider those as part of the current conversation but treat them as references only.\n"
             "- you must decline to do anything that is not explicitly covered by the EXPECTATION and IMPORTANT NOTES section.\n\n"
         )
