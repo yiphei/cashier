@@ -219,8 +219,7 @@ class ListIndexTracker:
 
             self.named_idx_to_idx[curr_named_idx] = self.idxs[i]
             self.idx_to_named_idx.pop(curr_idx)
-            self.idx_to_named_idx[self.idxs[i]] = named_idx
-
+            self.idx_to_named_idx[self.idxs[i]] = curr_named_idx
         return popped_idx
 
 
@@ -246,6 +245,8 @@ class MessageManager:
         self.output_system_prompt = output_system_prompt
         self.list_index_tracker = ListIndexTracker()
         self.last_node_id = None
+        self.tool_call_ids = []
+        self.tool_return_schema = set()
 
         for msg in self.messages:
             self.print_msg(msg["role"], msg["content"])
@@ -284,6 +285,8 @@ class MessageManager:
                 ],
             }
         )
+        self.list_index_tracker.add_idx(tool_call_id, len(self.messages) - 1)
+        self.tool_call_ids.append(tool_call_id)
 
     def add_tool_response_message(self, tool_call_id, tool_response):
         self.add_message_dict(
@@ -293,6 +296,7 @@ class MessageManager:
                 "tool_call_id": tool_call_id,
             }
         )
+        self.list_index_tracker.add_idx(tool_call_id + "return", len(self.messages) - 1)
 
     def add_tool_return_schema_message(self, tool_name, msg):
         if tool_name in self.list_index_tracker.named_idx_to_idx:
@@ -301,12 +305,27 @@ class MessageManager:
 
         self.add_system_message(msg)
         self.list_index_tracker.add_idx(tool_name, len(self.messages) - 1)
+        self.tool_return_schema.add(tool_name)
 
-    def add_node_system_message(self, node_id, msg):
+    def add_node_system_message(self, node_id, msg, remove_prev_tool_calls=False):
         if self.last_node_id is not None:
             idx_to_remove = self.list_index_tracker.pop_idx(self.last_node_id)
             del self.messages[idx_to_remove]
+        
+        if remove_prev_tool_calls:
+            for tool_call_id in self.tool_call_ids:
+                idx_to_remove = self.list_index_tracker.pop_idx(tool_call_id)
+                del self.messages[idx_to_remove]
 
+                idx_to_remove = self.list_index_tracker.pop_idx(tool_call_id + "return")
+                del self.messages[idx_to_remove]
+
+            for toll_return in self.tool_return_schema:
+                idx_to_remove = self.list_index_tracker.pop_idx(toll_return)
+                del self.messages[idx_to_remove]
+        
+            self.tool_call_ids = []
+            self.tool_return_schema = set()
         self.add_system_message(msg)
         self.list_index_tracker.add_idx(node_id, len(self.messages) - 1)
         self.last_node_id = node_id

@@ -113,14 +113,17 @@ class NodeSchema:
 
         NODE_PROMPT += (
             "# IMPORTANT NOTES\n\n"
-            "- you must use tools whenever possible and as soon as possible. "
-            "This is because there usually is an associated tool for every user input and that tool will help you with the user input. "
-            "When in doubt, use the tools.\n"
+            "- use the messages before this new stage as a reference.\n"
+            "- you must not assume that tools and state updates used previously are still available.\n"
+            "- you must not state/mention that you can/will perform an action if there are no tools or state updates associated with that action.\n"
+            "- if you need to perform an action, you can only state to the customer that you performed it after the associated tool and/or state update calls have been successfull.\n"
             "- you must update the state object whenever possible. "
             "There is a specific update tool for each state field, and all state update tool names start with `update_state_*`. "
             "You cannot proceed to the next stage without updating the state.\n"
-            "- you must not state any action that you can perform if there are no associated tools or state updates.\n"
-            "- if you need to perform an action, you can only state to the customer that you performed it after the associated tool and/or state update calls have been successfull."
+            "- state updates should only happen in response to new messages, not messages prior to this stage"
+            "- you must use tools whenever possible and as soon as possible. "
+            "This is because there usually is an associated tool for every user input and that tool will help you with the user input. "
+            "When in doubt, use the tools.\n"
         )
 
         return NODE_PROMPT.format(**kwargs)
