@@ -20,9 +20,7 @@ class Model:
         "gpt-4o": ModelProvider.OPENAI,
         "claude-3-5-sonnet-20240620": ModelProvider.ANTHROPIC,
     }
-    alias_to_model_name = {
-        "claude-3.5": "claude-3-5-sonnet-20240620"
-    }
+    alias_to_model_name = {"claude-3.5": "claude-3-5-sonnet-20240620"}
 
     def __init__(self):
         self.oai_client = OpenAI()
@@ -100,7 +98,9 @@ class Model:
         if not tools:
             args.pop("tools")
 
-        return AnthropicModelOutput(self.anthropic_client.messages.create(**args), stream)
+        return AnthropicModelOutput(
+            self.anthropic_client.messages.create(**args), stream
+        )
 
 
 class FunctionCall(BaseModel):
@@ -228,15 +228,16 @@ class OAIModelOutput(ModelOutput):
                 )
         return function_calls
 
+
 class AnthropicModelOutput(ModelOutput):
     def get_message(self):
         self.msg_content = self.output_obj.content[0].text
         return self.msg_content
-    
+
     def has_tool_call(self):
         # TODO
         return False
-    
+
     def stream_message(self):
         has_message_started = False
         self.msg_content = ""
@@ -244,7 +245,7 @@ class AnthropicModelOutput(ModelOutput):
             while True:
                 chunk = next(self.output_obj)  # Get the next chunk
                 chunk_type = chunk.type
-                if chunk_type == 'content_block_start':
+                if chunk_type == "content_block_start":
                     has_message_started = True
                     continue
                 elif chunk_type == "content_block_stop":
