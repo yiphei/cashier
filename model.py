@@ -133,6 +133,8 @@ class ModelOutput:
             first_chunk = self._get_first_usable_chunk()
             self.current_chunk = first_chunk
             self._has_tool_call = self._has_function_call_id(first_chunk)
+        else:
+            self._has_tool_call = bool(self.output_obj.choices[0].message.tool_calls)
 
         return self._has_tool_call
 
@@ -159,34 +161,38 @@ class ModelOutput:
 
     def extract_fn_calls(self):
         function_calls = []
-
-        for chunk in itertools.chain([self.current_chunk], self.output_obj):
-            finish_reason = chunk.choices[0].finish_reason
-            if finish_reason is not None:
-                break
-            elif self._has_function_call_id(chunk):
-                if self.current_chunk != chunk:
-                    function_calls.append(
-                        FunctionCall(
-                            function_name=function_name,  # noqa
-                            tool_call_id=tool_call_id,  # noqa
-                            function_args_json=function_args_json,  # noqa
+        if self.is_stream:
+            for chunk in itertools.chain([self.current_chunk], self.output_obj):
+                finish_reason = chunk.choices[0].finish_reason
+                if finish_reason is not None:
+                    break
+                elif self._has_function_call_id(chunk):
+                    if self.current_chunk != chunk:
+                        function_calls.append(
+                            FunctionCall(
+                                function_name=function_name,  # noqa
+                                tool_call_id=tool_call_id,  # noqa
+                                function_args_json=function_args_json,  # noqa
+                            )
                         )
+
+                    function_name = chunk.choices[0].delta.tool_calls[0].function.name
+                    tool_call_id = chunk.choices[0].delta.tool_calls[0].id
+                    function_args_json = ""
+                else:
+                    function_args_json += (
+                        chunk.choices[0].delta.tool_calls[0].function.arguments
                     )
 
-                function_name = chunk.choices[0].delta.tool_calls[0].function.name
-                tool_call_id = chunk.choices[0].delta.tool_calls[0].id
-                function_args_json = ""
-            else:
-                function_args_json += (
-                    chunk.choices[0].delta.tool_calls[0].function.arguments
+            function_calls.append(
+                FunctionCall(
+                    function_name=function_name,
+                    tool_call_id=tool_call_id,
+                    function_args_json=function_args_json,
                 )
-
-        function_calls.append(
-            FunctionCall(
-                function_name=function_name,
-                tool_call_id=tool_call_id,
-                function_args_json=function_args_json,
             )
-        )
+        else:
+            tool_calls = self.output_obj.choices[0].message.tool_calls
+            for tool_call in tool_calls:
+                function_calls.append(FunctionCall(function_name=tool_call.function.name, tool_call_id=tool_call.id, function_args_json=tool_call.function.arguments))
         return function_calls
