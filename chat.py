@@ -1,17 +1,14 @@
 import argparse
-import itertools
 import json
 import os
 import tempfile
 from collections import defaultdict
-from collections.abc import Iterator
 from distutils.util import strtobool
+from types import GeneratorType
 
-import numpy as np
 from colorama import Fore, Style
 from dotenv import load_dotenv  # Add this import
 from elevenlabs import ElevenLabs, Voice, VoiceSettings, stream
-from openai import OpenAI
 from pydantic import BaseModel
 
 from audio import get_audio_input, save_audio_to_wav
@@ -24,6 +21,7 @@ from chain import (
 from db_functions import FN_NAME_TO_FN, OPENAI_TOOLS_RETUN_DESCRIPTION, create_db_client
 from gui import remove_previous_line
 from logger import logger
+from model import Model
 
 # Load environment variables from .env file
 load_dotenv()
@@ -40,30 +38,6 @@ class CustomJSONEncoder(json.JSONEncoder):
         elif isinstance(obj, (str, int, float, bool, type(None))):
             return obj
         return super().default(obj)
-
-
-class ChatCompletionIterator(Iterator):
-    def __init__(self, chat_stream):
-        self.chat_stream = chat_stream
-        self.full_msg = ""  # Initialize full message
-
-    def __iter__(self):
-        return self
-
-    def __next__(self):
-        try:
-            chunk = next(self.chat_stream)  # Get the next chunk
-            msg = chunk.choices[0].delta.content
-            finish_reason = chunk.choices[0].finish_reason
-            if finish_reason is not None:
-                raise StopIteration
-            if msg is None:
-                logger.warning(f"msg is None with chunk {chunk}")
-                raise StopIteration
-            self.full_msg += msg  # Append the message to full_msg
-            return msg  # Return the message
-        except StopIteration:
-            raise StopIteration  # Signal end of iteration
 
 
 def get_system_return_type_prompt(fn_name):
@@ -101,65 +75,6 @@ def get_speech_from_text(text_iterator, elabs_client):
         optimize_streaming_latency=3,
     )
     stream(audio)
-
-
-class FunctionCall(BaseModel):
-    function_name: str
-    tool_call_id: str
-    function_args_json: str
-
-
-def get_first_usable_chunk(chat_stream):
-    chunk = next(chat_stream)
-    while not (has_function_call_id(chunk) or has_msg_content(chunk)):
-        chunk = next(chat_stream)
-    return chunk
-
-
-def has_msg_content(chunk):
-    return chunk.choices[0].delta.content is not None
-
-
-def has_function_call_id(chunk):
-    return (
-        chunk.choices[0].delta.tool_calls is not None
-        and chunk.choices[0].delta.tool_calls[0].id is not None
-    )
-
-
-def extract_fns_from_chat_stream(chat_stream, first_chunk):
-    function_calls = []
-
-    for chunk in itertools.chain([first_chunk], chat_stream):
-        finish_reason = chunk.choices[0].finish_reason
-        if finish_reason is not None:
-            break
-        elif has_function_call_id(chunk):
-            if first_chunk != chunk:
-                function_calls.append(
-                    FunctionCall(
-                        function_name=function_name,  # noqa
-                        tool_call_id=tool_call_id,  # noqa
-                        function_args_json=function_args_json,  # noqa
-                    )
-                )
-
-            function_name = chunk.choices[0].delta.tool_calls[0].function.name
-            tool_call_id = chunk.choices[0].delta.tool_calls[0].id
-            function_args_json = ""
-        else:
-            function_args_json += (
-                chunk.choices[0].delta.tool_calls[0].function.arguments
-            )
-
-    function_calls.append(
-        FunctionCall(
-            function_name=function_name,
-            tool_call_id=tool_call_id,
-            function_args_json=function_args_json,
-        )
-    )
-    return function_calls
 
 
 def get_user_input(use_audio_input, openai_client):
@@ -327,21 +242,22 @@ class MessageManager:
         )
 
     def read_chat_stream(self, chat_stream):
-        self.print_msg(role="assistant", msg=None, end="")
-        try:
-            while True:
-                msg_chunk = next(chat_stream)
+        if isinstance(chat_stream, GeneratorType):
+            self.print_msg(role="assistant", msg=None, end="")
+            full_msg = ""
+            for msg_chunk in chat_stream:
                 self.print_msg(
                     role="assistant", msg=msg_chunk, add_role_prefix=False, end=""
                 )
-        except StopIteration:
-            pass
+                full_msg += msg_chunk
 
-        self.add_message_dict(
-            {"role": "assistant", "content": chat_stream.full_msg},
-            print_msg=False,
-        )
-        print("\n\n")
+            self.add_message_dict(
+                {"role": "assistant", "content": full_msg},
+                print_msg=False,
+            )
+            print("\n\n")
+        else:
+            self.add_assistant_message(chat_stream)
 
     def get_role_prefix(self, role):
         return f"{Style.BRIGHT}{self.API_ROLE_TO_PREFIX[role]}: {Style.NORMAL}"
@@ -373,7 +289,7 @@ class MessageManager:
         ]
 
 
-def is_on_topic(MM, current_node_schema, all_node_schemas):
+def is_on_topic(model, MM, current_node_schema, all_node_schemas):
     conversational_msgs = MM.get_all_conversational_messages_of_current_node()
     conversational_msgs.append(
         {
@@ -403,15 +319,15 @@ def is_on_topic(MM, current_node_schema, all_node_schemas):
     class Response1(BaseModel):
         output: bool
 
-    chat_completion = openai_client.beta.chat.completions.parse(
-        model="gpt-4o-mini",
+    chat_completion = model.chat(
+        model_name="gpt-4o-mini",
         messages=conversational_msgs,
         response_format=Response1,
         logprobs=True,
         temperature=0,
     )
-    is_on_topic = chat_completion.choices[0].message.parsed.output
-    prob = np.exp(chat_completion.choices[0].logprobs.content[-2].logprob)
+    is_on_topic = chat_completion.get_message_prop("output")
+    prob = chat_completion.get_prob(-2)
     logger.debug(f"IS_ON_TOPIC: {is_on_topic} with {prob}")
     if not is_on_topic:
         conversational_msgs.pop()
@@ -447,20 +363,20 @@ def is_on_topic(MM, current_node_schema, all_node_schemas):
         class Response2(BaseModel):
             agent_id: int
 
-        chat_completion = openai_client.beta.chat.completions.parse(
-            model="gpt-4o",
+        chat_completion = model.chat(
+            model_name="gpt-4o",
             messages=conversational_msgs,
             response_format=Response2,
             logprobs=True,
             temperature=0,
         )
 
-        agent_id = chat_completion.choices[0].message.parsed.agent_id
-        prob = np.exp(chat_completion.choices[0].logprobs.content[-2].logprob)
+        agent_id = chat_completion.get_message_prop("agent_id")
+        prob = chat_completion.get_prob(-2)
         logger.debug(f"AGENT_ID: {agent_id} with {prob}")
 
 
-def run_chat(args, openai_client, elevenlabs_client):
+def run_chat(args, model, elevenlabs_client):
     MM = MessageManager(
         output_system_prompt=args.output_system_prompt,
     )
@@ -484,7 +400,7 @@ def run_chat(args, openai_client, elevenlabs_client):
 
         if need_user_input:
             # Read user input from stdin
-            text_input = get_user_input(args.audio_input, openai_client)
+            text_input = get_user_input(args.audio_input, model.oai_client)
             # If user types 'exit', break the loop and end the program
             if text_input.lower() == "exit":
                 print("Exiting chatbot. Goodbye!")
@@ -492,6 +408,7 @@ def run_chat(args, openai_client, elevenlabs_client):
 
             MM.add_user_message(text_input)
             is_on_topic(
+                model,
                 MM,
                 current_node_schema,
                 [
@@ -501,26 +418,26 @@ def run_chat(args, openai_client, elevenlabs_client):
                 ],
             )
 
-        chat_completion = openai_client.chat.completions.create(
-            model=args.model,
+        chat_completion = model.chat(
+            model_name=args.model,
             messages=MM.messages,
             tools=current_node_schema.tool_fns,
-            stream=True,
+            stream=args.stream,
         )
 
-        first_chunk = get_first_usable_chunk(chat_completion)
-        is_tool_call = has_function_call_id(first_chunk)
+        has_tool_call = chat_completion.has_tool_call()
 
-        if not is_tool_call:
-            chat_stream_iterator = ChatCompletionIterator(chat_completion)
+        if not has_tool_call:
             if args.audio_output:
-                get_speech_from_text(chat_stream_iterator, elevenlabs_client)
-                MM.add_assistant_message(chat_stream_iterator.full_msg)
+                get_speech_from_text(
+                    chat_completion.get_or_stream_message(), elevenlabs_client
+                )
+                MM.add_assistant_message(chat_completion.msg_content)
             else:
-                MM.read_chat_stream(chat_stream_iterator)
+                MM.read_chat_stream(chat_completion.get_or_stream_message())
             need_user_input = True
-        elif is_tool_call:
-            function_calls = extract_fns_from_chat_stream(chat_completion, first_chunk)
+        elif has_tool_call:
+            function_calls = chat_completion.extract_fn_calls()
 
             for function_call in function_calls:
                 function_args = json.loads(function_call.function_args_json)
@@ -604,9 +521,14 @@ if __name__ == "__main__":
         type=lambda v: bool(strtobool(v)),
         default=True,
     )
+    parser.add_argument(
+        "--stream",
+        type=lambda v: bool(strtobool(v)),
+        default=True,
+    )
     args = parser.parse_args()
 
-    openai_client = OpenAI()
+    model = Model()
     elevenlabs_client = ElevenLabs(
         api_key=os.getenv("ELEVENLABS_API_KEY"),
     )
@@ -614,4 +536,4 @@ if __name__ == "__main__":
 
     if not args.enable_logging:
         logger.disabled = True
-    run_chat(args, openai_client, elevenlabs_client)
+    run_chat(args, model, elevenlabs_client)
