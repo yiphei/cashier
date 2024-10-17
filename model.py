@@ -136,7 +136,7 @@ class ModelOutput:
 
         return self._has_tool_call
 
-    def iter_messages(self):
+    def iter_message(self):
         self.msg_content = ""
         try:
             while True:
@@ -152,6 +152,10 @@ class ModelOutput:
                 yield msg  # Return the message
         except StopIteration:
             pass  # Signal end of iteration
+
+    def get_message(self):
+        self.msg_content = self.output_obj.choices[0].message.content
+        return self.msg_content
 
     def extract_fn_calls(self):
         function_calls = []
