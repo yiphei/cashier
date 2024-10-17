@@ -324,9 +324,7 @@ def is_on_topic(model, MM, current_node_schema, all_node_schemas):
         temperature=0,
     )
     is_on_topic = chat_completion.output_obj.choices[0].message.parsed.output
-    prob = np.exp(
-        chat_completion.output_obj.choices[0].logprobs.content[-2].logprob
-    )
+    prob = np.exp(chat_completion.output_obj.choices[0].logprobs.content[-2].logprob)
     logger.debug(f"IS_ON_TOPIC: {is_on_topic} with {prob}")
     if not is_on_topic:
         conversational_msgs.pop()
