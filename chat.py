@@ -323,9 +323,9 @@ def is_on_topic(model, MM, current_node_schema, all_node_schemas):
         logprobs=True,
         temperature=0,
     )
-    is_on_topic = chat_completion.completion_obj.choices[0].message.parsed.output
+    is_on_topic = chat_completion.output_obj.choices[0].message.parsed.output
     prob = np.exp(
-        chat_completion.completion_obj.choices[0].logprobs.content[-2].logprob
+        chat_completion.output_obj.choices[0].logprobs.content[-2].logprob
     )
     logger.debug(f"IS_ON_TOPIC: {is_on_topic} with {prob}")
     if not is_on_topic:
@@ -370,9 +370,9 @@ def is_on_topic(model, MM, current_node_schema, all_node_schemas):
             temperature=0,
         )
 
-        agent_id = chat_completion.completion_obj.choices[0].message.parsed.agent_id
+        agent_id = chat_completion.output_obj.choices[0].message.parsed.agent_id
         prob = np.exp(
-            chat_completion.completion_obj.choices[0].logprobs.content[-2].logprob
+            chat_completion.output_obj.choices[0].logprobs.content[-2].logprob
         )
         logger.debug(f"AGENT_ID: {agent_id} with {prob}")
 
@@ -426,17 +426,17 @@ def run_chat(args, model, elevenlabs_client):
             stream=True,
         )
 
-        is_tool_call = chat_completion.is_tool_call()
+        has_tool_call = chat_completion.has_tool_call()
 
-        if not is_tool_call:
+        if not has_tool_call:
             if args.audio_output:
                 get_speech_from_text(chat_completion.iter_messages(), elevenlabs_client)
-                MM.add_assistant_message(chat_completion.full_msg)
+                MM.add_assistant_message(chat_completion.msg_content)
             else:
                 MM.read_chat_stream(chat_completion.iter_messages())
             need_user_input = True
-        elif is_tool_call:
-            function_calls = chat_completion.extract_fns_from_chat_stream()
+        elif has_tool_call:
+            function_calls = chat_completion.extract_fn_calls()
 
             for function_call in function_calls:
                 function_args = json.loads(function_call.function_args_json)

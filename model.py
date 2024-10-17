@@ -71,7 +71,7 @@ class Model:
         if not tools:
             args.pop("tools")
 
-        return ModelCompletion(chat_fn(**args), stream, ModelProvider.OPENAI)
+        return ModelOutput(chat_fn(**args), stream, ModelProvider.OPENAI)
 
     def ant_chat(
         self,
@@ -101,13 +101,14 @@ class FunctionCall(BaseModel):
     function_args_json: str
 
 
-class ModelCompletion:
-    def __init__(self, completion_obj, is_stream, model_provider):
-        self.completion_obj = completion_obj
+class ModelOutput:
+    def __init__(self, output_obj, is_stream, model_provider):
+        self.output_obj = output_obj
         self.is_stream = is_stream
         self.model_provider = model_provider
-        self.full_msg = None
+        self.msg_content = None
         self.current_chunk = None
+        self.has_tool_call = None
 
     def _has_function_call_id(self, chunk):
         return (
@@ -119,22 +120,27 @@ class ModelCompletion:
         return chunk.choices[0].delta.content is not None
 
     def _get_first_usable_chunk(self):
-        chunk = next(self.completion_obj)
+        chunk = next(self.output_obj)
         while not (self._has_function_call_id(chunk) or self._has_msg_content(chunk)):
-            chunk = next(self.completion_obj)
+            chunk = next(self.output_obj)
         return chunk
 
-    def is_tool_call(self):
+    def has_tool_call(self):
+        if self.has_tool_call is not None:
+            return self.has_tool_call
+
         if self.is_stream:
             first_chunk = self._get_first_usable_chunk()
             self.current_chunk = first_chunk
-            return self._has_function_call_id(first_chunk)
+            self.has_tool_call = self._has_function_call_id(first_chunk)
+
+        return self.has_tool_call
 
     def iter_messages(self):
-        self.full_msg = ""
+        self.msg_content = ""
         try:
             while True:
-                chunk = next(self.completion_obj)  # Get the next chunk
+                chunk = next(self.output_obj)  # Get the next chunk
                 msg = chunk.choices[0].delta.content
                 finish_reason = chunk.choices[0].finish_reason
                 if finish_reason is not None:
@@ -142,15 +148,15 @@ class ModelCompletion:
                 if msg is None:
                     logger.warning(f"msg is None with chunk {chunk}")
                     raise StopIteration
-                self.full_msg += msg  # Append the message to full_msg
+                self.msg_content += msg  # Append the message to full_msg
                 yield msg  # Return the message
         except StopIteration:
             pass  # Signal end of iteration
 
-    def extract_fns_from_chat_stream(self):
+    def extract_fn_calls(self):
         function_calls = []
 
-        for chunk in itertools.chain([self.current_chunk], self.completion_obj):
+        for chunk in itertools.chain([self.current_chunk], self.output_obj):
             finish_reason = chunk.choices[0].finish_reason
             if finish_reason is not None:
                 break
