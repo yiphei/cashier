@@ -4,6 +4,7 @@ from enum import StrEnum
 import anthropic
 from openai import OpenAI
 from pydantic import BaseModel
+import numpy as np
 
 from logger import logger
 
@@ -158,6 +159,15 @@ class ModelOutput:
     def get_message(self):
         self.msg_content = self.output_obj.choices[0].message.content
         return self.msg_content
+    
+    def get_message_prop(self, prop_name):
+        return getattr(self.output_obj.choices[0].message.parsed, prop_name)
+    
+    def get_logprob(self, token_idx):
+        return self.output_obj.choices[0].logprobs.content[token_idx].logprob
+
+    def get_prob(self, token_idx):
+        return np.exp(self.get_logprob(token_idx))
 
     def extract_fn_calls(self):
         function_calls = []

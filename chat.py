@@ -323,8 +323,8 @@ def is_on_topic(model, MM, current_node_schema, all_node_schemas):
         logprobs=True,
         temperature=0,
     )
-    is_on_topic = chat_completion.output_obj.choices[0].message.parsed.output
-    prob = np.exp(chat_completion.output_obj.choices[0].logprobs.content[-2].logprob)
+    is_on_topic = chat_completion.get_message_prop('output')
+    prob = chat_completion.get_prob(-2)
     logger.debug(f"IS_ON_TOPIC: {is_on_topic} with {prob}")
     if not is_on_topic:
         conversational_msgs.pop()
@@ -368,10 +368,8 @@ def is_on_topic(model, MM, current_node_schema, all_node_schemas):
             temperature=0,
         )
 
-        agent_id = chat_completion.output_obj.choices[0].message.parsed.agent_id
-        prob = np.exp(
-            chat_completion.output_obj.choices[0].logprobs.content[-2].logprob
-        )
+        agent_id = chat_completion.get_message_prop('agent_id')
+        prob = chat_completion.get_prob(-2)
         logger.debug(f"AGENT_ID: {agent_id} with {prob}")
 
 
