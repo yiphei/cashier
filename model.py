@@ -108,7 +108,7 @@ class ModelOutput:
         self.model_provider = model_provider
         self.msg_content = None
         self.current_chunk = None
-        self.has_tool_call = None
+        self._has_tool_call = None
 
     def _has_function_call_id(self, chunk):
         return (
@@ -126,15 +126,15 @@ class ModelOutput:
         return chunk
 
     def has_tool_call(self):
-        if self.has_tool_call is not None:
-            return self.has_tool_call
+        if self._has_tool_call is not None:
+            return self._has_tool_call
 
         if self.is_stream:
             first_chunk = self._get_first_usable_chunk()
             self.current_chunk = first_chunk
-            self.has_tool_call = self._has_function_call_id(first_chunk)
+            self._has_tool_call = self._has_function_call_id(first_chunk)
 
-        return self.has_tool_call
+        return self._has_tool_call
 
     def iter_messages(self):
         self.msg_content = ""
