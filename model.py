@@ -72,7 +72,7 @@ class Model:
         if not tools:
             args.pop("tools")
 
-        return ModelOutput(chat_fn(**args), stream, ModelProvider.OPENAI)
+        return OAIModelOutput(chat_fn(**args), stream)
 
     def ant_chat(
         self,
@@ -103,13 +103,20 @@ class FunctionCall(BaseModel):
 
 
 class ModelOutput:
-    def __init__(self, output_obj, is_stream, model_provider):
+    def __init__(self, output_obj, is_stream):
         self.output_obj = output_obj
         self.is_stream = is_stream
-        self.model_provider = model_provider
         self.msg_content = None
         self.current_chunk = None
         self._has_tool_call = None
+
+    def get_or_stream_message(self):
+        if self.is_stream:
+            return self.stream_message()
+        else:
+            return self.get_message()
+
+class OAIModelOutput(ModelOutput):
 
     def _has_function_call_id(self, chunk):
         return (
@@ -159,12 +166,6 @@ class ModelOutput:
     def get_message(self):
         self.msg_content = self.output_obj.choices[0].message.content
         return self.msg_content
-
-    def get_or_stream_message(self):
-        if self.is_stream:
-            return self.stream_message()
-        else:
-            return self.get_message()
 
     def get_message_prop(self, prop_name):
         return getattr(self.output_obj.choices[0].message.parsed, prop_name)
