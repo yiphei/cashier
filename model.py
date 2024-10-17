@@ -116,6 +116,7 @@ class ModelOutput:
         else:
             return self.get_message()
 
+
 class OAIModelOutput(ModelOutput):
 
     def _has_function_call_id(self, chunk):
