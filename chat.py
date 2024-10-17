@@ -11,9 +11,7 @@ import numpy as np
 from colorama import Fore, Style
 from dotenv import load_dotenv  # Add this import
 from elevenlabs import ElevenLabs, Voice, VoiceSettings, stream
-from openai import OpenAI
 from pydantic import BaseModel
-from model import Model
 
 from audio import get_audio_input, save_audio_to_wav
 from chain import (
@@ -25,6 +23,7 @@ from chain import (
 from db_functions import FN_NAME_TO_FN, OPENAI_TOOLS_RETUN_DESCRIPTION, create_db_client
 from gui import remove_previous_line
 from logger import logger
+from model import Model
 
 # Load environment variables from .env file
 load_dotenv()
