@@ -2,9 +2,9 @@ import itertools
 from enum import StrEnum
 
 import anthropic
+import numpy as np
 from openai import OpenAI
 from pydantic import BaseModel
-import numpy as np
 
 from logger import logger
 
@@ -159,10 +159,10 @@ class ModelOutput:
     def get_message(self):
         self.msg_content = self.output_obj.choices[0].message.content
         return self.msg_content
-    
+
     def get_message_prop(self, prop_name):
         return getattr(self.output_obj.choices[0].message.parsed, prop_name)
-    
+
     def get_logprob(self, token_idx):
         return self.output_obj.choices[0].logprobs.content[token_idx].logprob
 
