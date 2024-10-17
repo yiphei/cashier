@@ -425,10 +425,10 @@ def run_chat(args, model, elevenlabs_client):
 
         if not has_tool_call:
             if args.audio_output:
-                get_speech_from_text(chat_completion.iter_message(), elevenlabs_client)
+                get_speech_from_text(chat_completion.stream_message(), elevenlabs_client)
                 MM.add_assistant_message(chat_completion.msg_content)
             else:
-                MM.read_chat_stream(chat_completion.iter_message())
+                MM.read_chat_stream(chat_completion.stream_message())
             need_user_input = True
         elif has_tool_call:
             function_calls = chat_completion.extract_fn_calls()

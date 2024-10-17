@@ -139,7 +139,7 @@ class ModelOutput:
 
         return self._has_tool_call
 
-    def iter_message(self):
+    def stream_message(self):
         self.msg_content = ""
         try:
             while True:
