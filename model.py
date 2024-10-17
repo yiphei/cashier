@@ -194,5 +194,11 @@ class ModelOutput:
         else:
             tool_calls = self.output_obj.choices[0].message.tool_calls
             for tool_call in tool_calls:
-                function_calls.append(FunctionCall(function_name=tool_call.function.name, tool_call_id=tool_call.id, function_args_json=tool_call.function.arguments))
+                function_calls.append(
+                    FunctionCall(
+                        function_name=tool_call.function.name,
+                        tool_call_id=tool_call.id,
+                        function_args_json=tool_call.function.arguments,
+                    )
+                )
         return function_calls
