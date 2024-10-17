@@ -13,6 +13,7 @@ from dotenv import load_dotenv  # Add this import
 from elevenlabs import ElevenLabs, Voice, VoiceSettings, stream
 from openai import OpenAI
 from pydantic import BaseModel
+from model import Model
 
 from audio import get_audio_input, save_audio_to_wav
 from chain import (
@@ -373,7 +374,7 @@ class MessageManager:
         ]
 
 
-def is_on_topic(MM, current_node_schema, all_node_schemas):
+def is_on_topic(model, MM, current_node_schema, all_node_schemas):
     conversational_msgs = MM.get_all_conversational_messages_of_current_node()
     conversational_msgs.append(
         {
@@ -403,8 +404,8 @@ def is_on_topic(MM, current_node_schema, all_node_schemas):
     class Response1(BaseModel):
         output: bool
 
-    chat_completion = openai_client.beta.chat.completions.parse(
-        model="gpt-4o-mini",
+    chat_completion = model.chat(
+        model_name="gpt-4o-mini",
         messages=conversational_msgs,
         response_format=Response1,
         logprobs=True,
@@ -447,8 +448,8 @@ def is_on_topic(MM, current_node_schema, all_node_schemas):
         class Response2(BaseModel):
             agent_id: int
 
-        chat_completion = openai_client.beta.chat.completions.parse(
-            model="gpt-4o",
+        chat_completion = model.chat(
+            model_name="gpt-4o",
             messages=conversational_msgs,
             response_format=Response2,
             logprobs=True,
@@ -460,7 +461,7 @@ def is_on_topic(MM, current_node_schema, all_node_schemas):
         logger.debug(f"AGENT_ID: {agent_id} with {prob}")
 
 
-def run_chat(args, openai_client, elevenlabs_client):
+def run_chat(args, model, elevenlabs_client):
     MM = MessageManager(
         output_system_prompt=args.output_system_prompt,
     )
@@ -484,7 +485,7 @@ def run_chat(args, openai_client, elevenlabs_client):
 
         if need_user_input:
             # Read user input from stdin
-            text_input = get_user_input(args.audio_input, openai_client)
+            text_input = get_user_input(args.audio_input, model.oai_client)
             # If user types 'exit', break the loop and end the program
             if text_input.lower() == "exit":
                 print("Exiting chatbot. Goodbye!")
@@ -492,6 +493,7 @@ def run_chat(args, openai_client, elevenlabs_client):
 
             MM.add_user_message(text_input)
             is_on_topic(
+                model,
                 MM,
                 current_node_schema,
                 [
@@ -501,8 +503,8 @@ def run_chat(args, openai_client, elevenlabs_client):
                 ],
             )
 
-        chat_completion = openai_client.chat.completions.create(
-            model=args.model,
+        chat_completion = model.chat(
+            model_name=args.model,
             messages=MM.messages,
             tools=current_node_schema.tool_fns,
             stream=True,
@@ -606,7 +608,7 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    openai_client = OpenAI()
+    model = Model()
     elevenlabs_client = ElevenLabs(
         api_key=os.getenv("ELEVENLABS_API_KEY"),
     )
@@ -614,4 +616,4 @@ if __name__ == "__main__":
 
     if not args.enable_logging:
         logger.disabled = True
-    run_chat(args, openai_client, elevenlabs_client)
+    run_chat(args, model, elevenlabs_client)
