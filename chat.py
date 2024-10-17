@@ -1,10 +1,8 @@
 import argparse
-import itertools
 import json
 import os
 import tempfile
 from collections import defaultdict
-from collections.abc import Iterator
 from distutils.util import strtobool
 
 import numpy as np
@@ -41,11 +39,13 @@ class CustomJSONEncoder(json.JSONEncoder):
             return obj
         return super().default(obj)
 
+
 def get_system_return_type_prompt(fn_name):
     json_schema = OPENAI_TOOLS_RETUN_DESCRIPTION[fn_name]
     return (
         f"This is the JSON Schema of {fn_name}'s return type: {json.dumps(json_schema)}"
     )
+
 
 def get_text_from_speech(audio_data, oai_client):
     with tempfile.NamedTemporaryFile(suffix=".wav", delete=True) as temp_wav_file:
@@ -75,6 +75,7 @@ def get_speech_from_text(text_iterator, elabs_client):
         optimize_streaming_latency=3,
     )
     stream(audio)
+
 
 def get_user_input(use_audio_input, openai_client):
     if use_audio_input:
@@ -323,7 +324,9 @@ def is_on_topic(model, MM, current_node_schema, all_node_schemas):
         temperature=0,
     )
     is_on_topic = chat_completion.completion_obj.choices[0].message.parsed.output
-    prob = np.exp(chat_completion.completion_obj.choices[0].logprobs.content[-2].logprob)
+    prob = np.exp(
+        chat_completion.completion_obj.choices[0].logprobs.content[-2].logprob
+    )
     logger.debug(f"IS_ON_TOPIC: {is_on_topic} with {prob}")
     if not is_on_topic:
         conversational_msgs.pop()
@@ -368,7 +371,9 @@ def is_on_topic(model, MM, current_node_schema, all_node_schemas):
         )
 
         agent_id = chat_completion.completion_obj.choices[0].message.parsed.agent_id
-        prob = np.exp(chat_completion.completion_obj.choices[0].logprobs.content[-2].logprob)
+        prob = np.exp(
+            chat_completion.completion_obj.choices[0].logprobs.content[-2].logprob
+        )
         logger.debug(f"AGENT_ID: {agent_id} with {prob}")
 
 

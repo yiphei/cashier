@@ -1,10 +1,12 @@
+import itertools
 from enum import StrEnum
 
 import anthropic
 from openai import OpenAI
-from logger import logger
-import itertools
 from pydantic import BaseModel
+
+from logger import logger
+
 
 class ModelProvider(StrEnum):
     OPENAI = "OPENAI"
@@ -93,12 +95,10 @@ class Model:
         return self.anthropic_client.messages.create(**args)
 
 
-
 class FunctionCall(BaseModel):
     function_name: str
     tool_call_id: str
     function_args_json: str
-
 
 
 class ModelCompletion:
@@ -114,10 +114,10 @@ class ModelCompletion:
             chunk.choices[0].delta.tool_calls is not None
             and chunk.choices[0].delta.tool_calls[0].id is not None
         )
-    
+
     def _has_msg_content(self, chunk):
         return chunk.choices[0].delta.content is not None
-    
+
     def _get_first_usable_chunk(self):
         chunk = next(self.completion_obj)
         while not (self._has_function_call_id(chunk) or self._has_msg_content(chunk)):
@@ -146,7 +146,7 @@ class ModelCompletion:
                 yield msg  # Return the message
         except StopIteration:
             pass  # Signal end of iteration
-            
+
     def extract_fns_from_chat_stream(self):
         function_calls = []
 
