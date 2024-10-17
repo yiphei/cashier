@@ -159,6 +159,12 @@ class ModelOutput:
     def get_message(self):
         self.msg_content = self.output_obj.choices[0].message.content
         return self.msg_content
+    
+    def get_or_stream_message(self):
+        if self.is_stream:
+            return self.stream_message()
+        else:
+            return self.get_message()
 
     def get_message_prop(self, prop_name):
         return getattr(self.output_obj.choices[0].message.parsed, prop_name)

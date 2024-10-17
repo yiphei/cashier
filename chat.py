@@ -4,6 +4,7 @@ import os
 import tempfile
 from collections import defaultdict
 from distutils.util import strtobool
+from types import GeneratorType
 
 from colorama import Fore, Style
 from dotenv import load_dotenv  # Add this import
@@ -241,19 +242,22 @@ class MessageManager:
         )
 
     def read_chat_stream(self, chat_stream):
-        self.print_msg(role="assistant", msg=None, end="")
-        full_msg = ""
-        for msg_chunk in chat_stream:
-            self.print_msg(
-                role="assistant", msg=msg_chunk, add_role_prefix=False, end=""
-            )
-            full_msg += msg_chunk
+        if isinstance(chat_stream, GeneratorType):
+            self.print_msg(role="assistant", msg=None, end="")
+            full_msg = ""
+            for msg_chunk in chat_stream:
+                self.print_msg(
+                    role="assistant", msg=msg_chunk, add_role_prefix=False, end=""
+                )
+                full_msg += msg_chunk
 
-        self.add_message_dict(
-            {"role": "assistant", "content": full_msg},
-            print_msg=False,
-        )
-        print("\n\n")
+            self.add_message_dict(
+                {"role": "assistant", "content": full_msg},
+                print_msg=False,
+            )
+            print("\n\n")
+        else:
+            self.add_assistant_message(chat_stream)
 
     def get_role_prefix(self, role):
         return f"{Style.BRIGHT}{self.API_ROLE_TO_PREFIX[role]}: {Style.NORMAL}"
@@ -418,7 +422,7 @@ def run_chat(args, model, elevenlabs_client):
             model_name=args.model,
             messages=MM.messages,
             tools=current_node_schema.tool_fns,
-            stream=True,
+            stream=args.stream,
         )
 
         has_tool_call = chat_completion.has_tool_call()
@@ -426,11 +430,11 @@ def run_chat(args, model, elevenlabs_client):
         if not has_tool_call:
             if args.audio_output:
                 get_speech_from_text(
-                    chat_completion.stream_message(), elevenlabs_client
+                    chat_completion.get_or_stream_message(), elevenlabs_client
                 )
                 MM.add_assistant_message(chat_completion.msg_content)
             else:
-                MM.read_chat_stream(chat_completion.stream_message())
+                MM.read_chat_stream(chat_completion.get_or_stream_message())
             need_user_input = True
         elif has_tool_call:
             function_calls = chat_completion.extract_fn_calls()
@@ -514,6 +518,11 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--enable_logging",
+        type=lambda v: bool(strtobool(v)),
+        default=True,
+    )
+    parser.add_argument(
+        "--stream",
         type=lambda v: bool(strtobool(v)),
         default=True,
     )
