@@ -37,7 +37,7 @@ class Model:
             )
         elif model_provider == ModelProvider.ANTHROPIC:
             return self.ant_chat(
-                model_name, messages, tools, stream, logprobs, response_format, **kwargs
+                model_name, messages, tools, stream, **kwargs
             )
 
     def oai_chat(
@@ -77,16 +77,19 @@ class Model:
         messages,
         tools=None,
         stream=False,
-        logprobs=False,
-        response_format=None,
         **kwargs,
     ):
-        return self.anthropic_client.messages.create(
-            model=model_name,
-            messages=messages,
-            tools=tools,
-            stream=stream,
-            logprobs=logprobs,
-            response_format=response_format,
+        args = {
+            "max_tokens": 8192,
+            "model":model_name,
+            "messages":messages,
+            "tools":tools,
+            "stream":stream,
             **kwargs,
+        }
+        if not tools:
+            args.pop('tools')
+        
+        return self.anthropic_client.messages.create(
+            **args
         )
