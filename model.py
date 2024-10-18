@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Optional
 import anthropic
 import numpy as np
 from openai import OpenAI
-from pydantic import BaseModel, Field, constr, PrivateAttr
+from pydantic import BaseModel, Field, PrivateAttr, constr
 
 from model_tool_decorator import (
     ANTHROPIC_TOOL_NAME_TO_TOOL_DEF,
@@ -158,6 +158,7 @@ class SystemTurn(ModelTurn):
 
 class NodeSystemTurn(SystemTurn):
     node_id: int
+
     def build_oai_messages(self):
         self.messages.append({"role": "system", "content": self.msg_content})
 
@@ -175,7 +176,7 @@ class AssistantModelTurn(ModelTurn):
 
     def build_oai_messages(self):
         if self.msg_content:
-            self.messages.append({"role": 'assistant', "content": self.msg_content})
+            self.messages.append({"role": "assistant", "content": self.msg_content})
         if self.fn_calls:
             for fn_call in self.fn_calls:
                 self.messages.append(

@@ -8,7 +8,6 @@ from types import GeneratorType
 from colorama import Fore, Style
 from dotenv import load_dotenv  # Add this import
 from elevenlabs import ElevenLabs, Voice, VoiceSettings, stream
-from pydantic import BaseModel
 
 from audio import get_audio_input, save_audio_to_wav
 from chain import (
@@ -20,7 +19,14 @@ from chain import (
 from db_functions import create_db_client
 from gui import remove_previous_line
 from logger import logger
-from model import CustomJSONEncoder, ListIndexTracker, Model, AssistantModelTurn, UserTurn, NodeSystemTurn, OAITurnManager
+from model import (
+    AssistantModelTurn,
+    CustomJSONEncoder,
+    Model,
+    NodeSystemTurn,
+    OAITurnManager,
+    UserTurn,
+)
 from model_tool_decorator import FN_NAME_TO_FN, OPENAI_TOOL_NAME_TO_TOOL_DEF
 
 # Load environment variables from .env file
@@ -80,6 +86,7 @@ class MessageDisplay:
         "user": Fore.WHITE,
         "assistant": Fore.BLUE,
     }
+
     @classmethod
     def read_chat_stream(cls, chat_stream):
         if isinstance(chat_stream, GeneratorType):
@@ -112,6 +119,7 @@ class MessageDisplay:
             formatted_msg,
             end=end,
         )
+
 
 def is_on_topic(model, TM, current_node_schema, all_node_schemas):
     all_tool_defs = (
@@ -217,15 +225,21 @@ def run_chat(args, model, elevenlabs_client):
                 f"[NODE_SCHEMA] Initializing {Style.BRIGHT}node_schema_id: {current_node_schema.id}{Style.NORMAL}"
             )
             current_node_schema.run(new_node_input)
-            node_system_turn = NodeSystemTurn(node_id=current_node_schema.id, msg_content=current_node_schema.prompt)
+            node_system_turn = NodeSystemTurn(
+                node_id=current_node_schema.id, msg_content=current_node_schema.prompt
+            )
             TM.add_node_turn(node_system_turn)
             MessageDisplay.print_msg("system", node_system_turn.msg_content)
 
             if current_node_schema.first_msg:
-                #TODO fix this
-                a_turn = AssistantModelTurn(msg_content=current_node_schema.first_msg['content'])
+                # TODO fix this
+                a_turn = AssistantModelTurn(
+                    msg_content=current_node_schema.first_msg["content"]
+                )
                 TM.add_assistant_turn(a_turn)
-                MessageDisplay.print_msg("assistant", current_node_schema.first_msg['content'])
+                MessageDisplay.print_msg(
+                    "assistant", current_node_schema.first_msg["content"]
+                )
 
         if need_user_input:
             # Read user input from stdin
@@ -235,7 +249,7 @@ def run_chat(args, model, elevenlabs_client):
                 print("Exiting chatbot. Goodbye!")
                 break
             user_turn = UserTurn(msg_content=text_input)
-            MessageDisplay.print_msg('user', text_input)
+            MessageDisplay.print_msg("user", text_input)
             TM.add_user_turn(user_turn)
             is_on_topic(
                 model,
