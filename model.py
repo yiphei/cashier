@@ -209,11 +209,13 @@ class AssistantModelTurn(ModelTurn):
 
                     self.messages.append({"role": "system", "content": system_msg})
 
+
 class TurnManager:
     def __init__(self):
         self.turns = []
         self.message_dicts = []
-    
+
+
 class OAITurnManager(TurnManager):
     def __init__(self):
         super().__init__()
@@ -226,9 +228,14 @@ class OAITurnManager(TurnManager):
         self.turns.append(turn)
         turn.build_oai_messages()
         self.message_dicts.extend(turn.messages)
-    
-    def add_node_turn(self, turn, node_id, remove_prev_tool_fn_return=None,
-        remove_prev_tool_calls=False):
+
+    def add_node_turn(
+        self,
+        turn,
+        node_id,
+        remove_prev_tool_fn_return=None,
+        remove_prev_tool_calls=False,
+    ):
         if remove_prev_tool_calls:
             assert remove_prev_tool_fn_return is not False
 
@@ -257,27 +264,29 @@ class OAITurnManager(TurnManager):
         turn.build_oai_messages()
         self.message_dicts.extend(turn.messages)
         self.last_node_id = node_id
-        self.index_tracker.add_idx(node_id, len(self.message_dicts)-1)
-    
+        self.index_tracker.add_idx(node_id, len(self.message_dicts) - 1)
+
     def add_user_turn(self, turn):
         self.turns.append(turn)
         turn.build_oai_messages()
         self.message_dicts.extend(turn.messages)
-    
+
     def add_assistant_turn(self, turn):
         self.turns.append(turn)
         turn.build_oai_messages()
         last_fn_name = None
         for message in turn.messages:
             if getattr(message, "tool_calls", None) is not None:
-                tool_call_id = message['tool_calls']['id']
+                tool_call_id = message["tool_calls"]["id"]
                 self.tool_call_ids.append(tool_call_id)
-                last_fn_name = message['tool_calls']['function']['name']
+                last_fn_name = message["tool_calls"]["function"]["name"]
                 self.index_tracker.add_idx(tool_call_id, len(self.message_dicts))
-            elif message['role'] == 'tool':
-                tool_call_id = message['tool_call_id']
-                self.index_tracker.add_idx(tool_call_id + "return", len(self.message_dicts))
-            elif message['role'] == 'system' and last_fn_name is not None:
+            elif message["role"] == "tool":
+                tool_call_id = message["tool_call_id"]
+                self.index_tracker.add_idx(
+                    tool_call_id + "return", len(self.message_dicts)
+                )
+            elif message["role"] == "system" and last_fn_name is not None:
                 if last_fn_name in self.tool_fn_return_names:
                     idx_to_remove = self.index_tracker.get_idx(last_fn_name)
                     del self.message_dicts[idx_to_remove]
@@ -286,6 +295,7 @@ class OAITurnManager(TurnManager):
                 last_fn_name = None
 
             self.message_dicts.append(message)
+
 
 class ModelOutput:
     def __init__(self, output_obj, is_stream):
