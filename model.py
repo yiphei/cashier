@@ -63,7 +63,7 @@ class Model:
                 all_tool_defs |= extra_anthropic_tool_defs
             if tool_names:
                 tools = [
-                    ANTHROPIC_TOOL_NAME_TO_TOOL_DEF[tool_name]
+                    all_tool_defs[tool_name]
                     for tool_name in tool_names
                 ]
 
