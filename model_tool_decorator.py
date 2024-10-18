@@ -1,12 +1,10 @@
-from collections import defaultdict
+import inspect
 import re
+from collections import defaultdict
+from functools import wraps
 
 from openai import pydantic_function_tool
 from pydantic import Field, create_model
-
-
-import inspect
-from functools import wraps
 
 
 def get_return_description_from_docstring(docstring):

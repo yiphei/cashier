@@ -10,6 +10,7 @@ from model_tool_decorator import openai_tool_decorator
 
 supabase: Client = None
 
+
 def create_db_client():
     global supabase
     supabase = create_supabase_client(
