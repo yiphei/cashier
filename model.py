@@ -276,29 +276,96 @@ class OAIModelOutput(ModelOutput):
 
 
 class AnthropicModelOutput(ModelOutput):
+    def is_message_start_chunk(self, chunk):
+        content_block = getattr(chunk, "content_block", None)
+        return content_block is not None and content_block.type == 'text'
+    
+    def is_tool_start_chunk(self, chunk):
+        content_block = getattr(chunk, "content_block", None)
+        return content_block is not None and content_block.type == 'tool_use'
+    
+    def is_end_block_chunk(self, chunk):
+        return chunk.type == "content_block_stop"
+    
+    def is_message_end_chunk(self, chunk):
+        return chunk.type == 'message_stop'
+
+    def get_next_usable_chunk(self):
+        if self.current_chunk is None:
+            chunk = next(self.output_obj)
+        else:
+            chunk = self.current_chunk
+        while not (self.is_message_start_chunk(chunk) or self.is_tool_start_chunk(chunk) or self.is_message_end_chunk(chunk)):
+            chunk = next(self.output_obj)
+        return chunk
+
     def get_message(self):
         self.msg_content = self.output_obj.content[0].text
         return self.msg_content
 
-    def has_tool_call(self):
-        # TODO
-        return False
-
     def stream_message(self):
-        has_message_started = False
+        first_chunk = self.get_next_usable_chunk()
+        self.current_chunk = first_chunk
+        if self.is_message_start_chunk(first_chunk):
+            self.current_chunk = next(self.output_obj)
+            return self._stream_message()
+        else:
+            return None
+
+    def _stream_message(self):
         self.msg_content = ""
+        first_msg = self.current_chunk.delta.text
+        self.msg_content += first_msg
+        yield first_msg
+
         try:
             while True:
                 chunk = next(self.output_obj)  # Get the next chunk
                 chunk_type = chunk.type
-                if chunk_type == "content_block_start":
-                    has_message_started = True
-                    continue
-                elif chunk_type == "content_block_stop":
+                if chunk_type == "content_block_stop":
+                    self.current_chunk = next(self.output_obj)
                     raise StopIteration
-                elif has_message_started:
-                    msg = chunk.delta.text
-                    self.msg_content += msg  # Append the message to full_msg
-                    yield msg  # Return the message
+                
+                msg = chunk.delta.text
+                self.msg_content += msg  # Append the message to full_msg
+                yield msg  # Return the message
         except StopIteration:
             pass  # Signal end of iteration
+
+    def stream_fn_calls(self):
+        first_chunk = self.get_next_usable_chunk()
+
+        function_name = None
+        tool_call_id = None
+        function_args_json = None
+
+        for chunk in itertools.chain([first_chunk], self.output_obj):
+            if self.is_tool_start_chunk(chunk):
+                function_name = chunk.content_block.name
+                tool_call_id = chunk.content_block.id
+                function_args_json = ""
+            elif self.is_end_block_chunk(chunk):
+                fn_call = FunctionCall(
+                    function_name=function_name,  # noqa
+                    tool_call_id=tool_call_id,  # noqa
+                    function_args_json=function_args_json,  # noqa
+                )
+                self.fn_calls.append(fn_call)
+                yield fn_call
+                function_name = None
+                tool_call_id = None
+                function_args_json = None
+            elif tool_call_id is not None:
+                function_args_json += (
+                    chunk.delta.partial_json
+                )
+
+        if tool_call_id is not None:
+            fn_call = FunctionCall(
+                function_name=function_name,
+                tool_call_id=tool_call_id,
+                function_args_json=function_args_json,
+            )
+
+            self.fn_calls.append(fn_call)
+            yield fn_call
