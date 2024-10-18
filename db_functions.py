@@ -6,7 +6,7 @@ from pydantic import BaseModel, Field
 from supabase import Client
 from supabase import create_client as create_supabase_client
 
-from model_tool_decorator import openai_tool_decorator
+from model_tool_decorator import model_tool_decorator
 
 supabase: Client = None
 
@@ -27,7 +27,7 @@ class Option(BaseModel):
     str_option_values: Optional[List[str]] = None
 
 
-@openai_tool_decorator(
+@model_tool_decorator(
     "Most customers either don't provide a complete order (i.e. not specifying required options like size)"
     "or are not aware of all the options available for a menu item. It is your job to help them with both cases."
 )
@@ -93,7 +93,7 @@ class MenuItem(BaseModel):
     group: str = Field(description="the menu category it belongs to")
 
 
-@openai_tool_decorator()
+@model_tool_decorator()
 def get_menu_item_from_name(menu_item_name: str) -> MenuItem:
     """
     Get the menu item given the name of the menu item.

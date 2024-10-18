@@ -58,7 +58,7 @@ FN_NAME_TO_FN = {}
 OPENAI_TOOLS_RETUN_DESCRIPTION = {}
 
 
-def openai_tool_decorator(tool_instructions=None):
+def model_tool_decorator(tool_instructions=None):
     def decorator_fn(func):
         docstring = inspect.getdoc(func)
         fn_signature = inspect.signature(func)
