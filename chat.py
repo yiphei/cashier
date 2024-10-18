@@ -434,73 +434,72 @@ def run_chat(args, model, elevenlabs_client):
             extra_oai_tool_defs=current_node_schema.OPENAI_TOOL_NAME_TO_TOOL_DEF,
             extra_anthropic_tool_defs=current_node_schema.ANTHROPIC_TOOL_NAME_TO_TOOL_DEF,
         )
-        has_tool_call = chat_completion.has_tool_call()
 
-        if not has_tool_call:
+        message = chat_completion.get_or_stream_message()
+        if message is not None:
             if args.audio_output:
-                get_speech_from_text(
-                    chat_completion.get_or_stream_message(), elevenlabs_client
-                )
+                get_speech_from_text(message, elevenlabs_client)
                 MM.add_assistant_message(chat_completion.msg_content)
             else:
-                MM.read_chat_stream(chat_completion.get_or_stream_message())
+                MM.read_chat_stream(message)
             need_user_input = True
-        elif has_tool_call:
-            function_calls = chat_completion.extract_fn_calls()
 
-            for function_call in function_calls:
-                function_args = json.loads(function_call.function_args_json)
-                logger.debug(
-                    f"[FUNCTION_CALL] {Style.BRIGHT}name: {function_call.function_name}, id: {function_call.tool_call_id}{Style.NORMAL} with args:\n{json.dumps(function_args, indent=4)}"
+        for function_call in chat_completion.get_or_stream_fn_calls():
+            function_args = json.loads(function_call.function_args_json)
+            logger.debug(
+                f"[FUNCTION_CALL] {Style.BRIGHT}name: {function_call.function_name}, id: {function_call.tool_call_id}{Style.NORMAL} with args:\n{json.dumps(function_args, indent=4)}"
+            )
+
+            if function_call.function_name.startswith("get_state"):
+                fn_output = getattr(current_node_schema, function_call.function_name)(
+                    **function_args
                 )
+            elif function_call.function_name.startswith("update_state"):
+                fn_output = current_node_schema.update_state(**function_args)
+                state_condition_results = [
+                    edge_schema.check_state_condition(current_node_schema.state)
+                    for edge_schema in current_edge_schemas
+                ]
+                if any(state_condition_results):
+                    first_true_index = state_condition_results.index(True)
+                    first_true_edge_schema = current_edge_schemas[first_true_index]
 
-                if function_call.function_name.startswith("get_state"):
-                    fn_output = getattr(
-                        current_node_schema, function_call.function_name
-                    )(**function_args)
-                elif function_call.function_name.startswith("update_state"):
-                    fn_output = current_node_schema.update_state(**function_args)
-                    state_condition_results = [
-                        edge_schema.check_state_condition(current_node_schema.state)
-                        for edge_schema in current_edge_schemas
-                    ]
-                    if any(state_condition_results):
-                        first_true_index = state_condition_results.index(True)
-                        first_true_edge_schema = current_edge_schemas[first_true_index]
-
-                        new_node_input = first_true_edge_schema.new_input_from_state_fn(
-                            current_node_schema.state
-                        )
-                        current_node_schema = first_true_edge_schema.to_node_schema
-                        current_edge_schemas = FROM_NODE_ID_TO_EDGE_SCHEMA.get(
-                            current_node_schema.id, []
-                        )
-                else:
-                    fn = FN_NAME_TO_FN[function_call.function_name]
-                    fn_output = fn(**function_args)
-
-                logger.debug(
-                    f"[FUNCTION_RETURN] {Style.BRIGHT}name: {function_call.function_name}, id: {function_call.tool_call_id}{Style.NORMAL} with output:\n{json.dumps(fn_output, cls=CustomJSONEncoder, indent=4)}"
-                )
-                MM.add_tool_call_message(
-                    function_call.tool_call_id,
-                    function_call.function_name,
-                    function_call.function_args_json,
-                )
-                MM.add_tool_response_message(
-                    function_call.tool_call_id,
-                    json.dumps(fn_output, cls=CustomJSONEncoder),
-                )
-
-                if not function_call.function_name.startswith(
-                    ("get_state", "update_state")
-                ):
-                    MM.add_tool_return_schema_message(
-                        function_call.function_name,
-                        get_system_return_type_prompt(function_call.function_name),
+                    new_node_input = first_true_edge_schema.new_input_from_state_fn(
+                        current_node_schema.state
                     )
+                    current_node_schema = first_true_edge_schema.to_node_schema
+                    current_edge_schemas = FROM_NODE_ID_TO_EDGE_SCHEMA.get(
+                        current_node_schema.id, []
+                    )
+            else:
+                fn = FN_NAME_TO_FN[function_call.function_name]
+                fn_output = fn(**function_args)
 
-                need_user_input = False
+            logger.debug(
+                f"[FUNCTION_RETURN] {Style.BRIGHT}name: {function_call.function_name}, id: {function_call.tool_call_id}{Style.NORMAL} with output:\n{json.dumps(fn_output, cls=CustomJSONEncoder, indent=4)}"
+            )
+            MM.add_tool_call_message(
+                function_call.tool_call_id,
+                function_call.function_name,
+                function_call.function_args_json,
+            )
+            MM.add_tool_response_message(
+                function_call.tool_call_id,
+                json.dumps(fn_output, cls=CustomJSONEncoder),
+            )
+
+            if (
+                not function_call.function_name.startswith(
+                    ("get_state", "update_state")
+                )
+                or args.model == "claude-3.5"
+            ):
+                MM.add_tool_return_schema_message(
+                    function_call.function_name,
+                    get_system_return_type_prompt(function_call.function_name),
+                )
+
+            need_user_input = False
 
 
 if __name__ == "__main__":
