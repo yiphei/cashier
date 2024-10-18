@@ -165,7 +165,7 @@ class NodeSystemTurn(SystemTurn):
         return {"role": "system", "content": self.msg_content}
 
 
-class AssistantModelTurn(ModelTurn):
+class AssistantTurn(ModelTurn):
     msg_content: Optional[str]
     fn_calls: Optional[List[FunctionCall]] = Field(default_factory=list)
     fn_call_id_to_fn_output: Optional[Dict[str, Any]] = Field(default_factory=dict)
@@ -442,7 +442,7 @@ class TurnContainer:
             mm.add_user_turn(turn)
 
     def add_assistant_turn(self, msg_content, fn_calls=None, fn_id_to_outputs=None):
-        turn = AssistantModelTurn(
+        turn = AssistantTurn(
             msg_content=msg_content,
             fn_calls=fn_calls,
             fn_call_id_to_fn_output=fn_id_to_outputs,
