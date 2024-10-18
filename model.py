@@ -1,13 +1,13 @@
-from collections import defaultdict
 import itertools
-from enum import StrEnum
 import json
+from collections import defaultdict
+from enum import StrEnum
+from typing import Any, Dict, List, Literal, Optional
 
 import anthropic
 import numpy as np
 from openai import OpenAI
 from pydantic import BaseModel, Field
-from typing import Optional, List, Any, Dict, Literal
 
 from model_tool_decorator import (
     ANTHROPIC_TOOL_NAME_TO_TOOL_DEF,
@@ -137,14 +137,15 @@ class FunctionCall(BaseModel):
     tool_call_id: str
     function_args_json: str
 
+
 class ModelMessage(BaseModel):
-    turn: Literal['user', 'assistant', 'system']
+    turn: Literal["user", "assistant", "system"]
     msg_content: Optional[str]
     fn_calls: List[FunctionCall] = Field(default_factory=list)
     fn_outputs: List[Any] = Field(default_factory=list)
     messages: List[Dict] = Field(default_factory=list)
     _fn_call_id_to_fn_output: Dict[str, Any] = Field(default_factory=dict)
-    
+
     def add_fn_call_w_output(self, fn_call, fn_output):
         self.fn_calls.append(fn_call)
         self.fn_outputs.append(fn_output)
@@ -152,38 +153,40 @@ class ModelMessage(BaseModel):
 
     def build_oai_messages(self):
         if self.msg_content:
-            self.messages.append({'role': self.turn, "content": self.msg_content})
+            self.messages.append({"role": self.turn, "content": self.msg_content})
         if self.fn_calls:
             for fn_call in self.fn_calls:
-                self.messages.append(            {
-                "role": "assistant",
-                "tool_calls": [
+                self.messages.append(
                     {
-                        "id": fn_call.tool_call_id,
-                        "type": "function",
-                        "function": {
-                            "arguments": fn_call.function_args_json,
-                            "name": fn_call.function_name,
-                        },
+                        "role": "assistant",
+                        "tool_calls": [
+                            {
+                                "id": fn_call.tool_call_id,
+                                "type": "function",
+                                "function": {
+                                    "arguments": fn_call.function_args_json,
+                                    "name": fn_call.function_name,
+                                },
+                            }
+                        ],
                     }
-                ],
-            })
-                self.messages.append({
-                "role": "tool",
-                "content": json.dumps(self._fn_call_id_to_fn_output[fn_call.tool_call_id], cls=CustomJSONEncoder),
-                "tool_call_id": fn_call.tool_call_id,
-                })
-                
+                )
+                self.messages.append(
+                    {
+                        "role": "tool",
+                        "content": json.dumps(
+                            self._fn_call_id_to_fn_output[fn_call.tool_call_id],
+                            cls=CustomJSONEncoder,
+                        ),
+                        "tool_call_id": fn_call.tool_call_id,
+                    }
+                )
+
                 if fn_call.function_name in OPENAI_TOOLS_RETUN_DESCRIPTION:
                     json_schema = OPENAI_TOOLS_RETUN_DESCRIPTION[fn_call.function_name]
-                    system_msg = (
-                            f"This is the JSON Schema of {fn_call.function_name}'s return type: {json.dumps(json_schema)}"
-                        )
-                    
-                    self.messages.append({
-                        "role": "system",
-                        "content": system_msg
-                    })
+                    system_msg = f"This is the JSON Schema of {fn_call.function_name}'s return type: {json.dumps(json_schema)}"
+
+                    self.messages.append({"role": "system", "content": system_msg})
 
     def build_messages(self, model_provider):
         if model_provider == ModelProvider.OPENAI:
@@ -191,6 +194,7 @@ class ModelMessage(BaseModel):
 
     def build_anthropic_messages(self):
         pass
+
 
 class ModelOutput:
     def __init__(self, output_obj, is_stream):

@@ -20,11 +20,8 @@ from chain import (
 from db_functions import create_db_client
 from gui import remove_previous_line
 from logger import logger
-from model import Model, ModelMessage
-from model_tool_decorator import (
-    FN_NAME_TO_FN,
-    OPENAI_TOOL_NAME_TO_TOOL_DEF,
-)
+from model import Model, ModelMessage, CustomJSONEncoder
+from model_tool_decorator import FN_NAME_TO_FN, OPENAI_TOOL_NAME_TO_TOOL_DEF
 
 # Load environment variables from .env file
 load_dotenv()
@@ -421,7 +418,7 @@ def run_chat(args, model, elevenlabs_client):
                 MM.read_chat_stream(message)
             need_user_input = True
 
-        m_message = ModelMessage(role="assistant", msg_content = message)
+        m_message = ModelMessage(role="assistant", msg_content=message)
 
         for function_call in chat_completion.get_or_stream_fn_calls():
             function_args = json.loads(function_call.function_args_json)
