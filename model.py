@@ -2,12 +2,12 @@ import itertools
 import json
 from collections import defaultdict
 from enum import StrEnum
-from typing import Any, Dict, List, Literal, Optional
+from typing import Any, Dict, List, Optional
 
 import anthropic
 import numpy as np
 from openai import OpenAI
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, constr
 
 from model_tool_decorator import (
     ANTHROPIC_TOOL_NAME_TO_TOOL_DEF,
@@ -137,13 +137,44 @@ class FunctionCall(BaseModel):
     tool_call_id: str
     function_args_json: str
 
-
 class ModelTurn(BaseModel):
-    turn: Literal["user", "assistant", "system"]
+    msg_content: constr(min_length=1)  # type: ignore
+    messages: List[Dict] = Field(default_factory=list)
+
+    def build_oai_messages(self):
+        raise NotImplementedError
+    
+class UserTurn(ModelTurn):
+    def build_oai_messages(self):
+        self.messages.append(
+            {
+                "role": "user",
+                "content": self.msg_content
+            }
+        )
+    
+class SystemTurn(ModelTurn):
+    def build_oai_messages(self):
+        self.messages.append(
+            {
+                "role": "system",
+                "content": self.msg_content
+            }
+        )
+
+class NodeSystemTurn(SystemTurn):
+    def build_oai_messages(self):
+        self.messages.append(
+            {
+                "role": "system",
+                "content": self.msg_content
+            }
+        )
+
+class AssistantModelTurn(ModelTurn):
     msg_content: Optional[str]
     fn_calls: List[FunctionCall] = Field(default_factory=list)
     fn_outputs: List[Any] = Field(default_factory=list)
-    messages: List[Dict] = Field(default_factory=list)
     _fn_call_id_to_fn_output: Dict[str, Any] = Field(default_factory=dict)
 
     def add_fn_call_w_output(self, fn_call, fn_output):
@@ -187,13 +218,6 @@ class ModelTurn(BaseModel):
                     system_msg = f"This is the JSON Schema of {fn_call.function_name}'s return type: {json.dumps(json_schema)}"
 
                     self.messages.append({"role": "system", "content": system_msg})
-
-    def build_messages(self, model_provider):
-        if model_provider == ModelProvider.OPENAI:
-            self.build_oai_messages()
-
-    def build_anthropic_messages(self):
-        pass
 
 
 class ModelOutput:
