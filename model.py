@@ -228,7 +228,7 @@ class AssistantModelTurn(ModelTurn):
 
         if len(contents) == 1 and self.msg_content:
             contents = contents[0]
-            contents = contents['text']
+            contents = contents["text"]
 
         messages.append({"role": "assistant", "content": contents})
 
@@ -418,9 +418,7 @@ class TurnContainer:
         self.turns = []
 
     def add_system_turn(self, msg_content):
-        turn = SystemTurn(
-                msg_content=msg_content
-            )
+        turn = SystemTurn(msg_content=msg_content)
         self.turns.append(turn)
         for mm in self.message_managers:
             mm.add_system_turn(turn)
@@ -432,9 +430,7 @@ class TurnContainer:
         remove_prev_tool_fn_return=None,
         remove_prev_tool_calls=False,
     ):
-        turn = NodeSystemTurn(
-                node_id=node_id, msg_content=node_prompt
-            )
+        turn = NodeSystemTurn(node_id=node_id, msg_content=node_prompt)
         self.turns.append(turn)
         for mm in self.message_managers:
             mm.add_node_turn(turn, remove_prev_tool_fn_return, remove_prev_tool_calls)
@@ -446,7 +442,11 @@ class TurnContainer:
             mm.add_user_turn(turn)
 
     def add_assistant_turn(self, msg_content, fn_calls=None, fn_id_to_outputs=None):
-        turn = AssistantModelTurn(msg_content=msg_content, fn_calls=fn_calls, fn_call_id_to_fn_output=fn_id_to_outputs)
+        turn = AssistantModelTurn(
+            msg_content=msg_content,
+            fn_calls=fn_calls,
+            fn_call_id_to_fn_output=fn_id_to_outputs,
+        )
         self.turns.append(turn)
         for mm in self.message_managers:
             mm.add_assistant_turn(turn)

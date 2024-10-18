@@ -19,12 +19,7 @@ from chain import (
 from db_functions import create_db_client
 from gui import remove_previous_line
 from logger import logger
-from model import (
-    CustomJSONEncoder,
-    Model,
-    ModelProvider,
-    TurnContainer,
-)
+from model import CustomJSONEncoder, Model, ModelProvider, TurnContainer
 from model_tool_decorator import FN_NAME_TO_FN, OPENAI_TOOL_NAME_TO_TOOL_DEF
 
 # Load environment variables from .env file
@@ -311,8 +306,9 @@ def run_chat(args, model, elevenlabs_client):
             need_user_input = False
             fn_id_to_output[function_call.tool_call_id] = fn_output
 
-        TM.add_assistant_turn(chat_completion.msg_content, chat_completion.fn_calls, fn_id_to_output)
-
+        TM.add_assistant_turn(
+            chat_completion.msg_content, chat_completion.fn_calls, fn_id_to_output
+        )
 
 
 if __name__ == "__main__":
