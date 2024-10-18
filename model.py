@@ -148,13 +148,12 @@ class ModelOutput:
             return self.stream_message()
         else:
             return self.get_message()
-        
+
     def get_or_stream_fn_calls(self):
         if self.is_stream:
             return self.stream_fn_calls()
         else:
             return self.get_fn_calls()
-
 
 
 class OAIModelOutput(ModelOutput):
@@ -203,7 +202,7 @@ class OAIModelOutput(ModelOutput):
                 yield msg  # Return the message
         except StopIteration:
             pass  # Signal end of iteration
-        
+
     def stream_fn_calls(self):
         function_name = None
         tool_call_id = None
@@ -216,13 +215,11 @@ class OAIModelOutput(ModelOutput):
             elif self._has_function_call_id(chunk):
                 if self.current_chunk != chunk:
                     fn_call = FunctionCall(
-                            function_name=function_name,  # noqa
-                            tool_call_id=tool_call_id,  # noqa
-                            function_args_json=function_args_json,  # noqa
-                        )
-                    self.fn_calls.append(
-                        fn_call
+                        function_name=function_name,  # noqa
+                        tool_call_id=tool_call_id,  # noqa
+                        function_args_json=function_args_json,  # noqa
                     )
+                    self.fn_calls.append(fn_call)
                     yield fn_call
 
                 function_name = chunk.choices[0].delta.tool_calls[0].function.name
@@ -234,15 +231,13 @@ class OAIModelOutput(ModelOutput):
                 )
 
         if tool_call_id is not None:
-            fn_call =             FunctionCall(
-                    function_name=function_name,
-                    tool_call_id=tool_call_id,
-                    function_args_json=function_args_json,
-                )
-            
-            self.fn_calls.append(
-                fn_call
+            fn_call = FunctionCall(
+                function_name=function_name,
+                tool_call_id=tool_call_id,
+                function_args_json=function_args_json,
             )
+
+            self.fn_calls.append(fn_call)
             yield fn_call
 
     def get_message(self):
@@ -263,13 +258,11 @@ class OAIModelOutput(ModelOutput):
         tool_calls = self.output_obj.choices[0].message.tool_calls or []
         for tool_call in tool_calls:
             fn_call = FunctionCall(
-                    function_name=tool_call.function.name,
-                    tool_call_id=tool_call.id,
-                    function_args_json=tool_call.function.arguments,
-                )
-            function_calls.append(
-                fn_call
+                function_name=tool_call.function.name,
+                tool_call_id=tool_call.id,
+                function_args_json=tool_call.function.arguments,
             )
+            function_calls.append(fn_call)
             yield fn_call
 
 

@@ -438,14 +438,12 @@ def run_chat(args, model, elevenlabs_client):
         message_stream = chat_completion.get_or_stream_message()
         if message_stream is not None:
             if args.audio_output:
-                get_speech_from_text(
-                    message_stream, elevenlabs_client
-                )
+                get_speech_from_text(message_stream, elevenlabs_client)
                 MM.add_assistant_message(chat_completion.msg_content)
             else:
                 MM.read_chat_stream(message_stream)
             need_user_input = True
-        
+
         for function_call in chat_completion.get_or_stream_fn_calls():
             function_args = json.loads(function_call.function_args_json)
             logger.debug(
@@ -453,9 +451,9 @@ def run_chat(args, model, elevenlabs_client):
             )
 
             if function_call.function_name.startswith("get_state"):
-                fn_output = getattr(
-                    current_node_schema, function_call.function_name
-                )(**function_args)
+                fn_output = getattr(current_node_schema, function_call.function_name)(
+                    **function_args
+                )
             elif function_call.function_name.startswith("update_state"):
                 fn_output = current_node_schema.update_state(**function_args)
                 state_condition_results = [
