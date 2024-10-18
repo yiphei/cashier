@@ -2,7 +2,6 @@ import argparse
 import json
 import os
 import tempfile
-from collections import defaultdict
 from distutils.util import strtobool
 from types import GeneratorType
 
@@ -21,35 +20,14 @@ from chain import (
 from db_functions import create_db_client
 from gui import remove_previous_line
 from logger import logger
-from model import Model
+from model import Model, ModelMessage
 from model_tool_decorator import (
     FN_NAME_TO_FN,
     OPENAI_TOOL_NAME_TO_TOOL_DEF,
-    OPENAI_TOOLS_RETUN_DESCRIPTION,
 )
 
 # Load environment variables from .env file
 load_dotenv()
-
-
-class CustomJSONEncoder(json.JSONEncoder):
-    def default(self, obj):
-        if isinstance(obj, BaseModel):
-            return obj.model_dump()
-        elif isinstance(obj, (defaultdict, dict)):
-            return {self.default(k): self.default(v) for k, v in obj.items()}
-        elif isinstance(obj, (list, tuple)):
-            return [self.default(item) for item in obj]
-        elif isinstance(obj, (str, int, float, bool, type(None))):
-            return obj
-        return super().default(obj)
-
-
-def get_system_return_type_prompt(fn_name):
-    json_schema = OPENAI_TOOLS_RETUN_DESCRIPTION[fn_name]
-    return (
-        f"This is the JSON Schema of {fn_name}'s return type: {json.dumps(json_schema)}"
-    )
 
 
 def get_text_from_speech(audio_data, oai_client):
@@ -434,7 +412,6 @@ def run_chat(args, model, elevenlabs_client):
             extra_oai_tool_defs=current_node_schema.OPENAI_TOOL_NAME_TO_TOOL_DEF,
             extra_anthropic_tool_defs=current_node_schema.ANTHROPIC_TOOL_NAME_TO_TOOL_DEF,
         )
-
         message = chat_completion.get_or_stream_message()
         if message is not None:
             if args.audio_output:
@@ -443,6 +420,8 @@ def run_chat(args, model, elevenlabs_client):
             else:
                 MM.read_chat_stream(message)
             need_user_input = True
+
+        m_message = ModelMessage(role="assistant", msg_content = message)
 
         for function_call in chat_completion.get_or_stream_fn_calls():
             function_args = json.loads(function_call.function_args_json)
@@ -478,27 +457,7 @@ def run_chat(args, model, elevenlabs_client):
             logger.debug(
                 f"[FUNCTION_RETURN] {Style.BRIGHT}name: {function_call.function_name}, id: {function_call.tool_call_id}{Style.NORMAL} with output:\n{json.dumps(fn_output, cls=CustomJSONEncoder, indent=4)}"
             )
-            MM.add_tool_call_message(
-                function_call.tool_call_id,
-                function_call.function_name,
-                function_call.function_args_json,
-            )
-            MM.add_tool_response_message(
-                function_call.tool_call_id,
-                json.dumps(fn_output, cls=CustomJSONEncoder),
-            )
-
-            if (
-                not function_call.function_name.startswith(
-                    ("get_state", "update_state")
-                )
-                or args.model == "claude-3.5"
-            ):
-                MM.add_tool_return_schema_message(
-                    function_call.function_name,
-                    get_system_return_type_prompt(function_call.function_name),
-                )
-
+            m_message.add_fn_call_w_output(function_call, fn_output)
             need_user_input = False
 
 

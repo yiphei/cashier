@@ -1,14 +1,18 @@
+from collections import defaultdict
 import itertools
 from enum import StrEnum
+import json
 
 import anthropic
 import numpy as np
 from openai import OpenAI
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+from typing import Optional, List, Any, Dict, Literal
 
 from model_tool_decorator import (
     ANTHROPIC_TOOL_NAME_TO_TOOL_DEF,
     OPENAI_TOOL_NAME_TO_TOOL_DEF,
+    OPENAI_TOOLS_RETUN_DESCRIPTION,
 )
 
 
@@ -133,6 +137,60 @@ class FunctionCall(BaseModel):
     tool_call_id: str
     function_args_json: str
 
+class ModelMessage(BaseModel):
+    turn: Literal['user', 'assistant', 'system']
+    msg_content: Optional[str]
+    fn_calls: List[FunctionCall] = Field(default_factory=list)
+    fn_outputs: List[Any] = Field(default_factory=list)
+    messages: List[Dict] = Field(default_factory=list)
+    _fn_call_id_to_fn_output: Dict[str, Any] = Field(default_factory=dict)
+    
+    def add_fn_call_w_output(self, fn_call, fn_output):
+        self.fn_calls.append(fn_call)
+        self.fn_outputs.append(fn_output)
+        self._fn_call_id_to_fn_output[fn_call.tool_call_id] = fn_output
+
+    def build_oai_messages(self):
+        if self.msg_content:
+            self.messages.append({'role': self.turn, "content": self.msg_content})
+        if self.fn_calls:
+            for fn_call in self.fn_calls:
+                self.messages.append(            {
+                "role": "assistant",
+                "tool_calls": [
+                    {
+                        "id": fn_call.tool_call_id,
+                        "type": "function",
+                        "function": {
+                            "arguments": fn_call.function_args_json,
+                            "name": fn_call.function_name,
+                        },
+                    }
+                ],
+            })
+                self.messages.append({
+                "role": "tool",
+                "content": json.dumps(self._fn_call_id_to_fn_output[fn_call.tool_call_id], cls=CustomJSONEncoder),
+                "tool_call_id": fn_call.tool_call_id,
+                })
+                
+                if fn_call.function_name in OPENAI_TOOLS_RETUN_DESCRIPTION:
+                    json_schema = OPENAI_TOOLS_RETUN_DESCRIPTION[fn_call.function_name]
+                    system_msg = (
+                            f"This is the JSON Schema of {fn_call.function_name}'s return type: {json.dumps(json_schema)}"
+                        )
+                    
+                    self.messages.append({
+                        "role": "system",
+                        "content": system_msg
+                    })
+
+    def build_messages(self, model_provider):
+        if model_provider == ModelProvider.OPENAI:
+            self.build_oai_messages()
+
+    def build_anthropic_messages(self):
+        pass
 
 class ModelOutput:
     def __init__(self, output_obj, is_stream):
@@ -371,3 +429,23 @@ class AnthropicModelOutput(ModelOutput):
 
             self.fn_calls.append(fn_call)
             yield fn_call
+
+
+class CustomJSONEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, BaseModel):
+            return obj.model_dump()
+        elif isinstance(obj, (defaultdict, dict)):
+            return {self.default(k): self.default(v) for k, v in obj.items()}
+        elif isinstance(obj, (list, tuple)):
+            return [self.default(item) for item in obj]
+        elif isinstance(obj, (str, int, float, bool, type(None))):
+            return obj
+        return super().default(obj)
+
+
+def get_system_return_type_prompt(fn_name):
+    json_schema = OPENAI_TOOLS_RETUN_DESCRIPTION[fn_name]
+    return (
+        f"This is the JSON Schema of {fn_name}'s return type: {json.dumps(json_schema)}"
+    )
