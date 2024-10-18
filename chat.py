@@ -25,6 +25,7 @@ from model import (
     Model,
     NodeSystemTurn,
     OAITurnManager,
+    AnthropicTurnManager,
     UserTurn,
 )
 from model_tool_decorator import FN_NAME_TO_FN, OPENAI_TOOL_NAME_TO_TOOL_DEF
@@ -212,7 +213,7 @@ def is_on_topic(model, TM, current_node_schema, all_node_schemas):
 
 
 def run_chat(args, model, elevenlabs_client):
-    TM = OAITurnManager()
+    TM = AnthropicTurnManager()
 
     need_user_input = True
     current_node_schema = take_order_node_schema
