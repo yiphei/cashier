@@ -57,7 +57,9 @@ class Model:
             model_name = self.alias_to_model_name[model_name]
 
         model_provider = self.model_name_to_provider[model_name]
-        message_manager = turn_container.model_provider_to_message_manager[model_provider]
+        message_manager = turn_container.model_provider_to_message_manager[
+            model_provider
+        ]
         if model_provider == ModelProvider.OPENAI:
             if tool_names:
                 tools = self.get_tool_defs_from_names(
@@ -76,7 +78,9 @@ class Model:
                 )
 
             messages, system_prompt = message_manager.get_chat_input()
-            return self.ant_chat(model_name, messages,system_prompt, tools, stream, **kwargs)
+            return self.ant_chat(
+                model_name, messages, system_prompt, tools, stream, **kwargs
+            )
 
     def oai_chat(
         self,
