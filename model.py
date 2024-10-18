@@ -1,14 +1,18 @@
 import itertools
+import json
+from collections import defaultdict
 from enum import StrEnum
+from typing import Any, Dict, List, Optional
 
 import anthropic
 import numpy as np
 from openai import OpenAI
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, PrivateAttr, constr
 
 from model_tool_decorator import (
     ANTHROPIC_TOOL_NAME_TO_TOOL_DEF,
     OPENAI_TOOL_NAME_TO_TOOL_DEF,
+    OPENAI_TOOLS_RETUN_DESCRIPTION,
 )
 
 
@@ -132,6 +136,166 @@ class FunctionCall(BaseModel):
     function_name: str
     tool_call_id: str
     function_args_json: str
+
+
+class ModelTurn(BaseModel):
+    msg_content: constr(min_length=1)  # type: ignore
+    messages: List[Dict] = Field(default_factory=list)
+
+    def build_oai_messages(self):
+        raise NotImplementedError
+
+
+class UserTurn(ModelTurn):
+    def build_oai_messages(self):
+        self.messages.append({"role": "user", "content": self.msg_content})
+
+
+class SystemTurn(ModelTurn):
+    def build_oai_messages(self):
+        self.messages.append({"role": "system", "content": self.msg_content})
+
+
+class NodeSystemTurn(SystemTurn):
+    node_id: int
+
+    def build_oai_messages(self):
+        self.messages.append({"role": "system", "content": self.msg_content})
+
+
+class AssistantModelTurn(ModelTurn):
+    msg_content: Optional[str]
+    fn_calls: List[FunctionCall] = Field(default_factory=list)
+    fn_outputs: List[Any] = Field(default_factory=list)
+    _fn_call_id_to_fn_output: Dict[str, Any] = PrivateAttr(default_factory=dict)
+
+    def add_fn_call_w_output(self, fn_call, fn_output):
+        self.fn_calls.append(fn_call)
+        self.fn_outputs.append(fn_output)
+        self._fn_call_id_to_fn_output[fn_call.tool_call_id] = fn_output
+
+    def build_oai_messages(self):
+        if self.msg_content:
+            self.messages.append({"role": "assistant", "content": self.msg_content})
+        if self.fn_calls:
+            for fn_call in self.fn_calls:
+                self.messages.append(
+                    {
+                        "role": "assistant",
+                        "tool_calls": [
+                            {
+                                "id": fn_call.tool_call_id,
+                                "type": "function",
+                                "function": {
+                                    "arguments": fn_call.function_args_json,
+                                    "name": fn_call.function_name,
+                                },
+                            }
+                        ],
+                    }
+                )
+                self.messages.append(
+                    {
+                        "role": "tool",
+                        "content": json.dumps(
+                            self._fn_call_id_to_fn_output[fn_call.tool_call_id],
+                            cls=CustomJSONEncoder,
+                        ),
+                        "tool_call_id": fn_call.tool_call_id,
+                    }
+                )
+
+                if fn_call.function_name in OPENAI_TOOLS_RETUN_DESCRIPTION:
+                    json_schema = OPENAI_TOOLS_RETUN_DESCRIPTION[fn_call.function_name]
+                    system_msg = f"This is the JSON Schema of {fn_call.function_name}'s return type: {json.dumps(json_schema)}"
+
+                    self.messages.append({"role": "system", "content": system_msg})
+
+
+class TurnManager:
+    def __init__(self):
+        self.turns = []
+        self.message_dicts = []
+
+
+class OAITurnManager(TurnManager):
+    def __init__(self):
+        super().__init__()
+        self.last_node_id = None
+        self.tool_call_ids = []
+        self.tool_fn_return_names = set()
+        self.index_tracker = ListIndexTracker()
+
+    def add_system_turn(self, turn):
+        self.turns.append(turn)
+        turn.build_oai_messages()
+        self.message_dicts.extend(turn.messages)
+
+    def add_node_turn(
+        self,
+        turn,
+        remove_prev_tool_fn_return=None,
+        remove_prev_tool_calls=False,
+    ):
+        if remove_prev_tool_calls:
+            assert remove_prev_tool_fn_return is not False
+
+        if self.last_node_id is not None:
+            idx_to_remove = self.index_tracker.pop_idx(self.last_node_id)
+            del self.message_dicts[idx_to_remove]
+
+        if remove_prev_tool_fn_return is True or remove_prev_tool_calls:
+            for toll_return in self.tool_fn_return_names:
+                idx_to_remove = self.index_tracker.pop_idx(toll_return)
+                del self.message_dicts[idx_to_remove]
+
+            self.tool_fn_return_names = set()
+
+        if remove_prev_tool_calls:
+            for tool_call_id in self.tool_call_ids:
+                idx_to_remove = self.index_tracker.pop_idx(tool_call_id)
+                del self.message_dicts[idx_to_remove]
+
+                idx_to_remove = self.index_tracker.pop_idx(tool_call_id + "return")
+                del self.message_dicts[idx_to_remove]
+
+            self.tool_call_ids = []
+
+        self.turns.append(turn)
+        turn.build_oai_messages()
+        self.message_dicts.extend(turn.messages)
+        self.last_node_id = turn.node_id
+        self.index_tracker.add_idx(turn.node_id, len(self.message_dicts) - 1)
+
+    def add_user_turn(self, turn):
+        self.turns.append(turn)
+        turn.build_oai_messages()
+        self.message_dicts.extend(turn.messages)
+
+    def add_assistant_turn(self, turn):
+        self.turns.append(turn)
+        turn.build_oai_messages()
+        last_fn_name = None
+        for message in turn.messages:
+            if getattr(message, "tool_calls", None) is not None:
+                tool_call_id = message["tool_calls"]["id"]
+                self.tool_call_ids.append(tool_call_id)
+                last_fn_name = message["tool_calls"]["function"]["name"]
+                self.index_tracker.add_idx(tool_call_id, len(self.message_dicts))
+            elif message["role"] == "tool":
+                tool_call_id = message["tool_call_id"]
+                self.index_tracker.add_idx(
+                    tool_call_id + "return", len(self.message_dicts)
+                )
+            elif message["role"] == "system" and last_fn_name is not None:
+                if last_fn_name in self.tool_fn_return_names:
+                    idx_to_remove = self.index_tracker.get_idx(last_fn_name)
+                    del self.message_dicts[idx_to_remove]
+
+                self.tool_fn_return_names.append(last_fn_name)
+                last_fn_name = None
+
+            self.message_dicts.append(message)
 
 
 class ModelOutput:
@@ -371,3 +535,52 @@ class AnthropicModelOutput(ModelOutput):
 
             self.fn_calls.append(fn_call)
             yield fn_call
+
+
+class CustomJSONEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, BaseModel):
+            return obj.model_dump()
+        elif isinstance(obj, (defaultdict, dict)):
+            return {self.default(k): self.default(v) for k, v in obj.items()}
+        elif isinstance(obj, (list, tuple)):
+            return [self.default(item) for item in obj]
+        elif isinstance(obj, (str, int, float, bool, type(None))):
+            return obj
+        return super().default(obj)
+
+
+class ListIndexTracker:
+    def __init__(self):
+        self.named_idx_to_idx = {}
+        self.idx_to_named_idx = {}
+        self.idxs = []
+        self.idx_to_pos = {}
+
+    def add_idx(self, named_idx, idx):
+        self.named_idx_to_idx[named_idx] = idx
+        self.idx_to_named_idx[idx] = named_idx
+        self.idxs.append(idx)
+        self.idx_to_pos[idx] = len(self.idxs) - 1
+
+    def get_idx(self, named_idx):
+        return self.named_idx_to_idx[named_idx]
+
+    def pop_idx(self, named_idx):
+        popped_idx = self.named_idx_to_idx.pop(named_idx)
+        popped_idx_pos = self.idx_to_pos.pop(popped_idx)
+        self.idx_to_named_idx.pop(popped_idx)
+        del self.idxs[popped_idx_pos]
+
+        for i in range(popped_idx_pos, len(self.idxs)):
+            curr_idx = self.idxs[i]
+            curr_named_idx = self.idx_to_named_idx[curr_idx]
+
+            self.idxs[i] -= 1
+            self.idx_to_pos.pop(curr_idx)
+            self.idx_to_pos[self.idxs[i]] = i
+
+            self.named_idx_to_idx[curr_named_idx] = self.idxs[i]
+            self.idx_to_named_idx.pop(curr_idx)
+            self.idx_to_named_idx[self.idxs[i]] = curr_named_idx
+        return popped_idx
