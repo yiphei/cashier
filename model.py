@@ -6,7 +6,6 @@ import numpy as np
 from openai import OpenAI
 from pydantic import BaseModel
 
-from logger import logger
 from model_tool_decorator import (
     ANTHROPIC_TOOL_NAME_TO_TOOL_DEF,
     OPENAI_TOOL_NAME_TO_TOOL_DEF,
