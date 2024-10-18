@@ -409,10 +409,10 @@ class AnthropicMessageManager(MessageManager):
 class TurnContainer:
     model_provider_to_message_manager_cls = {
         ModelProvider.OPENAI: OAIMessageManager,
-        ModelProvider.ANTHROPIC: AnthropicMessageManager
+        ModelProvider.ANTHROPIC: AnthropicMessageManager,
     }
 
-    def __init__(self, model_providers = [ModelProvider.OPENAI, ModelProvider.ANTHROPIC]):
+    def __init__(self, model_providers=[ModelProvider.OPENAI, ModelProvider.ANTHROPIC]):
         self.message_managers = []
         self.model_provider_to_message_manager = {}
         for provider in model_providers:
