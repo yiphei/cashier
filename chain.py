@@ -4,7 +4,7 @@ from openai import pydantic_function_tool
 from pydantic import BaseModel, ConfigDict, Field, create_model
 
 from db_functions import Order
-from model_tool_decorator import OPENAI_TOOL_NAME_TO_TOOL_DEF
+from model_tool_decorator import get_anthropic_tool_def_from_oai
 
 BACKGROUND = (
     "You are a cashier working for the coffee shop Heaven Coffee. You are physically embedded inside the shop, "
@@ -15,11 +15,13 @@ BACKGROUND = (
 
 class NodeSchema:
     _counter = 0
+    OPENAI_TOOL_NAME_TO_TOOL_DEF = {}
+    ANTHROPIC_TOOL_NAME_TO_TOOL_DEF = {}
 
     def __init__(
         self,
         node_prompt,
-        tool_fns,
+        tool_fn_names,
         input_pydantic_model,
         state_pydantic_model,
         first_msg=None,
@@ -27,7 +29,7 @@ class NodeSchema:
         NodeSchema._counter += 1
         self.id = NodeSchema._counter
         self.node_prompt = node_prompt
-        self.tool_fns = tool_fns
+        self.tool_fn_names = tool_fn_names
         self.is_initialized = False
         self.input_pydantic_model = input_pydantic_model
         self.state_pydantic_model = state_pydantic_model
@@ -56,10 +58,11 @@ class NodeSchema:
                 description=f"Function to update the `{field_name}` field in the state",
             )
             remove_default(update_state_fn_json_schema)
-            self.tool_fns.append(update_state_fn_json_schema)
+            self.OPENAI_TOOL_NAME_TO_TOOL_DEF[f"update_state_{field_name}"] = update_state_fn_json_schema
+            self.ANTHROPIC_TOOL_NAME_TO_TOOL_DEF[f"update_state_{field_name}"] = get_anthropic_tool_def_from_oai(update_state_fn_json_schema)            
+            self.tool_fn_names.append(f"update_state_{field_name}")
 
-        self.tool_fns.append(
-            {
+        get_state_oai_tool_def = {
                 "type": "function",
                 "function": {
                     "name": "get_state",
@@ -73,7 +76,10 @@ class NodeSchema:
                     },
                 },
             }
-        )
+        get_state_anthropic_tool_def = get_anthropic_tool_def_from_oai(get_state_oai_tool_def)
+        self.OPENAI_TOOL_NAME_TO_TOOL_DEF["get_state"] = get_state_oai_tool_def
+        self.ANTHROPIC_TOOL_NAME_TO_TOOL_DEF["get_state"] = get_state_anthropic_tool_def
+        self.tool_fn_names.append( "get_state")
 
     def run(self, input):
         self.is_initialized = True
@@ -240,9 +246,9 @@ take_order_node_schema = NodeSchema(
         " small talk about any topic, but you need to steer the conversation back to ordering after some"
         " back-and-forths."
     ),
-    tool_fns=[
-        OPENAI_TOOL_NAME_TO_TOOL_DEF["get_menu_items_options"],
-        OPENAI_TOOL_NAME_TO_TOOL_DEF["get_menu_item_from_name"],
+    tool_fn_names=[
+        "get_menu_items_options",
+        "get_menu_item_from_name",
     ],
     input_pydantic_model=None,
     state_pydantic_model=TakeOrderState,
@@ -261,7 +267,7 @@ confirm_order_node_schema = NodeSchema(
         "Confirm the order with the customer. You do this by"
         " repeating the order back to them and get their confirmation."
     ),
-    tool_fns=[],
+    tool_fn_names=[],
     input_pydantic_model=Order,
     state_pydantic_model=ConfirmOrderState,
 )
@@ -283,7 +289,7 @@ class TerminalOrderState(BaseStateModel):
 
 terminal_order_node_schema = NodeSchema(
     node_prompt=("Order has been successfully placed. Thank the customer."),
-    tool_fns=[],
+    tool_fn_names=[],
     input_pydantic_model=None,
     state_pydantic_model=TerminalOrderState,
 )

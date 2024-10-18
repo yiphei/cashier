@@ -2,6 +2,7 @@ import inspect
 import re
 from collections import defaultdict
 from functools import wraps
+import copy
 
 from openai import pydantic_function_tool
 from pydantic import Field, create_model
@@ -54,9 +55,17 @@ def get_description_from_docstring(docstring):
 
 
 OPENAI_TOOL_NAME_TO_TOOL_DEF = {}
+ANTHROPIC_TOOL_NAME_TO_TOOL_DEF = {}
 FN_NAME_TO_FN = {}
 OPENAI_TOOLS_RETUN_DESCRIPTION = {}
 
+def get_anthropic_tool_def_from_oai(oai_tool_def):
+    anthropic_tool_def_body = copy.deepcopy(oai_tool_def['function']['parameters'])
+    return {
+        "name": oai_tool_def['function']['name'],
+        "description": oai_tool_def['function']['description'],
+        "input_schema": anthropic_tool_def_body,
+    }
 
 def model_tool_decorator(tool_instructions=None):
     def decorator_fn(func):
@@ -75,10 +84,15 @@ def model_tool_decorator(tool_instructions=None):
             func.__name__ + "_parameters", **field_map
         )
         func.pydantic_model = fn_signature_pydantic_model
-        global OPENAI_TOOL_NAME_TO_TOOL_DEF
-        OPENAI_TOOL_NAME_TO_TOOL_DEF[func.__name__] = pydantic_function_tool(
+        oai_tool_def = pydantic_function_tool(
             fn_signature_pydantic_model, name=func.__name__, description=description
         )
+        global OPENAI_TOOL_NAME_TO_TOOL_DEF
+        OPENAI_TOOL_NAME_TO_TOOL_DEF[func.__name__] = oai_tool_def
+
+        anthropic_tool_def = get_anthropic_tool_def_from_oai(oai_tool_def)
+        global ANTHROPIC_TOOL_NAME_TO_TOOL_DEF
+        ANTHROPIC_TOOL_NAME_TO_TOOL_DEF[func.__name__] = anthropic_tool_def
 
         # Generate function return type schema
         return_description = get_return_description_from_docstring(docstring)

@@ -7,7 +7,7 @@ from openai import OpenAI
 from pydantic import BaseModel
 
 from logger import logger
-
+from model_tool_decorator import OPENAI_TOOL_NAME_TO_TOOL_DEF, ANTHROPIC_TOOL_NAME_TO_TOOL_DEF
 
 class ModelProvider(StrEnum):
     OPENAI = "OPENAI"
@@ -30,10 +30,13 @@ class Model:
         self,
         model_name,
         messages,
+        tool_names = None,
         tools=None,
         stream=False,
         logprobs=False,
         response_format=None,
+        extra_oai_tool_defs=None,
+        extra_anthropic_tool_defs = None,
         **kwargs,
     ):
         if model_name in self.alias_to_model_name:
@@ -41,10 +44,22 @@ class Model:
 
         model_provider = self.model_name_to_provider[model_name]
         if model_provider == ModelProvider.OPENAI:
+            all_tool_defs = OPENAI_TOOL_NAME_TO_TOOL_DEF
+            if extra_oai_tool_defs is not None:
+                all_tool_defs |= extra_oai_tool_defs
+            if tool_names:
+                tools = [all_tool_defs[tool_name] for tool_name in tool_names]
+
             return self.oai_chat(
                 model_name, messages, tools, stream, logprobs, response_format, **kwargs
             )
         elif model_provider == ModelProvider.ANTHROPIC:
+            all_tool_defs = ANTHROPIC_TOOL_NAME_TO_TOOL_DEF
+            if extra_anthropic_tool_defs:
+                all_tool_defs |= extra_anthropic_tool_defs
+            if tool_names:
+                tools = [ANTHROPIC_TOOL_NAME_TO_TOOL_DEF[tool_name] for tool_name in tool_names]
+
             return self.ant_chat(model_name, messages, tools, stream, **kwargs)
 
     def oai_chat(
@@ -91,7 +106,7 @@ class Model:
             "max_tokens": 8192,
             "model": model_name,
             "messages": messages[1:],
-            # "tools": tools,
+            "tools": tools,
             "stream": stream,
             **kwargs,
         }
