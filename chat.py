@@ -435,13 +435,13 @@ def run_chat(args, model, elevenlabs_client):
             extra_anthropic_tool_defs=current_node_schema.ANTHROPIC_TOOL_NAME_TO_TOOL_DEF,
         )
 
-        message_stream = chat_completion.get_or_stream_message()
-        if message_stream is not None:
+        message = chat_completion.get_or_stream_message()
+        if message is not None:
             if args.audio_output:
-                get_speech_from_text(message_stream, elevenlabs_client)
+                get_speech_from_text(message, elevenlabs_client)
                 MM.add_assistant_message(chat_completion.msg_content)
             else:
-                MM.read_chat_stream(message_stream)
+                MM.read_chat_stream(message)
             need_user_input = True
 
         for function_call in chat_completion.get_or_stream_fn_calls():
