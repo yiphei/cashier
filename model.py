@@ -173,7 +173,6 @@ class OAIModelOutput(ModelOutput):
         return chunk
 
     def stream_message(self):
-        self.msg_content = ""
         first_chunk = self._get_first_usable_chunk()
         self.current_chunk = first_chunk
         if self._has_msg_content(first_chunk):
@@ -253,7 +252,6 @@ class OAIModelOutput(ModelOutput):
         return np.exp(self.get_logprob(token_idx))
 
     def get_fn_calls(self):
-        function_calls = []
         tool_calls = self.output_obj.choices[0].message.tool_calls or []
         for tool_call in tool_calls:
             fn_call = FunctionCall(
@@ -261,7 +259,7 @@ class OAIModelOutput(ModelOutput):
                 tool_call_id=tool_call.id,
                 function_args_json=tool_call.function.arguments,
             )
-            function_calls.append(fn_call)
+            self.fn_calls.append(fn_call)
             yield fn_call
 
 
