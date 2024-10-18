@@ -58,28 +58,34 @@ class NodeSchema:
                 description=f"Function to update the `{field_name}` field in the state",
             )
             remove_default(update_state_fn_json_schema)
-            self.OPENAI_TOOL_NAME_TO_TOOL_DEF[f"update_state_{field_name}"] = update_state_fn_json_schema
-            self.ANTHROPIC_TOOL_NAME_TO_TOOL_DEF[f"update_state_{field_name}"] = get_anthropic_tool_def_from_oai(update_state_fn_json_schema)            
+            self.OPENAI_TOOL_NAME_TO_TOOL_DEF[f"update_state_{field_name}"] = (
+                update_state_fn_json_schema
+            )
+            self.ANTHROPIC_TOOL_NAME_TO_TOOL_DEF[f"update_state_{field_name}"] = (
+                get_anthropic_tool_def_from_oai(update_state_fn_json_schema)
+            )
             self.tool_fn_names.append(f"update_state_{field_name}")
 
         get_state_oai_tool_def = {
-                "type": "function",
-                "function": {
-                    "name": "get_state",
-                    "strict": True,
-                    "description": "Function to get the current state",
-                    "parameters": {
-                        "type": "object",
-                        "properties": {},
-                        "required": [],
-                        "additionalProperties": False,
-                    },
+            "type": "function",
+            "function": {
+                "name": "get_state",
+                "strict": True,
+                "description": "Function to get the current state",
+                "parameters": {
+                    "type": "object",
+                    "properties": {},
+                    "required": [],
+                    "additionalProperties": False,
                 },
-            }
-        get_state_anthropic_tool_def = get_anthropic_tool_def_from_oai(get_state_oai_tool_def)
+            },
+        }
+        get_state_anthropic_tool_def = get_anthropic_tool_def_from_oai(
+            get_state_oai_tool_def
+        )
         self.OPENAI_TOOL_NAME_TO_TOOL_DEF["get_state"] = get_state_oai_tool_def
         self.ANTHROPIC_TOOL_NAME_TO_TOOL_DEF["get_state"] = get_state_anthropic_tool_def
-        self.tool_fn_names.append( "get_state")
+        self.tool_fn_names.append("get_state")
 
     def run(self, input):
         self.is_initialized = True

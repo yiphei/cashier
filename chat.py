@@ -10,7 +10,6 @@ from colorama import Fore, Style
 from dotenv import load_dotenv  # Add this import
 from elevenlabs import ElevenLabs, Voice, VoiceSettings, stream
 from pydantic import BaseModel
-from model_tool_decorator import OPENAI_TOOL_NAME_TO_TOOL_DEF
 
 from audio import get_audio_input, save_audio_to_wav
 from chain import (
@@ -23,7 +22,11 @@ from db_functions import create_db_client
 from gui import remove_previous_line
 from logger import logger
 from model import Model
-from model_tool_decorator import FN_NAME_TO_FN, OPENAI_TOOLS_RETUN_DESCRIPTION
+from model_tool_decorator import (
+    FN_NAME_TO_FN,
+    OPENAI_TOOL_NAME_TO_TOOL_DEF,
+    OPENAI_TOOLS_RETUN_DESCRIPTION,
+)
 
 # Load environment variables from .env file
 load_dotenv()
@@ -292,7 +295,9 @@ class MessageManager:
 
 
 def is_on_topic(model, MM, current_node_schema, all_node_schemas):
-    all_tool_defs = OPENAI_TOOL_NAME_TO_TOOL_DEF | current_node_schema.OPENAI_TOOL_NAME_TO_TOOL_DEF
+    all_tool_defs = (
+        OPENAI_TOOL_NAME_TO_TOOL_DEF | current_node_schema.OPENAI_TOOL_NAME_TO_TOOL_DEF
+    )
     conversational_msgs = MM.get_all_conversational_messages_of_current_node()
     conversational_msgs.append(
         {
@@ -427,7 +432,7 @@ def run_chat(args, model, elevenlabs_client):
             tool_names=current_node_schema.tool_fn_names,
             stream=args.stream,
             extra_oai_tool_defs=current_node_schema.OPENAI_TOOL_NAME_TO_TOOL_DEF,
-            extra_anthropic_tool_defs=current_node_schema.ANTHROPIC_TOOL_NAME_TO_TOOL_DEF
+            extra_anthropic_tool_defs=current_node_schema.ANTHROPIC_TOOL_NAME_TO_TOOL_DEF,
         )
         has_tool_call = chat_completion.has_tool_call()
 
