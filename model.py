@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Optional
 import anthropic
 import numpy as np
 from openai import OpenAI
-from pydantic import BaseModel, Field, constr
+from pydantic import BaseModel, Field, constr, PrivateAttr
 
 from model_tool_decorator import (
     ANTHROPIC_TOOL_NAME_TO_TOOL_DEF,
@@ -157,6 +157,7 @@ class SystemTurn(ModelTurn):
 
 
 class NodeSystemTurn(SystemTurn):
+    node_id: int
     def build_oai_messages(self):
         self.messages.append({"role": "system", "content": self.msg_content})
 
@@ -165,7 +166,7 @@ class AssistantModelTurn(ModelTurn):
     msg_content: Optional[str]
     fn_calls: List[FunctionCall] = Field(default_factory=list)
     fn_outputs: List[Any] = Field(default_factory=list)
-    _fn_call_id_to_fn_output: Dict[str, Any] = Field(default_factory=dict)
+    _fn_call_id_to_fn_output: Dict[str, Any] = PrivateAttr(default_factory=dict)
 
     def add_fn_call_w_output(self, fn_call, fn_output):
         self.fn_calls.append(fn_call)
@@ -174,7 +175,7 @@ class AssistantModelTurn(ModelTurn):
 
     def build_oai_messages(self):
         if self.msg_content:
-            self.messages.append({"role": self.turn, "content": self.msg_content})
+            self.messages.append({"role": 'assistant', "content": self.msg_content})
         if self.fn_calls:
             for fn_call in self.fn_calls:
                 self.messages.append(
@@ -232,7 +233,6 @@ class OAITurnManager(TurnManager):
     def add_node_turn(
         self,
         turn,
-        node_id,
         remove_prev_tool_fn_return=None,
         remove_prev_tool_calls=False,
     ):
@@ -263,8 +263,8 @@ class OAITurnManager(TurnManager):
         self.turns.append(turn)
         turn.build_oai_messages()
         self.message_dicts.extend(turn.messages)
-        self.last_node_id = node_id
-        self.index_tracker.add_idx(node_id, len(self.message_dicts) - 1)
+        self.last_node_id = turn.node_id
+        self.index_tracker.add_idx(turn.node_id, len(self.message_dicts) - 1)
 
     def add_user_turn(self, turn):
         self.turns.append(turn)

@@ -20,7 +20,7 @@ from chain import (
 from db_functions import create_db_client
 from gui import remove_previous_line
 from logger import logger
-from model import CustomJSONEncoder, ListIndexTracker, Model, ModelTurn
+from model import CustomJSONEncoder, ListIndexTracker, Model, AssistantModelTurn, UserTurn, NodeSystemTurn, OAITurnManager
 from model_tool_decorator import FN_NAME_TO_FN, OPENAI_TOOL_NAME_TO_TOOL_DEF
 
 # Load environment variables from .env file
@@ -68,7 +68,7 @@ def get_user_input(use_audio_input, openai_client):
     return text_input
 
 
-class MessageManager:
+class MessageDisplay:
     API_ROLE_TO_PREFIX = {
         "system": "System",
         "user": "You",
@@ -80,136 +80,30 @@ class MessageManager:
         "user": Fore.WHITE,
         "assistant": Fore.BLUE,
     }
-
-    def __init__(self, output_system_prompt=False):
-        self.messages = []
-        self.output_system_prompt = output_system_prompt
-        self.list_index_tracker = ListIndexTracker()
-        self.last_node_id = None
-        self.tool_call_ids = []
-        self.tool_fn_return_names = set()
-
-    def add_message_dict(self, msg_dict, print_msg=True):
-        self.messages.append(msg_dict)
-        if (
-            print_msg
-            and (msg_dict["role"] != "system" or self.output_system_prompt)
-            and not self.is_tool_message(msg_dict)
-        ):
-            self.print_msg(msg_dict["role"], msg_dict["content"])
-
-    def add_user_message(self, msg):
-        self.add_message_dict({"role": "user", "content": msg})
-
-    def add_assistant_message(self, msg):
-        self.add_message_dict({"role": "assistant", "content": msg})
-
-    def add_system_message(self, msg):
-        self.add_message_dict({"role": "system", "content": msg})
-
-    def add_tool_call_message(self, tool_call_id, function_name, function_args_json):
-        self.add_message_dict(
-            {
-                "role": "assistant",
-                "tool_calls": [
-                    {
-                        "id": tool_call_id,
-                        "type": "function",
-                        "function": {
-                            "arguments": function_args_json,
-                            "name": function_name,
-                        },
-                    }
-                ],
-            }
-        )
-        self.list_index_tracker.add_idx(tool_call_id, len(self.messages) - 1)
-        self.tool_call_ids.append(tool_call_id)
-
-    def add_tool_response_message(self, tool_call_id, tool_response):
-        self.add_message_dict(
-            {
-                "role": "tool",
-                "content": tool_response,
-                "tool_call_id": tool_call_id,
-            }
-        )
-        self.list_index_tracker.add_idx(tool_call_id + "return", len(self.messages) - 1)
-
-    def add_tool_return_schema_message(self, tool_name, msg):
-        if tool_name in self.list_index_tracker.named_idx_to_idx:
-            idx_to_remove = self.list_index_tracker.pop_idx(tool_name)
-            del self.messages[idx_to_remove]
-
-        self.add_system_message(msg)
-        self.list_index_tracker.add_idx(tool_name, len(self.messages) - 1)
-        self.tool_fn_return_names.add(tool_name)
-
-    def add_node_system_message(
-        self,
-        node_id,
-        msg,
-        remove_prev_tool_fn_return=None,
-        remove_prev_tool_calls=False,
-    ):
-        if remove_prev_tool_calls:
-            assert remove_prev_tool_fn_return is not False
-
-        if self.last_node_id is not None:
-            idx_to_remove = self.list_index_tracker.pop_idx(self.last_node_id)
-            del self.messages[idx_to_remove]
-
-        if remove_prev_tool_fn_return is True or remove_prev_tool_calls:
-            for toll_return in self.tool_fn_return_names:
-                idx_to_remove = self.list_index_tracker.pop_idx(toll_return)
-                del self.messages[idx_to_remove]
-
-            self.tool_fn_return_names = set()
-
-        if remove_prev_tool_calls:
-            for tool_call_id in self.tool_call_ids:
-                idx_to_remove = self.list_index_tracker.pop_idx(tool_call_id)
-                del self.messages[idx_to_remove]
-
-                idx_to_remove = self.list_index_tracker.pop_idx(tool_call_id + "return")
-                del self.messages[idx_to_remove]
-
-            self.tool_call_ids = []
-
-        self.add_system_message(msg)
-        self.list_index_tracker.add_idx(node_id, len(self.messages) - 1)
-        self.last_node_id = node_id
-
-    def is_tool_message(self, msg):
-        return (msg["role"] == "assistant" and msg.get("tool_calls") is not None) or (
-            msg["role"] == "tool" and msg.get("tool_call_id") is not None
-        )
-
-    def read_chat_stream(self, chat_stream):
+    @classmethod
+    def read_chat_stream(cls, chat_stream):
         if isinstance(chat_stream, GeneratorType):
-            self.print_msg(role="assistant", msg=None, end="")
+            cls.print_msg(role="assistant", msg=None, end="")
             full_msg = ""
             for msg_chunk in chat_stream:
-                self.print_msg(
+                cls.print_msg(
                     role="assistant", msg=msg_chunk, add_role_prefix=False, end=""
                 )
                 full_msg += msg_chunk
 
-            self.add_message_dict(
-                {"role": "assistant", "content": full_msg},
-                print_msg=False,
-            )
             print("\n\n")
         else:
-            self.add_assistant_message(chat_stream)
+            cls.print_msg("assistant", chat_stream)
 
-    def get_role_prefix(self, role):
-        return f"{Style.BRIGHT}{self.API_ROLE_TO_PREFIX[role]}: {Style.NORMAL}"
+    @classmethod
+    def get_role_prefix(cls, role):
+        return f"{Style.BRIGHT}{cls.API_ROLE_TO_PREFIX[role]}: {Style.NORMAL}"
 
-    def print_msg(self, role, msg, add_role_prefix=True, end="\n\n"):
-        formatted_msg = f"{self.API_ROLE_TO_COLOR[role]}"
+    @classmethod
+    def print_msg(cls, role, msg, add_role_prefix=True, end="\n\n"):
+        formatted_msg = f"{cls.API_ROLE_TO_COLOR[role]}"
         if add_role_prefix:
-            formatted_msg += f"{self.get_role_prefix(role)}"
+            formatted_msg += f"{cls.get_role_prefix(role)}"
         if msg is not None:
             formatted_msg += f"{msg}"
 
@@ -219,114 +113,98 @@ class MessageManager:
             end=end,
         )
 
-    def is_conversational_msg(self, msg):
-        return msg["role"] == "user" or (
-            msg["role"] == "assistant" and not self.is_tool_message(msg)
-        )
-
-    def get_all_conversational_messages_of_current_node(self):
-        start_idx = self.list_index_tracker.get_idx(self.last_node_id)
-        return [
-            msg
-            for msg in self.messages[start_idx + 1 :]
-            if self.is_conversational_msg(msg)
-        ]
-
-
-def is_on_topic(model, MM, current_node_schema, all_node_schemas):
+def is_on_topic(model, TM, current_node_schema, all_node_schemas):
     all_tool_defs = (
         OPENAI_TOOL_NAME_TO_TOOL_DEF | current_node_schema.OPENAI_TOOL_NAME_TO_TOOL_DEF
     )
-    conversational_msgs = MM.get_all_conversational_messages_of_current_node()
-    conversational_msgs.append(
-        {
-            "role": "system",
-            "content": (
-                "You are an AI-agent orchestration engine. Each AI agent is defined by an expectation"
-                " and a set of tools (i.e. functions). Given the prior conversation, determine if the"
-                " last user message can be fully handled by the current AI agent. Return true if"
-                " the last user message is a case covered by the current AI agent's expectation OR "
-                "tools. Return false if otherwise, meaning that we should explore letting another AI agent take over.\n\n"
-                "LAST USER MESSAGE:\n"
-                "```\n"
-                f"{conversational_msgs[-1]['content']}\n"
-                "```\n\n"
-                "EXPECTATION:\n"
-                "```\n"
-                f"{current_node_schema.node_prompt}\n"
-                "```\n\n"
-                "TOOLS:\n"
-                "```\n"
-                f"{json.dumps([all_tool_defs[name] for name in current_node_schema.tool_fn_names])}\n"
-                "```"
-            ),
-        }
-    )
+    # conversational_msgs = TM.get_all_conversational_messages_of_current_node()
+    # conversational_msgs.append(
+    #     {
+    #         "role": "system",
+    #         "content": (
+    #             "You are an AI-agent orchestration engine. Each AI agent is defined by an expectation"
+    #             " and a set of tools (i.e. functions). Given the prior conversation, determine if the"
+    #             " last user message can be fully handled by the current AI agent. Return true if"
+    #             " the last user message is a case covered by the current AI agent's expectation OR "
+    #             "tools. Return false if otherwise, meaning that we should explore letting another AI agent take over.\n\n"
+    #             "LAST USER MESSAGE:\n"
+    #             "```\n"
+    #             f"{conversational_msgs[-1]['content']}\n"
+    #             "```\n\n"
+    #             "EXPECTATION:\n"
+    #             "```\n"
+    #             f"{current_node_schema.node_prompt}\n"
+    #             "```\n\n"
+    #             "TOOLS:\n"
+    #             "```\n"
+    #             f"{json.dumps([all_tool_defs[name] for name in current_node_schema.tool_fn_names])}\n"
+    #             "```"
+    #         ),
+    #     }
+    # )
 
-    class Response1(BaseModel):
-        output: bool
+    # class Response1(BaseModel):
+    #     output: bool
 
-    chat_completion = model.chat(
-        model_name="gpt-4o-mini",
-        messages=conversational_msgs,
-        response_format=Response1,
-        logprobs=True,
-        temperature=0,
-    )
-    is_on_topic = chat_completion.get_message_prop("output")
-    prob = chat_completion.get_prob(-2)
-    logger.debug(f"IS_ON_TOPIC: {is_on_topic} with {prob}")
-    if not is_on_topic:
-        conversational_msgs.pop()
-        prompt = (
-            "You are an AI-agent orchestration engine. Each AI agent is defined by an expectation"
-            " and a set of tools (i.e. functions). An AI agent can handle a user message if it is "
-            "a case covered by the AI agent's expectation OR tools. "
-            "Given the prior conversation and a list of AI agents,"
-            " determine which agent can best handle the last user message. "
-            "Respond by returning the AI agent ID.\n\n"
-        )
-        for node_schema in all_node_schemas:
-            prompt += (
-                f"## AGENT ID: {node_schema.id}\n\n"
-                "EXPECTATION:\n"
-                "```\n"
-                f"{node_schema.node_prompt}\n"
-                "```\n\n"
-                "TOOLS:\n"
-                "```\n"
-                f"{json.dumps([all_tool_defs[name] for name in current_node_schema.tool_fn_names])}\n"
-                "```\n\n"
-            )
+    # chat_completion = model.chat(
+    #     model_name="gpt-4o-mini",
+    #     messages=conversational_msgs,
+    #     response_format=Response1,
+    #     logprobs=True,
+    #     temperature=0,
+    # )
+    # is_on_topic = chat_completion.get_message_prop("output")
+    # prob = chat_completion.get_prob(-2)
+    # logger.debug(f"IS_ON_TOPIC: {is_on_topic} with {prob}")
+    # if not is_on_topic:
+    #     conversational_msgs.pop()
+    #     prompt = (
+    #         "You are an AI-agent orchestration engine. Each AI agent is defined by an expectation"
+    #         " and a set of tools (i.e. functions). An AI agent can handle a user message if it is "
+    #         "a case covered by the AI agent's expectation OR tools. "
+    #         "Given the prior conversation and a list of AI agents,"
+    #         " determine which agent can best handle the last user message. "
+    #         "Respond by returning the AI agent ID.\n\n"
+    #     )
+    #     for node_schema in all_node_schemas:
+    #         prompt += (
+    #             f"## AGENT ID: {node_schema.id}\n\n"
+    #             "EXPECTATION:\n"
+    #             "```\n"
+    #             f"{node_schema.node_prompt}\n"
+    #             "```\n\n"
+    #             "TOOLS:\n"
+    #             "```\n"
+    #             f"{json.dumps([all_tool_defs[name] for name in current_node_schema.tool_fn_names])}\n"
+    #             "```\n\n"
+    #         )
 
-        prompt += (
-            "LAST USER MESSAGE:\n"
-            "```\n"
-            f"{conversational_msgs[-1]['content']}\n"
-            "```"
-        )
-        conversational_msgs.append({"role": "system", "content": prompt})
+    #     prompt += (
+    #         "LAST USER MESSAGE:\n"
+    #         "```\n"
+    #         f"{conversational_msgs[-1]['content']}\n"
+    #         "```"
+    #     )
+    #     conversational_msgs.append({"role": "system", "content": prompt})
 
-        class Response2(BaseModel):
-            agent_id: int
+    #     class Response2(BaseModel):
+    #         agent_id: int
 
-        chat_completion = model.chat(
-            model_name="gpt-4o",
-            messages=conversational_msgs,
-            response_format=Response2,
-            logprobs=True,
-            temperature=0,
-        )
+    #     chat_completion = model.chat(
+    #         model_name="gpt-4o",
+    #         messages=conversational_msgs,
+    #         response_format=Response2,
+    #         logprobs=True,
+    #         temperature=0,
+    #     )
 
-        agent_id = chat_completion.get_message_prop("agent_id")
-        prob = chat_completion.get_prob(-2)
-        logger.debug(f"AGENT_ID: {agent_id} with {prob}")
+    #     agent_id = chat_completion.get_message_prop("agent_id")
+    #     prob = chat_completion.get_prob(-2)
+    #     logger.debug(f"AGENT_ID: {agent_id} with {prob}")
 
 
 def run_chat(args, model, elevenlabs_client):
-    MM = MessageManager(
-        output_system_prompt=args.output_system_prompt,
-    )
+    TM = OAITurnManager()
 
     need_user_input = True
     current_node_schema = take_order_node_schema
@@ -339,11 +217,15 @@ def run_chat(args, model, elevenlabs_client):
                 f"[NODE_SCHEMA] Initializing {Style.BRIGHT}node_schema_id: {current_node_schema.id}{Style.NORMAL}"
             )
             current_node_schema.run(new_node_input)
-            MM.add_node_system_message(
-                current_node_schema.id, current_node_schema.prompt
-            )
+            node_system_turn = NodeSystemTurn(node_id=current_node_schema.id, msg_content=current_node_schema.prompt)
+            TM.add_node_turn(node_system_turn)
+            MessageDisplay.print_msg("system", node_system_turn.msg_content)
+
             if current_node_schema.first_msg:
-                MM.add_message_dict(current_node_schema.first_msg)
+                #TODO fix this
+                a_turn = AssistantModelTurn(msg_content=current_node_schema.first_msg['content'])
+                TM.add_assistant_turn(a_turn)
+                MessageDisplay.print_msg("assistant", current_node_schema.first_msg['content'])
 
         if need_user_input:
             # Read user input from stdin
@@ -352,11 +234,12 @@ def run_chat(args, model, elevenlabs_client):
             if text_input.lower() == "exit":
                 print("Exiting chatbot. Goodbye!")
                 break
-
-            MM.add_user_message(text_input)
+            user_turn = UserTurn(msg_content=text_input)
+            MessageDisplay.print_msg('user', text_input)
+            TM.add_user_turn(user_turn)
             is_on_topic(
                 model,
-                MM,
+                TM,
                 current_node_schema,
                 [
                     take_order_node_schema,
@@ -367,7 +250,7 @@ def run_chat(args, model, elevenlabs_client):
 
         chat_completion = model.chat(
             model_name=args.model,
-            messages=MM.messages,
+            messages=TM.message_dicts,
             tool_names=current_node_schema.tool_fn_names,
             stream=args.stream,
             extra_oai_tool_defs=current_node_schema.OPENAI_TOOL_NAME_TO_TOOL_DEF,
@@ -377,12 +260,11 @@ def run_chat(args, model, elevenlabs_client):
         if message is not None:
             if args.audio_output:
                 get_speech_from_text(message, elevenlabs_client)
-                MM.add_assistant_message(chat_completion.msg_content)
             else:
-                MM.read_chat_stream(message)
+                MessageDisplay.read_chat_stream(message)
             need_user_input = True
 
-        m_turn = ModelTurn(turn="assistant", msg_content=message)
+        a_turn_2 = AssistantModelTurn(msg_content=chat_completion.msg_content)
 
         for function_call in chat_completion.get_or_stream_fn_calls():
             function_args = json.loads(function_call.function_args_json)
@@ -418,7 +300,8 @@ def run_chat(args, model, elevenlabs_client):
             logger.debug(
                 f"[FUNCTION_RETURN] {Style.BRIGHT}name: {function_call.function_name}, id: {function_call.tool_call_id}{Style.NORMAL} with output:\n{json.dumps(fn_output, cls=CustomJSONEncoder, indent=4)}"
             )
-            m_turn.add_fn_call_w_output(function_call, fn_output)
+            a_turn_2.add_fn_call_w_output(function_call, fn_output)
+            TM.add_assistant_turn(a_turn_2)
             need_user_input = False
 
 
