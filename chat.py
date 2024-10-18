@@ -20,7 +20,7 @@ from chain import (
 from db_functions import create_db_client
 from gui import remove_previous_line
 from logger import logger
-from model import CustomJSONEncoder, Model, ModelTurn
+from model import CustomJSONEncoder, ListIndexTracker, Model, ModelTurn
 from model_tool_decorator import FN_NAME_TO_FN, OPENAI_TOOL_NAME_TO_TOOL_DEF
 
 # Load environment variables from .env file
@@ -66,42 +66,6 @@ def get_user_input(use_audio_input, openai_client):
         remove_previous_line()
 
     return text_input
-
-
-class ListIndexTracker:
-    def __init__(self):
-        self.named_idx_to_idx = {}
-        self.idx_to_named_idx = {}
-        self.idxs = []
-        self.idx_to_pos = {}
-
-    def add_idx(self, named_idx, idx):
-        self.named_idx_to_idx[named_idx] = idx
-        self.idx_to_named_idx[idx] = named_idx
-        self.idxs.append(idx)
-        self.idx_to_pos[idx] = len(self.idxs) - 1
-
-    def get_idx(self, named_idx):
-        return self.named_idx_to_idx[named_idx]
-
-    def pop_idx(self, named_idx):
-        popped_idx = self.named_idx_to_idx.pop(named_idx)
-        popped_idx_pos = self.idx_to_pos.pop(popped_idx)
-        self.idx_to_named_idx.pop(popped_idx)
-        del self.idxs[popped_idx_pos]
-
-        for i in range(popped_idx_pos, len(self.idxs)):
-            curr_idx = self.idxs[i]
-            curr_named_idx = self.idx_to_named_idx[curr_idx]
-
-            self.idxs[i] -= 1
-            self.idx_to_pos.pop(curr_idx)
-            self.idx_to_pos[self.idxs[i]] = i
-
-            self.named_idx_to_idx[curr_named_idx] = self.idxs[i]
-            self.idx_to_named_idx.pop(curr_idx)
-            self.idx_to_named_idx[self.idxs[i]] = curr_named_idx
-        return popped_idx
 
 
 class MessageManager:
