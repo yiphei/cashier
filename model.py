@@ -255,6 +255,7 @@ class AssistantModelTurn(ModelTurn):
 
         return messages
 
+
 class TurnManager:
     def __init__(self):
         self.turns = []
@@ -412,6 +413,7 @@ class AnthropicTurnManager(TurnManager):
 
             self.message_dicts.append(message)
 
+
 class TurnContainer:
     def __init__(self):
         self.oai_turn_manager = OAITurnManager()
@@ -427,8 +429,12 @@ class TurnContainer:
         remove_prev_tool_fn_return=None,
         remove_prev_tool_calls=False,
     ):
-        self.oai_turn_manager.add_node_turn(turn, remove_prev_tool_fn_return, remove_prev_tool_calls)
-        self.anthropic_turn_manager.add_node_turn(turn, remove_prev_tool_fn_return, remove_prev_tool_calls)
+        self.oai_turn_manager.add_node_turn(
+            turn, remove_prev_tool_fn_return, remove_prev_tool_calls
+        )
+        self.anthropic_turn_manager.add_node_turn(
+            turn, remove_prev_tool_fn_return, remove_prev_tool_calls
+        )
 
     def add_user_turn(self, turn):
         self.oai_turn_manager.add_user_turn(turn)

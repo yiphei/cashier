@@ -23,10 +23,10 @@ from model import (
     AssistantModelTurn,
     CustomJSONEncoder,
     Model,
+    ModelProvider,
     NodeSystemTurn,
     TurnContainer,
     UserTurn,
-    ModelProvider
 )
 from model_tool_decorator import FN_NAME_TO_FN, OPENAI_TOOL_NAME_TO_TOOL_DEF
 
@@ -265,7 +265,11 @@ def run_chat(args, model, elevenlabs_client):
 
         chat_completion = model.chat(
             model_name=args.model,
-            messages=TM.get_message_dicts(ModelProvider.ANTHROPIC if args.model == 'claude-3.5' else ModelProvider.OPENAI),
+            messages=TM.get_message_dicts(
+                ModelProvider.ANTHROPIC
+                if args.model == "claude-3.5"
+                else ModelProvider.OPENAI
+            ),
             tool_names=current_node_schema.tool_fn_names,
             stream=args.stream,
             extra_oai_tool_defs=current_node_schema.OPENAI_TOOL_NAME_TO_TOOL_DEF,
