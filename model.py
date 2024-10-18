@@ -256,13 +256,12 @@ class AssistantModelTurn(ModelTurn):
         return messages
 
 
-class TurnManager:
+class MessageManager:
     def __init__(self):
-        self.turns = []
         self.message_dicts = []
 
 
-class OAITurnManager(TurnManager):
+class OAIMessageManager(MessageManager):
     def __init__(self):
         super().__init__()
         self.last_node_id = None
@@ -271,7 +270,6 @@ class OAITurnManager(TurnManager):
         self.index_tracker = ListIndexTracker()
 
     def add_system_turn(self, turn):
-        self.turns.append(turn)
         self.message_dicts.append(turn.build_oai_messages())
 
     def add_node_turn(
@@ -304,17 +302,14 @@ class OAITurnManager(TurnManager):
 
             self.tool_call_ids = []
 
-        self.turns.append(turn)
         self.message_dicts.append(turn.build_oai_messages())
         self.last_node_id = turn.node_id
         self.index_tracker.add_idx(turn.node_id, len(self.message_dicts) - 1)
 
     def add_user_turn(self, turn):
-        self.turns.append(turn)
         self.message_dicts.append(turn.build_oai_messages())
 
     def add_assistant_turn(self, turn):
-        self.turns.append(turn)
         messages = turn.build_oai_messages()
         last_fn_name = None
         for message in messages:
@@ -339,7 +334,7 @@ class OAITurnManager(TurnManager):
             self.message_dicts.append(message)
 
 
-class AnthropicTurnManager(TurnManager):
+class AnthropicMessageManager(MessageManager):
     def __init__(self):
         super().__init__()
         self.last_node_id = None
@@ -381,15 +376,12 @@ class AnthropicTurnManager(TurnManager):
 
         #     self.tool_call_ids = []
 
-        self.turns.append(turn)
         self.system = turn.msg_content
 
     def add_user_turn(self, turn):
-        self.turns.append(turn)
         self.message_dicts.append(turn.build_anthropic_messages())
 
     def add_assistant_turn(self, turn):
-        self.turns.append(turn)
         messages = turn.build_anthropic_messages()
         last_fn_name = None
         for message in messages:
@@ -415,13 +407,25 @@ class AnthropicTurnManager(TurnManager):
 
 
 class TurnContainer:
-    def __init__(self):
-        self.oai_turn_manager = OAITurnManager()
-        self.anthropic_turn_manager = AnthropicTurnManager()
+    model_provider_to_message_manager_cls = {
+        ModelProvider.OPENAI: OAIMessageManager,
+        ModelProvider.ANTHROPIC: AnthropicMessageManager
+    }
+
+    def __init__(self, model_providers = [ModelProvider.OPENAI, ModelProvider.ANTHROPIC]):
+        self.message_managers = []
+        self.model_provider_to_message_manager = {}
+        for provider in model_providers:
+            mm = self.model_provider_to_message_manager_cls[provider]()
+            self.message_managers.append(mm)
+            self.model_provider_to_message_manager[provider] = mm
+
+        self.turns = []
 
     def add_system_turn(self, turn):
-        self.oai_turn_manager.add_system_turn(turn)
-        self.anthropic_turn_manager.add_system_turn(turn)
+        self.turns.append(turn)
+        for mm in self.message_managers:
+            mm.add_system_turn(turn)
 
     def add_node_turn(
         self,
@@ -429,26 +433,22 @@ class TurnContainer:
         remove_prev_tool_fn_return=None,
         remove_prev_tool_calls=False,
     ):
-        self.oai_turn_manager.add_node_turn(
-            turn, remove_prev_tool_fn_return, remove_prev_tool_calls
-        )
-        self.anthropic_turn_manager.add_node_turn(
-            turn, remove_prev_tool_fn_return, remove_prev_tool_calls
-        )
+        self.turns.append(turn)
+        for mm in self.message_managers:
+            mm.add_node_turn(turn, remove_prev_tool_fn_return, remove_prev_tool_calls)
 
     def add_user_turn(self, turn):
-        self.oai_turn_manager.add_user_turn(turn)
-        self.anthropic_turn_manager.add_user_turn(turn)
+        self.turns.append(turn)
+        for mm in self.message_managers:
+            mm.add_user_turn(turn)
 
     def add_assistant_turn(self, turn):
-        self.oai_turn_manager.add_assistant_turn(turn)
-        self.anthropic_turn_manager.add_assistant_turn(turn)
+        self.turns.append(turn)
+        for mm in self.message_managers:
+            mm.add_assistant_turn(turn)
 
     def get_message_dicts(self, model_provider):
-        if model_provider == ModelProvider.OPENAI:
-            return self.oai_turn_manager.message_dicts
-        else:
-            return self.anthropic_turn_manager.message_dicts
+        return self.model_provider_to_message_manager[model_provider].message_dicts
 
 
 class ModelOutput:
