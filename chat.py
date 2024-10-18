@@ -20,13 +20,10 @@ from db_functions import create_db_client
 from gui import remove_previous_line
 from logger import logger
 from model import (
-    AssistantModelTurn,
     CustomJSONEncoder,
     Model,
     ModelProvider,
-    NodeSystemTurn,
     TurnContainer,
-    UserTurn,
 )
 from model_tool_decorator import FN_NAME_TO_FN, OPENAI_TOOL_NAME_TO_TOOL_DEF
 
@@ -226,18 +223,12 @@ def run_chat(args, model, elevenlabs_client):
                 f"[NODE_SCHEMA] Initializing {Style.BRIGHT}node_schema_id: {current_node_schema.id}{Style.NORMAL}"
             )
             current_node_schema.run(new_node_input)
-            node_system_turn = NodeSystemTurn(
-                node_id=current_node_schema.id, msg_content=current_node_schema.prompt
-            )
-            TM.add_node_turn(node_system_turn)
-            MessageDisplay.print_msg("system", node_system_turn.msg_content)
+            TM.add_node_turn(current_node_schema.id, current_node_schema.prompt)
+            MessageDisplay.print_msg("system", current_node_schema.prompt)
 
             if current_node_schema.first_msg:
                 # TODO fix this
-                a_turn = AssistantModelTurn(
-                    msg_content=current_node_schema.first_msg["content"]
-                )
-                TM.add_assistant_turn(a_turn)
+                TM.add_assistant_turn(current_node_schema.first_msg["content"])
                 MessageDisplay.print_msg(
                     "assistant", current_node_schema.first_msg["content"]
                 )
@@ -249,9 +240,8 @@ def run_chat(args, model, elevenlabs_client):
             if text_input.lower() == "exit":
                 print("Exiting chatbot. Goodbye!")
                 break
-            user_turn = UserTurn(msg_content=text_input)
             MessageDisplay.print_msg("user", text_input)
-            TM.add_user_turn(user_turn)
+            TM.add_user_turn(text_input)
             is_on_topic(
                 model,
                 TM,
@@ -283,8 +273,7 @@ def run_chat(args, model, elevenlabs_client):
                 MessageDisplay.read_chat_stream(message)
             need_user_input = True
 
-        a_turn_2 = AssistantModelTurn(msg_content=chat_completion.msg_content)
-
+        fn_id_to_output = {}
         for function_call in chat_completion.get_or_stream_fn_calls():
             function_args = json.loads(function_call.function_args_json)
             logger.debug(
@@ -319,9 +308,11 @@ def run_chat(args, model, elevenlabs_client):
             logger.debug(
                 f"[FUNCTION_RETURN] {Style.BRIGHT}name: {function_call.function_name}, id: {function_call.tool_call_id}{Style.NORMAL} with output:\n{json.dumps(fn_output, cls=CustomJSONEncoder, indent=4)}"
             )
-            a_turn_2.add_fn_call_w_output(function_call, fn_output)
-            TM.add_assistant_turn(a_turn_2)
             need_user_input = False
+            fn_id_to_output[function_call.tool_call_id] = fn_output
+
+        TM.add_assistant_turn(chat_completion.msg_content, chat_completion.fn_calls, fn_id_to_output)
+
 
 
 if __name__ == "__main__":

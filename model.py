@@ -167,14 +167,8 @@ class NodeSystemTurn(SystemTurn):
 
 class AssistantModelTurn(ModelTurn):
     msg_content: Optional[str]
-    fn_calls: List[FunctionCall] = Field(default_factory=list)
-    fn_outputs: List[Any] = Field(default_factory=list)
-    _fn_call_id_to_fn_output: Dict[str, Any] = PrivateAttr(default_factory=dict)
-
-    def add_fn_call_w_output(self, fn_call, fn_output):
-        self.fn_calls.append(fn_call)
-        self.fn_outputs.append(fn_output)
-        self._fn_call_id_to_fn_output[fn_call.tool_call_id] = fn_output
+    fn_calls: Optional[List[FunctionCall]] = Field(default_factory=list)
+    fn_call_id_to_fn_output: Optional[Dict[str, Any]] = Field(default_factory=dict)
 
     def build_oai_messages(self):
         messages = []
@@ -201,7 +195,7 @@ class AssistantModelTurn(ModelTurn):
                     {
                         "role": "tool",
                         "content": json.dumps(
-                            self._fn_call_id_to_fn_output[fn_call.tool_call_id],
+                            self.fn_call_id_to_fn_output[fn_call.tool_call_id],
                             cls=CustomJSONEncoder,
                         ),
                         "tool_call_id": fn_call.tool_call_id,
@@ -232,8 +226,9 @@ class AssistantModelTurn(ModelTurn):
                     }
                 )
 
-        if len(contents) == 1:
+        if len(contents) == 1 and self.msg_content:
             contents = contents[0]
+            contents = contents['text']
 
         messages.append({"role": "assistant", "content": contents})
 
@@ -243,7 +238,7 @@ class AssistantModelTurn(ModelTurn):
                 return_contents.append(
                     {
                         "content": json.dumps(
-                            self._fn_call_id_to_fn_output[fn_call.tool_call_id],
+                            self.fn_call_id_to_fn_output[fn_call.tool_call_id],
                             cls=CustomJSONEncoder,
                         ),
                         "type": "tool_result",
@@ -422,27 +417,36 @@ class TurnContainer:
 
         self.turns = []
 
-    def add_system_turn(self, turn):
+    def add_system_turn(self, msg_content):
+        turn = SystemTurn(
+                msg_content=msg_content
+            )
         self.turns.append(turn)
         for mm in self.message_managers:
             mm.add_system_turn(turn)
 
     def add_node_turn(
         self,
-        turn,
+        node_id,
+        node_prompt,
         remove_prev_tool_fn_return=None,
         remove_prev_tool_calls=False,
     ):
+        turn = NodeSystemTurn(
+                node_id=node_id, msg_content=node_prompt
+            )
         self.turns.append(turn)
         for mm in self.message_managers:
             mm.add_node_turn(turn, remove_prev_tool_fn_return, remove_prev_tool_calls)
 
-    def add_user_turn(self, turn):
+    def add_user_turn(self, msg_content):
+        turn = UserTurn(msg_content=msg_content)
         self.turns.append(turn)
         for mm in self.message_managers:
             mm.add_user_turn(turn)
 
-    def add_assistant_turn(self, turn):
+    def add_assistant_turn(self, msg_content, fn_calls=None, fn_id_to_outputs=None):
+        turn = AssistantModelTurn(msg_content=msg_content, fn_calls=fn_calls, fn_call_id_to_fn_output=fn_id_to_outputs)
         self.turns.append(turn)
         for mm in self.message_managers:
             mm.add_assistant_turn(turn)
