@@ -18,10 +18,11 @@ from chain import (
     take_order_node_schema,
     terminal_order_node_schema,
 )
-from db_functions import FN_NAME_TO_FN, OPENAI_TOOLS_RETUN_DESCRIPTION, create_db_client
+from db_functions import create_db_client
 from gui import remove_previous_line
 from logger import logger
 from model import Model
+from model_tool_decorator import FN_NAME_TO_FN, OPENAI_TOOLS_RETUN_DESCRIPTION
 
 # Load environment variables from .env file
 load_dotenv()

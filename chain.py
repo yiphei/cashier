@@ -3,7 +3,8 @@ from typing import Optional
 from openai import pydantic_function_tool
 from pydantic import BaseModel, ConfigDict, Field, create_model
 
-from db_functions import OPENAI_TOOL_NAME_TO_TOOL_DEF, Order
+from db_functions import Order
+from model_tool_decorator import OPENAI_TOOL_NAME_TO_TOOL_DEF
 
 BACKGROUND = (
     "You are a cashier working for the coffee shop Heaven Coffee. You are physically embedded inside the shop, "
