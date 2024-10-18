@@ -20,13 +20,13 @@ from db_functions import create_db_client
 from gui import remove_previous_line
 from logger import logger
 from model import (
-    AnthropicTurnManager,
     AssistantModelTurn,
     CustomJSONEncoder,
     Model,
     NodeSystemTurn,
-    OAITurnManager,
+    TurnContainer,
     UserTurn,
+    ModelProvider
 )
 from model_tool_decorator import FN_NAME_TO_FN, OPENAI_TOOL_NAME_TO_TOOL_DEF
 
@@ -213,7 +213,7 @@ def is_on_topic(model, TM, current_node_schema, all_node_schemas):
 
 
 def run_chat(args, model, elevenlabs_client):
-    TM = AnthropicTurnManager()
+    TM = TurnContainer()
 
     need_user_input = True
     current_node_schema = take_order_node_schema
@@ -265,7 +265,7 @@ def run_chat(args, model, elevenlabs_client):
 
         chat_completion = model.chat(
             model_name=args.model,
-            messages=TM.message_dicts,
+            messages=TM.get_message_dicts(ModelProvider.ANTHROPIC if args.model == 'claude-3.5' else ModelProvider.OPENAI),
             tool_names=current_node_schema.tool_fn_names,
             stream=args.stream,
             extra_oai_tool_defs=current_node_schema.OPENAI_TOOL_NAME_TO_TOOL_DEF,

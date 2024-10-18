@@ -140,7 +140,6 @@ class FunctionCall(BaseModel):
 
 class ModelTurn(BaseModel):
     msg_content: constr(min_length=1)  # type: ignore
-    messages: List[Dict] = Field(default_factory=list)
 
     def build_oai_messages(self):
         raise NotImplementedError
@@ -148,7 +147,7 @@ class ModelTurn(BaseModel):
 
 class UserTurn(ModelTurn):
     def build_oai_messages(self):
-        self.messages.append({"role": "user", "content": self.msg_content})
+        return {"role": "user", "content": self.msg_content}
 
     def build_anthropic_messages(self):
         return self.build_oai_messages()
@@ -156,14 +155,14 @@ class UserTurn(ModelTurn):
 
 class SystemTurn(ModelTurn):
     def build_oai_messages(self):
-        self.messages.append({"role": "system", "content": self.msg_content})
+        return {"role": "system", "content": self.msg_content}
 
 
 class NodeSystemTurn(SystemTurn):
     node_id: int
 
     def build_oai_messages(self):
-        self.messages.append({"role": "system", "content": self.msg_content})
+        return {"role": "system", "content": self.msg_content}
 
 
 class AssistantModelTurn(ModelTurn):
@@ -178,11 +177,12 @@ class AssistantModelTurn(ModelTurn):
         self._fn_call_id_to_fn_output[fn_call.tool_call_id] = fn_output
 
     def build_oai_messages(self):
+        messages = []
         if self.msg_content:
-            self.messages.append({"role": "assistant", "content": self.msg_content})
+            messages.append({"role": "assistant", "content": self.msg_content})
         if self.fn_calls:
             for fn_call in self.fn_calls:
-                self.messages.append(
+                messages.append(
                     {
                         "role": "assistant",
                         "tool_calls": [
@@ -197,7 +197,7 @@ class AssistantModelTurn(ModelTurn):
                         ],
                     }
                 )
-                self.messages.append(
+                messages.append(
                     {
                         "role": "tool",
                         "content": json.dumps(
@@ -212,10 +212,13 @@ class AssistantModelTurn(ModelTurn):
                     json_schema = OPENAI_TOOLS_RETUN_DESCRIPTION[fn_call.function_name]
                     system_msg = f"This is the JSON Schema of {fn_call.function_name}'s return type: {json.dumps(json_schema)}"
 
-                    self.messages.append({"role": "system", "content": system_msg})
+                    messages.append({"role": "system", "content": system_msg})
+
+        return messages
 
     def build_anthropic_messages(self):
         contents = []
+        messages = []
         if self.msg_content:
             contents.append({"type": "text", "text": self.msg_content})
         if self.fn_calls:
@@ -232,7 +235,7 @@ class AssistantModelTurn(ModelTurn):
         if len(contents) == 1:
             contents = contents[0]
 
-        self.messages.append({"role": "assistant", "content": contents})
+        messages.append({"role": "assistant", "content": contents})
 
         if self.fn_calls:
             return_contents = []
@@ -248,8 +251,9 @@ class AssistantModelTurn(ModelTurn):
                     }
                 )
 
-            self.messages.append({"role": "user", "content": return_contents})
+            messages.append({"role": "user", "content": return_contents})
 
+        return messages
 
 class TurnManager:
     def __init__(self):
@@ -267,8 +271,7 @@ class OAITurnManager(TurnManager):
 
     def add_system_turn(self, turn):
         self.turns.append(turn)
-        turn.build_oai_messages()
-        self.message_dicts.extend(turn.messages)
+        self.message_dicts.append(turn.build_oai_messages())
 
     def add_node_turn(
         self,
@@ -301,21 +304,19 @@ class OAITurnManager(TurnManager):
             self.tool_call_ids = []
 
         self.turns.append(turn)
-        turn.build_oai_messages()
-        self.message_dicts.extend(turn.messages)
+        self.message_dicts.append(turn.build_oai_messages())
         self.last_node_id = turn.node_id
         self.index_tracker.add_idx(turn.node_id, len(self.message_dicts) - 1)
 
     def add_user_turn(self, turn):
         self.turns.append(turn)
-        turn.build_oai_messages()
-        self.message_dicts.extend(turn.messages)
+        self.message_dicts.append(turn.build_oai_messages())
 
     def add_assistant_turn(self, turn):
         self.turns.append(turn)
-        turn.build_oai_messages()
+        messages = turn.build_oai_messages()
         last_fn_name = None
-        for message in turn.messages:
+        for message in messages:
             if getattr(message, "tool_calls", None) is not None:
                 tool_call_id = message["tool_calls"]["id"]
                 self.tool_call_ids.append(tool_call_id)
@@ -384,14 +385,13 @@ class AnthropicTurnManager(TurnManager):
 
     def add_user_turn(self, turn):
         self.turns.append(turn)
-        turn.build_anthropic_messages()
-        self.message_dicts.extend(turn.messages)
+        self.message_dicts.append(turn.build_anthropic_messages())
 
     def add_assistant_turn(self, turn):
         self.turns.append(turn)
-        turn.build_anthropic_messages()
+        messages = turn.build_anthropic_messages()
         last_fn_name = None
-        for message in turn.messages:
+        for message in messages:
             # if getattr(message, "tool_calls", None) is not None:
             #     tool_call_id = message["tool_calls"]["id"]
             #     self.tool_call_ids.append(tool_call_id)
@@ -411,6 +411,38 @@ class AnthropicTurnManager(TurnManager):
             #     last_fn_name = None
 
             self.message_dicts.append(message)
+
+class TurnContainer:
+    def __init__(self):
+        self.oai_turn_manager = OAITurnManager()
+        self.anthropic_turn_manager = AnthropicTurnManager()
+
+    def add_system_turn(self, turn):
+        self.oai_turn_manager.add_system_turn(turn)
+        self.anthropic_turn_manager.add_system_turn(turn)
+
+    def add_node_turn(
+        self,
+        turn,
+        remove_prev_tool_fn_return=None,
+        remove_prev_tool_calls=False,
+    ):
+        self.oai_turn_manager.add_node_turn(turn, remove_prev_tool_fn_return, remove_prev_tool_calls)
+        self.anthropic_turn_manager.add_node_turn(turn, remove_prev_tool_fn_return, remove_prev_tool_calls)
+
+    def add_user_turn(self, turn):
+        self.oai_turn_manager.add_user_turn(turn)
+        self.anthropic_turn_manager.add_user_turn(turn)
+
+    def add_assistant_turn(self, turn):
+        self.oai_turn_manager.add_assistant_turn(turn)
+        self.anthropic_turn_manager.add_assistant_turn(turn)
+
+    def get_message_dicts(self, model_provider):
+        if model_provider == ModelProvider.OPENAI:
+            return self.oai_turn_manager.message_dicts
+        else:
+            return self.anthropic_turn_manager.message_dicts
 
 
 class ModelOutput:
