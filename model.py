@@ -43,7 +43,7 @@ class Model:
     def chat(
         self,
         model_name,
-        messages,
+        turn_container,
         tool_names=None,
         tools=None,
         stream=False,
@@ -57,12 +57,13 @@ class Model:
             model_name = self.alias_to_model_name[model_name]
 
         model_provider = self.model_name_to_provider[model_name]
+        message_manager = turn_container.model_provider_to_message_manager[model_provider]
         if model_provider == ModelProvider.OPENAI:
             if tool_names:
                 tools = self.get_tool_defs_from_names(
                     tool_names, OPENAI_TOOL_NAME_TO_TOOL_DEF, extra_oai_tool_defs
                 )
-
+            messages = message_manager.get_chat_input()
             return self.oai_chat(
                 model_name, messages, tools, stream, logprobs, response_format, **kwargs
             )
@@ -74,7 +75,8 @@ class Model:
                     extra_anthropic_tool_defs,
                 )
 
-            return self.ant_chat(model_name, messages, tools, stream, **kwargs)
+            messages, system_prompt = message_manager.get_chat_input()
+            return self.ant_chat(model_name, messages,system_prompt, tools, stream, **kwargs)
 
     def oai_chat(
         self,
@@ -111,6 +113,7 @@ class Model:
         self,
         model_name,
         messages,
+        system=None,
         tools=None,
         stream=False,
         **kwargs,
@@ -119,6 +122,7 @@ class Model:
         args = {
             "max_tokens": 8192,
             "model": model_name,
+            "system": system,
             "messages": messages[1:],
             "tools": tools,
             "stream": stream,
@@ -328,6 +332,9 @@ class OAIMessageManager(MessageManager):
 
             self.message_dicts.append(message)
 
+    def get_chat_input(self):
+        return self.message_dicts
+
 
 class AnthropicMessageManager(MessageManager):
     def __init__(self):
@@ -399,6 +406,9 @@ class AnthropicMessageManager(MessageManager):
             #     last_fn_name = None
 
             self.message_dicts.append(message)
+
+    def get_chat_input(self):
+        return self.message_dicts, self.system
 
 
 class TurnContainer:

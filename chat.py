@@ -250,11 +250,7 @@ def run_chat(args, model, elevenlabs_client):
 
         chat_completion = model.chat(
             model_name=args.model,
-            messages=TM.get_message_dicts(
-                ModelProvider.ANTHROPIC
-                if args.model == "claude-3.5"
-                else ModelProvider.OPENAI
-            ),
+            turn_container=TM,
             tool_names=current_node_schema.tool_fn_names,
             stream=args.stream,
             extra_oai_tool_defs=current_node_schema.OPENAI_TOOL_NAME_TO_TOOL_DEF,
