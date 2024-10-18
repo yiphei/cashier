@@ -137,39 +137,29 @@ class FunctionCall(BaseModel):
     tool_call_id: str
     function_args_json: str
 
+
 class ModelTurn(BaseModel):
     msg_content: constr(min_length=1)  # type: ignore
     messages: List[Dict] = Field(default_factory=list)
 
     def build_oai_messages(self):
         raise NotImplementedError
-    
+
+
 class UserTurn(ModelTurn):
     def build_oai_messages(self):
-        self.messages.append(
-            {
-                "role": "user",
-                "content": self.msg_content
-            }
-        )
-    
+        self.messages.append({"role": "user", "content": self.msg_content})
+
+
 class SystemTurn(ModelTurn):
     def build_oai_messages(self):
-        self.messages.append(
-            {
-                "role": "system",
-                "content": self.msg_content
-            }
-        )
+        self.messages.append({"role": "system", "content": self.msg_content})
+
 
 class NodeSystemTurn(SystemTurn):
     def build_oai_messages(self):
-        self.messages.append(
-            {
-                "role": "system",
-                "content": self.msg_content
-            }
-        )
+        self.messages.append({"role": "system", "content": self.msg_content})
+
 
 class AssistantModelTurn(ModelTurn):
     msg_content: Optional[str]
