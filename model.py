@@ -34,7 +34,7 @@ class Model:
         all_tool_defs = tool_defs
         if extra_tool_defs is not None:
             all_tool_defs |= extra_tool_defs
-        
+
         return [all_tool_defs[tool_name] for tool_name in tool_names]
 
     def chat(
@@ -56,14 +56,20 @@ class Model:
         model_provider = self.model_name_to_provider[model_name]
         if model_provider == ModelProvider.OPENAI:
             if tool_names:
-                tools = self.get_tool_defs_from_names(tool_names, OPENAI_TOOL_NAME_TO_TOOL_DEF, extra_oai_tool_defs)
+                tools = self.get_tool_defs_from_names(
+                    tool_names, OPENAI_TOOL_NAME_TO_TOOL_DEF, extra_oai_tool_defs
+                )
 
             return self.oai_chat(
                 model_name, messages, tools, stream, logprobs, response_format, **kwargs
             )
         elif model_provider == ModelProvider.ANTHROPIC:
             if tool_names:
-                tools = self.get_tool_defs_from_names(tool_names, ANTHROPIC_TOOL_NAME_TO_TOOL_DEF, extra_anthropic_tool_defs)
+                tools = self.get_tool_defs_from_names(
+                    tool_names,
+                    ANTHROPIC_TOOL_NAME_TO_TOOL_DEF,
+                    extra_anthropic_tool_defs,
+                )
 
             return self.ant_chat(model_name, messages, tools, stream, **kwargs)
 
