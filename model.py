@@ -30,6 +30,13 @@ class Model:
         self.oai_client = OpenAI()
         self.anthropic_client = anthropic.Anthropic()
 
+    def get_tool_defs_from_names(self, tool_names, tool_defs, extra_tool_defs):
+        all_tool_defs = tool_defs
+        if extra_tool_defs is not None:
+            all_tool_defs |= extra_tool_defs
+        
+        return [all_tool_defs[tool_name] for tool_name in tool_names]
+
     def chat(
         self,
         model_name,
@@ -48,24 +55,15 @@ class Model:
 
         model_provider = self.model_name_to_provider[model_name]
         if model_provider == ModelProvider.OPENAI:
-            all_tool_defs = OPENAI_TOOL_NAME_TO_TOOL_DEF
-            if extra_oai_tool_defs is not None:
-                all_tool_defs |= extra_oai_tool_defs
             if tool_names:
-                tools = [all_tool_defs[tool_name] for tool_name in tool_names]
+                tools = self.get_tool_defs_from_names(tool_names, OPENAI_TOOL_NAME_TO_TOOL_DEF, extra_oai_tool_defs)
 
             return self.oai_chat(
                 model_name, messages, tools, stream, logprobs, response_format, **kwargs
             )
         elif model_provider == ModelProvider.ANTHROPIC:
-            all_tool_defs = ANTHROPIC_TOOL_NAME_TO_TOOL_DEF
-            if extra_anthropic_tool_defs:
-                all_tool_defs |= extra_anthropic_tool_defs
             if tool_names:
-                tools = [
-                    all_tool_defs[tool_name]
-                    for tool_name in tool_names
-                ]
+                tools = self.get_tool_defs_from_names(tool_names, ANTHROPIC_TOOL_NAME_TO_TOOL_DEF, extra_anthropic_tool_defs)
 
             return self.ant_chat(model_name, messages, tools, stream, **kwargs)
 
