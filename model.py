@@ -446,10 +446,3 @@ class CustomJSONEncoder(json.JSONEncoder):
         elif isinstance(obj, (str, int, float, bool, type(None))):
             return obj
         return super().default(obj)
-
-
-def get_system_return_type_prompt(fn_name):
-    json_schema = OPENAI_TOOLS_RETUN_DESCRIPTION[fn_name]
-    return (
-        f"This is the JSON Schema of {fn_name}'s return type: {json.dumps(json_schema)}"
-    )
