@@ -20,7 +20,7 @@ from chain import (
 from db_functions import create_db_client
 from gui import remove_previous_line
 from logger import logger
-from model import CustomJSONEncoder, Model, ModelMessage
+from model import CustomJSONEncoder, Model, ModelTurn
 from model_tool_decorator import FN_NAME_TO_FN, OPENAI_TOOL_NAME_TO_TOOL_DEF
 
 # Load environment variables from .env file
@@ -418,7 +418,7 @@ def run_chat(args, model, elevenlabs_client):
                 MM.read_chat_stream(message)
             need_user_input = True
 
-        m_message = ModelMessage(role="assistant", msg_content=message)
+        m_turn = ModelTurn(turn="assistant", msg_content=message)
 
         for function_call in chat_completion.get_or_stream_fn_calls():
             function_args = json.loads(function_call.function_args_json)
@@ -454,7 +454,7 @@ def run_chat(args, model, elevenlabs_client):
             logger.debug(
                 f"[FUNCTION_RETURN] {Style.BRIGHT}name: {function_call.function_name}, id: {function_call.tool_call_id}{Style.NORMAL} with output:\n{json.dumps(fn_output, cls=CustomJSONEncoder, indent=4)}"
             )
-            m_message.add_fn_call_w_output(function_call, fn_output)
+            m_turn.add_fn_call_w_output(function_call, fn_output)
             need_user_input = False
 
 

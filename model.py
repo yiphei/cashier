@@ -138,7 +138,7 @@ class FunctionCall(BaseModel):
     function_args_json: str
 
 
-class ModelMessage(BaseModel):
+class ModelTurn(BaseModel):
     turn: Literal["user", "assistant", "system"]
     msg_content: Optional[str]
     fn_calls: List[FunctionCall] = Field(default_factory=list)
