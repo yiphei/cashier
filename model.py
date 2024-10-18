@@ -142,6 +142,18 @@ class ModelOutput:
         self.current_chunk = None
         self.fn_calls = []
 
+    def stream_message(self):
+        raise NotImplementedError
+
+    def get_message(self):
+        raise NotImplementedError
+    
+    def stream_fn_calls(self):
+        raise NotImplementedError
+    
+    def get_fn_calls(self):
+        raise NotImplementedError
+
     def get_or_stream_message(self):
         if self.is_stream:
             return self.stream_message()
