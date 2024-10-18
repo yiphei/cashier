@@ -20,12 +20,12 @@ from db_functions import create_db_client
 from gui import remove_previous_line
 from logger import logger
 from model import (
+    AnthropicTurnManager,
     AssistantModelTurn,
     CustomJSONEncoder,
     Model,
     NodeSystemTurn,
     OAITurnManager,
-    AnthropicTurnManager,
     UserTurn,
 )
 from model_tool_decorator import FN_NAME_TO_FN, OPENAI_TOOL_NAME_TO_TOOL_DEF

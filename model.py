@@ -214,7 +214,6 @@ class AssistantModelTurn(ModelTurn):
 
                     self.messages.append({"role": "system", "content": system_msg})
 
-
     def build_anthropic_messages(self):
         contents = []
         if self.msg_content:
@@ -222,14 +221,14 @@ class AssistantModelTurn(ModelTurn):
         if self.fn_calls:
             for fn_call in self.fn_calls:
                 contents.append(
-                        {
-                            "type": "tool_use",
-                            "id": fn_call.tool_call_id,
-                            "name": fn_call.function_name,
-                            "input": json.loads(fn_call.function_args_json),
-                            }
+                    {
+                        "type": "tool_use",
+                        "id": fn_call.tool_call_id,
+                        "name": fn_call.function_name,
+                        "input": json.loads(fn_call.function_args_json),
+                    }
                 )
-        
+
         if len(contents) == 1:
             contents = contents[0]
 
@@ -245,7 +244,7 @@ class AssistantModelTurn(ModelTurn):
                             cls=CustomJSONEncoder,
                         ),
                         "type": "tool_result",
-                        "tool_use_id": fn_call.tool_call_id
+                        "tool_use_id": fn_call.tool_call_id,
                     }
                 )
 
@@ -336,7 +335,6 @@ class OAITurnManager(TurnManager):
                 last_fn_name = None
 
             self.message_dicts.append(message)
-
 
 
 class AnthropicTurnManager(TurnManager):
