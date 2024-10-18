@@ -147,10 +147,10 @@ class ModelOutput:
 
     def get_message(self):
         raise NotImplementedError
-    
+
     def stream_fn_calls(self):
         raise NotImplementedError
-    
+
     def get_fn_calls(self):
         raise NotImplementedError
 
@@ -278,24 +278,28 @@ class OAIModelOutput(ModelOutput):
 class AnthropicModelOutput(ModelOutput):
     def is_message_start_chunk(self, chunk):
         content_block = getattr(chunk, "content_block", None)
-        return content_block is not None and content_block.type == 'text'
-    
+        return content_block is not None and content_block.type == "text"
+
     def is_tool_start_chunk(self, chunk):
         content_block = getattr(chunk, "content_block", None)
-        return content_block is not None and content_block.type == 'tool_use'
-    
+        return content_block is not None and content_block.type == "tool_use"
+
     def is_end_block_chunk(self, chunk):
         return chunk.type == "content_block_stop"
-    
+
     def is_message_end_chunk(self, chunk):
-        return chunk.type == 'message_stop'
+        return chunk.type == "message_stop"
 
     def get_next_usable_chunk(self):
         if self.current_chunk is None:
             chunk = next(self.output_obj)
         else:
             chunk = self.current_chunk
-        while not (self.is_message_start_chunk(chunk) or self.is_tool_start_chunk(chunk) or self.is_message_end_chunk(chunk)):
+        while not (
+            self.is_message_start_chunk(chunk)
+            or self.is_tool_start_chunk(chunk)
+            or self.is_message_end_chunk(chunk)
+        ):
             chunk = next(self.output_obj)
         return chunk
 
@@ -325,7 +329,7 @@ class AnthropicModelOutput(ModelOutput):
                 if chunk_type == "content_block_stop":
                     self.current_chunk = next(self.output_obj)
                     raise StopIteration
-                
+
                 msg = chunk.delta.text
                 self.msg_content += msg  # Append the message to full_msg
                 yield msg  # Return the message
@@ -356,9 +360,7 @@ class AnthropicModelOutput(ModelOutput):
                 tool_call_id = None
                 function_args_json = None
             elif tool_call_id is not None:
-                function_args_json += (
-                    chunk.delta.partial_json
-                )
+                function_args_json += chunk.delta.partial_json
 
         if tool_call_id is not None:
             fn_call = FunctionCall(

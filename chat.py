@@ -488,9 +488,12 @@ def run_chat(args, model, elevenlabs_client):
                 json.dumps(fn_output, cls=CustomJSONEncoder),
             )
 
-            if not function_call.function_name.startswith(
-                ("get_state", "update_state")
-            ) or args.model == "claude-3.5":
+            if (
+                not function_call.function_name.startswith(
+                    ("get_state", "update_state")
+                )
+                or args.model == "claude-3.5"
+            ):
                 MM.add_tool_return_schema_message(
                     function_call.function_name,
                     get_system_return_type_prompt(function_call.function_name),
