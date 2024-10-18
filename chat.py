@@ -18,10 +18,15 @@ from chain import (
     take_order_node_schema,
     terminal_order_node_schema,
 )
-from db_functions import FN_NAME_TO_FN, OPENAI_TOOLS_RETUN_DESCRIPTION, create_db_client
+from db_functions import create_db_client
 from gui import remove_previous_line
 from logger import logger
 from model import Model
+from model_tool_decorator import (
+    FN_NAME_TO_FN,
+    OPENAI_TOOL_NAME_TO_TOOL_DEF,
+    OPENAI_TOOLS_RETUN_DESCRIPTION,
+)
 
 # Load environment variables from .env file
 load_dotenv()
@@ -290,6 +295,9 @@ class MessageManager:
 
 
 def is_on_topic(model, MM, current_node_schema, all_node_schemas):
+    all_tool_defs = (
+        OPENAI_TOOL_NAME_TO_TOOL_DEF | current_node_schema.OPENAI_TOOL_NAME_TO_TOOL_DEF
+    )
     conversational_msgs = MM.get_all_conversational_messages_of_current_node()
     conversational_msgs.append(
         {
@@ -310,7 +318,7 @@ def is_on_topic(model, MM, current_node_schema, all_node_schemas):
                 "```\n\n"
                 "TOOLS:\n"
                 "```\n"
-                f"{json.dumps(current_node_schema.tool_fns)}\n"
+                f"{json.dumps([all_tool_defs[name] for name in current_node_schema.tool_fn_names])}\n"
                 "```"
             ),
         }
@@ -348,7 +356,7 @@ def is_on_topic(model, MM, current_node_schema, all_node_schemas):
                 "```\n\n"
                 "TOOLS:\n"
                 "```\n"
-                f"{json.dumps(node_schema.tool_fns)}\n"
+                f"{json.dumps([all_tool_defs[name] for name in current_node_schema.tool_fn_names])}\n"
                 "```\n\n"
             )
 
@@ -421,10 +429,11 @@ def run_chat(args, model, elevenlabs_client):
         chat_completion = model.chat(
             model_name=args.model,
             messages=MM.messages,
-            tools=current_node_schema.tool_fns,
+            tool_names=current_node_schema.tool_fn_names,
             stream=args.stream,
+            extra_oai_tool_defs=current_node_schema.OPENAI_TOOL_NAME_TO_TOOL_DEF,
+            extra_anthropic_tool_defs=current_node_schema.ANTHROPIC_TOOL_NAME_TO_TOOL_DEF,
         )
-
         has_tool_call = chat_completion.has_tool_call()
 
         if not has_tool_call:

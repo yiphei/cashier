@@ -7,6 +7,10 @@ from openai import OpenAI
 from pydantic import BaseModel
 
 from logger import logger
+from model_tool_decorator import (
+    ANTHROPIC_TOOL_NAME_TO_TOOL_DEF,
+    OPENAI_TOOL_NAME_TO_TOOL_DEF,
+)
 
 
 class ModelProvider(StrEnum):
@@ -20,27 +24,53 @@ class Model:
         "gpt-4o": ModelProvider.OPENAI,
         "claude-3-5-sonnet-20240620": ModelProvider.ANTHROPIC,
     }
+    alias_to_model_name = {"claude-3.5": "claude-3-5-sonnet-20240620"}
 
     def __init__(self):
         self.oai_client = OpenAI()
         self.anthropic_client = anthropic.Anthropic()
 
+    def get_tool_defs_from_names(self, tool_names, tool_defs, extra_tool_defs):
+        all_tool_defs = tool_defs
+        if extra_tool_defs is not None:
+            all_tool_defs |= extra_tool_defs
+
+        return [all_tool_defs[tool_name] for tool_name in tool_names]
+
     def chat(
         self,
         model_name,
         messages,
+        tool_names=None,
         tools=None,
         stream=False,
         logprobs=False,
         response_format=None,
+        extra_oai_tool_defs=None,
+        extra_anthropic_tool_defs=None,
         **kwargs,
     ):
+        if model_name in self.alias_to_model_name:
+            model_name = self.alias_to_model_name[model_name]
+
         model_provider = self.model_name_to_provider[model_name]
         if model_provider == ModelProvider.OPENAI:
+            if tool_names:
+                tools = self.get_tool_defs_from_names(
+                    tool_names, OPENAI_TOOL_NAME_TO_TOOL_DEF, extra_oai_tool_defs
+                )
+
             return self.oai_chat(
                 model_name, messages, tools, stream, logprobs, response_format, **kwargs
             )
         elif model_provider == ModelProvider.ANTHROPIC:
+            if tool_names:
+                tools = self.get_tool_defs_from_names(
+                    tool_names,
+                    ANTHROPIC_TOOL_NAME_TO_TOOL_DEF,
+                    extra_anthropic_tool_defs,
+                )
+
             return self.ant_chat(model_name, messages, tools, stream, **kwargs)
 
     def oai_chat(
@@ -72,7 +102,7 @@ class Model:
         if not tools:
             args.pop("tools")
 
-        return ModelOutput(chat_fn(**args), stream, ModelProvider.OPENAI)
+        return OAIModelOutput(chat_fn(**args), stream)
 
     def ant_chat(
         self,
@@ -82,10 +112,11 @@ class Model:
         stream=False,
         **kwargs,
     ):
+        # TODO: remove adhoc code
         args = {
             "max_tokens": 8192,
             "model": model_name,
-            "messages": messages,
+            "messages": messages[1:],
             "tools": tools,
             "stream": stream,
             **kwargs,
@@ -93,7 +124,9 @@ class Model:
         if not tools:
             args.pop("tools")
 
-        return self.anthropic_client.messages.create(**args)
+        return AnthropicModelOutput(
+            self.anthropic_client.messages.create(**args), stream
+        )
 
 
 class FunctionCall(BaseModel):
@@ -103,13 +136,21 @@ class FunctionCall(BaseModel):
 
 
 class ModelOutput:
-    def __init__(self, output_obj, is_stream, model_provider):
+    def __init__(self, output_obj, is_stream):
         self.output_obj = output_obj
         self.is_stream = is_stream
-        self.model_provider = model_provider
         self.msg_content = None
         self.current_chunk = None
         self._has_tool_call = None
+
+    def get_or_stream_message(self):
+        if self.is_stream:
+            return self.stream_message()
+        else:
+            return self.get_message()
+
+
+class OAIModelOutput(ModelOutput):
 
     def _has_function_call_id(self, chunk):
         return (
@@ -159,12 +200,6 @@ class ModelOutput:
     def get_message(self):
         self.msg_content = self.output_obj.choices[0].message.content
         return self.msg_content
-
-    def get_or_stream_message(self):
-        if self.is_stream:
-            return self.stream_message()
-        else:
-            return self.get_message()
 
     def get_message_prop(self, prop_name):
         return getattr(self.output_obj.choices[0].message.parsed, prop_name)
@@ -218,3 +253,32 @@ class ModelOutput:
                     )
                 )
         return function_calls
+
+
+class AnthropicModelOutput(ModelOutput):
+    def get_message(self):
+        self.msg_content = self.output_obj.content[0].text
+        return self.msg_content
+
+    def has_tool_call(self):
+        # TODO
+        return False
+
+    def stream_message(self):
+        has_message_started = False
+        self.msg_content = ""
+        try:
+            while True:
+                chunk = next(self.output_obj)  # Get the next chunk
+                chunk_type = chunk.type
+                if chunk_type == "content_block_start":
+                    has_message_started = True
+                    continue
+                elif chunk_type == "content_block_stop":
+                    raise StopIteration
+                elif has_message_started:
+                    msg = chunk.delta.text
+                    self.msg_content += msg  # Append the message to full_msg
+                    yield msg  # Return the message
+        except StopIteration:
+            pass  # Signal end of iteration
