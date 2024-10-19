@@ -660,6 +660,19 @@ class ModelOutput(ABC):
             self.fn_calls.append(fn_call)
             yield fn_call
 
+    def get_next_usable_chunk(self):
+        if self.current_chunk is None:
+            chunk = next(self.output_obj)
+        else:
+            chunk = self.current_chunk
+        while not (
+            self.is_message_start_chunk(chunk)
+            or self.is_tool_start_chunk(chunk)
+            or self.is_final_chunk(chunk)
+        ):
+            chunk = next(self.output_obj)
+        return chunk
+
 
 class OAIModelOutput(ModelOutput):
     def get_fn_call_id_from_chunk(self, chunk):
@@ -676,6 +689,9 @@ class OAIModelOutput(ModelOutput):
             chunk.choices[0].delta.tool_calls is not None
             and chunk.choices[0].delta.tool_calls[0].id is not None
         )
+    
+    def is_tool_start_chunk(self, chunk):
+        return self.has_function_call_id(chunk)
 
     def has_args_json(self, chunk):
         return (
@@ -699,19 +715,6 @@ class OAIModelOutput(ModelOutput):
 
     def is_final_chunk(self, chunk):
         return chunk.choices[0].finish_reason is not None
-
-    def get_next_usable_chunk(self):
-        if self.current_chunk is None:
-            chunk = next(self.output_obj)
-        else:
-            chunk = self.current_chunk
-        while not (
-            self.has_function_call_id(chunk)
-            or self.has_msg_content(chunk)
-            or self.is_final_chunk(chunk)
-        ):
-            chunk = next(self.output_obj)
-        return chunk
 
     def get_message(self):
         self.msg_content = self.output_obj.choices[0].message.content
@@ -762,7 +765,7 @@ class AnthropicModelOutput(ModelOutput):
     def is_end_block_chunk(self, chunk):
         return chunk.type == "content_block_stop"
 
-    def is_message_end_chunk(self, chunk):
+    def is_final_chunk(self, chunk):
         return chunk.type == "message_stop"
 
     def get_first_message_chunk(self, chunk):
@@ -779,19 +782,6 @@ class AnthropicModelOutput(ModelOutput):
 
     def get_msg_from_chunk(self, chunk):
         return chunk.delta.text
-
-    def get_next_usable_chunk(self):
-        if self.current_chunk is None:
-            chunk = next(self.output_obj)
-        else:
-            chunk = self.current_chunk
-        while not (
-            self.is_message_start_chunk(chunk)
-            or self.is_tool_start_chunk(chunk)
-            or self.is_message_end_chunk(chunk)
-        ):
-            chunk = next(self.output_obj)
-        return chunk
 
     def get_message(self):
         self.msg_content = self.output_obj.content[0].text
