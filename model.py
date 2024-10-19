@@ -760,13 +760,14 @@ class AnthropicModelOutput(ModelOutput):
     def has_fn_args_json(self, chunk):
         return hasattr(chunk, "delta") and hasattr(chunk.delta, "partial_json")
 
+    def _is_content_block(self, chunk):
+        return hasattr(chunk, "content_block")
+
     def is_message_start_chunk(self, chunk):
-        content_block = getattr(chunk, "content_block", None)
-        return content_block is not None and content_block.type == "text"
+        return self._is_content_block(chunk) and chunk.content_block.type == "text"
 
     def is_tool_start_chunk(self, chunk):
-        content_block = getattr(chunk, "content_block", None)
-        return content_block is not None and content_block.type == "tool_use"
+        return self._is_content_block(chunk) and chunk.content_block.type == "tool_use"
 
     def is_end_block_chunk(self, chunk):
         return chunk.type == "content_block_stop"
@@ -781,7 +782,7 @@ class AnthropicModelOutput(ModelOutput):
         )
 
     def has_function_call_id(self, chunk):
-        return hasattr(chunk, "content_block") and hasattr(chunk.content_block, "id")
+        return self._is_content_block(chunk) and hasattr(chunk.content_block, "id")
 
     def get_msg_from_chunk(self, chunk):
         return chunk.delta.text
