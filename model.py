@@ -695,20 +695,21 @@ class OAIModelOutput(ModelOutput):
 
     def get_fn_args_json_from_chunk(self, chunk):
         return self._get_tool_call(chunk).function.arguments
-    
+
     def _has_tool_call(self, chunk):
         return bool(chunk.choices[0].delta.tool_calls)
 
     def has_function_call_id(self, chunk):
-        return (
-            self._has_tool_call(chunk) and self._get_tool_call(chunk).id is not None
-        )
+        return self._has_tool_call(chunk) and self._get_tool_call(chunk).id is not None
 
     def is_tool_start_chunk(self, chunk):
         return self.has_function_call_id(chunk)
 
     def has_fn_args_json(self, chunk):
-        return self._has_tool_call(chunk) and self._get_tool_call(chunk).function.arguments is not None
+        return (
+            self._has_tool_call(chunk)
+            and self._get_tool_call(chunk).function.arguments is not None
+        )
 
     def is_message_start_chunk(self, chunk):
         return self.has_msg_content(chunk)
@@ -762,7 +763,7 @@ class AnthropicModelOutput(ModelOutput):
 
     def _is_content_block(self, chunk):
         return hasattr(chunk, "content_block")
-    
+
     def _is_delta_chunk(self, chunk):
         return hasattr(chunk, "delta")
 
