@@ -619,14 +619,64 @@ class ModelOutput(ABC):
                 pass  # Signal end of iteration
         else:
             return None
+        
+
+    def stream_fn_calls(self):
+        self.current_chunk = self.get_next_usable_chunk()
+        function_name = None
+        tool_call_id = None
+        function_args_json = None
+
+        for chunk in itertools.chain([self.current_chunk], self.output_obj):
+            if self.has_function_call_id(chunk):
+                if tool_call_id is not None:
+                    fn_call = FunctionCall(
+                        function_name=function_name,  # noqa
+                        tool_call_id=tool_call_id,  # noqa
+                        function_args_json=function_args_json,  # noqa
+                    )
+                    self.fn_calls.append(fn_call)
+                    yield fn_call
+
+                function_name = self.get_fn_name(chunk)
+                tool_call_id = self.get_fn_call_id(chunk)
+                function_args_json = ""
+            elif tool_call_id is not None and self.has_args_json(chunk):
+                function_args_json += self.get_fn_args_json(chunk)
+
+        if tool_call_id is not None:
+            fn_call = FunctionCall(
+                function_name=function_name,
+                tool_call_id=tool_call_id,
+                function_args_json=function_args_json,
+            )
+
+            self.fn_calls.append(fn_call)
+            yield fn_call
 
 
 class OAIModelOutput(ModelOutput):
+    def get_fn_call_id(self, chunk):
+        return chunk.choices[0].delta.tool_calls[0].id
 
-    def _has_function_call_id(self, chunk):
+    def get_fn_name(self, chunk):
+        return chunk.choices[0].delta.tool_calls[0].function.name
+
+    def get_fn_args_json(self, chunk):
+        return chunk.choices[0].delta.tool_calls[0].function.arguments
+
+    def has_function_call_id(self, chunk):
         return (
             chunk.choices[0].delta.tool_calls is not None
             and chunk.choices[0].delta.tool_calls[0].id is not None
+        )
+    
+    def has_args_json(self, chunk):
+        return (
+            getattr(chunk.choices[0].delta, 'tool_calls', None) is not None and
+            len(chunk.choices[0].delta.tool_calls) > 0
+            and hasattr(chunk.choices[0].delta.tool_calls[0], 'function') 
+            and hasattr(chunk.choices[0].delta.tool_calls[0].function, 'arguments') 
         )
 
     def is_message_start_chunk(self, chunk):
@@ -640,52 +690,18 @@ class OAIModelOutput(ModelOutput):
 
     def get_msg_from_chunk(self, chunk):
         return chunk.choices[0].delta.content
+    
+    def is_final_chunk(self, chunk):
+        return chunk.choices[0].finish_reason is not None
 
     def get_next_usable_chunk(self):
         if self.current_chunk is None:
             chunk = next(self.output_obj)
         else:
             chunk = self.current_chunk
-        while not (self._has_function_call_id(chunk) or self.has_msg_content(chunk)):
+        while not (self.has_function_call_id(chunk) or self.has_msg_content(chunk) or self.is_final_chunk(chunk)):
             chunk = next(self.output_obj)
         return chunk
-
-    def stream_fn_calls(self):
-        function_name = None
-        tool_call_id = None
-        function_args_json = None
-
-        for chunk in itertools.chain([self.current_chunk], self.output_obj):
-            finish_reason = chunk.choices[0].finish_reason
-            if finish_reason is not None:
-                break
-            elif self._has_function_call_id(chunk):
-                if self.current_chunk != chunk:
-                    fn_call = FunctionCall(
-                        function_name=function_name,  # noqa
-                        tool_call_id=tool_call_id,  # noqa
-                        function_args_json=function_args_json,  # noqa
-                    )
-                    self.fn_calls.append(fn_call)
-                    yield fn_call
-
-                function_name = chunk.choices[0].delta.tool_calls[0].function.name
-                tool_call_id = chunk.choices[0].delta.tool_calls[0].id
-                function_args_json = ""
-            elif tool_call_id is not None:
-                function_args_json += (
-                    chunk.choices[0].delta.tool_calls[0].function.arguments
-                )
-
-        if tool_call_id is not None:
-            fn_call = FunctionCall(
-                function_name=function_name,
-                tool_call_id=tool_call_id,
-                function_args_json=function_args_json,
-            )
-
-            self.fn_calls.append(fn_call)
-            yield fn_call
 
     def get_message(self):
         self.msg_content = self.output_obj.choices[0].message.content
@@ -713,6 +729,20 @@ class OAIModelOutput(ModelOutput):
 
 
 class AnthropicModelOutput(ModelOutput):
+    def get_fn_call_id(self, chunk):
+        return chunk.content_block.id
+
+    def get_fn_name(self, chunk):
+        return chunk.content_block.name
+
+    def get_fn_args_json(self, chunk):
+        return chunk.delta.partial_json
+
+    def has_args_json(self, chunk):
+        return (
+            hasattr(chunk, 'delta') and hasattr(chunk.delta, 'partial_json')
+        )
+
     def is_message_start_chunk(self, chunk):
         content_block = getattr(chunk, "content_block", None)
         return content_block is not None and content_block.type == "text"
@@ -735,6 +765,11 @@ class AnthropicModelOutput(ModelOutput):
             getattr(chunk, "delta", None) is not None
             and getattr(chunk.delta, "text", None) is not None
         )
+    
+    def has_function_call_id(self, chunk):
+        return (
+            hasattr(chunk, 'content_block') and hasattr(chunk.content_block, 'id')
+        )
 
     def get_msg_from_chunk(self, chunk):
         return chunk.delta.text
@@ -755,43 +790,6 @@ class AnthropicModelOutput(ModelOutput):
     def get_message(self):
         self.msg_content = self.output_obj.content[0].text
         return self.msg_content
-
-    def stream_fn_calls(self):
-        first_chunk = self.get_next_usable_chunk()
-
-        function_name = None
-        tool_call_id = None
-        function_args_json = None
-
-        for chunk in itertools.chain([first_chunk], self.output_obj):
-            if self.is_tool_start_chunk(chunk):
-                function_name = chunk.content_block.name
-                tool_call_id = chunk.content_block.id
-                function_args_json = ""
-            elif self.is_end_block_chunk(chunk):
-                fn_call = FunctionCall(
-                    function_name=function_name,  # noqa
-                    tool_call_id=tool_call_id,  # noqa
-                    function_args_json=function_args_json,  # noqa
-                )
-                self.fn_calls.append(fn_call)
-                yield fn_call
-                function_name = None
-                tool_call_id = None
-                function_args_json = None
-            elif tool_call_id is not None:
-                function_args_json += chunk.delta.partial_json
-
-        if tool_call_id is not None:
-            fn_call = FunctionCall(
-                function_name=function_name,
-                tool_call_id=tool_call_id,
-                function_args_json=function_args_json,
-            )
-
-            self.fn_calls.append(fn_call)
-            yield fn_call
-
 
 class CustomJSONEncoder(json.JSONEncoder):
     def default(self, obj):
