@@ -3,7 +3,6 @@ import json
 from collections import defaultdict
 from enum import StrEnum
 from typing import Any, Dict, List, Optional
-import copy
 
 import anthropic
 import numpy as np
@@ -295,6 +294,7 @@ class MessageManager:
 
         self.last_node_id = turn.node_id
 
+
 class OAIMessageManager(MessageManager):
 
     def add_system_turn(self, turn):
@@ -362,39 +362,41 @@ class AnthropicMessageManager(MessageManager):
 
     def add_system_turn(self, turn):
         return
-    
+
     def remove_fn_call(self, tool_call_id):
         idx_to_remove = self.index_tracker.peek_idx(tool_call_id)
         message = self.message_dicts[idx_to_remove]
         new_contents = []
-        for content in message['content']:
-            if content['type'] == 'tool_use' and content['id'] == tool_call_id:
+        for content in message["content"]:
+            if content["type"] == "tool_use" and content["id"] == tool_call_id:
                 continue
             new_contents.append(content)
 
         if new_contents:
-            if new_contents[0]['type'] == 'text':
-                #TODO: i prob also want to remove these texts because they are usually internal reflections
-                new_message = {'role': 'assistant', "content": new_contents[0]['text']}
+            if new_contents[0]["type"] == "text":
+                # TODO: i prob also want to remove these texts because they are usually internal reflections
+                new_message = {"role": "assistant", "content": new_contents[0]["text"]}
             else:
-                new_message = {'role': 'assistant', "content": new_contents}
+                new_message = {"role": "assistant", "content": new_contents}
             self.message_dicts[idx_to_remove] = new_message
         else:
             del self.message_dicts[idx_to_remove]
             self.index_tracker.pop_idx(tool_call_id)
-        
 
     def remove_fn_output(self, tool_call_id):
-        idx_to_remove = self.index_tracker.peek_idx(tool_call_id+ "return")
+        idx_to_remove = self.index_tracker.peek_idx(tool_call_id + "return")
         message = self.message_dicts[idx_to_remove]
         new_contents = []
-        for content in message['content']:
-            if content['type'] == 'tool_result' and content['tool_use_id'] == tool_call_id:
+        for content in message["content"]:
+            if (
+                content["type"] == "tool_result"
+                and content["tool_use_id"] == tool_call_id
+            ):
                 continue
             new_contents.append(content)
 
         if new_contents:
-            new_message = {'role': 'assistant', "content": new_contents}
+            new_message = {"role": "assistant", "content": new_contents}
             self.message_dicts[idx_to_remove] = new_message
         else:
             del self.message_dicts[idx_to_remove]
@@ -423,10 +425,10 @@ class AnthropicMessageManager(MessageManager):
             [message_1] = messages
             message_2 = None
 
-        contents = message_1['content']
+        contents = message_1["content"]
         if type(contents) == list:
             for content in contents:
-                if content['type'] == 'tool_use':
+                if content["type"] == "tool_use":
                     tool_call_id = content["id"]
                     self.tool_call_ids.append(tool_call_id)
                     self.index_tracker.add_idx(tool_call_id, len(self.message_dicts))
@@ -434,9 +436,9 @@ class AnthropicMessageManager(MessageManager):
         self.message_dicts.append(message_1)
 
         if message_2 is not None:
-            for content in message_2['content']:
-                if content['type'] == 'tool_result':
-                    tool_id = content['tool_use_id']
+            for content in message_2["content"]:
+                if content["type"] == "tool_result":
+                    tool_id = content["tool_use_id"]
                     self.index_tracker.add_idx(
                         tool_id + "return", len(self.message_dicts)
                     )
@@ -765,16 +767,16 @@ class ListIndexTracker:
 
     def get_idx(self, named_idx):
         return self.named_idx_to_idx[named_idx]
-    
+
     def peek_idx(self, named_idx):
         return self.named_idx_to_idx[named_idx]
 
-    def pop_idx(self, named_idx, shift_idxs = True):
+    def pop_idx(self, named_idx, shift_idxs=True):
         popped_idx = self.named_idx_to_idx.pop(named_idx)
         popped_idx_pos = self.idx_to_pos.pop(popped_idx)
         self.idx_to_named_idx.pop(popped_idx)
         del self.idxs[popped_idx_pos]
-        
+
         if shift_idxs:
             for i in range(popped_idx_pos, len(self.idxs)):
                 curr_idx = self.idxs[i]
