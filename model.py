@@ -587,7 +587,7 @@ class ModelOutput(ABC):
     @abstractmethod
     def has_msg_content(self, chunk):
         raise NotImplementedError
-    
+
     @abstractmethod
     def get_fn_call_id_from_chunk(self, chunk):
         raise NotImplementedError
