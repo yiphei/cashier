@@ -612,11 +612,11 @@ class ModelOutput(ABC):
         chunk = self.get_next_usable_chunk()
         self.last_chunk = chunk
         if self.is_message_start_chunk(chunk):
-            return self._stream_messages(chunk)
+            return self._stream_message(chunk)
         else:
             return None
 
-    def _stream_messages(self, chunk):
+    def _stream_message(self, chunk):
         self.msg_content = ""
         while not self.has_msg_content(chunk):
             chunk = next(self.output_obj)
