@@ -545,7 +545,7 @@ class ModelOutput(ABC):
         self.output_obj = output_obj
         self.is_stream = is_stream
         self.msg_content = None
-        self.current_chunk = None
+        self.last_chunk = None
         self.fn_calls = []
 
     @abstractmethod
@@ -605,10 +605,10 @@ class ModelOutput(ABC):
         raise NotImplementedError
 
     def stream_message(self):
-        first_chunk = self.get_next_usable_chunk()
-        self.current_chunk = first_chunk
-        if self.is_message_start_chunk(first_chunk):
-            return self._stream_messages(first_chunk)
+        chunk = self.get_next_usable_chunk()
+        self.last_chunk = chunk
+        if self.is_message_start_chunk(chunk):
+            return self._stream_messages(chunk)
         else:
             return None
 
@@ -627,24 +627,24 @@ class ModelOutput(ABC):
                     self.msg_content += msg  # Append the message to full_msg
                     yield msg  # Return the message
                 else:
-                    self.current_chunk = chunk
+                    self.last_chunk = chunk
                     raise StopIteration
         except StopIteration:
             pass  # Signal end of iteration
 
     def stream_fn_calls(self):
-        self.current_chunk = self.get_next_usable_chunk()
+        self.last_chunk = self.get_next_usable_chunk()
         function_name = None
         tool_call_id = None
         function_args_json = None
 
-        for chunk in itertools.chain([self.current_chunk], self.output_obj):
+        for chunk in itertools.chain([self.last_chunk], self.output_obj):
             if self.has_function_call_id(chunk):
                 if tool_call_id is not None:
                     fn_call = FunctionCall(
-                        function_name=function_name,  # noqa
-                        tool_call_id=tool_call_id,  # noqa
-                        function_args_json=function_args_json,  # noqa
+                        function_name=function_name,
+                        tool_call_id=tool_call_id,
+                        function_args_json=function_args_json,
                     )
                     self.fn_calls.append(fn_call)
                     yield fn_call
@@ -666,10 +666,10 @@ class ModelOutput(ABC):
             yield fn_call
 
     def get_next_usable_chunk(self):
-        if self.current_chunk is None:
+        if self.last_chunk is None:
             chunk = next(self.output_obj)
         else:
-            chunk = self.current_chunk
+            chunk = self.last_chunk
         while not (
             self.is_message_start_chunk(chunk)
             or self.is_tool_start_chunk(chunk)
