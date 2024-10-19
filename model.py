@@ -776,7 +776,7 @@ class ListIndexTracker:
     def pop_idx(self, named_idx, shift_idxs=True):
         popped_idx = self.named_idx_to_idx.pop(named_idx)
         named_idxs = self.idx_to_named_idx[popped_idx]
-        
+
         named_idxs.remove(named_idx)
         if not named_idxs:
             popped_idx_pos = self.idx_to_pos.pop(popped_idx)

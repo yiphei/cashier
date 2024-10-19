@@ -218,7 +218,11 @@ def run_chat(args, model, elevenlabs_client):
                 f"[NODE_SCHEMA] Initializing {Style.BRIGHT}node_schema_id: {current_node_schema.id}{Style.NORMAL}"
             )
             current_node_schema.run(new_node_input)
-            TM.add_node_turn(current_node_schema.id, current_node_schema.prompt, remove_prev_tool_calls=True)
+            TM.add_node_turn(
+                current_node_schema.id,
+                current_node_schema.prompt,
+                remove_prev_tool_calls=True,
+            )
             MessageDisplay.print_msg("system", current_node_schema.prompt)
 
             if current_node_schema.first_msg:
