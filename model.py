@@ -758,10 +758,13 @@ class AnthropicModelOutput(ModelOutput):
         return chunk.delta.partial_json
 
     def has_fn_args_json(self, chunk):
-        return hasattr(chunk, "delta") and hasattr(chunk.delta, "partial_json")
+        return self._is_delta_chunk(chunk) and hasattr(chunk.delta, "partial_json")
 
     def _is_content_block(self, chunk):
         return hasattr(chunk, "content_block")
+    
+    def _is_delta_chunk(self, chunk):
+        return hasattr(chunk, "delta")
 
     def is_message_start_chunk(self, chunk):
         return self._is_content_block(chunk) and chunk.content_block.type == "text"
@@ -777,7 +780,7 @@ class AnthropicModelOutput(ModelOutput):
 
     def has_msg_content(self, chunk):
         return (
-            getattr(chunk, "delta", None) is not None
+            self._is_delta_chunk(chunk)
             and getattr(chunk.delta, "text", None) is not None
         )
 
