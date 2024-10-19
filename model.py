@@ -571,15 +571,15 @@ class ModelOutput(ABC):
     @abstractmethod
     def is_message_start_chunk(self):
         raise NotImplementedError
-    
+
     @abstractmethod
     def is_tool_start_chunk(self):
         raise NotImplementedError
-    
+
     @abstractmethod
     def is_final_chunk(self):
         raise NotImplementedError
-    
+
     @abstractmethod
     def has_function_call_id(self, chunk):
         raise NotImplementedError
