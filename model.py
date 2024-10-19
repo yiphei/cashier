@@ -167,7 +167,7 @@ class ModelTurn(BaseModel, ABC):
 
 class UserTurn(ModelTurn):
     def build_oai_messages(self):
-        return {"role": "user", "content": self.msg_content}
+        return [{"role": "user", "content": self.msg_content}]
 
     def build_anthropic_messages(self):
         return self.build_oai_messages()
@@ -175,7 +175,7 @@ class UserTurn(ModelTurn):
 
 class SystemTurn(ModelTurn):
     def build_oai_messages(self):
-        return {"role": "system", "content": self.msg_content}
+        return [{"role": "system", "content": self.msg_content}]
     
     def build_anthropic_messages(self):
         return None
@@ -286,7 +286,7 @@ class MessageManager(ABC):
             raise TypeError(f"{cls.__name__} must define 'model_provider'")
         
     def add_user_turn(self, turn):
-        self.message_dicts.append(turn.build_messages(self.model_provider))
+        self.message_dicts.extend(turn.build_messages(self.model_provider))
 
     def add_node_turn(
         self,
@@ -325,7 +325,7 @@ class MessageManager(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def parse_system_message(self, msg):
+    def parse_system_messages(self, msg):
         raise NotImplementedError
     
     @abstractmethod
@@ -333,7 +333,7 @@ class MessageManager(ABC):
         raise NotImplementedError
 
     def add_system_turn(self, turn):
-        self.parse_system_message(turn.build_messages(self.model_provider))
+        self.parse_system_messages(turn.build_messages(self.model_provider))
     
     def add_assistant_turn(self, turn):
         self.parse_assistant_messages(turn.build_messages(self.model_provider))
@@ -341,8 +341,8 @@ class MessageManager(ABC):
 class OAIMessageManager(MessageManager):
     model_provider = ModelProvider.OPENAI
 
-    def parse_system_message(self, msg):
-        self.message_dicts.append(msg)
+    def parse_system_messages(self, msgs):
+        self.message_dicts.extend(msgs)
 
     def remove_fn_call(self, tool_call_id):
         idx_to_remove = self.index_tracker.pop_idx(tool_call_id)
@@ -367,7 +367,7 @@ class OAIMessageManager(MessageManager):
             del self.message_dicts[idx_to_remove]
         super().add_node_turn(turn, remove_prev_tool_fn_return, remove_prev_tool_calls)
 
-        self.message_dicts.append(turn.build_oai_messages())
+        self.message_dicts.extend(turn.build_oai_messages())
         self.index_tracker.add_idx(turn.node_id, len(self.message_dicts) - 1)
 
     def parse_assistant_messages(self, msgs):
@@ -401,7 +401,7 @@ class OAIMessageManager(MessageManager):
 class AnthropicMessageManager(MessageManager):
     model_provider = ModelProvider.ANTHROPIC
 
-    def parse_system_message(self, msg):
+    def parse_system_messages(self, msgs):
         return
 
     def remove_fn_call(self, tool_call_id):
