@@ -695,23 +695,20 @@ class OAIModelOutput(ModelOutput):
 
     def get_fn_args_json_from_chunk(self, chunk):
         return self._get_tool_call(chunk).function.arguments
+    
+    def _has_tool_call(self, chunk):
+        return bool(chunk.choices[0].delta.tool_calls)
 
     def has_function_call_id(self, chunk):
         return (
-            chunk.choices[0].delta.tool_calls is not None
-            and chunk.choices[0].delta.tool_calls[0].id is not None
+            self._has_tool_call(chunk) and self._get_tool_call(chunk).id is not None
         )
 
     def is_tool_start_chunk(self, chunk):
         return self.has_function_call_id(chunk)
 
     def has_fn_args_json(self, chunk):
-        return (
-            getattr(chunk.choices[0].delta, "tool_calls", None) is not None
-            and len(chunk.choices[0].delta.tool_calls) > 0
-            and hasattr(chunk.choices[0].delta.tool_calls[0], "function")
-            and hasattr(chunk.choices[0].delta.tool_calls[0].function, "arguments")
-        )
+        return self._has_tool_call(chunk) and self._get_tool_call(chunk).function.arguments is not None
 
     def is_message_start_chunk(self, chunk):
         return self.has_msg_content(chunk)
