@@ -604,25 +604,28 @@ class ModelOutput(ABC):
         first_chunk = self.get_next_usable_chunk()
         self.current_chunk = first_chunk
         if self.is_message_start_chunk(first_chunk):
-            self.msg_content = ""
-            first_chunk = self.get_first_message_chunk(first_chunk)
-            first_msg = self.get_msg_from_chunk(first_chunk)
-            self.msg_content += first_msg
-            yield first_msg
-            try:
-                while True:
-                    chunk = next(self.output_obj)  # Get the next chunk
-                    if self.has_msg_content(chunk):
-                        msg = self.get_msg_from_chunk(chunk)
-                        self.msg_content += msg  # Append the message to full_msg
-                        yield msg  # Return the message
-                    else:
-                        self.current_chunk = chunk
-                        raise StopIteration
-            except StopIteration:
-                pass  # Signal end of iteration
+            return self._stream_messages(first_chunk)
         else:
             return None
+        
+    def _stream_messages(self, first_chunk):
+        self.msg_content = ""
+        first_chunk = self.get_first_message_chunk(first_chunk)
+        first_msg = self.get_msg_from_chunk(first_chunk)
+        self.msg_content += first_msg
+        yield first_msg
+        try:
+            while True:
+                chunk = next(self.output_obj)  # Get the next chunk
+                if self.has_msg_content(chunk):
+                    msg = self.get_msg_from_chunk(chunk)
+                    self.msg_content += msg  # Append the message to full_msg
+                    yield msg  # Return the message
+                else:
+                    self.current_chunk = chunk
+                    raise StopIteration
+        except StopIteration:
+            pass  # Signal end of iteration
 
     def stream_fn_calls(self):
         self.current_chunk = self.get_next_usable_chunk()
