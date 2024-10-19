@@ -784,12 +784,12 @@ class ListIndexTracker:
             del self.idxs[popped_idx_pos]
 
             for i in range(popped_idx_pos, len(self.idxs)):
+                curr_idx = self.idxs[i]
+                self.idx_to_pos.pop(curr_idx)
                 if shift_idxs:
-                    curr_idx = self.idxs[i]
                     curr_named_idxs = self.idx_to_named_idx[curr_idx]
 
                     self.idxs[i] -= 1
-                    self.idx_to_pos.pop(curr_idx)
                     self.idx_to_pos[self.idxs[i]] = i
 
                     for curr_named_idx in curr_named_idxs:
@@ -797,8 +797,6 @@ class ListIndexTracker:
                     self.idx_to_named_idx.pop(curr_idx)
                     self.idx_to_named_idx[self.idxs[i]] = curr_named_idxs
                 else:
-                    curr_idx = self.idxs[i]
-                    self.idx_to_pos.pop(curr_idx)
                     self.idx_to_pos[curr_idx] = i
 
             return popped_idx
