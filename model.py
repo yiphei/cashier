@@ -379,6 +379,7 @@ class AnthropicMessageManager(MessageManager):
             else:
                 new_message = {"role": "assistant", "content": new_contents}
             self.message_dicts[idx_to_remove] = new_message
+            self.index_tracker.pop_idx(tool_call_id, shift_idxs=False)
         else:
             del self.message_dicts[idx_to_remove]
             self.index_tracker.pop_idx(tool_call_id)
@@ -398,6 +399,7 @@ class AnthropicMessageManager(MessageManager):
         if new_contents:
             new_message = {"role": "assistant", "content": new_contents}
             self.message_dicts[idx_to_remove] = new_message
+            self.index_tracker.pop_idx(tool_call_id, shift_idxs=False)
         else:
             del self.message_dicts[idx_to_remove]
             self.index_tracker.pop_idx(tool_call_id)
