@@ -1,9 +1,9 @@
 import itertools
 import json
+from abc import ABC, abstractmethod
 from collections import defaultdict
 from enum import StrEnum
 from typing import Any, Dict, List, Optional
-from abc import ABC, abstractmethod, ABCMeta
 
 import anthropic
 import numpy as np
@@ -157,7 +157,7 @@ class ModelTurn(BaseModel, ABC):
     @abstractmethod
     def build_anthropic_messages(self):
         raise NotImplementedError
-    
+
     def build_messages(self, model_provider):
         if model_provider == ModelProvider.OPENAI:
             return self.build_oai_messages()
@@ -176,13 +176,14 @@ class UserTurn(ModelTurn):
 class SystemTurn(ModelTurn):
     def build_oai_messages(self):
         return [{"role": "system", "content": self.msg_content}]
-    
+
     def build_anthropic_messages(self):
         return None
 
 
 class NodeSystemTurn(SystemTurn):
     node_id: int
+
 
 class AssistantTurn(ModelTurn):
     msg_content: Optional[str]
@@ -284,7 +285,7 @@ class MessageManager(ABC):
         super().__init_subclass__(**kwargs)
         if cls.model_provider is None:
             raise TypeError(f"{cls.__name__} must define 'model_provider'")
-        
+
     def add_user_turn(self, turn):
         self.message_dicts.extend(turn.build_messages(self.model_provider))
 
@@ -327,16 +328,17 @@ class MessageManager(ABC):
     @abstractmethod
     def parse_system_messages(self, msg):
         raise NotImplementedError
-    
+
     @abstractmethod
     def parse_assistant_messages(self, msgs):
         raise NotImplementedError
 
     def add_system_turn(self, turn):
         self.parse_system_messages(turn.build_messages(self.model_provider))
-    
+
     def add_assistant_turn(self, turn):
         self.parse_assistant_messages(turn.build_messages(self.model_provider))
+
 
 class OAIMessageManager(MessageManager):
     model_provider = ModelProvider.OPENAI
