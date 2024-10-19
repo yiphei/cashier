@@ -575,11 +575,11 @@ class ModelOutput(ABC):
             return self.stream_fn_calls()
         else:
             return self.get_fn_calls()
-        
+
     @abstractmethod
     def get_next_usable_chunk(self):
         raise NotImplementedError
-    
+
     @abstractmethod
     def is_message_start_chunk(self):
         raise NotImplementedError
@@ -591,7 +591,7 @@ class ModelOutput(ABC):
     @abstractmethod
     def get_msg_from_chunk(self, chunk):
         raise NotImplementedError
-    
+
     @abstractmethod
     def has_msg_content(self, chunk):
         raise NotImplementedError
