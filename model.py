@@ -323,20 +323,26 @@ class MessageManager(ABC):
     @abstractmethod
     def remove_fn_output_schema(self, fn_name):
         raise NotImplementedError
+
+    @abstractmethod
+    def parse_system_message(self, msg):
+        raise NotImplementedError
     
     @abstractmethod
+    def parse_assistant_messages(self, msgs):
+        raise NotImplementedError
+
     def add_system_turn(self, turn):
-        raise NotImplementedError
+        self.parse_system_message(turn.build_messages(self.model_provider))
     
-    @abstractmethod
     def add_assistant_turn(self, turn):
-        raise NotImplementedError
+        self.parse_assistant_messages(turn.build_messages(self.model_provider))
 
 class OAIMessageManager(MessageManager):
     model_provider = ModelProvider.OPENAI
 
-    def add_system_turn(self, turn):
-        self.message_dicts.append(turn.build_oai_messages())
+    def parse_system_message(self, msg):
+        self.message_dicts.append(msg)
 
     def remove_fn_call(self, tool_call_id):
         idx_to_remove = self.index_tracker.pop_idx(tool_call_id)
@@ -364,10 +370,9 @@ class OAIMessageManager(MessageManager):
         self.message_dicts.append(turn.build_oai_messages())
         self.index_tracker.add_idx(turn.node_id, len(self.message_dicts) - 1)
 
-    def add_assistant_turn(self, turn):
-        messages = turn.build_oai_messages()
+    def parse_assistant_messages(self, msgs):
         last_fn_name = None
-        for message in messages:
+        for message in msgs:
             if message.get("tool_calls", None) is not None:
                 tool_call_id = message["tool_calls"][0]["id"]
                 self.tool_call_ids.append(tool_call_id)
@@ -396,7 +401,7 @@ class OAIMessageManager(MessageManager):
 class AnthropicMessageManager(MessageManager):
     model_provider = ModelProvider.ANTHROPIC
 
-    def add_system_turn(self, turn):
+    def parse_system_message(self, msg):
         return
 
     def remove_fn_call(self, tool_call_id):
@@ -452,8 +457,7 @@ class AnthropicMessageManager(MessageManager):
         super().add_node_turn(turn, remove_prev_tool_fn_return, remove_prev_tool_calls)
         self.system = turn.msg_content
 
-    def add_assistant_turn(self, turn):
-        messages = turn.build_anthropic_messages()
+    def parse_assistant_messages(self, messages):
         if len(messages) == 2:
             [message_1, message_2] = messages
         else:
