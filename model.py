@@ -265,15 +265,12 @@ class AssistantTurn(ModelTurn):
 class MessageManager:
     def __init__(self):
         self.message_dicts = []
-
-
-class OAIMessageManager(MessageManager):
-    def __init__(self):
-        super().__init__()
         self.last_node_id = None
         self.tool_call_ids = []
         self.tool_fn_return_names = set()
         self.index_tracker = ListIndexTracker()
+
+class OAIMessageManager(MessageManager):
 
     def add_system_turn(self, turn):
         self.message_dicts.append(turn.build_oai_messages())
@@ -345,13 +342,6 @@ class OAIMessageManager(MessageManager):
 
 
 class AnthropicMessageManager(MessageManager):
-    def __init__(self):
-        super().__init__()
-        self.last_node_id = None
-        self.tool_call_ids = []
-        self.tool_fn_return_names = set()
-        self.index_tracker = ListIndexTracker()
-        self.system = None
 
     def add_system_turn(self, turn):
         return
@@ -393,27 +383,31 @@ class AnthropicMessageManager(MessageManager):
 
     def add_assistant_turn(self, turn):
         messages = turn.build_anthropic_messages()
-        last_fn_name = None
-        for message in messages:
-            # if getattr(message, "tool_calls", None) is not None:
-            #     tool_call_id = message["tool_calls"]["id"]
-            #     self.tool_call_ids.append(tool_call_id)
-            #     last_fn_name = message["tool_calls"]["function"]["name"]
-            #     self.index_tracker.add_idx(tool_call_id, len(self.message_dicts))
-            # elif message["role"] == "tool":
-            #     tool_call_id = message["tool_call_id"]
-            #     self.index_tracker.add_idx(
-            #         tool_call_id + "return", len(self.message_dicts)
-            #     )
-            # elif message["role"] == "system" and last_fn_name is not None:
-            #     if last_fn_name in self.tool_fn_return_names:
-            #         idx_to_remove = self.index_tracker.get_idx(last_fn_name)
-            #         del self.message_dicts[idx_to_remove]
+        if len(messages) == 2:
+            [message_1, message_2] = messages
+        else:
+            [message_1] = messages
+            message_2 = None
 
-            #     self.tool_fn_return_names.append(last_fn_name)
-            #     last_fn_name = None
+        contents = message_1['content']
+        if type(contents) == list:
+            for content in contents:
+                if content['type'] == 'tool_use':
+                    tool_call_id = content["id"]
+                    self.tool_call_ids.append(tool_call_id)
+                    self.index_tracker.add_idx(tool_call_id, len(self.message_dicts))
 
-            self.message_dicts.append(message)
+        self.message_dicts.append(message_1)
+
+        if message_2 is not None:
+            for content in message_2['content']:
+                if content['type'] == 'tool_result':
+                    tool_id = content['tool_use_id']
+                    self.index_tracker.add_idx(
+                        tool_id + "return", len(self.message_dicts)
+                    )
+
+            self.message_dicts.append(message_2)
 
     def get_chat_input(self):
         return self.message_dicts, self.system
