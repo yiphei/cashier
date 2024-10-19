@@ -684,14 +684,17 @@ class ModelOutput(ABC):
 
 
 class OAIModelOutput(ModelOutput):
+    def _get_tool_call(self, chunk):
+        return chunk.choices[0].delta.tool_calls[0]
+
     def get_fn_call_id_from_chunk(self, chunk):
-        return chunk.choices[0].delta.tool_calls[0].id
+        return self._get_tool_call(chunk).id
 
     def get_fn_name_from_chunk(self, chunk):
-        return chunk.choices[0].delta.tool_calls[0].function.name
+        return self._get_tool_call(chunk).function.name
 
     def get_fn_args_json_from_chunk(self, chunk):
-        return chunk.choices[0].delta.tool_calls[0].function.arguments
+        return self._get_tool_call(chunk).function.arguments
 
     def has_function_call_id(self, chunk):
         return (
