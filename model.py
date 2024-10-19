@@ -548,16 +548,9 @@ class ModelOutput(ABC):
         self.current_chunk = None
         self.fn_calls = []
 
-    @abstractmethod
-    def stream_message(self):
-        raise NotImplementedError
 
     @abstractmethod
     def get_message(self):
-        raise NotImplementedError
-
-    @abstractmethod
-    def stream_fn_calls(self):
         raise NotImplementedError
 
     # @abstractmethod
@@ -619,7 +612,6 @@ class ModelOutput(ABC):
                 pass  # Signal end of iteration
         else:
             return None
-        
 
     def stream_fn_calls(self):
         self.current_chunk = self.get_next_usable_chunk()
@@ -670,13 +662,13 @@ class OAIModelOutput(ModelOutput):
             chunk.choices[0].delta.tool_calls is not None
             and chunk.choices[0].delta.tool_calls[0].id is not None
         )
-    
+
     def has_args_json(self, chunk):
         return (
-            getattr(chunk.choices[0].delta, 'tool_calls', None) is not None and
-            len(chunk.choices[0].delta.tool_calls) > 0
-            and hasattr(chunk.choices[0].delta.tool_calls[0], 'function') 
-            and hasattr(chunk.choices[0].delta.tool_calls[0].function, 'arguments') 
+            getattr(chunk.choices[0].delta, "tool_calls", None) is not None
+            and len(chunk.choices[0].delta.tool_calls) > 0
+            and hasattr(chunk.choices[0].delta.tool_calls[0], "function")
+            and hasattr(chunk.choices[0].delta.tool_calls[0].function, "arguments")
         )
 
     def is_message_start_chunk(self, chunk):
@@ -690,7 +682,7 @@ class OAIModelOutput(ModelOutput):
 
     def get_msg_from_chunk(self, chunk):
         return chunk.choices[0].delta.content
-    
+
     def is_final_chunk(self, chunk):
         return chunk.choices[0].finish_reason is not None
 
@@ -699,7 +691,11 @@ class OAIModelOutput(ModelOutput):
             chunk = next(self.output_obj)
         else:
             chunk = self.current_chunk
-        while not (self.has_function_call_id(chunk) or self.has_msg_content(chunk) or self.is_final_chunk(chunk)):
+        while not (
+            self.has_function_call_id(chunk)
+            or self.has_msg_content(chunk)
+            or self.is_final_chunk(chunk)
+        ):
             chunk = next(self.output_obj)
         return chunk
 
@@ -739,9 +735,7 @@ class AnthropicModelOutput(ModelOutput):
         return chunk.delta.partial_json
 
     def has_args_json(self, chunk):
-        return (
-            hasattr(chunk, 'delta') and hasattr(chunk.delta, 'partial_json')
-        )
+        return hasattr(chunk, "delta") and hasattr(chunk.delta, "partial_json")
 
     def is_message_start_chunk(self, chunk):
         content_block = getattr(chunk, "content_block", None)
@@ -765,11 +759,9 @@ class AnthropicModelOutput(ModelOutput):
             getattr(chunk, "delta", None) is not None
             and getattr(chunk.delta, "text", None) is not None
         )
-    
+
     def has_function_call_id(self, chunk):
-        return (
-            hasattr(chunk, 'content_block') and hasattr(chunk.content_block, 'id')
-        )
+        return hasattr(chunk, "content_block") and hasattr(chunk.content_block, "id")
 
     def get_msg_from_chunk(self, chunk):
         return chunk.delta.text
@@ -790,6 +782,7 @@ class AnthropicModelOutput(ModelOutput):
     def get_message(self):
         self.msg_content = self.output_obj.content[0].text
         return self.msg_content
+
 
 class CustomJSONEncoder(json.JSONEncoder):
     def default(self, obj):
