@@ -585,10 +585,6 @@ class ModelOutput(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def get_first_message_chunk(self, chunk):
-        raise NotImplementedError
-
-    @abstractmethod
     def get_msg_from_chunk(self, chunk):
         raise NotImplementedError
 
@@ -616,10 +612,11 @@ class ModelOutput(ABC):
         else:
             return None
 
-    def _stream_messages(self, first_chunk):
+    def _stream_messages(self, chunk):
         self.msg_content = ""
-        first_chunk = self.get_first_message_chunk(first_chunk)
-        first_msg = self.get_msg_from_chunk(first_chunk)
+        while not self.has_msg_content(chunk):
+            chunk = next(self.output_obj)
+        first_msg = self.get_msg_from_chunk(chunk)
         self.msg_content += first_msg
         yield first_msg
         try:
@@ -712,9 +709,6 @@ class OAIModelOutput(ModelOutput):
     def is_message_start_chunk(self, chunk):
         return self.has_msg_content(chunk)
 
-    def get_first_message_chunk(self, chunk):
-        return chunk
-
     def has_msg_content(self, chunk):
         return chunk.choices[0].delta.content is not None
 
@@ -775,9 +769,6 @@ class AnthropicModelOutput(ModelOutput):
 
     def is_final_chunk(self, chunk):
         return chunk.type == "message_stop"
-
-    def get_first_message_chunk(self, chunk):
-        return next(self.output_obj)
 
     def has_msg_content(self, chunk):
         return (
