@@ -319,10 +319,10 @@ class OAIMessageManager(MessageManager):
         messages = turn.build_oai_messages()
         last_fn_name = None
         for message in messages:
-            if getattr(message, "tool_calls", None) is not None:
-                tool_call_id = message["tool_calls"]["id"]
+            if message.get("tool_calls", None) is not None:
+                tool_call_id = message["tool_calls"][0]["id"]
                 self.tool_call_ids.append(tool_call_id)
-                last_fn_name = message["tool_calls"]["function"]["name"]
+                last_fn_name = message["tool_calls"][0]["function"]["name"]
                 self.index_tracker.add_idx(tool_call_id, len(self.message_dicts))
             elif message["role"] == "tool":
                 tool_call_id = message["tool_call_id"]
@@ -334,7 +334,8 @@ class OAIMessageManager(MessageManager):
                     idx_to_remove = self.index_tracker.get_idx(last_fn_name)
                     del self.message_dicts[idx_to_remove]
 
-                self.tool_fn_return_names.append(last_fn_name)
+                self.tool_fn_return_names.add(last_fn_name)
+                self.index_tracker.add_idx(last_fn_name, len(self.message_dicts))
                 last_fn_name = None
 
             self.message_dicts.append(message)
