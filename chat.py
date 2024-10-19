@@ -19,7 +19,7 @@ from chain import (
 from db_functions import create_db_client
 from gui import remove_previous_line
 from logger import logger
-from model import CustomJSONEncoder, Model, ModelProvider, TurnContainer
+from model import CustomJSONEncoder, Model, TurnContainer
 from model_tool_decorator import FN_NAME_TO_FN, OPENAI_TOOL_NAME_TO_TOOL_DEF
 
 # Load environment variables from .env file
