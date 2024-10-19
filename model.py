@@ -3,6 +3,7 @@ import json
 from collections import defaultdict
 from enum import StrEnum
 from typing import Any, Dict, List, Optional
+import copy
 
 import anthropic
 import numpy as np
@@ -270,11 +271,6 @@ class MessageManager:
         self.tool_fn_return_names = set()
         self.index_tracker = ListIndexTracker()
 
-class OAIMessageManager(MessageManager):
-
-    def add_system_turn(self, turn):
-        self.message_dicts.append(turn.build_oai_messages())
-
     def add_node_turn(
         self,
         turn,
@@ -284,29 +280,50 @@ class OAIMessageManager(MessageManager):
         if remove_prev_tool_calls:
             assert remove_prev_tool_fn_return is not False
 
-        if self.last_node_id is not None:
-            idx_to_remove = self.index_tracker.pop_idx(self.last_node_id)
-            del self.message_dicts[idx_to_remove]
-
         if remove_prev_tool_fn_return is True or remove_prev_tool_calls:
             for toll_return in self.tool_fn_return_names:
-                idx_to_remove = self.index_tracker.pop_idx(toll_return)
-                del self.message_dicts[idx_to_remove]
+                self.remove_fn_output_schema(toll_return)
 
             self.tool_fn_return_names = set()
 
         if remove_prev_tool_calls:
             for tool_call_id in self.tool_call_ids:
-                idx_to_remove = self.index_tracker.pop_idx(tool_call_id)
-                del self.message_dicts[idx_to_remove]
-
-                idx_to_remove = self.index_tracker.pop_idx(tool_call_id + "return")
-                del self.message_dicts[idx_to_remove]
+                self.remove_fn_call(tool_call_id)
+                self.remove_fn_output(tool_call_id)
 
             self.tool_call_ids = []
 
-        self.message_dicts.append(turn.build_oai_messages())
         self.last_node_id = turn.node_id
+
+class OAIMessageManager(MessageManager):
+
+    def add_system_turn(self, turn):
+        self.message_dicts.append(turn.build_oai_messages())
+
+    def remove_fn_call(self, tool_call_id):
+        idx_to_remove = self.index_tracker.pop_idx(tool_call_id)
+        del self.message_dicts[idx_to_remove]
+
+    def remove_fn_output(self, tool_call_id):
+        idx_to_remove = self.index_tracker.pop_idx(tool_call_id + "return")
+        del self.message_dicts[idx_to_remove]
+
+    def remove_fn_output_schema(self, fn_name):
+        idx_to_remove = self.index_tracker.pop_idx(fn_name)
+        del self.message_dicts[idx_to_remove]
+
+    def add_node_turn(
+        self,
+        turn,
+        remove_prev_tool_fn_return=None,
+        remove_prev_tool_calls=False,
+    ):
+        if self.last_node_id is not None:
+            idx_to_remove = self.index_tracker.pop_idx(self.last_node_id)
+            del self.message_dicts[idx_to_remove]
+        super().add_node_turn(turn, remove_prev_tool_fn_return, remove_prev_tool_calls)
+
+        self.message_dicts.append(turn.build_oai_messages())
         self.index_tracker.add_idx(turn.node_id, len(self.message_dicts) - 1)
 
     def add_user_turn(self, turn):
@@ -345,6 +362,46 @@ class AnthropicMessageManager(MessageManager):
 
     def add_system_turn(self, turn):
         return
+    
+    def remove_fn_call(self, tool_call_id):
+        idx_to_remove = self.index_tracker.peek_idx(tool_call_id)
+        message = self.message_dicts[idx_to_remove]
+        new_contents = []
+        for content in message['content']:
+            if content['type'] == 'tool_use' and content['id'] == tool_call_id:
+                continue
+            new_contents.append(content)
+
+        if new_contents:
+            if new_contents[0]['type'] == 'text':
+                #TODO: i prob also want to remove these texts because they are usually internal reflections
+                new_message = {'role': 'assistant', "content": new_contents[0]['text']}
+            else:
+                new_message = {'role': 'assistant', "content": new_contents}
+            self.message_dicts[idx_to_remove] = new_message
+        else:
+            del self.message_dicts[idx_to_remove]
+            self.index_tracker.pop_idx(tool_call_id)
+        
+
+    def remove_fn_output(self, tool_call_id):
+        idx_to_remove = self.index_tracker.peek_idx(tool_call_id+ "return")
+        message = self.message_dicts[idx_to_remove]
+        new_contents = []
+        for content in message['content']:
+            if content['type'] == 'tool_result' and content['tool_use_id'] == tool_call_id:
+                continue
+            new_contents.append(content)
+
+        if new_contents:
+            new_message = {'role': 'assistant', "content": new_contents}
+            self.message_dicts[idx_to_remove] = new_message
+        else:
+            del self.message_dicts[idx_to_remove]
+            self.index_tracker.pop_idx(tool_call_id)
+
+    def remove_fn_output_schema(self, fn_name):
+        return
 
     def add_node_turn(
         self,
@@ -352,30 +409,7 @@ class AnthropicMessageManager(MessageManager):
         remove_prev_tool_fn_return=None,
         remove_prev_tool_calls=False,
     ):
-        # if remove_prev_tool_calls:
-        #     assert remove_prev_tool_fn_return is not False
-
-        # if self.last_node_id is not None:
-        #     idx_to_remove = self.index_tracker.pop_idx(self.last_node_id)
-        #     del self.message_dicts[idx_to_remove]
-
-        # if remove_prev_tool_fn_return is True or remove_prev_tool_calls:
-        #     for toll_return in self.tool_fn_return_names:
-        #         idx_to_remove = self.index_tracker.pop_idx(toll_return)
-        #         del self.message_dicts[idx_to_remove]
-
-        #     self.tool_fn_return_names = set()
-
-        # if remove_prev_tool_calls:
-        #     for tool_call_id in self.tool_call_ids:
-        #         idx_to_remove = self.index_tracker.pop_idx(tool_call_id)
-        #         del self.message_dicts[idx_to_remove]
-
-        #         idx_to_remove = self.index_tracker.pop_idx(tool_call_id + "return")
-        #         del self.message_dicts[idx_to_remove]
-
-        #     self.tool_call_ids = []
-
+        super().add_node_turn(turn, remove_prev_tool_fn_return, remove_prev_tool_calls)
         self.system = turn.msg_content
 
     def add_user_turn(self, turn):
@@ -731,22 +765,26 @@ class ListIndexTracker:
 
     def get_idx(self, named_idx):
         return self.named_idx_to_idx[named_idx]
+    
+    def peek_idx(self, named_idx):
+        return self.named_idx_to_idx[named_idx]
 
-    def pop_idx(self, named_idx):
+    def pop_idx(self, named_idx, shift_idxs = True):
         popped_idx = self.named_idx_to_idx.pop(named_idx)
         popped_idx_pos = self.idx_to_pos.pop(popped_idx)
         self.idx_to_named_idx.pop(popped_idx)
         del self.idxs[popped_idx_pos]
+        
+        if shift_idxs:
+            for i in range(popped_idx_pos, len(self.idxs)):
+                curr_idx = self.idxs[i]
+                curr_named_idx = self.idx_to_named_idx[curr_idx]
 
-        for i in range(popped_idx_pos, len(self.idxs)):
-            curr_idx = self.idxs[i]
-            curr_named_idx = self.idx_to_named_idx[curr_idx]
+                self.idxs[i] -= 1
+                self.idx_to_pos.pop(curr_idx)
+                self.idx_to_pos[self.idxs[i]] = i
 
-            self.idxs[i] -= 1
-            self.idx_to_pos.pop(curr_idx)
-            self.idx_to_pos[self.idxs[i]] = i
-
-            self.named_idx_to_idx[curr_named_idx] = self.idxs[i]
-            self.idx_to_named_idx.pop(curr_idx)
-            self.idx_to_named_idx[self.idxs[i]] = curr_named_idx
+                self.named_idx_to_idx[curr_named_idx] = self.idxs[i]
+                self.idx_to_named_idx.pop(curr_idx)
+                self.idx_to_named_idx[self.idxs[i]] = curr_named_idx
         return popped_idx
