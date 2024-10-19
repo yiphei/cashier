@@ -540,7 +540,7 @@ class TurnContainer:
             mm.add_assistant_turn(turn)
 
 
-class ModelOutput:
+class ModelOutput(ABC):
     def __init__(self, output_obj, is_stream):
         self.output_obj = output_obj
         self.is_stream = is_stream
@@ -548,15 +548,19 @@ class ModelOutput:
         self.current_chunk = None
         self.fn_calls = []
 
+    @abstractmethod
     def stream_message(self):
         raise NotImplementedError
 
+    @abstractmethod
     def get_message(self):
         raise NotImplementedError
 
+    @abstractmethod
     def stream_fn_calls(self):
         raise NotImplementedError
 
+    @abstractmethod
     def get_fn_calls(self):
         raise NotImplementedError
 
