@@ -569,10 +569,6 @@ class ModelOutput(ABC):
             return self.get_fn_calls()
 
     @abstractmethod
-    def get_next_usable_chunk(self):
-        raise NotImplementedError
-
-    @abstractmethod
     def is_message_start_chunk(self):
         raise NotImplementedError
 
@@ -689,7 +685,7 @@ class OAIModelOutput(ModelOutput):
             chunk.choices[0].delta.tool_calls is not None
             and chunk.choices[0].delta.tool_calls[0].id is not None
         )
-    
+
     def is_tool_start_chunk(self, chunk):
         return self.has_function_call_id(chunk)
 
