@@ -793,15 +793,15 @@ class AnthropicModelOutput(ModelOutput):
 
     def get_message(self):
         content = self.output_obj.content[0]
-        if content.type == 'text':
+        if content.type == "text":
             self.msg_content = content.text
             return self.msg_content
         else:
             return None
-        
+
     def get_fn_calls(self):
         for content in self.output_obj.content:
-            if content.type == 'tool_use':
+            if content.type == "tool_use":
                 fn_call = FunctionCall(
                     function_name=content.name,
                     tool_call_id=content.id,
@@ -809,6 +809,7 @@ class AnthropicModelOutput(ModelOutput):
                 )
                 self.fn_calls.append(fn_call)
                 yield fn_call
+
 
 class CustomJSONEncoder(json.JSONEncoder):
     def default(self, obj):
