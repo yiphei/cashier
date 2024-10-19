@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Optional
 import anthropic
 import numpy as np
 from openai import OpenAI
-from pydantic import BaseModel, Field, PrivateAttr, constr
+from pydantic import BaseModel, Field, constr
 
 from model_tool_decorator import (
     ANTHROPIC_TOOL_NAME_TO_TOOL_DEF,
@@ -464,9 +464,6 @@ class TurnContainer:
         self.turns.append(turn)
         for mm in self.message_managers:
             mm.add_assistant_turn(turn)
-
-    def get_message_dicts(self, model_provider):
-        return self.model_provider_to_message_manager[model_provider].message_dicts
 
 
 class ModelOutput:
