@@ -587,6 +587,18 @@ class ModelOutput(ABC):
     @abstractmethod
     def has_msg_content(self, chunk):
         raise NotImplementedError
+    
+    @abstractmethod
+    def get_fn_call_id_from_chunk(self, chunk):
+        raise NotImplementedError
+
+    @abstractmethod
+    def get_fn_name_from_chunk(self, chunk):
+        raise NotImplementedError
+
+    @abstractmethod
+    def get_fn_args_json_from_chunk(self, chunk):
+        raise NotImplementedError
 
     def stream_message(self):
         first_chunk = self.get_next_usable_chunk()
@@ -629,11 +641,11 @@ class ModelOutput(ABC):
                     self.fn_calls.append(fn_call)
                     yield fn_call
 
-                function_name = self.get_fn_name(chunk)
-                tool_call_id = self.get_fn_call_id(chunk)
+                function_name = self.get_fn_name_from_chunk(chunk)
+                tool_call_id = self.get_fn_call_id_from_chunk(chunk)
                 function_args_json = ""
             elif tool_call_id is not None and self.has_args_json(chunk):
-                function_args_json += self.get_fn_args_json(chunk)
+                function_args_json += self.get_fn_args_json_from_chunk(chunk)
 
         if tool_call_id is not None:
             fn_call = FunctionCall(
@@ -647,13 +659,13 @@ class ModelOutput(ABC):
 
 
 class OAIModelOutput(ModelOutput):
-    def get_fn_call_id(self, chunk):
+    def get_fn_call_id_from_chunk(self, chunk):
         return chunk.choices[0].delta.tool_calls[0].id
 
-    def get_fn_name(self, chunk):
+    def get_fn_name_from_chunk(self, chunk):
         return chunk.choices[0].delta.tool_calls[0].function.name
 
-    def get_fn_args_json(self, chunk):
+    def get_fn_args_json_from_chunk(self, chunk):
         return chunk.choices[0].delta.tool_calls[0].function.arguments
 
     def has_function_call_id(self, chunk):
@@ -724,13 +736,13 @@ class OAIModelOutput(ModelOutput):
 
 
 class AnthropicModelOutput(ModelOutput):
-    def get_fn_call_id(self, chunk):
+    def get_fn_call_id_from_chunk(self, chunk):
         return chunk.content_block.id
 
-    def get_fn_name(self, chunk):
+    def get_fn_name_from_chunk(self, chunk):
         return chunk.content_block.name
 
-    def get_fn_args_json(self, chunk):
+    def get_fn_args_json_from_chunk(self, chunk):
         return chunk.delta.partial_json
 
     def has_args_json(self, chunk):
