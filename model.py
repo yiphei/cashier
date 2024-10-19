@@ -591,6 +591,10 @@ class ModelOutput(ABC):
     @abstractmethod
     def has_msg_content(self, chunk):
         raise NotImplementedError
+    
+    @abstractmethod
+    def has_fn_args_json(self, chunk):
+        raise NotImplementedError
 
     @abstractmethod
     def get_fn_call_id_from_chunk(self, chunk):
@@ -652,7 +656,7 @@ class ModelOutput(ABC):
                 function_name = self.get_fn_name_from_chunk(chunk)
                 tool_call_id = self.get_fn_call_id_from_chunk(chunk)
                 function_args_json = ""
-            elif tool_call_id is not None and self.has_args_json(chunk):
+            elif tool_call_id is not None and self.has_fn_args_json(chunk):
                 function_args_json += self.get_fn_args_json_from_chunk(chunk)
 
         if tool_call_id is not None:
@@ -698,7 +702,7 @@ class OAIModelOutput(ModelOutput):
     def is_tool_start_chunk(self, chunk):
         return self.has_function_call_id(chunk)
 
-    def has_args_json(self, chunk):
+    def has_fn_args_json(self, chunk):
         return (
             getattr(chunk.choices[0].delta, "tool_calls", None) is not None
             and len(chunk.choices[0].delta.tool_calls) > 0
@@ -753,7 +757,7 @@ class AnthropicModelOutput(ModelOutput):
     def get_fn_args_json_from_chunk(self, chunk):
         return chunk.delta.partial_json
 
-    def has_args_json(self, chunk):
+    def has_fn_args_json(self, chunk):
         return hasattr(chunk, "delta") and hasattr(chunk.delta, "partial_json")
 
     def is_message_start_chunk(self, chunk):
