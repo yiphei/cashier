@@ -3,6 +3,7 @@ import json
 from collections import defaultdict
 from enum import StrEnum
 from typing import Any, Dict, List, Optional
+from abc import ABC, abstractmethod, ABCMeta
 
 import anthropic
 import numpy as np
@@ -146,14 +147,22 @@ class FunctionCall(BaseModel):
     function_args_json: str
 
 
-class ModelTurn(BaseModel):
+class ModelTurn(BaseModel, ABC):
     msg_content: constr(min_length=1)  # type: ignore
 
+    @abstractmethod
     def build_oai_messages(self):
         raise NotImplementedError
 
+    @abstractmethod
     def build_anthropic_messages(self):
         raise NotImplementedError
+    
+    def build_messages(self, model_provider):
+        if model_provider == ModelProvider.OPENAI:
+            return self.build_oai_messages()
+        elif model_provider == ModelProvider.ANTHROPIC:
+            return self.build_anthropic_messages()
 
 
 class UserTurn(ModelTurn):
@@ -167,6 +176,9 @@ class UserTurn(ModelTurn):
 class SystemTurn(ModelTurn):
     def build_oai_messages(self):
         return {"role": "system", "content": self.msg_content}
+    
+    def build_anthropic_messages(self):
+        return None
 
 
 class NodeSystemTurn(SystemTurn):
@@ -174,6 +186,9 @@ class NodeSystemTurn(SystemTurn):
 
     def build_oai_messages(self):
         return {"role": "system", "content": self.msg_content}
+    
+    def build_anthropic_messages(self):
+        return None
 
 
 class AssistantTurn(ModelTurn):
@@ -262,13 +277,23 @@ class AssistantTurn(ModelTurn):
         return messages
 
 
-class MessageManager:
+class MessageManager(ABC):
+    model_provider = None
+
     def __init__(self):
         self.message_dicts = []
         self.last_node_id = None
         self.tool_call_ids = []
         self.tool_fn_return_names = set()
         self.index_tracker = ListIndexTracker()
+
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+        if cls.model_provider is None:
+            raise TypeError(f"{cls.__name__} must define 'model_provider'")
+        
+    def add_user_turn(self, turn):
+        self.message_dicts.append(turn.build_messages(self.model_provider))
 
     def add_node_turn(
         self,
@@ -296,6 +321,7 @@ class MessageManager:
 
 
 class OAIMessageManager(MessageManager):
+    model_provider = ModelProvider.OPENAI
 
     def add_system_turn(self, turn):
         self.message_dicts.append(turn.build_oai_messages())
@@ -325,9 +351,6 @@ class OAIMessageManager(MessageManager):
 
         self.message_dicts.append(turn.build_oai_messages())
         self.index_tracker.add_idx(turn.node_id, len(self.message_dicts) - 1)
-
-    def add_user_turn(self, turn):
-        self.message_dicts.append(turn.build_oai_messages())
 
     def add_assistant_turn(self, turn):
         messages = turn.build_oai_messages()
@@ -359,6 +382,7 @@ class OAIMessageManager(MessageManager):
 
 
 class AnthropicMessageManager(MessageManager):
+    model_provider = ModelProvider.ANTHROPIC
 
     def add_system_turn(self, turn):
         return
@@ -415,9 +439,6 @@ class AnthropicMessageManager(MessageManager):
     ):
         super().add_node_turn(turn, remove_prev_tool_fn_return, remove_prev_tool_calls)
         self.system = turn.msg_content
-
-    def add_user_turn(self, turn):
-        self.message_dicts.append(turn.build_anthropic_messages())
 
     def add_assistant_turn(self, turn):
         messages = turn.build_anthropic_messages()
