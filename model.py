@@ -552,9 +552,9 @@ class ModelOutput(ABC):
     def get_message(self):
         raise NotImplementedError
 
-    # @abstractmethod
-    # def get_fn_calls(self):
-    #     raise NotImplementedError
+    @abstractmethod
+    def get_fn_calls(self):
+        raise NotImplementedError
 
     def get_or_stream_message(self):
         if self.is_stream:
@@ -792,9 +792,23 @@ class AnthropicModelOutput(ModelOutput):
         return chunk.delta.text
 
     def get_message(self):
-        self.msg_content = self.output_obj.content[0].text
-        return self.msg_content
-
+        content = self.output_obj.content[0]
+        if content.type == 'text':
+            self.msg_content = content.text
+            return self.msg_content
+        else:
+            return None
+        
+    def get_fn_calls(self):
+        for content in self.output_obj.content:
+            if content.type == 'tool_use':
+                fn_call = FunctionCall(
+                    function_name=content.name,
+                    tool_call_id=content.id,
+                    function_args_json=json.dumps(content.input),
+                )
+                self.fn_calls.append(fn_call)
+                yield fn_call
 
 class CustomJSONEncoder(json.JSONEncoder):
     def default(self, obj):
