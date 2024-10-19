@@ -151,9 +151,10 @@ class ModelTurn(BaseModel):
 
     def build_oai_messages(self):
         raise NotImplementedError
-    
+
     def build_anthropic_messages(self):
         raise NotImplementedError
+
 
 class UserTurn(ModelTurn):
     def build_oai_messages(self):
