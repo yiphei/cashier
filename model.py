@@ -591,7 +591,7 @@ class ModelOutput(ABC):
     @abstractmethod
     def has_msg_content(self, chunk):
         raise NotImplementedError
-    
+
     @abstractmethod
     def has_fn_args_json(self, chunk):
         raise NotImplementedError
