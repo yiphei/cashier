@@ -548,7 +548,6 @@ class ModelOutput(ABC):
         self.current_chunk = None
         self.fn_calls = []
 
-
     @abstractmethod
     def get_message(self):
         raise NotImplementedError
