@@ -364,7 +364,7 @@ class AnthropicMessageManager(MessageManager):
         return
 
     def remove_fn_call(self, tool_call_id):
-        idx_to_remove = self.index_tracker.peek_idx(tool_call_id)
+        idx_to_remove = self.index_tracker.get_idx(tool_call_id)
         message = self.message_dicts[idx_to_remove]
         new_contents = []
         for content in message["content"]:
@@ -385,7 +385,7 @@ class AnthropicMessageManager(MessageManager):
             self.index_tracker.pop_idx(tool_call_id)
 
     def remove_fn_output(self, tool_call_id):
-        idx_to_remove = self.index_tracker.peek_idx(tool_call_id + "return")
+        idx_to_remove = self.index_tracker.get_idx(tool_call_id + "return")
         message = self.message_dicts[idx_to_remove]
         new_contents = []
         for content in message["content"]:
@@ -768,9 +768,6 @@ class ListIndexTracker:
             self.idx_to_pos[idx] = len(self.idxs) - 1
 
     def get_idx(self, named_idx):
-        return self.named_idx_to_idx[named_idx]
-
-    def peek_idx(self, named_idx):
         return self.named_idx_to_idx[named_idx]
 
     def pop_idx(self, named_idx, shift_idxs=True):
