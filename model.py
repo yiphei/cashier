@@ -184,13 +184,6 @@ class SystemTurn(ModelTurn):
 class NodeSystemTurn(SystemTurn):
     node_id: int
 
-    def build_oai_messages(self):
-        return {"role": "system", "content": self.msg_content}
-    
-    def build_anthropic_messages(self):
-        return None
-
-
 class AssistantTurn(ModelTurn):
     msg_content: Optional[str]
     fn_calls: Optional[List[FunctionCall]] = Field(default_factory=list)
@@ -319,6 +312,25 @@ class MessageManager(ABC):
 
         self.last_node_id = turn.node_id
 
+    @abstractmethod
+    def remove_fn_call(self, tool_call_id):
+        raise NotImplementedError
+
+    @abstractmethod
+    def remove_fn_output(self, tool_call_id):
+        raise NotImplementedError
+
+    @abstractmethod
+    def remove_fn_output_schema(self, fn_name):
+        raise NotImplementedError
+    
+    @abstractmethod
+    def add_system_turn(self, turn):
+        raise NotImplementedError
+    
+    @abstractmethod
+    def add_assistant_turn(self, turn):
+        raise NotImplementedError
 
 class OAIMessageManager(MessageManager):
     model_provider = ModelProvider.OPENAI
