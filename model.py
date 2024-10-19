@@ -575,7 +575,7 @@ class ModelOutput(ABC):
             return self.stream_fn_calls()
         else:
             return self.get_fn_calls()
-        
+
     def stream_message(self):
         first_chunk = self.get_next_usable_chunk()
         self.current_chunk = first_chunk
@@ -600,6 +600,7 @@ class ModelOutput(ABC):
         else:
             return None
 
+
 class OAIModelOutput(ModelOutput):
 
     def _has_function_call_id(self, chunk):
@@ -607,16 +608,16 @@ class OAIModelOutput(ModelOutput):
             chunk.choices[0].delta.tool_calls is not None
             and chunk.choices[0].delta.tool_calls[0].id is not None
         )
-    
+
     def is_message_start_chunk(self, chunk):
         return self.has_msg_content(chunk)
-    
+
     def get_first_message_chunk(self, chunk):
         return chunk
 
     def has_msg_content(self, chunk):
         return chunk.choices[0].delta.content is not None
-    
+
     def get_msg_from_chunk(self, chunk):
         return chunk.choices[0].delta.content
 
@@ -705,13 +706,16 @@ class AnthropicModelOutput(ModelOutput):
 
     def is_message_end_chunk(self, chunk):
         return chunk.type == "message_stop"
-    
+
     def get_first_message_chunk(self, chunk):
         return next(self.output_obj)
-    
+
     def has_msg_content(self, chunk):
-        return getattr(chunk, 'delta', None) is not None and getattr(chunk.delta, 'text', None) is not None
-    
+        return (
+            getattr(chunk, "delta", None) is not None
+            and getattr(chunk.delta, "text", None) is not None
+        )
+
     def get_msg_from_chunk(self, chunk):
         return chunk.delta.text
 
