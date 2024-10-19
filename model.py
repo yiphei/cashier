@@ -607,7 +607,7 @@ class ModelOutput(ABC):
             return self._stream_messages(first_chunk)
         else:
             return None
-        
+
     def _stream_messages(self, first_chunk):
         self.msg_content = ""
         first_chunk = self.get_first_message_chunk(first_chunk)
