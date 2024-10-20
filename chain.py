@@ -50,21 +50,22 @@ class NodeSchema:
                 schema.pop("default")
 
         for field_name, field_info in self.state_pydantic_model.model_fields.items():
+            new_tool_fn_name = f"update_state_{field_name}"
             field_args = {field_name: (field_info.annotation, field_info)}
-            fn_pydantic_model = create_model(f"update_state_{field_name}", **field_args)
+            fn_pydantic_model = create_model(new_tool_fn_name, **field_args)
             update_state_fn_json_schema = pydantic_function_tool(
                 fn_pydantic_model,
-                name=f"update_state_{field_name}",
+                name=new_tool_fn_name,
                 description=f"Function to update the `{field_name}` field in the state",
             )
             remove_default(update_state_fn_json_schema)
-            self.OPENAI_TOOL_NAME_TO_TOOL_DEF[f"update_state_{field_name}"] = (
+            self.OPENAI_TOOL_NAME_TO_TOOL_DEF[new_tool_fn_name] = (
                 update_state_fn_json_schema
             )
-            self.ANTHROPIC_TOOL_NAME_TO_TOOL_DEF[f"update_state_{field_name}"] = (
+            self.ANTHROPIC_TOOL_NAME_TO_TOOL_DEF[new_tool_fn_name] = (
                 get_anthropic_tool_def_from_oai(update_state_fn_json_schema)
             )
-            self.tool_fn_names.append(f"update_state_{field_name}")
+            self.tool_fn_names.append(new_tool_fn_name)
 
         get_state_oai_tool_def = {
             "type": "function",
