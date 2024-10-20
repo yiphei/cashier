@@ -292,13 +292,13 @@ class MessageManager(ABC):
     def add_node_turn(
         self,
         turn,
-        remove_prev_tool_fn_return=None,
+        remove_prev_fn_return_schema=None,
         remove_prev_tool_calls=False,
     ):
         if remove_prev_tool_calls:
-            assert remove_prev_tool_fn_return is not False
+            assert remove_prev_fn_return_schema is not False
 
-        if remove_prev_tool_fn_return is True or remove_prev_tool_calls:
+        if remove_prev_fn_return_schema is True or remove_prev_tool_calls:
             for toll_return in self.tool_fn_return_names:
                 self.remove_fn_output_schema(toll_return)
 
@@ -361,13 +361,13 @@ class OAIMessageManager(MessageManager):
     def add_node_turn(
         self,
         turn,
-        remove_prev_tool_fn_return=None,
+        remove_prev_fn_return_schema=None,
         remove_prev_tool_calls=False,
     ):
         if self.last_node_id is not None:
             idx_to_remove = self.index_tracker.pop_idx(self.last_node_id)
             del self.message_dicts[idx_to_remove]
-        super().add_node_turn(turn, remove_prev_tool_fn_return, remove_prev_tool_calls)
+        super().add_node_turn(turn, remove_prev_fn_return_schema, remove_prev_tool_calls)
 
         self.message_dicts.extend(turn.build_oai_messages())
         self.index_tracker.add_idx(turn.node_id, len(self.message_dicts) - 1)
@@ -453,10 +453,10 @@ class AnthropicMessageManager(MessageManager):
     def add_node_turn(
         self,
         turn,
-        remove_prev_tool_fn_return=None,
+        remove_prev_fn_return_schema=None,
         remove_prev_tool_calls=False,
     ):
-        super().add_node_turn(turn, remove_prev_tool_fn_return, remove_prev_tool_calls)
+        super().add_node_turn(turn, remove_prev_fn_return_schema, remove_prev_tool_calls)
         self.system = turn.msg_content
 
     def parse_assistant_messages(self, messages):
