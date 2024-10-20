@@ -326,7 +326,7 @@ class MessageManager(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def parse_system_messages(self, msg):
+    def parse_system_messages(self, msgs):
         raise NotImplementedError
 
     @abstractmethod
