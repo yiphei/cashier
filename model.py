@@ -366,7 +366,9 @@ class OAIMessageManager(MessageManager):
         if self.last_node_id is not None:
             idx_to_remove = self.index_tracker.pop_idx(self.last_node_id)
             del self.message_dicts[idx_to_remove]
-        super().add_node_turn(turn, remove_prev_fn_return_schema, remove_prev_tool_calls)
+        super().add_node_turn(
+            turn, remove_prev_fn_return_schema, remove_prev_tool_calls
+        )
 
         self.message_dicts.extend(turn.build_oai_messages())
         self.index_tracker.add_idx(turn.node_id, len(self.message_dicts) - 1)
@@ -455,7 +457,9 @@ class AnthropicMessageManager(MessageManager):
         remove_prev_fn_return_schema=None,
         remove_prev_tool_calls=False,
     ):
-        super().add_node_turn(turn, remove_prev_fn_return_schema, remove_prev_tool_calls)
+        super().add_node_turn(
+            turn, remove_prev_fn_return_schema, remove_prev_tool_calls
+        )
         self.system = turn.msg_content
 
     def parse_assistant_messages(self, messages):
