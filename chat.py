@@ -205,7 +205,7 @@ def is_on_topic(model, TM, current_node_schema, all_node_schemas):
 
 
 def run_chat(args, model, elevenlabs_client):
-    TM = TurnContainer()
+    TC = TurnContainer()
 
     need_user_input = True
     current_node_schema = take_order_node_schema
@@ -218,7 +218,7 @@ def run_chat(args, model, elevenlabs_client):
                 f"[NODE_SCHEMA] Initializing {Style.BRIGHT}node_schema_id: {current_node_schema.id}{Style.NORMAL}"
             )
             current_node_schema.run(new_node_input)
-            TM.add_node_turn(
+            TC.add_node_turn(
                 current_node_schema.id,
                 current_node_schema.prompt,
                 remove_prev_tool_calls=True,
@@ -227,7 +227,7 @@ def run_chat(args, model, elevenlabs_client):
 
             if current_node_schema.first_msg:
                 # TODO fix this
-                TM.add_assistant_turn(current_node_schema.first_msg["content"])
+                TC.add_assistant_turn(current_node_schema.first_msg["content"])
                 MessageDisplay.print_msg(
                     "assistant", current_node_schema.first_msg["content"]
                 )
@@ -240,10 +240,10 @@ def run_chat(args, model, elevenlabs_client):
                 print("Exiting chatbot. Goodbye!")
                 break
             MessageDisplay.print_msg("user", text_input)
-            TM.add_user_turn(text_input)
+            TC.add_user_turn(text_input)
             is_on_topic(
                 model,
-                TM,
+                TC,
                 current_node_schema,
                 [
                     take_order_node_schema,
@@ -254,7 +254,7 @@ def run_chat(args, model, elevenlabs_client):
 
         chat_completion = model.chat(
             model_name=args.model,
-            turn_container=TM,
+            turn_container=TC,
             tool_names=current_node_schema.tool_fn_names,
             stream=args.stream,
             extra_oai_tool_defs=current_node_schema.OPENAI_TOOL_NAME_TO_TOOL_DEF,
@@ -306,7 +306,7 @@ def run_chat(args, model, elevenlabs_client):
             need_user_input = False
             fn_id_to_output[function_call.tool_call_id] = fn_output
 
-        TM.add_assistant_turn(
+        TC.add_assistant_turn(
             chat_completion.msg_content, chat_completion.fn_calls, fn_id_to_output
         )
 
