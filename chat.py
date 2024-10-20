@@ -81,11 +81,11 @@ class MessageDisplay:
     }
 
     @classmethod
-    def read_chat_stream(cls, chat_stream):
-        if isinstance(chat_stream, GeneratorType):
+    def display_assistant_message(cls, message_or_stream):
+        if isinstance(message_or_stream, GeneratorType):
             cls.print_msg(role="assistant", msg=None, end="")
             full_msg = ""
-            for msg_chunk in chat_stream:
+            for msg_chunk in message_or_stream:
                 cls.print_msg(
                     role="assistant", msg=msg_chunk, add_role_prefix=False, end=""
                 )
@@ -93,7 +93,7 @@ class MessageDisplay:
 
             print("\n\n")
         else:
-            cls.print_msg("assistant", chat_stream)
+            cls.print_msg("assistant", message_or_stream)
 
     @classmethod
     def get_role_prefix(cls, role):
@@ -265,7 +265,7 @@ def run_chat(args, model, elevenlabs_client):
             if args.audio_output:
                 get_speech_from_text(message, elevenlabs_client)
             else:
-                MessageDisplay.read_chat_stream(message)
+                MessageDisplay.display_assistant_message(message)
             need_user_input = True
 
         fn_id_to_output = {}
