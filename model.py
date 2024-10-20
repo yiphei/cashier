@@ -496,11 +496,9 @@ class TurnContainer:
     }
 
     def __init__(self, model_providers=[ModelProvider.OPENAI, ModelProvider.ANTHROPIC]):
-        self.message_managers = []
         self.model_provider_to_message_manager = {}
         for provider in model_providers:
             mm = self.model_provider_to_message_manager_cls[provider]()
-            self.message_managers.append(mm)
             self.model_provider_to_message_manager[provider] = mm
 
         self.turns = []
@@ -508,7 +506,7 @@ class TurnContainer:
     def add_system_turn(self, msg_content):
         turn = SystemTurn(msg_content=msg_content)
         self.turns.append(turn)
-        for mm in self.message_managers:
+        for mm in self.model_provider_to_message_manager.values():
             mm.add_system_turn(turn)
 
     def add_node_turn(
@@ -520,13 +518,13 @@ class TurnContainer:
     ):
         turn = NodeSystemTurn(node_id=node_id, msg_content=node_prompt)
         self.turns.append(turn)
-        for mm in self.message_managers:
+        for mm in self.model_provider_to_message_manager.values():
             mm.add_node_turn(turn, remove_prev_tool_fn_return, remove_prev_tool_calls)
 
     def add_user_turn(self, msg_content):
         turn = UserTurn(msg_content=msg_content)
         self.turns.append(turn)
-        for mm in self.message_managers:
+        for mm in self.model_provider_to_message_manager.values():
             mm.add_user_turn(turn)
 
     def add_assistant_turn(self, msg_content, fn_calls=None, fn_id_to_outputs=None):
@@ -536,7 +534,7 @@ class TurnContainer:
             fn_call_id_to_fn_output=fn_id_to_outputs,
         )
         self.turns.append(turn)
-        for mm in self.message_managers:
+        for mm in self.model_provider_to_message_manager.values():
             mm.add_assistant_turn(turn)
 
 
