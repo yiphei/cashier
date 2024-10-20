@@ -123,12 +123,11 @@ class Model:
         stream=False,
         **kwargs,
     ):
-        # TODO: remove adhoc code
         args = {
             "max_tokens": 8192,
             "model": model_name,
             "system": system,
-            "messages": messages[1:],
+            "messages": messages,
             "tools": tools,
             "stream": stream,
             **kwargs,
