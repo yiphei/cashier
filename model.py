@@ -240,7 +240,9 @@ class AssistantTurn(ModelTurn):
     def build_anthropic_messages(self):
         contents = []
         messages = []
-        if self.msg_content and not (self.model_provider == ModelProvider.ANTHROPIC and self.fn_calls):
+        if self.msg_content and not (
+            self.model_provider == ModelProvider.ANTHROPIC and self.fn_calls
+        ):
             contents.append({"type": "text", "text": self.msg_content})
         if self.fn_calls:
             for fn_call in self.fn_calls:
@@ -538,7 +540,9 @@ class TurnContainer:
         for mm in self.model_provider_to_message_manager.values():
             mm.add_user_turn(turn)
 
-    def add_assistant_turn(self, msg_content, model_provider, fn_calls=None, fn_id_to_outputs=None):
+    def add_assistant_turn(
+        self, msg_content, model_provider, fn_calls=None, fn_id_to_outputs=None
+    ):
         turn = AssistantTurn(
             msg_content=msg_content,
             model_provider=model_provider,
