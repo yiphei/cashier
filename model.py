@@ -20,6 +20,7 @@ from model_tool_decorator import (
 class ModelProvider(StrEnum):
     OPENAI = "OPENAI"
     ANTHROPIC = "ANTHROPIC"
+    NONE = "NONE"
 
 
 class Model:
@@ -41,6 +42,13 @@ class Model:
 
         return [all_tool_defs[tool_name] for tool_name in tool_names]
 
+    @classmethod
+    def get_model_provider(cls, model_name):
+        if model_name in cls.alias_to_model_name:
+            model_name = cls.alias_to_model_name[model_name]
+
+        return cls.model_name_to_provider[model_name]
+
     def chat(
         self,
         model_name,
@@ -56,8 +64,7 @@ class Model:
     ):
         if model_name in self.alias_to_model_name:
             model_name = self.alias_to_model_name[model_name]
-
-        model_provider = self.model_name_to_provider[model_name]
+        model_provider = self.get_model_provider(model_name)
         message_manager = turn_container.model_provider_to_message_manager[
             model_provider
         ]
@@ -185,13 +192,14 @@ class NodeSystemTurn(SystemTurn):
 
 
 class AssistantTurn(ModelTurn):
+    model_provider: ModelProvider
     msg_content: Optional[str]
     fn_calls: Optional[List[FunctionCall]] = Field(default_factory=list)
     fn_call_id_to_fn_output: Optional[Dict[str, Any]] = Field(default_factory=dict)
 
     def build_oai_messages(self):
         messages = []
-        if self.msg_content:
+        if self.msg_content and self.model_provider != ModelProvider.ANTHROPIC:
             messages.append({"role": "assistant", "content": self.msg_content})
         if self.fn_calls:
             for fn_call in self.fn_calls:
@@ -232,7 +240,7 @@ class AssistantTurn(ModelTurn):
     def build_anthropic_messages(self):
         contents = []
         messages = []
-        if self.msg_content:
+        if self.msg_content and not (self.model_provider == ModelProvider.ANTHROPIC and self.fn_calls):
             contents.append({"type": "text", "text": self.msg_content})
         if self.fn_calls:
             for fn_call in self.fn_calls:
@@ -245,7 +253,7 @@ class AssistantTurn(ModelTurn):
                     }
                 )
 
-        if len(contents) == 1 and self.msg_content:
+        if not self.fn_calls and self.msg_content:
             contents = contents[0]
             contents = contents["text"]
 
@@ -530,9 +538,10 @@ class TurnContainer:
         for mm in self.model_provider_to_message_manager.values():
             mm.add_user_turn(turn)
 
-    def add_assistant_turn(self, msg_content, fn_calls=None, fn_id_to_outputs=None):
+    def add_assistant_turn(self, msg_content, model_provider, fn_calls=None, fn_id_to_outputs=None):
         turn = AssistantTurn(
             msg_content=msg_content,
+            model_provider=model_provider,
             fn_calls=fn_calls,
             fn_call_id_to_fn_output=fn_id_to_outputs,
         )

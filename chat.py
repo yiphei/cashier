@@ -19,7 +19,7 @@ from chain import (
 from db_functions import create_db_client
 from gui import remove_previous_line
 from logger import logger
-from model import CustomJSONEncoder, Model, TurnContainer
+from model import CustomJSONEncoder, Model, TurnContainer, ModelProvider
 from model_tool_decorator import FN_NAME_TO_FN, OPENAI_TOOL_NAME_TO_TOOL_DEF
 
 # Load environment variables from .env file
@@ -227,7 +227,7 @@ def run_chat(args, model, elevenlabs_client):
 
             if current_node_schema.first_msg:
                 # TODO fix this
-                TC.add_assistant_turn(current_node_schema.first_msg["content"])
+                TC.add_assistant_turn(current_node_schema.first_msg["content"], ModelProvider.NONE)
                 MessageDisplay.print_msg(
                     "assistant", current_node_schema.first_msg["content"]
                 )
@@ -306,8 +306,9 @@ def run_chat(args, model, elevenlabs_client):
             need_user_input = False
             fn_id_to_output[function_call.tool_call_id] = fn_output
 
+        model_provider = Model.get_model_provider(args.model)
         TC.add_assistant_turn(
-            chat_completion.msg_content, chat_completion.fn_calls, fn_id_to_output
+            chat_completion.msg_content, model_provider, chat_completion.fn_calls, fn_id_to_output
         )
 
 
