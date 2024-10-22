@@ -160,3 +160,4 @@ def get_oai_tool_def_from_fields(tool_name, description, field_args):
         description=description,
     )
     remove_default(update_state_fn_json_schema)
+    return update_state_fn_json_schema
