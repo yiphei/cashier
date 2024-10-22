@@ -225,7 +225,7 @@ def run_chat(args, model, elevenlabs_client):
             TC.add_node_turn(
                 current_node_schema.id,
                 current_node_schema.prompt,
-                remove_prev_tool_calls=True,
+                remove_prev_tool_calls=args.remove_prev_tool_calls,
             )
             MessageDisplay.print_msg("system", current_node_schema.prompt)
 
@@ -351,6 +351,11 @@ if __name__ == "__main__":
         "--stream",
         type=lambda v: bool(strtobool(v)),
         default=True,
+    )
+    parser.add_argument(
+        "--remove_prev_tool_calls",
+        type=lambda v: bool(strtobool(v)),
+        default=False,
     )
     args = parser.parse_args()
 
