@@ -10,7 +10,7 @@ from typing import Any, Dict, List, Literal, Optional, Union, overload
 import anthropic
 import numpy as np
 from openai import OpenAI
-from pydantic import BaseModel, Field, constr
+from pydantic import BaseModel, Field, constr, model_validator
 
 from model_tool_decorator import (
     ANTHROPIC_TOOL_NAME_TO_TOOL_DEF,
@@ -267,7 +267,18 @@ class Model:
 class FunctionCall(BaseModel):
     function_name: str
     tool_call_id: str
-    function_args_json: str
+    function_args_json: Optional[str] = None
+    function_args: Optional[Dict] = None
+
+    @model_validator(mode='after')
+    def check_function_args(self):
+        if self.function_args_json is None and self.function_args is None:
+            raise ValueError("One of [function_args_json, function_args] must be provided")
+        
+        if self.function_args_json is not None and self.function_args is None:
+            self.function_args = json.loads(self.function_args_json)
+        if self.function_args is not None and self.function_args_json is None:
+            self.function_args_json = json.dumps(self.function_args)
 
 
 class ModelTurn(BaseModel, ABC):
@@ -945,8 +956,7 @@ class AnthropicModelOutput(ModelOutput):
     def get_message_prop(self, prop_name):
         if self.parsed_msg is None:
             fn_call = next(self.get_fn_calls())
-            tool_call_input = json.loads(fn_call.function_args_json)
-            self.parsed_msg = self.response_format(**tool_call_input)
+            self.parsed_msg = self.response_format(**fn_call.function_args)
         return getattr(self.parsed_msg, prop_name)
 
     def get_fn_calls(self):
@@ -955,7 +965,7 @@ class AnthropicModelOutput(ModelOutput):
                 fn_call = FunctionCall(
                     function_name=content.name,
                     tool_call_id=content.id,
-                    function_args_json=json.dumps(content.input),
+                    function_args=content.input,
                 )
                 self.fn_calls.append(fn_call)
                 yield fn_call
