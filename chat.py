@@ -21,7 +21,7 @@ from db_functions import create_db_client
 from gui import remove_previous_line
 from logger import logger
 from model import CustomJSONEncoder, Model, ModelProvider, TurnContainer
-from model_tool_decorator import FN_NAME_TO_FN, OPENAI_TOOL_NAME_TO_TOOL_DEF
+from model_tool_decorator import FN_NAME_TO_FN
 
 # Load environment variables from .env file
 load_dotenv()
@@ -116,53 +116,51 @@ class MessageDisplay:
 
 
 def is_on_topic(model, TM, current_node_schema, all_node_schemas):
-    all_tool_defs = (
-        OPENAI_TOOL_NAME_TO_TOOL_DEF | current_node_schema.OPENAI_TOOL_NAME_TO_TOOL_DEF
-    )
+    model_name = "claude-3.5"
+    model_provider = Model.get_model_provider(model_name)
     conversational_msgs = TM.model_provider_to_message_manager[
-        ModelProvider.OPENAI
+        model_provider
     ].conversation_dicts
-    conversational_msgs.append(
-        {
-            "role": "system",
-            "content": (
-                "You are an AI-agent orchestration engine. Each AI agent is defined by an expectation"
-                " and a set of tools (i.e. functions). Given the prior conversation, determine if the"
-                " last user message can be fully handled by the current AI agent. Return true if"
-                " the last user message is a case covered by the current AI agent's expectation OR "
-                "tools. Return false if otherwise, meaning that we should explore letting another AI agent take over.\n\n"
-                "LAST USER MESSAGE:\n"
-                "```\n"
-                f"{conversational_msgs[-1]['content']}\n"
-                "```\n\n"
-                "EXPECTATION:\n"
-                "```\n"
-                f"{current_node_schema.node_prompt}\n"
-                "```\n\n"
-                "TOOLS:\n"
-                "```\n"
-                f"{json.dumps([all_tool_defs[name] for name in current_node_schema.tool_fn_names])}\n"
-                "```"
-            ),
-        }
+    system_prompt = (
+        "You are an AI-agent orchestration engine. Each AI agent is defined by an expectation"
+        " and a set of tools (i.e. functions). Given the prior conversation, determine if the"
+        " last user message can be fully handled by the current AI agent. Return true if"
+        " the last user message is a case covered by the current AI agent's expectation OR "
+        "tools. Return false if otherwise, meaning that we should explore letting another AI agent take over.\n\n"
+        "LAST USER MESSAGE:\n"
+        "```\n"
+        f"{conversational_msgs[-1]['content']}\n"
+        "```\n\n"
+        "EXPECTATION:\n"
+        "```\n"
+        f"{current_node_schema.node_prompt}\n"
+        "```\n\n"
+        "TOOLS:\n"
+        "```\n"
+        f"{json.dumps(Model.get_tool_defs_from_names(current_node_schema.tool_fn_names, model_provider, current_node_schema.model_provider_to_tool_def[model_provider]))}\n"
+        "```"
     )
 
     class Response1(BaseModel):
         output: bool
 
+    model_provider = ModelProvider.ANTHROPIC
     chat_completion = model.chat(
-        model_name="gpt-4o-mini",
+        model_name=model_name,
         message_dicts=conversational_msgs,
+        system=system_prompt,
         response_format=Response1,
         logprobs=True,
         temperature=0,
     )
     is_on_topic = chat_completion.get_message_prop("output")
-    prob = chat_completion.get_prob(-2)
-    logger.debug(f"IS_ON_TOPIC: {is_on_topic} with {prob}")
+    if model_provider == ModelProvider.OPENAI:
+        prob = chat_completion.get_prob(-2)
+        logger.debug(f"IS_ON_TOPIC: {is_on_topic} with {prob}")
+    else:
+        logger.debug(f"IS_ON_TOPIC: {is_on_topic}")
     if not is_on_topic:
-        conversational_msgs.pop()
-        prompt = (
+        system_prompt = (
             "You are an AI-agent orchestration engine. Each AI agent is defined by an expectation"
             " and a set of tools (i.e. functions). An AI agent can handle a user message if it is "
             "a case covered by the AI agent's expectation OR tools. "
@@ -171,7 +169,7 @@ def is_on_topic(model, TM, current_node_schema, all_node_schemas):
             "Respond by returning the AI agent ID.\n\n"
         )
         for node_schema in all_node_schemas:
-            prompt += (
+            system_prompt += (
                 f"## AGENT ID: {node_schema.id}\n\n"
                 "EXPECTATION:\n"
                 "```\n"
@@ -179,32 +177,35 @@ def is_on_topic(model, TM, current_node_schema, all_node_schemas):
                 "```\n\n"
                 "TOOLS:\n"
                 "```\n"
-                f"{json.dumps([all_tool_defs[name] for name in current_node_schema.tool_fn_names])}\n"
+                f"{json.dumps(Model.get_tool_defs_from_names(node_schema.tool_fn_names, model_provider, node_schema.model_provider_to_tool_def[model_provider]))}\n"
                 "```\n\n"
             )
 
-        prompt += (
+        system_prompt += (
             "LAST USER MESSAGE:\n"
             "```\n"
             f"{conversational_msgs[-1]['content']}\n"
             "```"
         )
-        conversational_msgs.append({"role": "system", "content": prompt})
 
         class Response2(BaseModel):
             agent_id: int
 
         chat_completion = model.chat(
-            model_name="gpt-4o",
+            model_name=model_name,
             message_dicts=conversational_msgs,
+            system=system_prompt,
             response_format=Response2,
             logprobs=True,
             temperature=0,
         )
 
         agent_id = chat_completion.get_message_prop("agent_id")
-        prob = chat_completion.get_prob(-2)
-        logger.debug(f"AGENT_ID: {agent_id} with {prob}")
+        if model_provider == ModelProvider.OPENAI:
+            prob = chat_completion.get_prob(-2)
+            logger.debug(f"AGENT_ID: {agent_id} with {prob}")
+        else:
+            logger.debug(f"AGENT_ID: {agent_id}")
 
 
 def run_chat(args, model, elevenlabs_client):

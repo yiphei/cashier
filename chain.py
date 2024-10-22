@@ -4,6 +4,7 @@ from openai import pydantic_function_tool
 from pydantic import BaseModel, ConfigDict, Field, create_model
 
 from db_functions import Order
+from model import ModelProvider
 from model_tool_decorator import get_anthropic_tool_def_from_oai
 
 BACKGROUND = (
@@ -17,6 +18,11 @@ class NodeSchema:
     _counter = 0
     OPENAI_TOOL_NAME_TO_TOOL_DEF = {}
     ANTHROPIC_TOOL_NAME_TO_TOOL_DEF = {}
+
+    model_provider_to_tool_def = {
+        ModelProvider.OPENAI: OPENAI_TOOL_NAME_TO_TOOL_DEF,
+        ModelProvider.ANTHROPIC: ANTHROPIC_TOOL_NAME_TO_TOOL_DEF,
+    }
 
     def __init__(
         self,

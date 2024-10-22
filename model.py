@@ -46,8 +46,9 @@ class Model:
         self.oai_client = OpenAI()
         self.anthropic_client = anthropic.Anthropic()
 
-    def get_tool_defs_from_names(self, tool_names, tool_defs, extra_tool_defs):
-        all_tool_defs = tool_defs
+    @classmethod
+    def get_tool_defs_from_names(cls, tool_names, model_provider, extra_tool_defs):
+        all_tool_defs = cls.model_provider_to_tool_def[model_provider]
         if extra_tool_defs is not None:
             all_tool_defs |= extra_tool_defs
 
@@ -67,7 +68,8 @@ class Model:
         model_name: OpenAIModels,
         turn_container: Literal[None] = None,
         message_dicts: List[Dict[str, str]],
-        system: Literal[None] = None,
+        system: Optional[str] = None,
+        system_idx: int = -1,
         tool_names_or_tool_defs: List[Union[str, Dict]] = None,
         stream: bool = False,
         logprobs: bool = False,
@@ -85,6 +87,7 @@ class Model:
         turn_container: Literal[None] = None,
         message_dicts: List[Dict[str, str]],
         system: Optional[str] = None,
+        system_idx: Literal[None] = None,
         tool_names_or_tool_defs: List[Union[str, Dict]] = None,
         stream: bool = False,
         logprobs: bool = False,
@@ -102,6 +105,7 @@ class Model:
         turn_container: TurnContainer,
         message_dicts: Literal[None] = None,
         system: Literal[None] = None,
+        system_idx: Literal[None] = None,
         tool_names_or_tool_defs: List[Union[str, Dict]] = None,
         stream: bool = False,
         logprobs: bool = False,
@@ -118,6 +122,7 @@ class Model:
         turn_container: Optional[TurnContainer] = None,
         message_dicts: Optional[List[Dict[str, str]]] = None,
         system: Optional[str] = None,
+        system_idx: int = -1,
         tool_names_or_tool_defs: Optional[List[Union[str, Dict]]] = None,
         stream: bool = False,
         logprobs: bool = False,
@@ -135,7 +140,7 @@ class Model:
             if type(tool_names_or_tool_defs[0]) is str:
                 tools = self.get_tool_defs_from_names(
                     tool_names_or_tool_defs,
-                    self.model_provider_to_tool_def[model_provider],
+                    model_provider,
                     (
                         extra_oai_tool_defs
                         if model_provider is ModelProvider.OPENAI
@@ -162,13 +167,22 @@ class Model:
             messages = message_dicts
 
         if model_provider == ModelProvider.OPENAI:
+            if system is not None:
+                system_dict = {"role": "system", "content": system}
+                if system_idx == -1:
+                    messages.append(system_dict)
+                else:
+                    messages.insert(system_idx, system_dict)
+
             return self.oai_chat(
                 model_name, messages, tools, stream, logprobs, response_format, **kwargs
             )
         elif model_provider == ModelProvider.ANTHROPIC:
             if message_manager is not None:
                 system = message_manager.system
-            return self.ant_chat(model_name, messages, system, tools, stream, **kwargs)
+            return self.ant_chat(
+                model_name, messages, system, tools, stream, response_format, **kwargs
+            )
 
     def oai_chat(
         self,
@@ -194,12 +208,13 @@ class Model:
             "response_format": response_format,
             **kwargs,
         }
-        if response_format is not None:
-            args.pop("stream")
+        if response_format and stream:
+            # Streaming with response_format is currently not supported (by me)
+            raise Exception("cannot both have response_format and stream defined")
         if not tools:
             args.pop("tools")
 
-        return OAIModelOutput(chat_fn(**args), stream)
+        return OAIModelOutput(chat_fn(**args), stream, response_format)
 
     def ant_chat(
         self,
@@ -208,8 +223,26 @@ class Model:
         system=None,
         tools=None,
         stream=False,
+        response_format=None,
         **kwargs,
     ):
+        tool_choice = None
+        if response_format is not None:
+            if stream:
+                # Streaming with response_format is currently not supported (by me)
+                raise Exception("cannot both have response_format and stream defined")
+            if tools:
+                raise Exception("cannot both have response_format and tools defined")
+
+            tools = [
+                {
+                    "name": "respond_fn",
+                    "description": "provide your response by calling this function with the adequate args",
+                    "input_schema": response_format.model_json_schema(),
+                }
+            ]
+            tool_choice = {"type": "tool", "name": "respond_fn"}
+
         args = {
             "max_tokens": 8192,
             "model": model_name,
@@ -219,13 +252,15 @@ class Model:
             "stream": stream,
             **kwargs,
         }
+        if tool_choice:
+            args["tool_choice"] = tool_choice
         if not tools:
             args.pop("tools")
         if not system:
             args.pop("system")
 
         return AnthropicModelOutput(
-            self.anthropic_client.messages.create(**args), stream
+            self.anthropic_client.messages.create(**args), stream, response_format
         )
 
 
@@ -431,6 +466,13 @@ class MessageManager(ABC):
         self.parse_system_messages(turn.build_messages(self.model_provider))
 
     def add_assistant_turn(self, turn):
+        if turn.msg_content and (
+            turn.model_provider != ModelProvider.ANTHROPIC
+            or (turn.model_provider == ModelProvider.ANTHROPIC and not turn.fn_calls)
+        ):
+            self.conversation_dicts.append(
+                {"role": "assistant", "content": turn.msg_content}
+            )
         self.parse_assistant_messages(turn.build_messages(self.model_provider))
 
 
@@ -489,11 +531,6 @@ class OAIMessageManager(MessageManager):
                 self.tool_fn_return_names.add(curr_fn_name)
                 self.index_tracker.add_idx(curr_fn_name, len(self.message_dicts))
                 curr_fn_name = None
-            elif (
-                message["role"] == "assistant"
-                and message.get("content", None) is not None
-            ):
-                self.conversation_dicts.append(message)
 
             self.message_dicts.append(message)
 
@@ -577,10 +614,6 @@ class AnthropicMessageManager(MessageManager):
                     tool_call_id = content["id"]
                     self.tool_call_ids.append(tool_call_id)
                     self.index_tracker.add_idx(tool_call_id, len(self.message_dicts))
-                elif content["type"] == "text":
-                    self.conversation_dicts.append(message_1)
-        else:
-            self.conversation_dicts.append(message_1)
 
         self.message_dicts.append(message_1)
 
@@ -647,9 +680,11 @@ class TurnContainer:
 
 
 class ModelOutput(ABC):
-    def __init__(self, output_obj, is_stream):
+    def __init__(self, output_obj, is_stream, response_format=None):
         self.output_obj = output_obj
         self.is_stream = is_stream
+        self.response_format = response_format
+        self.parsed_msg = None
         self.msg_content = None
         self.last_chunk = None
         self.fn_calls = []
@@ -834,7 +869,9 @@ class OAIModelOutput(ModelOutput):
         return self.msg_content
 
     def get_message_prop(self, prop_name):
-        return getattr(self.output_obj.choices[0].message.parsed, prop_name)
+        if self.parsed_msg is None:
+            self.parsed_msg = self.output_obj.choices[0].message.parsed
+        return getattr(self.parsed_msg, prop_name)
 
     def get_logprob(self, token_idx):
         return self.output_obj.choices[0].logprobs.content[token_idx].logprob
@@ -904,6 +941,13 @@ class AnthropicModelOutput(ModelOutput):
             return self.msg_content
         else:
             return None
+
+    def get_message_prop(self, prop_name):
+        if self.parsed_msg is None:
+            fn_call = next(self.get_fn_calls())
+            tool_call_input = json.loads(fn_call.function_args_json)
+            self.parsed_msg = self.response_format(**tool_call_input)
+        return getattr(self.parsed_msg, prop_name)
 
     def get_fn_calls(self):
         for content in self.output_obj.content:
