@@ -674,7 +674,7 @@ class ModelOutput(ABC):
         self.output_obj = output_obj
         self.is_stream = is_stream
         self.response_format = response_format
-        self.parsed_msg = None 
+        self.parsed_msg = None
         self.msg_content = None
         self.last_chunk = None
         self.fn_calls = []
@@ -931,7 +931,7 @@ class AnthropicModelOutput(ModelOutput):
             return self.msg_content
         else:
             return None
-        
+
     def get_message_prop(self, prop_name):
         if self.parsed_msg is None:
             message = self.get_message()
