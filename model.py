@@ -330,7 +330,11 @@ class AssistantTurn(ModelTurn):
 
     @model_validator(mode="after")
     def check_function_args(self):
-        if self.fn_calls and self.fn_call_id_to_fn_output and len(self.fn_calls) != len(self.fn_call_id_to_fn_output.values()):
+        if (
+            self.fn_calls
+            and self.fn_call_id_to_fn_output
+            and len(self.fn_calls) != len(self.fn_call_id_to_fn_output.values())
+        ):
             raise ValueError(
                 "Mismatch between fn_calls' and fn_call_id_to_fn_output's lengths"
             )
