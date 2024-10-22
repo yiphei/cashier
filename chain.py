@@ -183,7 +183,7 @@ class NodeSchema:
         self.state = self.state_pydantic_model(**new_state)
 
     def get_state(self):
-        return self.state.model_dump_json()
+        return self.state
 
 
 class EdgeSchema:
