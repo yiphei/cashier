@@ -465,6 +465,8 @@ class MessageManager(ABC):
         self.parse_system_messages(turn.build_messages(self.model_provider))
 
     def add_assistant_turn(self, turn):
+        if turn.msg_content and (turn.model_provider != ModelProvider.ANTHROPIC or (turn.model_provider == ModelProvider.ANTHROPIC and not turn.fn_calls)):
+            self.conversation_dicts.append({"role": "assistant", "content": turn.msg_content})
         self.parse_assistant_messages(turn.build_messages(self.model_provider))
 
 
@@ -523,11 +525,6 @@ class OAIMessageManager(MessageManager):
                 self.tool_fn_return_names.add(curr_fn_name)
                 self.index_tracker.add_idx(curr_fn_name, len(self.message_dicts))
                 curr_fn_name = None
-            elif (
-                message["role"] == "assistant"
-                and message.get("content", None) is not None
-            ):
-                self.conversation_dicts.append(message)
 
             self.message_dicts.append(message)
 
@@ -611,10 +608,6 @@ class AnthropicMessageManager(MessageManager):
                     tool_call_id = content["id"]
                     self.tool_call_ids.append(tool_call_id)
                     self.index_tracker.add_idx(tool_call_id, len(self.message_dicts))
-                elif content["type"] == "text":
-                    self.conversation_dicts.append(message_1)
-        else:
-            self.conversation_dicts.append(message_1)
 
         self.message_dicts.append(message_1)
 
