@@ -168,7 +168,9 @@ class Model:
         elif model_provider == ModelProvider.ANTHROPIC:
             if message_manager is not None:
                 system = message_manager.system
-            return self.ant_chat(model_name, messages, system, tools, stream, response_format, **kwargs)
+            return self.ant_chat(
+                model_name, messages, system, tools, stream, response_format, **kwargs
+            )
 
     def oai_chat(
         self,
@@ -239,7 +241,7 @@ class Model:
             **kwargs,
         }
         if tool_choice:
-            args['tool_choice'] = tool_choice
+            args["tool_choice"] = tool_choice
         if not tools:
             args.pop("tools")
         if not system:
