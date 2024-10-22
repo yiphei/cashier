@@ -59,20 +59,7 @@ class NodeSchema:
             )
             self.tool_fn_names.append(new_tool_fn_name)
 
-        get_state_oai_tool_def = {
-            "type": "function",
-            "function": {
-                "name": "get_state",
-                "strict": True,
-                "description": "Function to get the current state",
-                "parameters": {
-                    "type": "object",
-                    "properties": {},
-                    "required": [],
-                    "additionalProperties": False,
-                },
-            },
-        }
+        get_state_oai_tool_def = get_oai_tool_def_from_fields("get_state", "Function to get the current state", {})
         get_state_anthropic_tool_def = get_anthropic_tool_def_from_oai(
             get_state_oai_tool_def
         )
