@@ -492,6 +492,7 @@ class MessageManager(ABC):
         self.parse_system_messages(turn.build_messages(self.model_provider))
 
     def add_assistant_turn(self, turn):
+        # TODO: maybe move this logic to AssistantTurn
         if turn.msg_content and (
             turn.model_provider != ModelProvider.ANTHROPIC
             or (turn.model_provider == ModelProvider.ANTHROPIC and not turn.fn_calls)
@@ -581,8 +582,7 @@ class AnthropicMessageManager(MessageManager):
             new_contents.append(content)
 
         if new_contents:
-            if new_contents[0]["type"] == "text":
-                # TODO: i prob also want to remove these texts because they are usually internal reflections
+            if len(new_contents) == 1 and new_contents[0]["type"] == "text":
                 new_message = {"role": "assistant", "content": new_contents[0]["text"]}
             else:
                 new_message = {"role": "assistant", "content": new_contents}
@@ -605,7 +605,7 @@ class AnthropicMessageManager(MessageManager):
             new_contents.append(content)
 
         if new_contents:
-            new_message = {"role": "assistant", "content": new_contents}
+            new_message = {"role": "user", "content": new_contents}
             self.message_dicts[idx_to_remove] = new_message
             self.index_tracker.pop_idx(tool_call_id + "return", shift_idxs=False)
         else:
