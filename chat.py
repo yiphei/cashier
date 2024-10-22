@@ -263,8 +263,7 @@ def run_chat(args, model, elevenlabs_client):
             turn_container=TC,
             tool_names_or_tool_defs=current_node_schema.tool_fn_names,
             stream=args.stream,
-            extra_oai_tool_defs=current_node_schema.OPENAI_TOOL_NAME_TO_TOOL_DEF,
-            extra_anthropic_tool_defs=current_node_schema.ANTHROPIC_TOOL_NAME_TO_TOOL_DEF,
+            model_provider_to_extra_tool_defs = current_node_schema.model_provider_to_tool_def
         )
         message = chat_completion.get_or_stream_message()
         if message is not None:
