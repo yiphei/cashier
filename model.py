@@ -195,7 +195,8 @@ class Model:
             **kwargs,
         }
         if response_format is not None:
-            args.pop("stream")
+            # Streaming with response_format is currently not supported (by me)
+            raise Exception("cannot both have response_format and stream defined")
         if not tools:
             args.pop("tools")
 
@@ -208,6 +209,7 @@ class Model:
         system=None,
         tools=None,
         stream=False,
+        response_format=None,
         **kwargs,
     ):
         args = {
@@ -223,7 +225,20 @@ class Model:
             args.pop("tools")
         if not system:
             args.pop("system")
-
+        if response_format is not None:
+            if stream:
+                # Streaming with response_format is currently not supported (by me)
+                raise Exception("cannot both have response_format and stream defined")
+            if tools:
+                raise Exception("cannot both have response_format and tools defined")
+            
+            tools = [{
+                "name": "respond_fn",
+                "description": "provide your response by calling this function with the adequate args",
+                "input_schema": response_format.model_json_schema(),
+            }]
+            args["tool_choice"] = 'respond_fn'
+        
         return AnthropicModelOutput(
             self.anthropic_client.messages.create(**args), stream
         )
