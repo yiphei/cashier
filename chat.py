@@ -119,7 +119,7 @@ def is_on_topic(model, TM, current_node_schema, all_node_schemas):
     model_name = "claude-3.5"
     model_provider = Model.get_model_provider(model_name)
     conversational_msgs = TM.model_provider_to_message_manager[
-        ModelProvider.OPENAI
+        model_provider
     ].conversation_dicts
     system_prompt = (
         "You are an AI-agent orchestration engine. Each AI agent is defined by an expectation"
