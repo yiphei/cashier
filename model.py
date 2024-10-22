@@ -202,7 +202,7 @@ class Model:
         if not tools:
             args.pop("tools")
 
-        return OAIModelOutput(chat_fn(**args), stream)
+        return OAIModelOutput(chat_fn(**args), stream, response_format)
 
     def ant_chat(
         self,
@@ -248,7 +248,7 @@ class Model:
             args.pop("system")
 
         return AnthropicModelOutput(
-            self.anthropic_client.messages.create(**args), stream
+            self.anthropic_client.messages.create(**args), stream, response_format
         )
 
 
@@ -670,9 +670,11 @@ class TurnContainer:
 
 
 class ModelOutput(ABC):
-    def __init__(self, output_obj, is_stream):
+    def __init__(self, output_obj, is_stream, response_format=None):
         self.output_obj = output_obj
         self.is_stream = is_stream
+        self.response_format = response_format
+        self.parsed_msg = None 
         self.msg_content = None
         self.last_chunk = None
         self.fn_calls = []
@@ -857,7 +859,9 @@ class OAIModelOutput(ModelOutput):
         return self.msg_content
 
     def get_message_prop(self, prop_name):
-        return getattr(self.output_obj.choices[0].message.parsed, prop_name)
+        if self.parsed_msg is None:
+            self.parsed_msg = self.output_obj.choices[0].message.parsed
+        return getattr(self.parsed_msg, prop_name)
 
     def get_logprob(self, token_idx):
         return self.output_obj.choices[0].logprobs.content[token_idx].logprob
@@ -927,6 +931,12 @@ class AnthropicModelOutput(ModelOutput):
             return self.msg_content
         else:
             return None
+        
+    def get_message_prop(self, prop_name):
+        if self.parsed_msg is None:
+            message = self.get_message()
+            self.parsed_msg = self.response_format(**json.loads(message))
+        return getattr(self.parsed_msg, prop_name)
 
     def get_fn_calls(self):
         for content in self.output_obj.content:
