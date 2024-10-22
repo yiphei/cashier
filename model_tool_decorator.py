@@ -136,6 +136,7 @@ def model_tool_decorator(tool_instructions=None):
 
     return decorator_fn
 
+
 def remove_default(schema):
     found_key = False
     for key, value in schema.items():
@@ -149,6 +150,7 @@ def remove_default(schema):
                     remove_default(item)
     if found_key:
         schema.pop("default")
+
 
 def get_oai_tool_def_from_fields(tool_name, description, field_args):
     fn_pydantic_model = create_model(tool_name, **field_args)

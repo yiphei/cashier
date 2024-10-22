@@ -4,7 +4,10 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from db_functions import Order
 from model import ModelProvider
-from model_tool_decorator import get_anthropic_tool_def_from_oai, get_oai_tool_def_from_fields
+from model_tool_decorator import (
+    get_anthropic_tool_def_from_oai,
+    get_oai_tool_def_from_fields,
+)
 
 BACKGROUND = (
     "You are a cashier working for the coffee shop Heaven Coffee. You are physically embedded inside the shop, "
@@ -43,7 +46,11 @@ class NodeSchema:
         for field_name, field_info in self.state_pydantic_model.model_fields.items():
             new_tool_fn_name = f"update_state_{field_name}"
             field_args = {field_name: (field_info.annotation, field_info)}
-            update_state_fn_json_schema = get_oai_tool_def_from_fields(new_tool_fn_name,f"Function to update the `{field_name}` field in the state",field_args)
+            update_state_fn_json_schema = get_oai_tool_def_from_fields(
+                new_tool_fn_name,
+                f"Function to update the `{field_name}` field in the state",
+                field_args,
+            )
             self.OPENAI_TOOL_NAME_TO_TOOL_DEF[new_tool_fn_name] = (
                 update_state_fn_json_schema
             )
