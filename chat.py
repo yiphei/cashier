@@ -122,10 +122,7 @@ def is_on_topic(model, TM, current_node_schema, all_node_schemas):
     conversational_msgs = TM.model_provider_to_message_manager[
         ModelProvider.OPENAI
     ].conversation_dicts
-    conversational_msgs.append(
-        {
-            "role": "system",
-            "content": (
+    system_prompt = (
                 "You are an AI-agent orchestration engine. Each AI agent is defined by an expectation"
                 " and a set of tools (i.e. functions). Given the prior conversation, determine if the"
                 " last user message can be fully handled by the current AI agent. Return true if"
@@ -142,24 +139,26 @@ def is_on_topic(model, TM, current_node_schema, all_node_schemas):
                 "TOOLS:\n"
                 "```\n"
                 f"{json.dumps([all_tool_defs[name] for name in current_node_schema.tool_fn_names])}\n"
-                "```"
-            ),
-        }
-    )
+                "```")
 
     class Response1(BaseModel):
         output: bool
 
+    model_provider = ModelProvider.ANTHROPIC
     chat_completion = model.chat(
-        model_name="gpt-4o-mini",
+        model_name="claude-3.5",
         message_dicts=conversational_msgs,
+        system=system_prompt,
         response_format=Response1,
         logprobs=True,
         temperature=0,
     )
     is_on_topic = chat_completion.get_message_prop("output")
-    prob = chat_completion.get_prob(-2)
-    logger.debug(f"IS_ON_TOPIC: {is_on_topic} with {prob}")
+    if model_provider == ModelProvider.OPENAI:
+        prob = chat_completion.get_prob(-2)
+        logger.debug(f"IS_ON_TOPIC: {is_on_topic} with {prob}")
+    else:
+        logger.debug(f"IS_ON_TOPIC: {is_on_topic}")
     if not is_on_topic:
         conversational_msgs.pop()
         prompt = (
@@ -195,7 +194,7 @@ def is_on_topic(model, TM, current_node_schema, all_node_schemas):
             agent_id: int
 
         chat_completion = model.chat(
-            model_name="gpt-4o",
+            model_name="claude-3.5",
             message_dicts=conversational_msgs,
             response_format=Response2,
             logprobs=True,
@@ -203,8 +202,11 @@ def is_on_topic(model, TM, current_node_schema, all_node_schemas):
         )
 
         agent_id = chat_completion.get_message_prop("agent_id")
-        prob = chat_completion.get_prob(-2)
-        logger.debug(f"AGENT_ID: {agent_id} with {prob}")
+        if model_provider == ModelProvider.OPENAI:
+            prob = chat_completion.get_prob(-2)
+            logger.debug(f"AGENT_ID: {agent_id} with {prob}")
+        else:
+            logger.debug(f"AGENT_ID: {agent_id}")
 
 
 def run_chat(args, model, elevenlabs_client):

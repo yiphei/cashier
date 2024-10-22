@@ -945,8 +945,9 @@ class AnthropicModelOutput(ModelOutput):
 
     def get_message_prop(self, prop_name):
         if self.parsed_msg is None:
-            message = self.get_message()
-            self.parsed_msg = self.response_format(**json.loads(message))
+            fn_call = next(self.get_fn_calls())
+            tool_call_input = json.loads(fn_call.function_args_json)
+            self.parsed_msg = self.response_format(**tool_call_input)
         return getattr(self.parsed_msg, prop_name)
 
     def get_fn_calls(self):
