@@ -381,7 +381,7 @@ class AssistantTurn(ModelTurn):
                         "type": "tool_use",
                         "id": fn_call.tool_call_id,
                         "name": fn_call.function_name,
-                        "input": json.loads(fn_call.function_args_json),
+                        "input": fn_call.function_args,
                     }
                 )
 

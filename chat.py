@@ -276,7 +276,7 @@ def run_chat(args, model, elevenlabs_client):
 
         fn_id_to_output = {}
         for function_call in chat_completion.get_or_stream_fn_calls():
-            function_args = json.loads(function_call.function_args_json)
+            function_args = function_call.function_args
             logger.debug(
                 f"[FUNCTION_CALL] {Style.BRIGHT}name: {function_call.function_name}, id: {function_call.tool_call_id}{Style.NORMAL} with args:\n{json.dumps(function_args, indent=4)}"
             )
