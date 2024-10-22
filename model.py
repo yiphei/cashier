@@ -328,6 +328,14 @@ class AssistantTurn(ModelTurn):
     fn_calls: Optional[List[FunctionCall]] = Field(default_factory=list)
     fn_call_id_to_fn_output: Optional[Dict[str, Any]] = Field(default_factory=dict)
 
+    @model_validator(mode="after")
+    def check_function_args(self):
+        if self.fn_calls and self.fn_call_id_to_fn_output and len(self.fn_calls) != len(self.fn_call_id_to_fn_output.values()):
+            raise ValueError(
+                "Mismatch between fn_calls' and fn_call_id_to_fn_output's lengths"
+            )
+        return self
+
     def build_oai_messages(self):
         messages = []
         if self.msg_content and self.model_provider != ModelProvider.ANTHROPIC:
