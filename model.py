@@ -168,7 +168,7 @@ class Model:
         elif model_provider == ModelProvider.ANTHROPIC:
             if message_manager is not None:
                 system = message_manager.system
-            return self.ant_chat(model_name, messages, system, tools, stream, **kwargs)
+            return self.ant_chat(model_name, messages, system, tools, stream, response_format, **kwargs)
 
     def oai_chat(
         self,
@@ -212,19 +212,7 @@ class Model:
         response_format=None,
         **kwargs,
     ):
-        args = {
-            "max_tokens": 8192,
-            "model": model_name,
-            "system": system,
-            "messages": messages,
-            "tools": tools,
-            "stream": stream,
-            **kwargs,
-        }
-        if not tools:
-            args.pop("tools")
-        if not system:
-            args.pop("system")
+        tool_choice = None
         if response_format is not None:
             if stream:
                 # Streaming with response_format is currently not supported (by me)
@@ -239,7 +227,23 @@ class Model:
                     "input_schema": response_format.model_json_schema(),
                 }
             ]
-            args["tool_choice"] = "respond_fn"
+            tool_choice = {"type": "tool", "name": "respond_fn"}
+
+        args = {
+            "max_tokens": 8192,
+            "model": model_name,
+            "system": system,
+            "messages": messages,
+            "tools": tools,
+            "stream": stream,
+            **kwargs,
+        }
+        if tool_choice:
+            args['tool_choice'] = tool_choice
+        if not tools:
+            args.pop("tools")
+        if not system:
+            args.pop("system")
 
         return AnthropicModelOutput(
             self.anthropic_client.messages.create(**args), stream
