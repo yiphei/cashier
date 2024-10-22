@@ -285,6 +285,7 @@ class MessageManager(ABC):
 
     def __init__(self):
         self.message_dicts = []
+        self.conversation_dicts = []
         self.last_node_id = None
         self.tool_call_ids = []
         self.tool_fn_return_names = set()
@@ -296,7 +297,9 @@ class MessageManager(ABC):
             raise TypeError(f"{cls.__name__} must define 'model_provider'")
 
     def add_user_turn(self, turn):
-        self.message_dicts.extend(turn.build_messages(self.model_provider))
+        user_msgs = turn.build_messages(self.model_provider)
+        self.message_dicts.extend(user_msgs)
+        self.conversation_dicts.extend(user_msgs)
 
     def add_node_turn(
         self,
@@ -404,6 +407,8 @@ class OAIMessageManager(MessageManager):
                 self.tool_fn_return_names.add(curr_fn_name)
                 self.index_tracker.add_idx(curr_fn_name, len(self.message_dicts))
                 curr_fn_name = None
+            elif message['role'] == 'assistant' and message.get('content', None) is not None:
+                self.conversation_dicts.append(message)
 
             self.message_dicts.append(message)
 
@@ -486,6 +491,10 @@ class AnthropicMessageManager(MessageManager):
                     tool_call_id = content["id"]
                     self.tool_call_ids.append(tool_call_id)
                     self.index_tracker.add_idx(tool_call_id, len(self.message_dicts))
+                elif content['type'] == 'text':
+                    self.conversation_dicts.append(message_1)
+        else:
+            self.conversation_dicts.append(message_1)
 
         self.message_dicts.append(message_1)
 
