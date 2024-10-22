@@ -1,11 +1,10 @@
 from typing import Optional
 
-from openai import pydantic_function_tool
-from pydantic import BaseModel, ConfigDict, Field, create_model
+from pydantic import BaseModel, ConfigDict, Field
 
 from db_functions import Order
 from model import ModelProvider
-from model_tool_decorator import get_anthropic_tool_def_from_oai
+from model_tool_decorator import get_anthropic_tool_def_from_oai, get_oai_tool_def_from_fields
 
 BACKGROUND = (
     "You are a cashier working for the coffee shop Heaven Coffee. You are physically embedded inside the shop, "
@@ -41,30 +40,10 @@ class NodeSchema:
         self.state_pydantic_model = state_pydantic_model
         self.first_msg = first_msg
 
-        def remove_default(schema):
-            found_key = False
-            for key, value in schema.items():
-                if key == "default":
-                    found_key = True
-                elif isinstance(value, dict):
-                    remove_default(value)
-                elif isinstance(value, list):
-                    for item in value:
-                        if isinstance(item, dict):
-                            remove_default(item)
-            if found_key:
-                schema.pop("default")
-
         for field_name, field_info in self.state_pydantic_model.model_fields.items():
             new_tool_fn_name = f"update_state_{field_name}"
             field_args = {field_name: (field_info.annotation, field_info)}
-            fn_pydantic_model = create_model(new_tool_fn_name, **field_args)
-            update_state_fn_json_schema = pydantic_function_tool(
-                fn_pydantic_model,
-                name=new_tool_fn_name,
-                description=f"Function to update the `{field_name}` field in the state",
-            )
-            remove_default(update_state_fn_json_schema)
+            update_state_fn_json_schema = get_oai_tool_def_from_fields(new_tool_fn_name,f"Function to update the `{field_name}` field in the state",field_args)
             self.OPENAI_TOOL_NAME_TO_TOOL_DEF[new_tool_fn_name] = (
                 update_state_fn_json_schema
             )

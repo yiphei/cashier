@@ -135,3 +135,26 @@ def model_tool_decorator(tool_instructions=None):
         return wrapper
 
     return decorator_fn
+
+def remove_default(schema):
+    found_key = False
+    for key, value in schema.items():
+        if key == "default":
+            found_key = True
+        elif isinstance(value, dict):
+            remove_default(value)
+        elif isinstance(value, list):
+            for item in value:
+                if isinstance(item, dict):
+                    remove_default(item)
+    if found_key:
+        schema.pop("default")
+
+def get_oai_tool_def_from_fields(tool_name, description, field_args):
+    fn_pydantic_model = create_model(tool_name, **field_args)
+    update_state_fn_json_schema = pydantic_function_tool(
+        fn_pydantic_model,
+        name=tool_name,
+        description=description,
+    )
+    remove_default(update_state_fn_json_schema)
