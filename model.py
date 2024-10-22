@@ -153,7 +153,7 @@ class Model:
                     model_provider_to_extra_tool_defs.get(model_provider, None)
                     is not None
                 ):
-                    tools |= model_provider_to_extra_tool_defs.get(model_provider)
+                    tools += model_provider_to_extra_tool_defs.get(model_provider).values()
 
         message_manager = None
         if turn_container is not None:
