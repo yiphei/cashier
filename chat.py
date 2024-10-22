@@ -144,7 +144,6 @@ def is_on_topic(model, TM, current_node_schema, all_node_schemas):
     class Response1(BaseModel):
         output: bool
 
-    model_provider = ModelProvider.ANTHROPIC
     chat_completion = model.chat(
         model_name=model_name,
         message_dicts=conversational_msgs,
