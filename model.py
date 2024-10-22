@@ -1,9 +1,11 @@
+from __future__ import annotations
+
 import itertools
 import json
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from enum import StrEnum
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Literal, Optional, Union, overload
 
 import anthropic
 import numpy as np
@@ -20,6 +22,12 @@ from model_tool_decorator import (
 class ModelProvider(StrEnum):
     OPENAI = "OPENAI"
     ANTHROPIC = "ANTHROPIC"
+    NONE = "NONE"
+
+
+OpenAIModels = Literal["gpt-4o-mini", "gpt-4o"]
+
+AnthropicModels = Literal["claude-3.5", "claude-3-5-sonnet-latest"]
 
 
 class Model:
@@ -29,6 +37,10 @@ class Model:
         "claude-3-5-sonnet-20240620": ModelProvider.ANTHROPIC,
     }
     alias_to_model_name = {"claude-3.5": "claude-3-5-sonnet-20240620"}
+    model_provider_to_tool_def = {
+        ModelProvider.OPENAI: OPENAI_TOOL_NAME_TO_TOOL_DEF,
+        ModelProvider.ANTHROPIC: ANTHROPIC_TOOL_NAME_TO_TOOL_DEF,
+    }
 
     def __init__(self):
         self.oai_client = OpenAI()
@@ -41,47 +53,122 @@ class Model:
 
         return [all_tool_defs[tool_name] for tool_name in tool_names]
 
+    @classmethod
+    def get_model_provider(cls, model_name):
+        if model_name in cls.alias_to_model_name:
+            model_name = cls.alias_to_model_name[model_name]
+
+        return cls.model_name_to_provider[model_name]
+
+    @overload
+    def chat(  # noqa: E704
+        self,
+        *,
+        model_name: OpenAIModels,
+        turn_container: Literal[None] = None,
+        message_dicts: List[Dict[str, str]],
+        system: Literal[None] = None,
+        tool_names_or_tool_defs: List[Union[str, Dict]] = None,
+        stream: bool = False,
+        logprobs: bool = False,
+        response_format: Optional[BaseModel] = None,
+        extra_oai_tool_defs: Optional[List[Dict[str, str]]] = None,
+        extra_anthropic_tool_defs: Optional[List[Dict[str, str]]] = None,
+        **kwargs,
+    ): ...
+
+    @overload
+    def chat(  # noqa: E704
+        self,
+        *,
+        model_name: AnthropicModels,
+        turn_container: Literal[None] = None,
+        message_dicts: List[Dict[str, str]],
+        system: Optional[str] = None,
+        tool_names_or_tool_defs: List[Union[str, Dict]] = None,
+        stream: bool = False,
+        logprobs: bool = False,
+        response_format: Optional[BaseModel] = None,
+        extra_oai_tool_defs: Optional[List[Dict[str, str]]] = None,
+        extra_anthropic_tool_defs: Optional[List[Dict[str, str]]] = None,
+        **kwargs,
+    ): ...
+
+    @overload
+    def chat(  # noqa: E704
+        self,
+        *,
+        model_name: str,
+        turn_container: TurnContainer,
+        message_dicts: Literal[None] = None,
+        system: Literal[None] = None,
+        tool_names_or_tool_defs: List[Union[str, Dict]] = None,
+        stream: bool = False,
+        logprobs: bool = False,
+        response_format: Optional[BaseModel] = None,
+        extra_oai_tool_defs: Optional[List[Dict[str, str]]] = None,
+        extra_anthropic_tool_defs: Optional[List[Dict[str, str]]] = None,
+        **kwargs,
+    ): ...
+
     def chat(
         self,
-        model_name,
-        turn_container,
-        tool_names=None,
-        tools=None,
-        stream=False,
-        logprobs=False,
-        response_format=None,
-        extra_oai_tool_defs=None,
-        extra_anthropic_tool_defs=None,
+        *,
+        model_name: str,
+        turn_container: Optional[TurnContainer] = None,
+        message_dicts: Optional[List[Dict[str, str]]] = None,
+        system: Optional[str] = None,
+        tool_names_or_tool_defs: Optional[List[Union[str, Dict]]] = None,
+        stream: bool = False,
+        logprobs: bool = False,
+        response_format: Optional[BaseModel] = None,
+        extra_oai_tool_defs: Optional[List[Dict[str, str]]] = None,
+        extra_anthropic_tool_defs: Optional[List[Dict[str, str]]] = None,
         **kwargs,
     ):
         if model_name in self.alias_to_model_name:
             model_name = self.alias_to_model_name[model_name]
+        model_provider = self.get_model_provider(model_name)
 
-        model_provider = self.model_name_to_provider[model_name]
-        message_manager = turn_container.model_provider_to_message_manager[
-            model_provider
-        ]
-        if model_provider == ModelProvider.OPENAI:
-            if tool_names:
+        tools = None
+        if tool_names_or_tool_defs is not None:
+            if type(tool_names_or_tool_defs[0]) is str:
                 tools = self.get_tool_defs_from_names(
-                    tool_names, OPENAI_TOOL_NAME_TO_TOOL_DEF, extra_oai_tool_defs
+                    tool_names_or_tool_defs,
+                    self.model_provider_to_tool_def[model_provider],
+                    (
+                        extra_oai_tool_defs
+                        if model_provider is ModelProvider.OPENAI
+                        else extra_anthropic_tool_defs
+                    ),
                 )
-            messages = message_manager.get_chat_input()
+            else:
+                tools = tool_names_or_tool_defs
+                if model_provider == ModelProvider.OPENAI and extra_oai_tool_defs:
+                    tools.extend(extra_oai_tool_defs)
+                elif (
+                    model_provider == ModelProvider.ANTHROPIC
+                    and extra_anthropic_tool_defs
+                ):
+                    tools.extend(extra_oai_tool_defs)
+
+        message_manager = None
+        if turn_container is not None:
+            message_manager = turn_container.model_provider_to_message_manager[
+                model_provider
+            ]
+            messages = message_manager.message_dicts
+        elif message_dicts is not None:
+            messages = message_dicts
+
+        if model_provider == ModelProvider.OPENAI:
             return self.oai_chat(
                 model_name, messages, tools, stream, logprobs, response_format, **kwargs
             )
         elif model_provider == ModelProvider.ANTHROPIC:
-            if tool_names:
-                tools = self.get_tool_defs_from_names(
-                    tool_names,
-                    ANTHROPIC_TOOL_NAME_TO_TOOL_DEF,
-                    extra_anthropic_tool_defs,
-                )
-
-            messages, system_prompt = message_manager.get_chat_input()
-            return self.ant_chat(
-                model_name, messages, system_prompt, tools, stream, **kwargs
-            )
+            if message_manager is not None:
+                system = message_manager.system
+            return self.ant_chat(model_name, messages, system, tools, stream, **kwargs)
 
     def oai_chat(
         self,
@@ -134,6 +221,8 @@ class Model:
         }
         if not tools:
             args.pop("tools")
+        if not system:
+            args.pop("system")
 
         return AnthropicModelOutput(
             self.anthropic_client.messages.create(**args), stream
@@ -185,13 +274,14 @@ class NodeSystemTurn(SystemTurn):
 
 
 class AssistantTurn(ModelTurn):
+    model_provider: ModelProvider
     msg_content: Optional[str]
     fn_calls: Optional[List[FunctionCall]] = Field(default_factory=list)
     fn_call_id_to_fn_output: Optional[Dict[str, Any]] = Field(default_factory=dict)
 
     def build_oai_messages(self):
         messages = []
-        if self.msg_content:
+        if self.msg_content and self.model_provider != ModelProvider.ANTHROPIC:
             messages.append({"role": "assistant", "content": self.msg_content})
         if self.fn_calls:
             for fn_call in self.fn_calls:
@@ -232,7 +322,9 @@ class AssistantTurn(ModelTurn):
     def build_anthropic_messages(self):
         contents = []
         messages = []
-        if self.msg_content:
+        if self.msg_content and not (
+            self.model_provider == ModelProvider.ANTHROPIC and self.fn_calls
+        ):
             contents.append({"type": "text", "text": self.msg_content})
         if self.fn_calls:
             for fn_call in self.fn_calls:
@@ -245,7 +337,7 @@ class AssistantTurn(ModelTurn):
                     }
                 )
 
-        if len(contents) == 1 and self.msg_content:
+        if not self.fn_calls and self.msg_content:
             contents = contents[0]
             contents = contents["text"]
 
@@ -275,6 +367,7 @@ class MessageManager(ABC):
 
     def __init__(self):
         self.message_dicts = []
+        self.conversation_dicts = []
         self.last_node_id = None
         self.tool_call_ids = []
         self.tool_fn_return_names = set()
@@ -286,7 +379,9 @@ class MessageManager(ABC):
             raise TypeError(f"{cls.__name__} must define 'model_provider'")
 
     def add_user_turn(self, turn):
-        self.message_dicts.extend(turn.build_messages(self.model_provider))
+        user_msgs = turn.build_messages(self.model_provider)
+        self.message_dicts.extend(user_msgs)
+        self.conversation_dicts.extend(user_msgs)
 
     def add_node_turn(
         self,
@@ -394,15 +489,21 @@ class OAIMessageManager(MessageManager):
                 self.tool_fn_return_names.add(curr_fn_name)
                 self.index_tracker.add_idx(curr_fn_name, len(self.message_dicts))
                 curr_fn_name = None
+            elif (
+                message["role"] == "assistant"
+                and message.get("content", None) is not None
+            ):
+                self.conversation_dicts.append(message)
 
             self.message_dicts.append(message)
-
-    def get_chat_input(self):
-        return self.message_dicts
 
 
 class AnthropicMessageManager(MessageManager):
     model_provider = ModelProvider.ANTHROPIC
+
+    def __init__(self):
+        super().__init__()
+        self.system = None
 
     def parse_system_messages(self, msgs):
         return
@@ -476,6 +577,10 @@ class AnthropicMessageManager(MessageManager):
                     tool_call_id = content["id"]
                     self.tool_call_ids.append(tool_call_id)
                     self.index_tracker.add_idx(tool_call_id, len(self.message_dicts))
+                elif content["type"] == "text":
+                    self.conversation_dicts.append(message_1)
+        else:
+            self.conversation_dicts.append(message_1)
 
         self.message_dicts.append(message_1)
 
@@ -487,9 +592,6 @@ class AnthropicMessageManager(MessageManager):
                         tool_id + "return", len(self.message_dicts)
                     )
             self.message_dicts.append(message_2)
-
-    def get_chat_input(self):
-        return self.message_dicts, self.system
 
 
 class TurnContainer:
@@ -530,9 +632,12 @@ class TurnContainer:
         for mm in self.model_provider_to_message_manager.values():
             mm.add_user_turn(turn)
 
-    def add_assistant_turn(self, msg_content, fn_calls=None, fn_id_to_outputs=None):
+    def add_assistant_turn(
+        self, msg_content, model_provider, fn_calls=None, fn_id_to_outputs=None
+    ):
         turn = AssistantTurn(
             msg_content=msg_content,
+            model_provider=model_provider,
             fn_calls=fn_calls,
             fn_call_id_to_fn_output=fn_id_to_outputs,
         )
