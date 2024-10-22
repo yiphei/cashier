@@ -270,11 +270,13 @@ class FunctionCall(BaseModel):
     function_args_json: Optional[str] = None
     function_args: Optional[Dict] = None
 
-    @model_validator(mode='after')
+    @model_validator(mode="after")
     def check_function_args(self):
         if self.function_args_json is None and self.function_args is None:
-            raise ValueError("One of [function_args_json, function_args] must be provided")
-        
+            raise ValueError(
+                "One of [function_args_json, function_args] must be provided"
+            )
+
         if self.function_args_json is not None and self.function_args is None:
             self.function_args = json.loads(self.function_args_json)
         if self.function_args is not None and self.function_args_json is None:
