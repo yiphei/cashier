@@ -161,8 +161,7 @@ def is_on_topic(model, TM, current_node_schema, all_node_schemas):
     else:
         logger.debug(f"IS_ON_TOPIC: {is_on_topic}")
     if not is_on_topic:
-        conversational_msgs.pop()
-        prompt = (
+        system_prompt = (
             "You are an AI-agent orchestration engine. Each AI agent is defined by an expectation"
             " and a set of tools (i.e. functions). An AI agent can handle a user message if it is "
             "a case covered by the AI agent's expectation OR tools. "
@@ -171,7 +170,7 @@ def is_on_topic(model, TM, current_node_schema, all_node_schemas):
             "Respond by returning the AI agent ID.\n\n"
         )
         for node_schema in all_node_schemas:
-            prompt += (
+            system_prompt += (
                 f"## AGENT ID: {node_schema.id}\n\n"
                 "EXPECTATION:\n"
                 "```\n"
@@ -183,13 +182,12 @@ def is_on_topic(model, TM, current_node_schema, all_node_schemas):
                 "```\n\n"
             )
 
-        prompt += (
+        system_prompt += (
             "LAST USER MESSAGE:\n"
             "```\n"
             f"{conversational_msgs[-1]['content']}\n"
             "```"
         )
-        conversational_msgs.append({"role": "system", "content": prompt})
 
         class Response2(BaseModel):
             agent_id: int
@@ -197,6 +195,7 @@ def is_on_topic(model, TM, current_node_schema, all_node_schemas):
         chat_completion = model.chat(
             model_name="claude-3.5",
             message_dicts=conversational_msgs,
+            system = system_prompt,
             response_format=Response2,
             logprobs=True,
             temperature=0,
