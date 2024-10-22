@@ -196,7 +196,7 @@ class Model:
             "response_format": response_format,
             **kwargs,
         }
-        if response_format is not None:
+        if response_format and stream:
             # Streaming with response_format is currently not supported (by me)
             raise Exception("cannot both have response_format and stream defined")
         if not tools:
