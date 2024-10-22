@@ -119,7 +119,9 @@ def is_on_topic(model, TM, current_node_schema, all_node_schemas):
     all_tool_defs = (
         OPENAI_TOOL_NAME_TO_TOOL_DEF | current_node_schema.OPENAI_TOOL_NAME_TO_TOOL_DEF
     )
-    conversational_msgs = TM.model_provider_to_message_manager[ModelProvider.OPENAI].conversation_dicts
+    conversational_msgs = TM.model_provider_to_message_manager[
+        ModelProvider.OPENAI
+    ].conversation_dicts
     conversational_msgs.append(
         {
             "role": "system",
