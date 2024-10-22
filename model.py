@@ -27,7 +27,7 @@ class ModelProvider(StrEnum):
 
 OpenAIModels = Literal["gpt-4o-mini", "gpt-4o"]
 
-AnthropicModels = Literal["claude-3.5", "claude-3-5-sonnet-20240620"]
+AnthropicModels = Literal["claude-3.5", "claude-3-5-sonnet-latest"]
 
 
 class Model:
