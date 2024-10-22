@@ -281,6 +281,7 @@ class FunctionCall(BaseModel):
             self.function_args = json.loads(self.function_args_json)
         if self.function_args is not None and self.function_args_json is None:
             self.function_args_json = json.dumps(self.function_args)
+        return self
 
 
 class ModelTurn(BaseModel, ABC):
