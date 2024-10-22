@@ -67,7 +67,8 @@ class Model:
         model_name: OpenAIModels,
         turn_container: Literal[None] = None,
         message_dicts: List[Dict[str, str]],
-        system: Literal[None] = None,
+        system: Optional[str] = None,
+        system_idx: int = -1,
         tool_names_or_tool_defs: List[Union[str, Dict]] = None,
         stream: bool = False,
         logprobs: bool = False,
@@ -85,6 +86,7 @@ class Model:
         turn_container: Literal[None] = None,
         message_dicts: List[Dict[str, str]],
         system: Optional[str] = None,
+        system_idx: Literal[None] = None,
         tool_names_or_tool_defs: List[Union[str, Dict]] = None,
         stream: bool = False,
         logprobs: bool = False,
@@ -102,6 +104,7 @@ class Model:
         turn_container: TurnContainer,
         message_dicts: Literal[None] = None,
         system: Literal[None] = None,
+        system_idx: Literal[None] = None,
         tool_names_or_tool_defs: List[Union[str, Dict]] = None,
         stream: bool = False,
         logprobs: bool = False,
@@ -118,6 +121,7 @@ class Model:
         turn_container: Optional[TurnContainer] = None,
         message_dicts: Optional[List[Dict[str, str]]] = None,
         system: Optional[str] = None,
+        system_idx: int = -1,
         tool_names_or_tool_defs: Optional[List[Union[str, Dict]]] = None,
         stream: bool = False,
         logprobs: bool = False,
@@ -162,6 +166,13 @@ class Model:
             messages = message_dicts
 
         if model_provider == ModelProvider.OPENAI:
+            if system is not None:
+                system_dict = {"role": "system", "content": system}
+                if system_idx == -1:
+                    messages.append(system_dict)
+                else:
+                    messages.insert(system_idx, system_dict)
+
             return self.oai_chat(
                 model_name, messages, tools, stream, logprobs, response_format, **kwargs
             )
