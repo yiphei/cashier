@@ -123,23 +123,24 @@ def is_on_topic(model, TM, current_node_schema, all_node_schemas):
         ModelProvider.OPENAI
     ].conversation_dicts
     system_prompt = (
-                "You are an AI-agent orchestration engine. Each AI agent is defined by an expectation"
-                " and a set of tools (i.e. functions). Given the prior conversation, determine if the"
-                " last user message can be fully handled by the current AI agent. Return true if"
-                " the last user message is a case covered by the current AI agent's expectation OR "
-                "tools. Return false if otherwise, meaning that we should explore letting another AI agent take over.\n\n"
-                "LAST USER MESSAGE:\n"
-                "```\n"
-                f"{conversational_msgs[-1]['content']}\n"
-                "```\n\n"
-                "EXPECTATION:\n"
-                "```\n"
-                f"{current_node_schema.node_prompt}\n"
-                "```\n\n"
-                "TOOLS:\n"
-                "```\n"
-                f"{json.dumps([all_tool_defs[name] for name in current_node_schema.tool_fn_names])}\n"
-                "```")
+        "You are an AI-agent orchestration engine. Each AI agent is defined by an expectation"
+        " and a set of tools (i.e. functions). Given the prior conversation, determine if the"
+        " last user message can be fully handled by the current AI agent. Return true if"
+        " the last user message is a case covered by the current AI agent's expectation OR "
+        "tools. Return false if otherwise, meaning that we should explore letting another AI agent take over.\n\n"
+        "LAST USER MESSAGE:\n"
+        "```\n"
+        f"{conversational_msgs[-1]['content']}\n"
+        "```\n\n"
+        "EXPECTATION:\n"
+        "```\n"
+        f"{current_node_schema.node_prompt}\n"
+        "```\n\n"
+        "TOOLS:\n"
+        "```\n"
+        f"{json.dumps([all_tool_defs[name] for name in current_node_schema.tool_fn_names])}\n"
+        "```"
+    )
 
     class Response1(BaseModel):
         output: bool
