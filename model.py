@@ -61,7 +61,7 @@ class Model:
         return cls.model_name_to_provider[model_name]
 
     @overload
-    def chat(
+    def chat( # noqa: E704
         self,
         *,
         model_name: OpenAIModels,
@@ -78,7 +78,7 @@ class Model:
     ): ...
 
     @overload
-    def chat(
+    def chat( # noqa: E704
         self,
         *,
         model_name: AnthropicModels,
@@ -95,7 +95,7 @@ class Model:
     ): ...
 
     @overload
-    def chat(
+    def chat( # noqa: E704
         self,
         *,
         model_name: str,
