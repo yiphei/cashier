@@ -155,7 +155,7 @@ class Model:
         message_manager = None
         if turn_container is not None:
             message_manager = turn_container.model_provider_to_message_manager[
-            model_provider
+                model_provider
             ]
             messages = message_manager.message_dicts
         elif message_dicts is not None:
