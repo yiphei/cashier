@@ -195,7 +195,7 @@ def is_on_topic(model, TM, current_node_schema, all_node_schemas):
         chat_completion = model.chat(
             model_name="claude-3.5",
             message_dicts=conversational_msgs,
-            system = system_prompt,
+            system=system_prompt,
             response_format=Response2,
             logprobs=True,
             temperature=0,
