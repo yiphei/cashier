@@ -8,6 +8,7 @@ from types import GeneratorType
 from colorama import Fore, Style
 from dotenv import load_dotenv  # Add this import
 from elevenlabs import ElevenLabs, Voice, VoiceSettings, stream
+from pydantic import BaseModel
 
 from audio import get_audio_input, save_audio_to_wav
 from chain import (
@@ -118,90 +119,90 @@ def is_on_topic(model, TM, current_node_schema, all_node_schemas):
     all_tool_defs = (
         OPENAI_TOOL_NAME_TO_TOOL_DEF | current_node_schema.OPENAI_TOOL_NAME_TO_TOOL_DEF
     )
-    # conversational_msgs = TM.get_all_conversational_messages_of_current_node()
-    # conversational_msgs.append(
-    #     {
-    #         "role": "system",
-    #         "content": (
-    #             "You are an AI-agent orchestration engine. Each AI agent is defined by an expectation"
-    #             " and a set of tools (i.e. functions). Given the prior conversation, determine if the"
-    #             " last user message can be fully handled by the current AI agent. Return true if"
-    #             " the last user message is a case covered by the current AI agent's expectation OR "
-    #             "tools. Return false if otherwise, meaning that we should explore letting another AI agent take over.\n\n"
-    #             "LAST USER MESSAGE:\n"
-    #             "```\n"
-    #             f"{conversational_msgs[-1]['content']}\n"
-    #             "```\n\n"
-    #             "EXPECTATION:\n"
-    #             "```\n"
-    #             f"{current_node_schema.node_prompt}\n"
-    #             "```\n\n"
-    #             "TOOLS:\n"
-    #             "```\n"
-    #             f"{json.dumps([all_tool_defs[name] for name in current_node_schema.tool_fn_names])}\n"
-    #             "```"
-    #         ),
-    #     }
-    # )
+    conversational_msgs = TM.model_provider_to_message_manager[ModelProvider.OPENAI].conversation_dicts
+    conversational_msgs.append(
+        {
+            "role": "system",
+            "content": (
+                "You are an AI-agent orchestration engine. Each AI agent is defined by an expectation"
+                " and a set of tools (i.e. functions). Given the prior conversation, determine if the"
+                " last user message can be fully handled by the current AI agent. Return true if"
+                " the last user message is a case covered by the current AI agent's expectation OR "
+                "tools. Return false if otherwise, meaning that we should explore letting another AI agent take over.\n\n"
+                "LAST USER MESSAGE:\n"
+                "```\n"
+                f"{conversational_msgs[-1]['content']}\n"
+                "```\n\n"
+                "EXPECTATION:\n"
+                "```\n"
+                f"{current_node_schema.node_prompt}\n"
+                "```\n\n"
+                "TOOLS:\n"
+                "```\n"
+                f"{json.dumps([all_tool_defs[name] for name in current_node_schema.tool_fn_names])}\n"
+                "```"
+            ),
+        }
+    )
 
-    # class Response1(BaseModel):
-    #     output: bool
+    class Response1(BaseModel):
+        output: bool
 
-    # chat_completion = model.chat(
-    #     model_name="gpt-4o-mini",
-    #     messages=conversational_msgs,
-    #     response_format=Response1,
-    #     logprobs=True,
-    #     temperature=0,
-    # )
-    # is_on_topic = chat_completion.get_message_prop("output")
-    # prob = chat_completion.get_prob(-2)
-    # logger.debug(f"IS_ON_TOPIC: {is_on_topic} with {prob}")
-    # if not is_on_topic:
-    #     conversational_msgs.pop()
-    #     prompt = (
-    #         "You are an AI-agent orchestration engine. Each AI agent is defined by an expectation"
-    #         " and a set of tools (i.e. functions). An AI agent can handle a user message if it is "
-    #         "a case covered by the AI agent's expectation OR tools. "
-    #         "Given the prior conversation and a list of AI agents,"
-    #         " determine which agent can best handle the last user message. "
-    #         "Respond by returning the AI agent ID.\n\n"
-    #     )
-    #     for node_schema in all_node_schemas:
-    #         prompt += (
-    #             f"## AGENT ID: {node_schema.id}\n\n"
-    #             "EXPECTATION:\n"
-    #             "```\n"
-    #             f"{node_schema.node_prompt}\n"
-    #             "```\n\n"
-    #             "TOOLS:\n"
-    #             "```\n"
-    #             f"{json.dumps([all_tool_defs[name] for name in current_node_schema.tool_fn_names])}\n"
-    #             "```\n\n"
-    #         )
+    chat_completion = model.chat(
+        model_name="gpt-4o-mini",
+        message_dicts=conversational_msgs,
+        response_format=Response1,
+        logprobs=True,
+        temperature=0,
+    )
+    is_on_topic = chat_completion.get_message_prop("output")
+    prob = chat_completion.get_prob(-2)
+    logger.debug(f"IS_ON_TOPIC: {is_on_topic} with {prob}")
+    if not is_on_topic:
+        conversational_msgs.pop()
+        prompt = (
+            "You are an AI-agent orchestration engine. Each AI agent is defined by an expectation"
+            " and a set of tools (i.e. functions). An AI agent can handle a user message if it is "
+            "a case covered by the AI agent's expectation OR tools. "
+            "Given the prior conversation and a list of AI agents,"
+            " determine which agent can best handle the last user message. "
+            "Respond by returning the AI agent ID.\n\n"
+        )
+        for node_schema in all_node_schemas:
+            prompt += (
+                f"## AGENT ID: {node_schema.id}\n\n"
+                "EXPECTATION:\n"
+                "```\n"
+                f"{node_schema.node_prompt}\n"
+                "```\n\n"
+                "TOOLS:\n"
+                "```\n"
+                f"{json.dumps([all_tool_defs[name] for name in current_node_schema.tool_fn_names])}\n"
+                "```\n\n"
+            )
 
-    #     prompt += (
-    #         "LAST USER MESSAGE:\n"
-    #         "```\n"
-    #         f"{conversational_msgs[-1]['content']}\n"
-    #         "```"
-    #     )
-    #     conversational_msgs.append({"role": "system", "content": prompt})
+        prompt += (
+            "LAST USER MESSAGE:\n"
+            "```\n"
+            f"{conversational_msgs[-1]['content']}\n"
+            "```"
+        )
+        conversational_msgs.append({"role": "system", "content": prompt})
 
-    #     class Response2(BaseModel):
-    #         agent_id: int
+        class Response2(BaseModel):
+            agent_id: int
 
-    #     chat_completion = model.chat(
-    #         model_name="gpt-4o",
-    #         messages=conversational_msgs,
-    #         response_format=Response2,
-    #         logprobs=True,
-    #         temperature=0,
-    #     )
+        chat_completion = model.chat(
+            model_name="gpt-4o",
+            message_dicts=conversational_msgs,
+            response_format=Response2,
+            logprobs=True,
+            temperature=0,
+        )
 
-    #     agent_id = chat_completion.get_message_prop("agent_id")
-    #     prob = chat_completion.get_prob(-2)
-    #     logger.debug(f"AGENT_ID: {agent_id} with {prob}")
+        agent_id = chat_completion.get_message_prop("agent_id")
+        prob = chat_completion.get_prob(-2)
+        logger.debug(f"AGENT_ID: {agent_id} with {prob}")
 
 
 def run_chat(args, model, elevenlabs_client):
