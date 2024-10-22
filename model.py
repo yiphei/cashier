@@ -231,14 +231,16 @@ class Model:
                 raise Exception("cannot both have response_format and stream defined")
             if tools:
                 raise Exception("cannot both have response_format and tools defined")
-            
-            tools = [{
-                "name": "respond_fn",
-                "description": "provide your response by calling this function with the adequate args",
-                "input_schema": response_format.model_json_schema(),
-            }]
-            args["tool_choice"] = 'respond_fn'
-        
+
+            tools = [
+                {
+                    "name": "respond_fn",
+                    "description": "provide your response by calling this function with the adequate args",
+                    "input_schema": response_format.model_json_schema(),
+                }
+            ]
+            args["tool_choice"] = "respond_fn"
+
         return AnthropicModelOutput(
             self.anthropic_client.messages.create(**args), stream
         )
