@@ -5,6 +5,7 @@ from pydantic import BaseModel, ConfigDict, Field, create_model
 
 from db_functions import Order
 from model_tool_decorator import get_anthropic_tool_def_from_oai
+from model import ModelProvider
 
 BACKGROUND = (
     "You are a cashier working for the coffee shop Heaven Coffee. You are physically embedded inside the shop, "
@@ -17,6 +18,11 @@ class NodeSchema:
     _counter = 0
     OPENAI_TOOL_NAME_TO_TOOL_DEF = {}
     ANTHROPIC_TOOL_NAME_TO_TOOL_DEF = {}
+
+    model_provider_to_tool_def = {
+        ModelProvider.OPENAI: OPENAI_TOOL_NAME_TO_TOOL_DEF,
+        ModelProvider.ANTHROPIC: ANTHROPIC_TOOL_NAME_TO_TOOL_DEF,
+    }
 
     def __init__(
         self,

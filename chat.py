@@ -116,9 +116,8 @@ class MessageDisplay:
 
 
 def is_on_topic(model, TM, current_node_schema, all_node_schemas):
-    all_tool_defs = (
-        OPENAI_TOOL_NAME_TO_TOOL_DEF | current_node_schema.OPENAI_TOOL_NAME_TO_TOOL_DEF
-    )
+    model_name = "claude-3.5"
+    model_provider = Model.get_model_provider(model_name)
     conversational_msgs = TM.model_provider_to_message_manager[
         ModelProvider.OPENAI
     ].conversation_dicts
@@ -138,7 +137,7 @@ def is_on_topic(model, TM, current_node_schema, all_node_schemas):
         "```\n\n"
         "TOOLS:\n"
         "```\n"
-        f"{json.dumps([all_tool_defs[name] for name in current_node_schema.tool_fn_names])}\n"
+        f"{json.dumps(Model.get_tool_defs_from_names(current_node_schema.tool_fn_names, model_provider, current_node_schema.model_provider_to_tool_def[model_provider]))}\n"
         "```"
     )
 
@@ -178,7 +177,7 @@ def is_on_topic(model, TM, current_node_schema, all_node_schemas):
                 "```\n\n"
                 "TOOLS:\n"
                 "```\n"
-                f"{json.dumps([all_tool_defs[name] for name in current_node_schema.tool_fn_names])}\n"
+                f"{json.dumps(Model.get_tool_defs_from_names(node_schema.tool_fn_names, model_provider, node_schema.model_provider_to_tool_def[model_provider]))}\n"
                 "```\n\n"
             )
 
@@ -193,7 +192,7 @@ def is_on_topic(model, TM, current_node_schema, all_node_schemas):
             agent_id: int
 
         chat_completion = model.chat(
-            model_name="claude-3.5",
+            model_name=model_name,
             message_dicts=conversational_msgs,
             system=system_prompt,
             response_format=Response2,

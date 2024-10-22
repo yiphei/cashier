@@ -46,8 +46,9 @@ class Model:
         self.oai_client = OpenAI()
         self.anthropic_client = anthropic.Anthropic()
 
-    def get_tool_defs_from_names(self, tool_names, tool_defs, extra_tool_defs):
-        all_tool_defs = tool_defs
+    @classmethod
+    def get_tool_defs_from_names(cls, tool_names, model_provider, extra_tool_defs):
+        all_tool_defs = cls.model_provider_to_tool_def[model_provider]
         if extra_tool_defs is not None:
             all_tool_defs |= extra_tool_defs
 
@@ -139,7 +140,7 @@ class Model:
             if type(tool_names_or_tool_defs[0]) is str:
                 tools = self.get_tool_defs_from_names(
                     tool_names_or_tool_defs,
-                    self.model_provider_to_tool_def[model_provider],
+                    model_provider,
                     (
                         extra_oai_tool_defs
                         if model_provider is ModelProvider.OPENAI
