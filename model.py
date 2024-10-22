@@ -74,7 +74,9 @@ class Model:
         stream: bool = False,
         logprobs: bool = False,
         response_format: Optional[BaseModel] = None,
-        model_provider_to_extra_tool_defs: Optional[Dict[ModelProvider, List[Dict[str, str]]]] = None,
+        model_provider_to_extra_tool_defs: Optional[
+            Dict[ModelProvider, List[Dict[str, str]]]
+        ] = None,
         **kwargs,
     ): ...
 
@@ -91,7 +93,9 @@ class Model:
         stream: bool = False,
         logprobs: bool = False,
         response_format: Optional[BaseModel] = None,
-        model_provider_to_extra_tool_defs: Optional[Dict[ModelProvider, List[Dict[str, str]]]] = None,
+        model_provider_to_extra_tool_defs: Optional[
+            Dict[ModelProvider, List[Dict[str, str]]]
+        ] = None,
         **kwargs,
     ): ...
 
@@ -108,7 +112,9 @@ class Model:
         stream: bool = False,
         logprobs: bool = False,
         response_format: Optional[BaseModel] = None,
-        model_provider_to_extra_tool_defs: Optional[Dict[ModelProvider, List[Dict[str, str]]]] = None,
+        model_provider_to_extra_tool_defs: Optional[
+            Dict[ModelProvider, List[Dict[str, str]]]
+        ] = None,
         **kwargs,
     ): ...
 
@@ -124,7 +130,9 @@ class Model:
         stream: bool = False,
         logprobs: bool = False,
         response_format: Optional[BaseModel] = None,
-        model_provider_to_extra_tool_defs: Optional[Dict[ModelProvider, List[Dict[str, str]]]] = None,
+        model_provider_to_extra_tool_defs: Optional[
+            Dict[ModelProvider, List[Dict[str, str]]]
+        ] = None,
         **kwargs,
     ):
         if model_name in self.alias_to_model_name:
@@ -137,11 +145,14 @@ class Model:
                 tools = self.get_tool_defs_from_names(
                     tool_names_or_tool_defs,
                     model_provider,
-                    model_provider_to_extra_tool_defs.get(model_provider, None)
+                    model_provider_to_extra_tool_defs.get(model_provider, None),
                 )
             else:
                 tools = tool_names_or_tool_defs
-                if model_provider_to_extra_tool_defs.get(model_provider, None) is not None:
+                if (
+                    model_provider_to_extra_tool_defs.get(model_provider, None)
+                    is not None
+                ):
                     tools |= model_provider_to_extra_tool_defs.get(model_provider)
 
         message_manager = None
