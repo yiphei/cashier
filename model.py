@@ -221,6 +221,8 @@ class Model:
         }
         if not tools:
             args.pop("tools")
+        if not system:
+            args.pop('system')
 
         return AnthropicModelOutput(
             self.anthropic_client.messages.create(**args), stream
