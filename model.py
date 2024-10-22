@@ -129,9 +129,6 @@ class Model:
         if model_name in self.alias_to_model_name:
             model_name = self.alias_to_model_name[model_name]
         model_provider = self.get_model_provider(model_name)
-        message_manager = turn_container.model_provider_to_message_manager[
-            model_provider
-        ]
 
         tools = None
         if tool_names_or_tool_defs is not None:
@@ -155,19 +152,22 @@ class Model:
                 ):
                     tools.extend(extra_oai_tool_defs)
 
+        message_manager = None
         if turn_container is not None:
+            message_manager = turn_container.model_provider_to_message_manager[
+            model_provider
+            ]
             messages = message_manager.message_dicts
         elif message_dicts is not None:
             messages = message_dicts
-
-        if model_provider == ModelProvider.ANTHROPIC and turn_container is not None:
-            system = message_manager.system
 
         if model_provider == ModelProvider.OPENAI:
             return self.oai_chat(
                 model_name, messages, tools, stream, logprobs, response_format, **kwargs
             )
         elif model_provider == ModelProvider.ANTHROPIC:
+            if message_manager is not None:
+                system = message_manager.system
             return self.ant_chat(model_name, messages, system, tools, stream, **kwargs)
 
     def oai_chat(
