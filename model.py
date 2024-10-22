@@ -466,8 +466,13 @@ class MessageManager(ABC):
         self.parse_system_messages(turn.build_messages(self.model_provider))
 
     def add_assistant_turn(self, turn):
-        if turn.msg_content and (turn.model_provider != ModelProvider.ANTHROPIC or (turn.model_provider == ModelProvider.ANTHROPIC and not turn.fn_calls)):
-            self.conversation_dicts.append({"role": "assistant", "content": turn.msg_content})
+        if turn.msg_content and (
+            turn.model_provider != ModelProvider.ANTHROPIC
+            or (turn.model_provider == ModelProvider.ANTHROPIC and not turn.fn_calls)
+        ):
+            self.conversation_dicts.append(
+                {"role": "assistant", "content": turn.msg_content}
+            )
         self.parse_assistant_messages(turn.build_messages(self.model_provider))
 
 

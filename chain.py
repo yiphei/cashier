@@ -4,8 +4,8 @@ from openai import pydantic_function_tool
 from pydantic import BaseModel, ConfigDict, Field, create_model
 
 from db_functions import Order
-from model_tool_decorator import get_anthropic_tool_def_from_oai
 from model import ModelProvider
+from model_tool_decorator import get_anthropic_tool_def_from_oai
 
 BACKGROUND = (
     "You are a cashier working for the coffee shop Heaven Coffee. You are physically embedded inside the shop, "
