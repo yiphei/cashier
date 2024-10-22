@@ -257,7 +257,7 @@ def run_chat(args, model, elevenlabs_client):
         chat_completion = model.chat(
             model_name=args.model,
             turn_container=TC,
-            tool_names=current_node_schema.tool_fn_names,
+            tool_names_or_tool_defs=current_node_schema.tool_fn_names,
             stream=args.stream,
             extra_oai_tool_defs=current_node_schema.OPENAI_TOOL_NAME_TO_TOOL_DEF,
             extra_anthropic_tool_defs=current_node_schema.ANTHROPIC_TOOL_NAME_TO_TOOL_DEF,

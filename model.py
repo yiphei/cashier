@@ -63,7 +63,8 @@ class Model:
     @overload
     def chat(
         self,
-        *model_name: OpenAIModels,
+        *,
+        model_name: OpenAIModels,
         turn_container: Literal[None] = None,
         message_dicts: List[Dict[str, str]],
         system: Literal[None] = None,
@@ -79,7 +80,8 @@ class Model:
     @overload
     def chat(
         self,
-        *model_name: AnthropicModels,
+        *,
+        model_name: AnthropicModels,
         turn_container: Literal[None] = None,
         message_dicts: List[Dict[str, str]],
         system: Optional[str] = None,
@@ -95,7 +97,8 @@ class Model:
     @overload
     def chat(
         self,
-        *model_name: str,
+        *,
+        model_name: str,
         turn_container: TurnContainer,
         message_dicts: Literal[None] = None,
         system: Literal[None] = None,
@@ -110,10 +113,11 @@ class Model:
 
     def chat(
         self,
-        *model_name: str,
-        turn_container: Optional[TurnContainer],
-        message_dicts: Optional[List[Dict[str, str]]],
-        system: Optional[str],
+        *,
+        model_name: str,
+        turn_container: Optional[TurnContainer]=None,
+        message_dicts: Optional[List[Dict[str, str]]]=None,
+        system: Optional[str]=None,
         tool_names_or_tool_defs: Optional[List[Union[str, Dict]]] = None,
         stream: bool = False,
         logprobs: bool = False,
@@ -156,8 +160,8 @@ class Model:
         elif message_dicts is not None:
             messages = message_dicts
 
-        if model_provider is AnthropicModels and turn_container is not None:
-            system = turn_container.system
+        if model_provider == ModelProvider.ANTHROPIC and turn_container is not None:
+            system = message_manager.system
 
         if model_provider == ModelProvider.OPENAI:
             return self.oai_chat(
