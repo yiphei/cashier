@@ -154,10 +154,10 @@ def remove_default(schema):
 
 def get_oai_tool_def_from_fields(tool_name, description, field_args):
     fn_pydantic_model = create_model(tool_name, **field_args)
-    update_state_fn_json_schema = pydantic_function_tool(
+    fn_json_schema = pydantic_function_tool(
         fn_pydantic_model,
         name=tool_name,
         description=description,
     )
-    remove_default(update_state_fn_json_schema)
-    return update_state_fn_json_schema
+    remove_default(fn_json_schema)
+    return fn_json_schema
