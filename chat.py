@@ -18,12 +18,12 @@ from chain import (
     terminal_order_node_schema,
 )
 from db_functions import create_db_client
+from function_call_context import FunctionCallContext
 from gui import remove_previous_line
 from logger import logger
 from model import CustomJSONEncoder, Model, TurnContainer
 from model_tool_decorator import ToolRegistry
 from model_util import ModelProvider
-from function_call_context import FunctionCallContext
 
 # Load environment variables from .env file
 load_dotenv()
@@ -286,9 +286,9 @@ def run_chat(args, model, elevenlabs_client):
                     raise Exception("Inexistent function")
 
                 if function_call.function_name.startswith("get_state"):
-                    fn_output = getattr(current_node_schema, function_call.function_name)(
-                        **function_args
-                    )
+                    fn_output = getattr(
+                        current_node_schema, function_call.function_name
+                    )(**function_args)
                 elif function_call.function_name.startswith("update_state"):
                     fn_output = current_node_schema.update_state(**function_args)
                 else:
