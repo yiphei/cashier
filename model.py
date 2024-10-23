@@ -51,9 +51,7 @@ class Model:
         stream: bool = False,
         logprobs: bool = False,
         response_format: Optional[BaseModel] = None,
-        model_provider_to_extra_tool_defs: Optional[
-            Dict[ModelProvider, List[Dict[str, str]]]
-        ] = None,
+        extra_tool_registry: Optional[ToolRegistry] = None,
         **kwargs,
     ): ...
 
@@ -70,9 +68,7 @@ class Model:
         stream: bool = False,
         logprobs: bool = False,
         response_format: Optional[BaseModel] = None,
-        model_provider_to_extra_tool_defs: Optional[
-            Dict[ModelProvider, List[Dict[str, str]]]
-        ] = None,
+        extra_tool_registry: Optional[ToolRegistry] = None,
         **kwargs,
     ): ...
 
@@ -89,9 +85,7 @@ class Model:
         stream: bool = False,
         logprobs: bool = False,
         response_format: Optional[BaseModel] = None,
-        model_provider_to_extra_tool_defs: Optional[
-            Dict[ModelProvider, List[Dict[str, str]]]
-        ] = None,
+        extra_tool_registry: Optional[ToolRegistry] = None,
         **kwargs,
     ): ...
 
@@ -107,9 +101,7 @@ class Model:
         stream: bool = False,
         logprobs: bool = False,
         response_format: Optional[BaseModel] = None,
-        model_provider_to_extra_tool_defs: Optional[
-            Dict[ModelProvider, List[Dict[str, str]]]
-        ] = None,
+        extra_tool_registry: Optional[ToolRegistry] = None,
         **kwargs,
     ):
         if model_name in self.alias_to_model_name:
@@ -122,15 +114,15 @@ class Model:
                 tools = ToolRegistry.get_tool_defs_from_names(
                     tool_names_or_tool_defs,
                     model_provider,
-                    model_provider_to_extra_tool_defs.get(model_provider, None),
+                    extra_tool_registry,
                 )
             else:
                 tools = tool_names_or_tool_defs
                 if (
-                    model_provider_to_extra_tool_defs.get(model_provider, None)
+                    extra_tool_registry.model_provider_to_tool_def.get(model_provider, None)
                     is not None
                 ):
-                    tools += model_provider_to_extra_tool_defs.get(
+                    tools += extra_tool_registry.model_provider_to_tool_def.get(
                         model_provider
                     ).values()
 

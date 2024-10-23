@@ -76,11 +76,30 @@ class ToolRegistry:
         ModelProvider.ANTHROPIC: GLOBAL_ANTHROPIC_TOOL_NAME_TO_TOOL_DEF,
     }
 
+    def __init__(self):
+        self.openai_tool_name_to_tool_def = {}
+        self.anthropic_tool_name_to_tool_def = {}
+        self.model_provider_to_tool_def = {
+        ModelProvider.OPENAI: self.openai_tool_name_to_tool_def,
+        ModelProvider.ANTHROPIC: self.anthropic_tool_name_to_tool_def,
+    }
+        
+    def add_tool_def_from_fields(self, tool_name, description, field_args):
+        fn_pydantic_model = create_model(tool_name, **field_args)
+        fn_json_schema = pydantic_function_tool(
+            fn_pydantic_model,
+            name=tool_name,
+            description=description,
+        )
+        remove_default(fn_json_schema)
+        self.openai_tool_name_to_tool_def[tool_name] = fn_json_schema
+        self.anthropic_tool_name_to_tool_def[tool_name] = get_anthropic_tool_def_from_oai(fn_json_schema)
+
     @classmethod
-    def get_tool_defs_from_names(cls, tool_names, model_provider, extra_tool_defs):
+    def get_tool_defs_from_names(cls, tool_names, model_provider, extra_tool_registry):
         all_tool_defs = cls.model_provider_to_global_tool_def[model_provider]
-        if extra_tool_defs is not None:
-            all_tool_defs |= extra_tool_defs
+        if extra_tool_registry is not None:
+            all_tool_defs |= extra_tool_registry.model_provider_to_tool_def.get(model_provider, {})
 
         return [all_tool_defs[tool_name] for tool_name in tool_names]
 
@@ -168,14 +187,3 @@ def remove_default(schema):
                     remove_default(item)
     if found_key:
         schema.pop("default")
-
-
-def get_oai_tool_def_from_fields(tool_name, description, field_args):
-    fn_pydantic_model = create_model(tool_name, **field_args)
-    fn_json_schema = pydantic_function_tool(
-        fn_pydantic_model,
-        name=tool_name,
-        description=description,
-    )
-    remove_default(fn_json_schema)
-    return fn_json_schema

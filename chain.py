@@ -5,8 +5,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from db_functions import Order
 from model import AssistantTurn
 from model_tool_decorator import (
-    get_anthropic_tool_def_from_oai,
-    get_oai_tool_def_from_fields,
+    ToolRegistry,
 )
 from model_util import ModelProvider
 
@@ -19,13 +18,6 @@ BACKGROUND = (
 
 class NodeSchema:
     _counter = 0
-    OPENAI_TOOL_NAME_TO_TOOL_DEF = {}
-    ANTHROPIC_TOOL_NAME_TO_TOOL_DEF = {}
-
-    model_provider_to_tool_def = {
-        ModelProvider.OPENAI: OPENAI_TOOL_NAME_TO_TOOL_DEF,
-        ModelProvider.ANTHROPIC: ANTHROPIC_TOOL_NAME_TO_TOOL_DEF,
-    }
 
     def __init__(
         self,
@@ -43,31 +35,21 @@ class NodeSchema:
         self.input_pydantic_model = input_pydantic_model
         self.state_pydantic_model = state_pydantic_model
         self.first_turn = first_turn
+        self.tool_registry = ToolRegistry()
 
         for field_name, field_info in self.state_pydantic_model.model_fields.items():
             new_tool_fn_name = f"update_state_{field_name}"
             field_args = {field_name: (field_info.annotation, field_info)}
-            update_state_fn_json_schema = get_oai_tool_def_from_fields(
-                new_tool_fn_name,
+            self.tool_registry.add_tool_def_from_fields(
+                                new_tool_fn_name,
                 f"Function to update the `{field_name}` field in the state",
                 field_args,
             )
-            self.OPENAI_TOOL_NAME_TO_TOOL_DEF[new_tool_fn_name] = (
-                update_state_fn_json_schema
-            )
-            self.ANTHROPIC_TOOL_NAME_TO_TOOL_DEF[new_tool_fn_name] = (
-                get_anthropic_tool_def_from_oai(update_state_fn_json_schema)
-            )
             self.tool_fn_names.append(new_tool_fn_name)
 
-        get_state_oai_tool_def = get_oai_tool_def_from_fields(
+        self.tool_registry.add_tool_def_from_fields(
             "get_state", "Function to get the current state", {}
         )
-        get_state_anthropic_tool_def = get_anthropic_tool_def_from_oai(
-            get_state_oai_tool_def
-        )
-        self.OPENAI_TOOL_NAME_TO_TOOL_DEF["get_state"] = get_state_oai_tool_def
-        self.ANTHROPIC_TOOL_NAME_TO_TOOL_DEF["get_state"] = get_state_anthropic_tool_def
         self.tool_fn_names.append("get_state")
 
     def run(self, input):
