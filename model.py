@@ -402,7 +402,10 @@ class AssistantTurn(ModelTurn):
                         ),
                         "type": "tool_result",
                         "tool_use_id": fn_call.tool_call_id,
-                        "is_error": isinstance(self.fn_call_id_to_fn_output[fn_call.tool_call_id], Exception)
+                        "is_error": isinstance(
+                            self.fn_call_id_to_fn_output[fn_call.tool_call_id],
+                            Exception,
+                        ),
                     }
                 )
 

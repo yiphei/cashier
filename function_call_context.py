@@ -5,6 +5,7 @@ class InexistentFunctionError(Exception):
     def __str__(self):
         return f"InexistentToolException: the tool {self.fn_name} does not exist"
 
+
 class FunctionCallContext:
     def __init__(self):
         self.exception = None
