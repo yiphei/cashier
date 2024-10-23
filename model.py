@@ -14,6 +14,7 @@ from pydantic import BaseModel, Field, constr, model_validator
 
 from model_tool_decorator import ToolRegistry
 
+
 class ModelProvider(StrEnum):
     OPENAI = "OPENAI"
     ANTHROPIC = "ANTHROPIC"
@@ -379,7 +380,9 @@ class AssistantTurn(ModelTurn):
                 )
 
                 if fn_call.function_name in ToolRegistry.OPENAI_TOOLS_RETUN_DESCRIPTION:
-                    json_schema = ToolRegistry.OPENAI_TOOLS_RETUN_DESCRIPTION[fn_call.function_name]
+                    json_schema = ToolRegistry.OPENAI_TOOLS_RETUN_DESCRIPTION[
+                        fn_call.function_name
+                    ]
                     system_msg = f"This is the JSON Schema of {fn_call.function_name}'s return type: {json.dumps(json_schema)}"
 
                     messages.append({"role": "system", "content": system_msg})

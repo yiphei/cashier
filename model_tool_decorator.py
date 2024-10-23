@@ -54,8 +54,6 @@ def get_description_from_docstring(docstring):
     return description
 
 
-
-
 def get_anthropic_tool_def_from_oai(oai_tool_def):
     anthropic_tool_def_body = copy.deepcopy(oai_tool_def["function"]["parameters"])
     return {
@@ -63,6 +61,7 @@ def get_anthropic_tool_def_from_oai(oai_tool_def):
         "description": oai_tool_def["function"]["description"],
         "input_schema": anthropic_tool_def_body,
     }
+
 
 class ToolRegistry:
     OPENAI_TOOL_NAME_TO_TOOL_DEF = {}
@@ -108,13 +107,17 @@ class ToolRegistry:
             return_type_json_schema = fn_return_type_model.model_json_schema()
 
             # Remove extra fields
-            actual_return_json_schema = return_type_json_schema["properties"]["return_obj"]
+            actual_return_json_schema = return_type_json_schema["properties"][
+                "return_obj"
+            ]
             if "$defs" in return_type_json_schema:
                 actual_return_json_schema["$defs"] = return_type_json_schema["$defs"]
             if "title" in actual_return_json_schema:
                 actual_return_json_schema.pop("title")
 
-            cls.OPENAI_TOOLS_RETUN_DESCRIPTION[func.__name__] = actual_return_json_schema
+            cls.OPENAI_TOOLS_RETUN_DESCRIPTION[func.__name__] = (
+                actual_return_json_schema
+            )
 
             @wraps(func)
             def wrapper(*args, **kwargs):
