@@ -279,7 +279,7 @@ def run_chat(args, model, elevenlabs_client):
             logger.debug(
                 f"[FUNCTION_CALL] {Style.BRIGHT}name: {function_call.function_name}, id: {function_call.tool_call_id}{Style.NORMAL} with args:\n{json.dumps(function_args, indent=4)}"
             )
-            with FunctionCallContext() as function_call_context:
+            with FunctionCallContext() as fn_call_context:
                 if function_call.function_name not in current_node_schema.tool_fn_names:
                     raise InexistentFunctionError(function_call.function_name)
 
@@ -294,7 +294,7 @@ def run_chat(args, model, elevenlabs_client):
                     fn_output = fn(**function_args)
 
             if (
-                not function_call_context.has_exception()
+                not fn_call_context.has_exception()
                 and function_call.function_name.startswith("update_state")
             ):
                 state_condition_results = [
@@ -314,12 +314,12 @@ def run_chat(args, model, elevenlabs_client):
                     )
                     has_node_transition = True
 
-            if function_call_context.has_exception():
+            if fn_call_context.has_exception():
                 logger.debug(
-                    f"[FUNCTION_RETURN] {Style.BRIGHT}name: {function_call.function_name}, id: {function_call.tool_call_id}{Style.NORMAL} with exception:\n{str(function_call_context.exception)}"
+                    f"[FUNCTION_RETURN] {Style.BRIGHT}name: {function_call.function_name}, id: {function_call.tool_call_id}{Style.NORMAL} with exception:\n{str(fn_call_context.exception)}"
                 )
                 fn_id_to_output[function_call.tool_call_id] = (
-                    function_call_context.exception
+                    fn_call_context.exception
                 )
             else:
                 logger.debug(
