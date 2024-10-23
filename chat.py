@@ -271,6 +271,7 @@ def run_chat(args, model, elevenlabs_client):
             need_user_input = True
 
         fn_id_to_output = {}
+        has_node_transition = False
         for function_call in chat_completion.get_or_stream_fn_calls():
             function_args = function_call.function_args
             logger.debug(
@@ -298,6 +299,7 @@ def run_chat(args, model, elevenlabs_client):
                     current_edge_schemas = FROM_NODE_ID_TO_EDGE_SCHEMA.get(
                         current_node_schema.id, []
                     )
+                    has_node_transition=True
             else:
                 fn = FN_NAME_TO_FN[function_call.function_name]
                 fn_output = fn(**function_args)
@@ -308,12 +310,16 @@ def run_chat(args, model, elevenlabs_client):
             need_user_input = False
             fn_id_to_output[function_call.tool_call_id] = fn_output
 
+            if has_node_transition:
+                break
+
         model_provider = Model.get_model_provider(args.model)
         TC.add_assistant_turn(
             chat_completion.msg_content,
             model_provider,
             chat_completion.fn_calls,
             fn_id_to_output,
+            has_node_transition,
         )
 
 

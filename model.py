@@ -327,12 +327,14 @@ class AssistantTurn(ModelTurn):
     msg_content: Optional[str]
     fn_calls: Optional[List[FunctionCall]] = Field(default_factory=list)
     fn_call_id_to_fn_output: Optional[Dict[str, Any]] = Field(default_factory=dict)
+    has_node_transition: bool=False
 
     @model_validator(mode="after")
     def check_function_args(self):
         if (
             self.fn_calls
             and self.fn_call_id_to_fn_output
+            and not self.has_node_transition
             and len(self.fn_calls) != len(self.fn_call_id_to_fn_output.values())
         ):
             raise ValueError(
@@ -692,13 +694,14 @@ class TurnContainer:
             mm.add_user_turn(turn)
 
     def add_assistant_turn(
-        self, msg_content, model_provider, fn_calls=None, fn_id_to_outputs=None
+        self, msg_content, model_provider, fn_calls=None, fn_id_to_outputs=None, has_node_transition=False
     ):
         turn = AssistantTurn(
             msg_content=msg_content,
             model_provider=model_provider,
             fn_calls=fn_calls,
             fn_call_id_to_fn_output=fn_id_to_outputs,
+            has_node_transition=has_node_transition,
         )
         self.add_assistant_direct_turn(turn)
 
