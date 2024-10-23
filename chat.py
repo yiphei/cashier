@@ -299,7 +299,7 @@ def run_chat(args, model, elevenlabs_client):
                     current_edge_schemas = FROM_NODE_ID_TO_EDGE_SCHEMA.get(
                         current_node_schema.id, []
                     )
-                    has_node_transition=True
+                    has_node_transition = True
             else:
                 fn = FN_NAME_TO_FN[function_call.function_name]
                 fn_output = fn(**function_args)
