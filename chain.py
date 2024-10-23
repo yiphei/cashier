@@ -3,7 +3,7 @@ from typing import Optional
 from pydantic import BaseModel, ConfigDict, Field
 
 from db_functions import Order
-from model import ModelProvider
+from model import ModelProvider, AssistantTurn
 from model_tool_decorator import (
     get_anthropic_tool_def_from_oai,
     get_oai_tool_def_from_fields,
@@ -32,7 +32,7 @@ class NodeSchema:
         tool_fn_names,
         input_pydantic_model,
         state_pydantic_model,
-        first_msg=None,
+        first_turn=None,
     ):
         NodeSchema._counter += 1
         self.id = NodeSchema._counter
@@ -41,7 +41,7 @@ class NodeSchema:
         self.is_initialized = False
         self.input_pydantic_model = input_pydantic_model
         self.state_pydantic_model = state_pydantic_model
-        self.first_msg = first_msg
+        self.first_turn = first_turn
 
         for field_name, field_info in self.state_pydantic_model.model_fields.items():
             new_tool_fn_name = f"update_state_{field_name}"
@@ -240,7 +240,7 @@ take_order_node_schema = NodeSchema(
     ],
     input_pydantic_model=None,
     state_pydantic_model=TakeOrderState,
-    first_msg={"role": "assistant", "content": "hi, welcome to Heaven Coffee"},
+    first_turn=AssistantTurn(msg_content = "hi, welcome to Heaven Coffee", model_provider = ModelProvider.NONE),
 )
 
 

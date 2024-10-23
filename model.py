@@ -700,6 +700,11 @@ class TurnContainer:
             fn_calls=fn_calls,
             fn_call_id_to_fn_output=fn_id_to_outputs,
         )
+        self.add_assistant_direct_turn(turn)
+
+    def add_assistant_direct_turn(
+        self, turn
+    ):
         self.turns.append(turn)
         for mm in self.model_provider_to_message_manager.values():
             mm.add_assistant_turn(turn)
