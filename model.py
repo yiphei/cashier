@@ -702,9 +702,7 @@ class TurnContainer:
         )
         self.add_assistant_direct_turn(turn)
 
-    def add_assistant_direct_turn(
-        self, turn
-    ):
+    def add_assistant_direct_turn(self, turn):
         self.turns.append(turn)
         for mm in self.model_provider_to_message_manager.values():
             mm.add_assistant_turn(turn)

@@ -3,7 +3,7 @@ from typing import Optional
 from pydantic import BaseModel, ConfigDict, Field
 
 from db_functions import Order
-from model import ModelProvider, AssistantTurn
+from model import AssistantTurn, ModelProvider
 from model_tool_decorator import (
     get_anthropic_tool_def_from_oai,
     get_oai_tool_def_from_fields,
@@ -240,7 +240,9 @@ take_order_node_schema = NodeSchema(
     ],
     input_pydantic_model=None,
     state_pydantic_model=TakeOrderState,
-    first_turn=AssistantTurn(msg_content = "hi, welcome to Heaven Coffee", model_provider = ModelProvider.NONE),
+    first_turn=AssistantTurn(
+        msg_content="hi, welcome to Heaven Coffee", model_provider=ModelProvider.NONE
+    ),
 )
 
 
