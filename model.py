@@ -360,8 +360,8 @@ class AssistantTurn(ModelTurn):
                     }
                 )
 
-                if fn_call.function_name in ToolRegistry.OPENAI_TOOLS_RETUN_DESCRIPTION:
-                    json_schema = ToolRegistry.OPENAI_TOOLS_RETUN_DESCRIPTION[
+                if fn_call.function_name in ToolRegistry.GLOBAL_OPENAI_TOOLS_RETUN_DESCRIPTION:
+                    json_schema = ToolRegistry.GLOBAL_OPENAI_TOOLS_RETUN_DESCRIPTION[
                         fn_call.function_name
                     ]
                     system_msg = f"This is the JSON Schema of {fn_call.function_name}'s return type: {json.dumps(json_schema)}"

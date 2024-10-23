@@ -66,14 +66,14 @@ def get_anthropic_tool_def_from_oai(oai_tool_def):
 
 
 class ToolRegistry:
-    OPENAI_TOOL_NAME_TO_TOOL_DEF = {}
-    ANTHROPIC_TOOL_NAME_TO_TOOL_DEF = {}
-    FN_NAME_TO_FN = {}
-    OPENAI_TOOLS_RETUN_DESCRIPTION = {}
+    GLOBAL_OPENAI_TOOL_NAME_TO_TOOL_DEF = {}
+    GLOBAL_ANTHROPIC_TOOL_NAME_TO_TOOL_DEF = {}
+    GLOBAL_FN_NAME_TO_FN = {}
+    GLOBAL_OPENAI_TOOLS_RETUN_DESCRIPTION = {}
 
     model_provider_to_tool_def = {
-        ModelProvider.OPENAI: OPENAI_TOOL_NAME_TO_TOOL_DEF,
-        ModelProvider.ANTHROPIC: ANTHROPIC_TOOL_NAME_TO_TOOL_DEF,
+        ModelProvider.OPENAI: GLOBAL_OPENAI_TOOL_NAME_TO_TOOL_DEF,
+        ModelProvider.ANTHROPIC: GLOBAL_ANTHROPIC_TOOL_NAME_TO_TOOL_DEF,
     }
 
     @classmethod
@@ -105,10 +105,10 @@ class ToolRegistry:
             oai_tool_def = pydantic_function_tool(
                 fn_signature_pydantic_model, name=func.__name__, description=description
             )
-            cls.OPENAI_TOOL_NAME_TO_TOOL_DEF[func.__name__] = oai_tool_def
+            cls.GLOBAL_OPENAI_TOOL_NAME_TO_TOOL_DEF[func.__name__] = oai_tool_def
 
             anthropic_tool_def = get_anthropic_tool_def_from_oai(oai_tool_def)
-            cls.ANTHROPIC_TOOL_NAME_TO_TOOL_DEF[func.__name__] = anthropic_tool_def
+            cls.GLOBAL_ANTHROPIC_TOOL_NAME_TO_TOOL_DEF[func.__name__] = anthropic_tool_def
 
             # Generate function return type schema
             return_description = get_return_description_from_docstring(docstring)
@@ -130,7 +130,7 @@ class ToolRegistry:
             if "title" in actual_return_json_schema:
                 actual_return_json_schema.pop("title")
 
-            cls.OPENAI_TOOLS_RETUN_DESCRIPTION[func.__name__] = (
+            cls.GLOBAL_OPENAI_TOOLS_RETUN_DESCRIPTION[func.__name__] = (
                 actual_return_json_schema
             )
 
@@ -146,7 +146,7 @@ class ToolRegistry:
                 # Call the original function with the modified arguments
                 return func(*bound_args.args, **bound_args.kwargs)
 
-            cls.FN_NAME_TO_FN[func.__name__] = wrapper
+            cls.GLOBAL_FN_NAME_TO_FN[func.__name__] = wrapper
 
             return wrapper
 

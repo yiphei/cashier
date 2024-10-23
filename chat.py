@@ -302,7 +302,7 @@ def run_chat(args, model, elevenlabs_client):
                     )
                     has_node_transition = True
             else:
-                fn = ToolRegistry.FN_NAME_TO_FN[function_call.function_name]
+                fn = ToolRegistry.GLOBAL_FN_NAME_TO_FN[function_call.function_name]
                 fn_output = fn(**function_args)
 
             logger.debug(
