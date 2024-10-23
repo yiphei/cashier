@@ -334,11 +334,14 @@ class AssistantTurn(ModelTurn):
         if (
             self.fn_calls
             and self.fn_call_id_to_fn_output
-            and not self.has_node_transition
             and len(self.fn_calls) != len(self.fn_call_id_to_fn_output.values())
         ):
             raise ValueError(
                 "Mismatch between fn_calls' and fn_call_id_to_fn_output's lengths"
+            )
+        if self.has_node_transition and len(self.fn_calls) != 1:
+            raise ValueError(
+                "There can be only one function call during a node transition"
             )
         return self
 
