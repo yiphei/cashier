@@ -98,7 +98,9 @@ class ToolRegistry:
         )
 
     @classmethod
-    def get_tool_defs_from_names(cls, tool_names, model_provider, extra_tool_registry=None):
+    def get_tool_defs_from_names(
+        cls, tool_names, model_provider, extra_tool_registry=None
+    ):
         all_tool_defs = cls.model_provider_to_global_tool_def[model_provider]
         if extra_tool_registry is not None:
             all_tool_defs |= extra_tool_registry.model_provider_to_tool_def.get(
