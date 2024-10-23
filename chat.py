@@ -21,7 +21,7 @@ from db_functions import create_db_client
 from gui import remove_previous_line
 from logger import logger
 from model import CustomJSONEncoder, Model, ModelProvider, TurnContainer
-from model_tool_decorator import FN_NAME_TO_FN
+from model_tool_decorator import ToolRegistry
 
 # Load environment variables from .env file
 load_dotenv()
@@ -301,7 +301,7 @@ def run_chat(args, model, elevenlabs_client):
                     )
                     has_node_transition = True
             else:
-                fn = FN_NAME_TO_FN[function_call.function_name]
+                fn = ToolRegistry.FN_NAME_TO_FN[function_call.function_name]
                 fn_output = fn(**function_args)
 
             logger.debug(

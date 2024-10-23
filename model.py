@@ -12,12 +12,7 @@ import numpy as np
 from openai import OpenAI
 from pydantic import BaseModel, Field, constr, model_validator
 
-from model_tool_decorator import (
-    ANTHROPIC_TOOL_NAME_TO_TOOL_DEF,
-    OPENAI_TOOL_NAME_TO_TOOL_DEF,
-    OPENAI_TOOLS_RETUN_DESCRIPTION,
-)
-
+from model_tool_decorator import ToolRegistry
 
 class ModelProvider(StrEnum):
     OPENAI = "OPENAI"
@@ -38,8 +33,8 @@ class Model:
     }
     alias_to_model_name = {"claude-3.5": "claude-3-5-sonnet-20240620"}
     model_provider_to_tool_def = {
-        ModelProvider.OPENAI: OPENAI_TOOL_NAME_TO_TOOL_DEF,
-        ModelProvider.ANTHROPIC: ANTHROPIC_TOOL_NAME_TO_TOOL_DEF,
+        ModelProvider.OPENAI: ToolRegistry.OPENAI_TOOL_NAME_TO_TOOL_DEF,
+        ModelProvider.ANTHROPIC: ToolRegistry.ANTHROPIC_TOOL_NAME_TO_TOOL_DEF,
     }
 
     def __init__(self):
@@ -383,8 +378,8 @@ class AssistantTurn(ModelTurn):
                     }
                 )
 
-                if fn_call.function_name in OPENAI_TOOLS_RETUN_DESCRIPTION:
-                    json_schema = OPENAI_TOOLS_RETUN_DESCRIPTION[fn_call.function_name]
+                if fn_call.function_name in ToolRegistry.OPENAI_TOOLS_RETUN_DESCRIPTION:
+                    json_schema = ToolRegistry.OPENAI_TOOLS_RETUN_DESCRIPTION[fn_call.function_name]
                     system_msg = f"This is the JSON Schema of {fn_call.function_name}'s return type: {json.dumps(json_schema)}"
 
                     messages.append({"role": "system", "content": system_msg})
