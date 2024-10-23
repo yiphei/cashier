@@ -138,7 +138,7 @@ def is_on_topic(model, TM, current_node_schema, all_node_schemas):
         "```\n\n"
         "TOOLS:\n"
         "```\n"
-        f"{json.dumps(Model.get_tool_defs_from_names(current_node_schema.tool_fn_names, model_provider, current_node_schema.model_provider_to_tool_def[model_provider]))}\n"
+        f"{json.dumps(ToolRegistry.get_tool_defs_from_names(current_node_schema.tool_fn_names, model_provider, current_node_schema.model_provider_to_tool_def[model_provider]))}\n"
         "```"
     )
 
@@ -177,7 +177,7 @@ def is_on_topic(model, TM, current_node_schema, all_node_schemas):
                 "```\n\n"
                 "TOOLS:\n"
                 "```\n"
-                f"{json.dumps(Model.get_tool_defs_from_names(node_schema.tool_fn_names, model_provider, node_schema.model_provider_to_tool_def[model_provider]))}\n"
+                f"{json.dumps(ToolRegistry.get_tool_defs_from_names(node_schema.tool_fn_names, model_provider, node_schema.model_provider_to_tool_def[model_provider]))}\n"
                 "```\n\n"
             )
 
