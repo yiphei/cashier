@@ -20,8 +20,9 @@ from chain import (
 from db_functions import create_db_client
 from gui import remove_previous_line
 from logger import logger
-from model import CustomJSONEncoder, Model, ModelProvider, TurnContainer
-from model_tool_decorator import FN_NAME_TO_FN
+from model import CustomJSONEncoder, Model, TurnContainer
+from model_tool_decorator import ToolRegistry
+from model_util import ModelProvider
 
 # Load environment variables from .env file
 load_dotenv()
@@ -137,7 +138,7 @@ def is_on_topic(model, TM, current_node_schema, all_node_schemas):
         "```\n\n"
         "TOOLS:\n"
         "```\n"
-        f"{json.dumps(Model.get_tool_defs_from_names(current_node_schema.tool_fn_names, model_provider, current_node_schema.model_provider_to_tool_def[model_provider]))}\n"
+        f"{json.dumps(ToolRegistry.get_tool_defs_from_names(current_node_schema.tool_fn_names, model_provider, current_node_schema.tool_registry))}\n"
         "```"
     )
 
@@ -176,7 +177,7 @@ def is_on_topic(model, TM, current_node_schema, all_node_schemas):
                 "```\n\n"
                 "TOOLS:\n"
                 "```\n"
-                f"{json.dumps(Model.get_tool_defs_from_names(node_schema.tool_fn_names, model_provider, node_schema.model_provider_to_tool_def[model_provider]))}\n"
+                f"{json.dumps(ToolRegistry.get_tool_defs_from_names(node_schema.tool_fn_names, model_provider, node_schema.tool_registry))}\n"
                 "```\n\n"
             )
 
@@ -260,7 +261,7 @@ def run_chat(args, model, elevenlabs_client):
             turn_container=TC,
             tool_names_or_tool_defs=current_node_schema.tool_fn_names,
             stream=args.stream,
-            model_provider_to_extra_tool_defs=current_node_schema.model_provider_to_tool_def,
+            extra_tool_registry=current_node_schema.tool_registry,
         )
         message = chat_completion.get_or_stream_message()
         if message is not None:
@@ -301,7 +302,7 @@ def run_chat(args, model, elevenlabs_client):
                     )
                     has_node_transition = True
             else:
-                fn = FN_NAME_TO_FN[function_call.function_name]
+                fn = ToolRegistry.GLOBAL_FN_NAME_TO_FN[function_call.function_name]
                 fn_output = fn(**function_args)
 
             logger.debug(

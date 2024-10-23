@@ -4,7 +4,6 @@ import itertools
 import json
 from abc import ABC, abstractmethod
 from collections import defaultdict
-from enum import StrEnum
 from typing import Any, Dict, List, Literal, Optional, Union, overload
 
 import anthropic
@@ -12,18 +11,8 @@ import numpy as np
 from openai import OpenAI
 from pydantic import BaseModel, Field, constr, model_validator
 
-from model_tool_decorator import (
-    ANTHROPIC_TOOL_NAME_TO_TOOL_DEF,
-    OPENAI_TOOL_NAME_TO_TOOL_DEF,
-    OPENAI_TOOLS_RETUN_DESCRIPTION,
-)
-
-
-class ModelProvider(StrEnum):
-    OPENAI = "OPENAI"
-    ANTHROPIC = "ANTHROPIC"
-    NONE = "NONE"
-
+from model_tool_decorator import ToolRegistry
+from model_util import ModelProvider
 
 OpenAIModels = Literal["gpt-4o-mini", "gpt-4o"]
 
@@ -37,22 +26,10 @@ class Model:
         "claude-3-5-sonnet-20240620": ModelProvider.ANTHROPIC,
     }
     alias_to_model_name = {"claude-3.5": "claude-3-5-sonnet-20240620"}
-    model_provider_to_tool_def = {
-        ModelProvider.OPENAI: OPENAI_TOOL_NAME_TO_TOOL_DEF,
-        ModelProvider.ANTHROPIC: ANTHROPIC_TOOL_NAME_TO_TOOL_DEF,
-    }
 
     def __init__(self):
         self.oai_client = OpenAI()
         self.anthropic_client = anthropic.Anthropic()
-
-    @classmethod
-    def get_tool_defs_from_names(cls, tool_names, model_provider, extra_tool_defs):
-        all_tool_defs = cls.model_provider_to_tool_def[model_provider]
-        if extra_tool_defs is not None:
-            all_tool_defs |= extra_tool_defs
-
-        return [all_tool_defs[tool_name] for tool_name in tool_names]
 
     @classmethod
     def get_model_provider(cls, model_name):
@@ -74,9 +51,7 @@ class Model:
         stream: bool = False,
         logprobs: bool = False,
         response_format: Optional[BaseModel] = None,
-        model_provider_to_extra_tool_defs: Optional[
-            Dict[ModelProvider, List[Dict[str, str]]]
-        ] = None,
+        extra_tool_registry: Optional[ToolRegistry] = None,
         **kwargs,
     ): ...
 
@@ -93,9 +68,7 @@ class Model:
         stream: bool = False,
         logprobs: bool = False,
         response_format: Optional[BaseModel] = None,
-        model_provider_to_extra_tool_defs: Optional[
-            Dict[ModelProvider, List[Dict[str, str]]]
-        ] = None,
+        extra_tool_registry: Optional[ToolRegistry] = None,
         **kwargs,
     ): ...
 
@@ -112,9 +85,7 @@ class Model:
         stream: bool = False,
         logprobs: bool = False,
         response_format: Optional[BaseModel] = None,
-        model_provider_to_extra_tool_defs: Optional[
-            Dict[ModelProvider, List[Dict[str, str]]]
-        ] = None,
+        extra_tool_registry: Optional[ToolRegistry] = None,
         **kwargs,
     ): ...
 
@@ -130,9 +101,7 @@ class Model:
         stream: bool = False,
         logprobs: bool = False,
         response_format: Optional[BaseModel] = None,
-        model_provider_to_extra_tool_defs: Optional[
-            Dict[ModelProvider, List[Dict[str, str]]]
-        ] = None,
+        extra_tool_registry: Optional[ToolRegistry] = None,
         **kwargs,
     ):
         if model_name in self.alias_to_model_name:
@@ -142,18 +111,20 @@ class Model:
         tools = None
         if tool_names_or_tool_defs is not None:
             if type(tool_names_or_tool_defs[0]) is str:
-                tools = self.get_tool_defs_from_names(
+                tools = ToolRegistry.get_tool_defs_from_names(
                     tool_names_or_tool_defs,
                     model_provider,
-                    model_provider_to_extra_tool_defs.get(model_provider, None),
+                    extra_tool_registry,
                 )
             else:
                 tools = tool_names_or_tool_defs
                 if (
-                    model_provider_to_extra_tool_defs.get(model_provider, None)
+                    extra_tool_registry.model_provider_to_tool_def.get(
+                        model_provider, None
+                    )
                     is not None
                 ):
-                    tools += model_provider_to_extra_tool_defs.get(
+                    tools += extra_tool_registry.model_provider_to_tool_def.get(
                         model_provider
                     ).values()
 
@@ -383,8 +354,13 @@ class AssistantTurn(ModelTurn):
                     }
                 )
 
-                if fn_call.function_name in OPENAI_TOOLS_RETUN_DESCRIPTION:
-                    json_schema = OPENAI_TOOLS_RETUN_DESCRIPTION[fn_call.function_name]
+                if (
+                    fn_call.function_name
+                    in ToolRegistry.GLOBAL_OPENAI_TOOLS_RETUN_DESCRIPTION
+                ):
+                    json_schema = ToolRegistry.GLOBAL_OPENAI_TOOLS_RETUN_DESCRIPTION[
+                        fn_call.function_name
+                    ]
                     system_msg = f"This is the JSON Schema of {fn_call.function_name}'s return type: {json.dumps(json_schema)}"
 
                     messages.append({"role": "system", "content": system_msg})
