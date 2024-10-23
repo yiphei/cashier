@@ -278,7 +278,13 @@ class FunctionCall(BaseModel):
             )
 
         if self.function_args_json is not None and self.function_args is None:
-            self.function_args = json.loads(self.function_args_json)
+            if self.function_args_json:
+                self.function_args = json.loads(self.function_args_json)
+            else:
+                # This case always happens when claude models call inexistent functions.
+                # We still want to construct the function call and let it error downstream.
+                self.function_args = {}
+                self.function_args_json = "{}"
         if self.function_args is not None and self.function_args_json is None:
             self.function_args_json = json.dumps(self.function_args)
         return self
