@@ -1,11 +1,13 @@
 from typing import Optional
 
-from openai import pydantic_function_tool
-from pydantic import BaseModel, ConfigDict, Field, create_model
+from pydantic import BaseModel, ConfigDict, Field
 
 from db_functions import Order
-from model import ModelProvider
-from model_tool_decorator import get_anthropic_tool_def_from_oai
+from model import AssistantTurn, ModelProvider
+from model_tool_decorator import (
+    get_anthropic_tool_def_from_oai,
+    get_oai_tool_def_from_fields,
+)
 
 BACKGROUND = (
     "You are a cashier working for the coffee shop Heaven Coffee. You are physically embedded inside the shop, "
@@ -30,7 +32,7 @@ class NodeSchema:
         tool_fn_names,
         input_pydantic_model,
         state_pydantic_model,
-        first_msg=None,
+        first_turn=None,
     ):
         NodeSchema._counter += 1
         self.id = NodeSchema._counter
@@ -39,32 +41,16 @@ class NodeSchema:
         self.is_initialized = False
         self.input_pydantic_model = input_pydantic_model
         self.state_pydantic_model = state_pydantic_model
-        self.first_msg = first_msg
-
-        def remove_default(schema):
-            found_key = False
-            for key, value in schema.items():
-                if key == "default":
-                    found_key = True
-                elif isinstance(value, dict):
-                    remove_default(value)
-                elif isinstance(value, list):
-                    for item in value:
-                        if isinstance(item, dict):
-                            remove_default(item)
-            if found_key:
-                schema.pop("default")
+        self.first_turn = first_turn
 
         for field_name, field_info in self.state_pydantic_model.model_fields.items():
             new_tool_fn_name = f"update_state_{field_name}"
             field_args = {field_name: (field_info.annotation, field_info)}
-            fn_pydantic_model = create_model(new_tool_fn_name, **field_args)
-            update_state_fn_json_schema = pydantic_function_tool(
-                fn_pydantic_model,
-                name=new_tool_fn_name,
-                description=f"Function to update the `{field_name}` field in the state",
+            update_state_fn_json_schema = get_oai_tool_def_from_fields(
+                new_tool_fn_name,
+                f"Function to update the `{field_name}` field in the state",
+                field_args,
             )
-            remove_default(update_state_fn_json_schema)
             self.OPENAI_TOOL_NAME_TO_TOOL_DEF[new_tool_fn_name] = (
                 update_state_fn_json_schema
             )
@@ -73,20 +59,9 @@ class NodeSchema:
             )
             self.tool_fn_names.append(new_tool_fn_name)
 
-        get_state_oai_tool_def = {
-            "type": "function",
-            "function": {
-                "name": "get_state",
-                "strict": True,
-                "description": "Function to get the current state",
-                "parameters": {
-                    "type": "object",
-                    "properties": {},
-                    "required": [],
-                    "additionalProperties": False,
-                },
-            },
-        }
+        get_state_oai_tool_def = get_oai_tool_def_from_fields(
+            "get_state", "Function to get the current state", {}
+        )
         get_state_anthropic_tool_def = get_anthropic_tool_def_from_oai(
             get_state_oai_tool_def
         )
@@ -197,7 +172,7 @@ class NodeSchema:
         self.state = self.state_pydantic_model(**new_state)
 
     def get_state(self):
-        return self.state.model_dump_json()
+        return self.state
 
 
 class EdgeSchema:
@@ -265,7 +240,9 @@ take_order_node_schema = NodeSchema(
     ],
     input_pydantic_model=None,
     state_pydantic_model=TakeOrderState,
-    first_msg={"role": "assistant", "content": "hi, welcome to Heaven Coffee"},
+    first_turn=AssistantTurn(
+        msg_content="hi, welcome to Heaven Coffee", model_provider=ModelProvider.NONE
+    ),
 )
 
 

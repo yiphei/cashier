@@ -10,7 +10,7 @@ from typing import Any, Dict, List, Literal, Optional, Union, overload
 import anthropic
 import numpy as np
 from openai import OpenAI
-from pydantic import BaseModel, Field, constr
+from pydantic import BaseModel, Field, constr, model_validator
 
 from model_tool_decorator import (
     ANTHROPIC_TOOL_NAME_TO_TOOL_DEF,
@@ -74,8 +74,9 @@ class Model:
         stream: bool = False,
         logprobs: bool = False,
         response_format: Optional[BaseModel] = None,
-        extra_oai_tool_defs: Optional[List[Dict[str, str]]] = None,
-        extra_anthropic_tool_defs: Optional[List[Dict[str, str]]] = None,
+        model_provider_to_extra_tool_defs: Optional[
+            Dict[ModelProvider, List[Dict[str, str]]]
+        ] = None,
         **kwargs,
     ): ...
 
@@ -92,8 +93,9 @@ class Model:
         stream: bool = False,
         logprobs: bool = False,
         response_format: Optional[BaseModel] = None,
-        extra_oai_tool_defs: Optional[List[Dict[str, str]]] = None,
-        extra_anthropic_tool_defs: Optional[List[Dict[str, str]]] = None,
+        model_provider_to_extra_tool_defs: Optional[
+            Dict[ModelProvider, List[Dict[str, str]]]
+        ] = None,
         **kwargs,
     ): ...
 
@@ -110,8 +112,9 @@ class Model:
         stream: bool = False,
         logprobs: bool = False,
         response_format: Optional[BaseModel] = None,
-        extra_oai_tool_defs: Optional[List[Dict[str, str]]] = None,
-        extra_anthropic_tool_defs: Optional[List[Dict[str, str]]] = None,
+        model_provider_to_extra_tool_defs: Optional[
+            Dict[ModelProvider, List[Dict[str, str]]]
+        ] = None,
         **kwargs,
     ): ...
 
@@ -127,8 +130,9 @@ class Model:
         stream: bool = False,
         logprobs: bool = False,
         response_format: Optional[BaseModel] = None,
-        extra_oai_tool_defs: Optional[List[Dict[str, str]]] = None,
-        extra_anthropic_tool_defs: Optional[List[Dict[str, str]]] = None,
+        model_provider_to_extra_tool_defs: Optional[
+            Dict[ModelProvider, List[Dict[str, str]]]
+        ] = None,
         **kwargs,
     ):
         if model_name in self.alias_to_model_name:
@@ -141,21 +145,17 @@ class Model:
                 tools = self.get_tool_defs_from_names(
                     tool_names_or_tool_defs,
                     model_provider,
-                    (
-                        extra_oai_tool_defs
-                        if model_provider is ModelProvider.OPENAI
-                        else extra_anthropic_tool_defs
-                    ),
+                    model_provider_to_extra_tool_defs.get(model_provider, None),
                 )
             else:
                 tools = tool_names_or_tool_defs
-                if model_provider == ModelProvider.OPENAI and extra_oai_tool_defs:
-                    tools.extend(extra_oai_tool_defs)
-                elif (
-                    model_provider == ModelProvider.ANTHROPIC
-                    and extra_anthropic_tool_defs
+                if (
+                    model_provider_to_extra_tool_defs.get(model_provider, None)
+                    is not None
                 ):
-                    tools.extend(extra_oai_tool_defs)
+                    tools += model_provider_to_extra_tool_defs.get(
+                        model_provider
+                    ).values()
 
         message_manager = None
         if turn_container is not None:
@@ -267,7 +267,21 @@ class Model:
 class FunctionCall(BaseModel):
     function_name: str
     tool_call_id: str
-    function_args_json: str
+    function_args_json: Optional[str] = None
+    function_args: Optional[Dict] = None
+
+    @model_validator(mode="after")
+    def check_function_args(self):
+        if self.function_args_json is None and self.function_args is None:
+            raise ValueError(
+                "One of [function_args_json, function_args] must be provided"
+            )
+
+        if self.function_args_json is not None and self.function_args is None:
+            self.function_args = json.loads(self.function_args_json)
+        if self.function_args is not None and self.function_args_json is None:
+            self.function_args_json = json.dumps(self.function_args)
+        return self
 
 
 class ModelTurn(BaseModel, ABC):
@@ -313,6 +327,18 @@ class AssistantTurn(ModelTurn):
     msg_content: Optional[str]
     fn_calls: Optional[List[FunctionCall]] = Field(default_factory=list)
     fn_call_id_to_fn_output: Optional[Dict[str, Any]] = Field(default_factory=dict)
+
+    @model_validator(mode="after")
+    def check_function_args(self):
+        if (
+            self.fn_calls
+            and self.fn_call_id_to_fn_output
+            and len(self.fn_calls) != len(self.fn_call_id_to_fn_output.values())
+        ):
+            raise ValueError(
+                "Mismatch between fn_calls' and fn_call_id_to_fn_output's lengths"
+            )
+        return self
 
     def build_oai_messages(self):
         messages = []
@@ -368,7 +394,7 @@ class AssistantTurn(ModelTurn):
                         "type": "tool_use",
                         "id": fn_call.tool_call_id,
                         "name": fn_call.function_name,
-                        "input": json.loads(fn_call.function_args_json),
+                        "input": fn_call.function_args,
                     }
                 )
 
@@ -466,6 +492,7 @@ class MessageManager(ABC):
         self.parse_system_messages(turn.build_messages(self.model_provider))
 
     def add_assistant_turn(self, turn):
+        # TODO: maybe move this logic to AssistantTurn
         if turn.msg_content and (
             turn.model_provider != ModelProvider.ANTHROPIC
             or (turn.model_provider == ModelProvider.ANTHROPIC and not turn.fn_calls)
@@ -555,8 +582,7 @@ class AnthropicMessageManager(MessageManager):
             new_contents.append(content)
 
         if new_contents:
-            if new_contents[0]["type"] == "text":
-                # TODO: i prob also want to remove these texts because they are usually internal reflections
+            if len(new_contents) == 1 and new_contents[0]["type"] == "text":
                 new_message = {"role": "assistant", "content": new_contents[0]["text"]}
             else:
                 new_message = {"role": "assistant", "content": new_contents}
@@ -579,7 +605,7 @@ class AnthropicMessageManager(MessageManager):
             new_contents.append(content)
 
         if new_contents:
-            new_message = {"role": "assistant", "content": new_contents}
+            new_message = {"role": "user", "content": new_contents}
             self.message_dicts[idx_to_remove] = new_message
             self.index_tracker.pop_idx(tool_call_id + "return", shift_idxs=False)
         else:
@@ -674,6 +700,9 @@ class TurnContainer:
             fn_calls=fn_calls,
             fn_call_id_to_fn_output=fn_id_to_outputs,
         )
+        self.add_assistant_direct_turn(turn)
+
+    def add_assistant_direct_turn(self, turn):
         self.turns.append(turn)
         for mm in self.model_provider_to_message_manager.values():
             mm.add_assistant_turn(turn)
@@ -945,8 +974,7 @@ class AnthropicModelOutput(ModelOutput):
     def get_message_prop(self, prop_name):
         if self.parsed_msg is None:
             fn_call = next(self.get_fn_calls())
-            tool_call_input = json.loads(fn_call.function_args_json)
-            self.parsed_msg = self.response_format(**tool_call_input)
+            self.parsed_msg = self.response_format(**fn_call.function_args)
         return getattr(self.parsed_msg, prop_name)
 
     def get_fn_calls(self):
@@ -955,7 +983,7 @@ class AnthropicModelOutput(ModelOutput):
                 fn_call = FunctionCall(
                     function_name=content.name,
                     tool_call_id=content.id,
-                    function_args_json=json.dumps(content.input),
+                    function_args=content.input,
                 )
                 self.fn_calls.append(fn_call)
                 yield fn_call

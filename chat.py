@@ -144,7 +144,6 @@ def is_on_topic(model, TM, current_node_schema, all_node_schemas):
     class Response1(BaseModel):
         output: bool
 
-    model_provider = ModelProvider.ANTHROPIC
     chat_completion = model.chat(
         model_name=model_name,
         message_dicts=conversational_msgs,
@@ -225,17 +224,15 @@ def run_chat(args, model, elevenlabs_client):
             TC.add_node_turn(
                 current_node_schema.id,
                 current_node_schema.prompt,
-                remove_prev_tool_calls=True,
+                remove_prev_tool_calls=args.remove_prev_tool_calls,
             )
             MessageDisplay.print_msg("system", current_node_schema.prompt)
 
-            if current_node_schema.first_msg:
+            if current_node_schema.first_turn:
                 # TODO fix this
-                TC.add_assistant_turn(
-                    current_node_schema.first_msg["content"], ModelProvider.NONE
-                )
+                TC.add_assistant_direct_turn(current_node_schema.first_turn)
                 MessageDisplay.print_msg(
-                    "assistant", current_node_schema.first_msg["content"]
+                    "assistant", current_node_schema.first_turn.msg_content
                 )
 
         if need_user_input:
@@ -263,8 +260,7 @@ def run_chat(args, model, elevenlabs_client):
             turn_container=TC,
             tool_names_or_tool_defs=current_node_schema.tool_fn_names,
             stream=args.stream,
-            extra_oai_tool_defs=current_node_schema.OPENAI_TOOL_NAME_TO_TOOL_DEF,
-            extra_anthropic_tool_defs=current_node_schema.ANTHROPIC_TOOL_NAME_TO_TOOL_DEF,
+            model_provider_to_extra_tool_defs=current_node_schema.model_provider_to_tool_def,
         )
         message = chat_completion.get_or_stream_message()
         if message is not None:
@@ -276,7 +272,7 @@ def run_chat(args, model, elevenlabs_client):
 
         fn_id_to_output = {}
         for function_call in chat_completion.get_or_stream_fn_calls():
-            function_args = json.loads(function_call.function_args_json)
+            function_args = function_call.function_args
             logger.debug(
                 f"[FUNCTION_CALL] {Style.BRIGHT}name: {function_call.function_name}, id: {function_call.tool_call_id}{Style.NORMAL} with args:\n{json.dumps(function_args, indent=4)}"
             )
@@ -352,6 +348,11 @@ if __name__ == "__main__":
         "--stream",
         type=lambda v: bool(strtobool(v)),
         default=True,
+    )
+    parser.add_argument(
+        "--remove_prev_tool_calls",
+        type=lambda v: bool(strtobool(v)),
+        default=False,
     )
     args = parser.parse_args()
 
