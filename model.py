@@ -13,6 +13,7 @@ from pydantic import BaseModel, Field, constr, model_validator
 
 from model_tool_decorator import ToolRegistry
 from model_util import ModelProvider
+from function_call_context import ExceptionWrapper
 
 OpenAIModels = Literal["gpt-4o-mini", "gpt-4o"]
 
@@ -358,7 +359,7 @@ class AssistantTurn(ModelTurn):
                     fn_call.function_name
                     in ToolRegistry.GLOBAL_OPENAI_TOOLS_RETUN_DESCRIPTION
                     and not isinstance(
-                        self.fn_call_id_to_fn_output[fn_call.tool_call_id], Exception
+                        self.fn_call_id_to_fn_output[fn_call.tool_call_id], ExceptionWrapper
                     )
                 ):
                     json_schema = ToolRegistry.GLOBAL_OPENAI_TOOLS_RETUN_DESCRIPTION[
@@ -407,7 +408,7 @@ class AssistantTurn(ModelTurn):
                         "tool_use_id": fn_call.tool_call_id,
                         "is_error": isinstance(
                             self.fn_call_id_to_fn_output[fn_call.tool_call_id],
-                            Exception,
+                            ExceptionWrapper,
                         ),
                     }
                 )
@@ -999,7 +1000,7 @@ class CustomJSONEncoder(json.JSONEncoder):
             return [self.default(item) for item in obj]
         elif isinstance(obj, (str, int, float, bool, type(None))):
             return obj
-        elif isinstance(obj, Exception):
+        elif isinstance(obj, ExceptionWrapper):
             return str(obj)
         return super().default(obj)
 
