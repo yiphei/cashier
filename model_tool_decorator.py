@@ -84,7 +84,7 @@ class ToolRegistry:
             ModelProvider.ANTHROPIC: self.anthropic_tool_name_to_tool_def,
         }
 
-    def add_tool_def_from_fields(self, tool_name, description, field_args):
+    def add_tool_def(self, tool_name, description, field_args):
         fn_pydantic_model = create_model(tool_name, **field_args)
         fn_json_schema = pydantic_function_tool(
             fn_pydantic_model,
@@ -98,7 +98,7 @@ class ToolRegistry:
         )
 
     @classmethod
-    def get_tool_defs_from_names(cls, tool_names, model_provider, extra_tool_registry):
+    def get_tool_defs_from_names(cls, tool_names, model_provider, extra_tool_registry=None):
         all_tool_defs = cls.model_provider_to_global_tool_def[model_provider]
         if extra_tool_registry is not None:
             all_tool_defs |= extra_tool_registry.model_provider_to_tool_def.get(

@@ -38,14 +38,14 @@ class NodeSchema:
         for field_name, field_info in self.state_pydantic_model.model_fields.items():
             new_tool_fn_name = f"update_state_{field_name}"
             field_args = {field_name: (field_info.annotation, field_info)}
-            self.tool_registry.add_tool_def_from_fields(
+            self.tool_registry.add_tool_def(
                 new_tool_fn_name,
                 f"Function to update the `{field_name}` field in the state",
                 field_args,
             )
             self.tool_fn_names.append(new_tool_fn_name)
 
-        self.tool_registry.add_tool_def_from_fields(
+        self.tool_registry.add_tool_def(
             "get_state", "Function to get the current state", {}
         )
         self.tool_fn_names.append("get_state")
