@@ -23,6 +23,7 @@ from logger import logger
 from model import CustomJSONEncoder, Model, TurnContainer
 from model_tool_decorator import ToolRegistry
 from model_util import ModelProvider
+from function_call_context import FunctionCallContext
 
 # Load environment variables from .env file
 load_dotenv()
@@ -279,12 +280,22 @@ def run_chat(args, model, elevenlabs_client):
                 f"[FUNCTION_CALL] {Style.BRIGHT}name: {function_call.function_name}, id: {function_call.tool_call_id}{Style.NORMAL} with args:\n{json.dumps(function_args, indent=4)}"
             )
 
-            if function_call.function_name.startswith("get_state"):
-                fn_output = getattr(current_node_schema, function_call.function_name)(
-                    **function_args
-                )
-            elif function_call.function_name.startswith("update_state"):
-                fn_output = current_node_schema.update_state(**function_args)
+            function_call_context = FunctionCallContext()
+            with function_call_context:
+                if function_call.function_name not in current_node_schema.tool_fn_names:
+                    raise Exception("Inexistent function")
+
+                if function_call.function_name.startswith("get_state"):
+                    fn_output = getattr(current_node_schema, function_call.function_name)(
+                        **function_args
+                    )
+                elif function_call.function_name.startswith("update_state"):
+                    fn_output = current_node_schema.update_state(**function_args)
+                else:
+                    fn = ToolRegistry.GLOBAL_FN_NAME_TO_FN[function_call.function_name]
+                    fn_output = fn(**function_args)
+
+            if function_call.function_name.startswith("update_state"):
                 state_condition_results = [
                     edge_schema.check_state_condition(current_node_schema.state)
                     for edge_schema in current_edge_schemas
@@ -301,9 +312,6 @@ def run_chat(args, model, elevenlabs_client):
                         current_node_schema.id, []
                     )
                     has_node_transition = True
-            else:
-                fn = ToolRegistry.GLOBAL_FN_NAME_TO_FN[function_call.function_name]
-                fn_output = fn(**function_args)
 
             logger.debug(
                 f"[FUNCTION_RETURN] {Style.BRIGHT}name: {function_call.function_name}, id: {function_call.tool_call_id}{Style.NORMAL} with output:\n{json.dumps(fn_output, cls=CustomJSONEncoder, indent=4)}"
