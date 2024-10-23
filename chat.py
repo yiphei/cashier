@@ -316,6 +316,9 @@ def run_chat(args, model, elevenlabs_client):
                     has_node_transition = True
 
             if function_call_context.has_exception():
+                logger.debug(
+                    f"[FUNCTION_RETURN] {Style.BRIGHT}name: {function_call.function_name}, id: {function_call.tool_call_id}{Style.NORMAL} with exception:\n{str(function_call_context.exception)}"
+                )
                 fn_id_to_output[function_call.tool_call_id] = (
                     function_call_context.exception
                 )
