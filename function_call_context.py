@@ -6,7 +6,7 @@ class InexistentFunctionError(Exception):
         return f"the tool {self.fn_name} does not exist"
 
 
-class ExceptionWrapper:
+class ToolExceptionWrapper:
     def __init__(self, exception):
         self.exception = exception
 
@@ -26,5 +26,5 @@ class FunctionCallContext:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         if exc_val:
-            self.exception = ExceptionWrapper(exc_val)
+            self.exception = ToolExceptionWrapper(exc_val)
         return True
