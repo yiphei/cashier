@@ -279,8 +279,7 @@ def run_chat(args, model, elevenlabs_client):
             logger.debug(
                 f"[FUNCTION_CALL] {Style.BRIGHT}name: {function_call.function_name}, id: {function_call.tool_call_id}{Style.NORMAL} with args:\n{json.dumps(function_args, indent=4)}"
             )
-            function_call_context = FunctionCallContext()
-            with function_call_context:
+            with FunctionCallContext() as function_call_context:
                 if function_call.function_name not in current_node_schema.tool_fn_names:
                     raise InexistentFunctionError(function_call.function_name)
 
