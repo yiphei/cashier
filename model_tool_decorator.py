@@ -108,7 +108,9 @@ class ToolRegistry:
             cls.GLOBAL_OPENAI_TOOL_NAME_TO_TOOL_DEF[func.__name__] = oai_tool_def
 
             anthropic_tool_def = get_anthropic_tool_def_from_oai(oai_tool_def)
-            cls.GLOBAL_ANTHROPIC_TOOL_NAME_TO_TOOL_DEF[func.__name__] = anthropic_tool_def
+            cls.GLOBAL_ANTHROPIC_TOOL_NAME_TO_TOOL_DEF[func.__name__] = (
+                anthropic_tool_def
+            )
 
             # Generate function return type schema
             return_description = get_return_description_from_docstring(docstring)
