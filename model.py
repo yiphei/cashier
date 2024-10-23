@@ -14,7 +14,6 @@ from pydantic import BaseModel, Field, constr, model_validator
 from model_tool_decorator import ToolRegistry
 from model_util import ModelProvider
 
-
 OpenAIModels = Literal["gpt-4o-mini", "gpt-4o"]
 
 AnthropicModels = Literal["claude-3.5", "claude-3-5-sonnet-latest"]

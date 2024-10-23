@@ -6,6 +6,7 @@ from functools import wraps
 
 from openai import pydantic_function_tool
 from pydantic import Field, create_model
+
 from model_util import ModelProvider
 
 
