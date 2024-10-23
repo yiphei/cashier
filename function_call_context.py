@@ -5,12 +5,14 @@ class InexistentFunctionError(Exception):
     def __str__(self):
         return f"the tool {self.fn_name} does not exist"
 
+
 class ExceptionWrapper:
     def __init__(self, exception):
         self.exception = exception
 
     def __str__(self):
         return f"{self.exception.__class__.__name__}: {str(self.exception)}"
+
 
 class FunctionCallContext:
     def __init__(self):

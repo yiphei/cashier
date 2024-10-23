@@ -11,9 +11,9 @@ import numpy as np
 from openai import OpenAI
 from pydantic import BaseModel, Field, constr, model_validator
 
+from function_call_context import ExceptionWrapper
 from model_tool_decorator import ToolRegistry
 from model_util import ModelProvider
-from function_call_context import ExceptionWrapper
 
 OpenAIModels = Literal["gpt-4o-mini", "gpt-4o"]
 
@@ -359,7 +359,8 @@ class AssistantTurn(ModelTurn):
                     fn_call.function_name
                     in ToolRegistry.GLOBAL_OPENAI_TOOLS_RETUN_DESCRIPTION
                     and not isinstance(
-                        self.fn_call_id_to_fn_output[fn_call.tool_call_id], ExceptionWrapper
+                        self.fn_call_id_to_fn_output[fn_call.tool_call_id],
+                        ExceptionWrapper,
                     )
                 ):
                     json_schema = ToolRegistry.GLOBAL_OPENAI_TOOLS_RETUN_DESCRIPTION[
