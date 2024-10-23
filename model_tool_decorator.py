@@ -6,6 +6,7 @@ from functools import wraps
 
 from openai import pydantic_function_tool
 from pydantic import Field, create_model
+from model_util import ModelProvider
 
 
 def get_return_description_from_docstring(docstring):
@@ -68,6 +69,11 @@ class ToolRegistry:
     ANTHROPIC_TOOL_NAME_TO_TOOL_DEF = {}
     FN_NAME_TO_FN = {}
     OPENAI_TOOLS_RETUN_DESCRIPTION = {}
+
+    model_provider_to_tool_def = {
+        ModelProvider.OPENAI: OPENAI_TOOL_NAME_TO_TOOL_DEF,
+        ModelProvider.ANTHROPIC: ANTHROPIC_TOOL_NAME_TO_TOOL_DEF,
+    }
 
     @classmethod
     def model_tool_decorator(cls, tool_instructions=None):

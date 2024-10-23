@@ -4,7 +4,6 @@ import itertools
 import json
 from abc import ABC, abstractmethod
 from collections import defaultdict
-from enum import StrEnum
 from typing import Any, Dict, List, Literal, Optional, Union, overload
 
 import anthropic
@@ -13,12 +12,7 @@ from openai import OpenAI
 from pydantic import BaseModel, Field, constr, model_validator
 
 from model_tool_decorator import ToolRegistry
-
-
-class ModelProvider(StrEnum):
-    OPENAI = "OPENAI"
-    ANTHROPIC = "ANTHROPIC"
-    NONE = "NONE"
+from model_util import ModelProvider
 
 
 OpenAIModels = Literal["gpt-4o-mini", "gpt-4o"]
@@ -33,10 +27,6 @@ class Model:
         "claude-3-5-sonnet-20240620": ModelProvider.ANTHROPIC,
     }
     alias_to_model_name = {"claude-3.5": "claude-3-5-sonnet-20240620"}
-    model_provider_to_tool_def = {
-        ModelProvider.OPENAI: ToolRegistry.OPENAI_TOOL_NAME_TO_TOOL_DEF,
-        ModelProvider.ANTHROPIC: ToolRegistry.ANTHROPIC_TOOL_NAME_TO_TOOL_DEF,
-    }
 
     def __init__(self):
         self.oai_client = OpenAI()
@@ -44,7 +34,7 @@ class Model:
 
     @classmethod
     def get_tool_defs_from_names(cls, tool_names, model_provider, extra_tool_defs):
-        all_tool_defs = cls.model_provider_to_tool_def[model_provider]
+        all_tool_defs = ToolRegistry.model_provider_to_tool_def[model_provider]
         if extra_tool_defs is not None:
             all_tool_defs |= extra_tool_defs
 

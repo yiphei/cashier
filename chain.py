@@ -3,11 +3,12 @@ from typing import Optional
 from pydantic import BaseModel, ConfigDict, Field
 
 from db_functions import Order
-from model import AssistantTurn, ModelProvider
+from model import AssistantTurn
 from model_tool_decorator import (
     get_anthropic_tool_def_from_oai,
     get_oai_tool_def_from_fields,
 )
+from model_util import ModelProvider
 
 BACKGROUND = (
     "You are a cashier working for the coffee shop Heaven Coffee. You are physically embedded inside the shop, "
