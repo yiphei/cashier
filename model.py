@@ -119,7 +119,9 @@ class Model:
             else:
                 tools = tool_names_or_tool_defs
                 if (
-                    extra_tool_registry.model_provider_to_tool_def.get(model_provider, None)
+                    extra_tool_registry.model_provider_to_tool_def.get(
+                        model_provider, None
+                    )
                     is not None
                 ):
                     tools += extra_tool_registry.model_provider_to_tool_def.get(

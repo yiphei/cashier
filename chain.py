@@ -4,9 +4,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from db_functions import Order
 from model import AssistantTurn
-from model_tool_decorator import (
-    ToolRegistry,
-)
+from model_tool_decorator import ToolRegistry
 from model_util import ModelProvider
 
 BACKGROUND = (
@@ -41,7 +39,7 @@ class NodeSchema:
             new_tool_fn_name = f"update_state_{field_name}"
             field_args = {field_name: (field_info.annotation, field_info)}
             self.tool_registry.add_tool_def_from_fields(
-                                new_tool_fn_name,
+                new_tool_fn_name,
                 f"Function to update the `{field_name}` field in the state",
                 field_args,
             )
