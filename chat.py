@@ -323,9 +323,9 @@ def run_chat(args, model, elevenlabs_client):
                 logger.debug(
                     f"[FUNCTION_RETURN] {Style.BRIGHT}name: {function_call.function_name}, id: {function_call.tool_call_id}{Style.NORMAL} with output:\n{json.dumps(fn_output, cls=CustomJSONEncoder, indent=4)}"
                 )
-                need_user_input = False
                 fn_id_to_output[function_call.tool_call_id] = fn_output
 
+            need_user_input = False
             if has_node_transition:
                 break
 

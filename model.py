@@ -357,6 +357,7 @@ class AssistantTurn(ModelTurn):
                 if (
                     fn_call.function_name
                     in ToolRegistry.GLOBAL_OPENAI_TOOLS_RETUN_DESCRIPTION
+                    and not isinstance(self.fn_call_id_to_fn_output[fn_call.tool_call_id], Exception)
                 ):
                     json_schema = ToolRegistry.GLOBAL_OPENAI_TOOLS_RETUN_DESCRIPTION[
                         fn_call.function_name
