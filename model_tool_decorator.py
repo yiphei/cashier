@@ -54,10 +54,6 @@ def get_description_from_docstring(docstring):
     return description
 
 
-OPENAI_TOOL_NAME_TO_TOOL_DEF = {}
-ANTHROPIC_TOOL_NAME_TO_TOOL_DEF = {}
-FN_NAME_TO_FN = {}
-OPENAI_TOOLS_RETUN_DESCRIPTION = {}
 
 
 def get_anthropic_tool_def_from_oai(oai_tool_def):
@@ -68,73 +64,75 @@ def get_anthropic_tool_def_from_oai(oai_tool_def):
         "input_schema": anthropic_tool_def_body,
     }
 
+class ToolRegistry:
+    OPENAI_TOOL_NAME_TO_TOOL_DEF = {}
+    ANTHROPIC_TOOL_NAME_TO_TOOL_DEF = {}
+    FN_NAME_TO_FN = {}
+    OPENAI_TOOLS_RETUN_DESCRIPTION = {}
 
-def model_tool_decorator(tool_instructions=None):
-    def decorator_fn(func):
-        docstring = inspect.getdoc(func)
-        fn_signature = inspect.signature(func)
+    @classmethod
+    def model_tool_decorator(cls, tool_instructions=None):
+        def decorator_fn(func):
+            docstring = inspect.getdoc(func)
+            fn_signature = inspect.signature(func)
 
-        # Generate function args schemas
-        description = get_description_from_docstring(docstring)
-        if tool_instructions is not None:
-            if description[-1] != ".":
-                description += "."
-            description += " " + tool_instructions.strip()
+            # Generate function args schemas
+            description = get_description_from_docstring(docstring)
+            if tool_instructions is not None:
+                if description[-1] != ".":
+                    description += "."
+                description += " " + tool_instructions.strip()
 
-        field_map = get_field_map_from_docstring(docstring, fn_signature)
-        fn_signature_pydantic_model = create_model(
-            func.__name__ + "_parameters", **field_map
-        )
-        func.pydantic_model = fn_signature_pydantic_model
-        oai_tool_def = pydantic_function_tool(
-            fn_signature_pydantic_model, name=func.__name__, description=description
-        )
-        global OPENAI_TOOL_NAME_TO_TOOL_DEF
-        OPENAI_TOOL_NAME_TO_TOOL_DEF[func.__name__] = oai_tool_def
+            field_map = get_field_map_from_docstring(docstring, fn_signature)
+            fn_signature_pydantic_model = create_model(
+                func.__name__ + "_parameters", **field_map
+            )
+            func.pydantic_model = fn_signature_pydantic_model
+            oai_tool_def = pydantic_function_tool(
+                fn_signature_pydantic_model, name=func.__name__, description=description
+            )
+            cls.OPENAI_TOOL_NAME_TO_TOOL_DEF[func.__name__] = oai_tool_def
 
-        anthropic_tool_def = get_anthropic_tool_def_from_oai(oai_tool_def)
-        global ANTHROPIC_TOOL_NAME_TO_TOOL_DEF
-        ANTHROPIC_TOOL_NAME_TO_TOOL_DEF[func.__name__] = anthropic_tool_def
+            anthropic_tool_def = get_anthropic_tool_def_from_oai(oai_tool_def)
+            cls.ANTHROPIC_TOOL_NAME_TO_TOOL_DEF[func.__name__] = anthropic_tool_def
 
-        # Generate function return type schema
-        return_description = get_return_description_from_docstring(docstring)
-        return_annotation = fn_signature.return_annotation
-        if return_annotation == inspect.Signature.empty:
-            raise Exception("Type annotation is required for return type")
-        fn_return_type_model = create_model(
-            func.__name__ + "_return",
-            return_obj=(return_annotation, Field(description=return_description)),
-        )
-        return_type_json_schema = fn_return_type_model.model_json_schema()
+            # Generate function return type schema
+            return_description = get_return_description_from_docstring(docstring)
+            return_annotation = fn_signature.return_annotation
+            if return_annotation == inspect.Signature.empty:
+                raise Exception("Type annotation is required for return type")
+            fn_return_type_model = create_model(
+                func.__name__ + "_return",
+                return_obj=(return_annotation, Field(description=return_description)),
+            )
+            return_type_json_schema = fn_return_type_model.model_json_schema()
 
-        # Remove extra fields
-        actual_return_json_schema = return_type_json_schema["properties"]["return_obj"]
-        if "$defs" in return_type_json_schema:
-            actual_return_json_schema["$defs"] = return_type_json_schema["$defs"]
-        if "title" in actual_return_json_schema:
-            actual_return_json_schema.pop("title")
+            # Remove extra fields
+            actual_return_json_schema = return_type_json_schema["properties"]["return_obj"]
+            if "$defs" in return_type_json_schema:
+                actual_return_json_schema["$defs"] = return_type_json_schema["$defs"]
+            if "title" in actual_return_json_schema:
+                actual_return_json_schema.pop("title")
 
-        global OPENAI_TOOLS_RETUN_DESCRIPTION
-        OPENAI_TOOLS_RETUN_DESCRIPTION[func.__name__] = actual_return_json_schema
+            cls.OPENAI_TOOLS_RETUN_DESCRIPTION[func.__name__] = actual_return_json_schema
 
-        @wraps(func)
-        def wrapper(*args, **kwargs):
-            bound_args = fn_signature.bind(*args, **kwargs)
-            bound_args.apply_defaults()
+            @wraps(func)
+            def wrapper(*args, **kwargs):
+                bound_args = fn_signature.bind(*args, **kwargs)
+                bound_args.apply_defaults()
 
-            pydantic_obj = func.pydantic_model(**bound_args.arguments)
-            for field_name in pydantic_obj.model_fields.keys():
-                bound_args.arguments[field_name] = getattr(pydantic_obj, field_name)
+                pydantic_obj = func.pydantic_model(**bound_args.arguments)
+                for field_name in pydantic_obj.model_fields.keys():
+                    bound_args.arguments[field_name] = getattr(pydantic_obj, field_name)
 
-            # Call the original function with the modified arguments
-            return func(*bound_args.args, **bound_args.kwargs)
+                # Call the original function with the modified arguments
+                return func(*bound_args.args, **bound_args.kwargs)
 
-        global FN_NAME_TO_FN
-        FN_NAME_TO_FN[func.__name__] = wrapper
+            cls.FN_NAME_TO_FN[func.__name__] = wrapper
 
-        return wrapper
+            return wrapper
 
-    return decorator_fn
+        return decorator_fn
 
 
 def remove_default(schema):
