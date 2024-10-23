@@ -18,7 +18,7 @@ from chain import (
     terminal_order_node_schema,
 )
 from db_functions import create_db_client
-from function_call_context import FunctionCallContext
+from function_call_context import FunctionCallContext, InexistentFunctionError
 from gui import remove_previous_line
 from logger import logger
 from model import CustomJSONEncoder, Model, TurnContainer
@@ -279,11 +279,10 @@ def run_chat(args, model, elevenlabs_client):
             logger.debug(
                 f"[FUNCTION_CALL] {Style.BRIGHT}name: {function_call.function_name}, id: {function_call.tool_call_id}{Style.NORMAL} with args:\n{json.dumps(function_args, indent=4)}"
             )
-
             function_call_context = FunctionCallContext()
             with function_call_context:
                 if function_call.function_name not in current_node_schema.tool_fn_names:
-                    raise Exception("Inexistent function")
+                    raise InexistentFunctionError(function_call.function_name)
 
                 if function_call.function_name.startswith("get_state"):
                     fn_output = getattr(
@@ -295,7 +294,7 @@ def run_chat(args, model, elevenlabs_client):
                     fn = ToolRegistry.GLOBAL_FN_NAME_TO_FN[function_call.function_name]
                     fn_output = fn(**function_args)
 
-            if function_call.function_name.startswith("update_state"):
+            if not function_call_context.has_exception() and function_call.function_name.startswith("update_state"):
                 state_condition_results = [
                     edge_schema.check_state_condition(current_node_schema.state)
                     for edge_schema in current_edge_schemas
@@ -313,11 +312,14 @@ def run_chat(args, model, elevenlabs_client):
                     )
                     has_node_transition = True
 
-            logger.debug(
-                f"[FUNCTION_RETURN] {Style.BRIGHT}name: {function_call.function_name}, id: {function_call.tool_call_id}{Style.NORMAL} with output:\n{json.dumps(fn_output, cls=CustomJSONEncoder, indent=4)}"
-            )
-            need_user_input = False
-            fn_id_to_output[function_call.tool_call_id] = fn_output
+            if function_call_context.has_exception():
+                fn_id_to_output[function_call.tool_call_id] = function_call_context.exception
+            else:
+                logger.debug(
+                    f"[FUNCTION_RETURN] {Style.BRIGHT}name: {function_call.function_name}, id: {function_call.tool_call_id}{Style.NORMAL} with output:\n{json.dumps(fn_output, cls=CustomJSONEncoder, indent=4)}"
+                )
+                need_user_input = False
+                fn_id_to_output[function_call.tool_call_id] = fn_output
 
             if has_node_transition:
                 break

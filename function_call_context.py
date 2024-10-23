@@ -1,27 +1,20 @@
-from enum import StrEnum
+class InexistentFunctionError(Exception):
+    def __init__(self, fn_name):
+        self.fn_name = fn_name
 
-from pydantic import ValidationError
-
-
-class FnCallError(StrEnum):
-    INEXISTENT_FUNCTION = "INEXISTENT_FUNCTION"
-    VALIDATION_ERROR = "VALIDATION_ERROR"
-    OTHER = "OTHER"
-
+    def __str__(self):
+        return f"InexistentToolException: the tool {self.fn_name} does not exist"
 
 class FunctionCallContext:
     def __init__(self):
-        self.error_type = None
-        self.error_msg = None
+        self.exception = None
+
+    def has_exception(self):
+        return self.exception is not None
 
     def __enter__(self):
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        if exc_type == Exception:
-            self.error_type = FnCallError.OTHER
-            self.error_msg = str(exc_val)
-        elif exc_type == ValidationError:
-            self.error_type = FnCallError.VALIDATION_ERROR
-            self.error_msg = str()
+        self.exception = exc_val
         return True
