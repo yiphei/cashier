@@ -255,6 +255,7 @@ def run_chat(args, model, elevenlabs_client):
                     terminal_order_node_schema,
                 ],
             )
+            current_node_schema.update_first_user_message()
 
         chat_completion = model.chat(
             model_name=args.model,

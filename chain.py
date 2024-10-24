@@ -6,6 +6,7 @@ from db_functions import Order
 from model import AssistantTurn
 from model_tool_decorator import ToolRegistry
 from model_util import ModelProvider
+from function_call_context import StateUpdateError
 
 BACKGROUND = (
     "You are a cashier working for the coffee shop Heaven Coffee. You are physically embedded inside the shop, "
@@ -34,6 +35,7 @@ class NodeSchema:
         self.state_pydantic_model = state_pydantic_model
         self.first_turn = first_turn
         self.tool_registry = ToolRegistry()
+        self.first_user_message = False
 
         for field_name, field_info in self.state_pydantic_model.model_fields.items():
             new_tool_fn_name = f"update_state_{field_name}"
@@ -49,6 +51,9 @@ class NodeSchema:
             "get_state", "Function to get the current state", {}
         )
         self.tool_fn_names.append("get_state")
+
+    def update_first_user_message(self):
+        self.first_user_message = True
 
     def run(self, input):
         self.is_initialized = True
@@ -148,9 +153,12 @@ class NodeSchema:
         return NODE_PROMPT.format(**kwargs)
 
     def update_state(self, **kwargs):
-        old_state = self.state.model_dump()
-        new_state = old_state | kwargs
-        self.state = self.state_pydantic_model(**new_state)
+        if self.first_user_message:
+            old_state = self.state.model_dump()
+            new_state = old_state | kwargs
+            self.state = self.state_pydantic_model(**new_state)
+        else:
+            raise StateUpdateError("cannot update until first user message")
 
     def get_state(self):
         return self.state
