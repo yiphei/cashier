@@ -6,6 +6,10 @@ class InexistentFunctionError(Exception):
         return f"the tool {self.fn_name} does not exist"
 
 
+class StateUpdateError(Exception):
+    pass
+
+
 class ToolExceptionWrapper:
     def __init__(self, exception):
         self.exception = exception
