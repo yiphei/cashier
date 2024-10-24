@@ -124,32 +124,6 @@ class NodeSchema:
                 "```\n\n"
             )
 
-        # NODE_PROMPT += (
-        #     "# IMPORTANT NOTES\n\n"
-        #     "Treat these notes with the utmost importance:\n"
-        #     "- because your responses will be converted to speech, "
-        #     "you must respond in a conversational way: natural, easy to understand when converted to speech, and generally concise and brief\n"
-        #     "- DO NOT use any rich text formatting like hashtags, bold, italic, bullet points, numbered points, headers, etc.\n"
-        #     "- When responding to customers, DO NOT provide unrequested information.\n"
-        #     "- If a response to a request is naturally long, then either ask claryfing questions to further refine the request, "
-        #     "summarize the response, or break down the response in many separate responses.\n"
-        #     "- Minimize reliance on external knowledge. Always get information from the prompts and tools."
-        #     "If they dont provide the information you need, just say you do not know.\n"
-        #     "- Overall, be professional, polite, empathetic, and friendly.\n"
-        #     "- if there are messages before this stage, use them as a reference ONLY.\n"
-        #     "- you must decline to do anything that is not explicitly covered by EXPECTATION or BACKGROUND.\n"
-        #     "- you must not assume that tools and state updates used previously are still available.\n"
-        #     "- you must not state/mention that you can/will perform an action if there are no tools or state updates associated with that action.\n"
-        #     "- if you need to perform an action, you can only state to the customer that you performed it after the associated tool and/or state update calls have been successfull.\n"
-        #     "- you must update the state object whenever possible. "
-        #     "There is a specific update tool for each state field, and all state update tool names start with `update_state_*`. "
-        #     "You cannot proceed to the next stage without updating the state.\n"
-        #     "- state updates should only happen in response to new messages, not messages prior to this stage"
-        #     "- you must use tools whenever possible and as soon as possible. "
-        #     "This is because there usually is an associated tool for every user input and that tool will help you with the user input. "
-        #     "When in doubt, use the tools.\n"
-        # )
-
         return NODE_PROMPT.format(**kwargs)
 
     def update_state(self, **kwargs):
