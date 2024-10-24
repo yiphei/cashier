@@ -305,7 +305,6 @@ class AssistantTurn(ModelTurn):
     msg_content: Optional[str]
     fn_calls: Optional[List[FunctionCall]] = Field(default_factory=list)
     fn_call_id_to_fn_output: Optional[Dict[str, Any]] = Field(default_factory=dict)
-    has_node_transition: bool = False
 
     @model_validator(mode="after")
     def check_function_args(self):
@@ -316,10 +315,6 @@ class AssistantTurn(ModelTurn):
         ):
             raise ValueError(
                 "Mismatch between fn_calls' and fn_call_id_to_fn_output's lengths"
-            )
-        if self.has_node_transition and len(self.fn_calls) != 1:
-            raise ValueError(
-                "There can be only one function call during a node transition"
             )
         return self
 
@@ -693,14 +688,12 @@ class TurnContainer:
         model_provider,
         fn_calls=None,
         fn_id_to_outputs=None,
-        has_node_transition=False,
     ):
         turn = AssistantTurn(
             msg_content=msg_content,
             model_provider=model_provider,
             fn_calls=fn_calls,
             fn_call_id_to_fn_output=fn_id_to_outputs,
-            has_node_transition=has_node_transition,
         )
         self.add_assistant_direct_turn(turn)
 
