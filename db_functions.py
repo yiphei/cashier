@@ -136,7 +136,9 @@ class OptionOrder(BaseModel):
 class ItemOrder(BaseModel):
     name: str
     size: CupSize
-    options: List[OptionOrder] = Field(description="Even if the order only has default options, they must be included here")
+    options: List[OptionOrder] = Field(
+        description="Even if the order only has default options, they must be included here"
+    )
 
 
 class Order(BaseModel):
