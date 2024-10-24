@@ -335,7 +335,6 @@ def run_chat(args, model, elevenlabs_client):
             model_provider,
             chat_completion.fn_calls,
             fn_id_to_output,
-            has_node_transition,
         )
 
 
