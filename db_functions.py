@@ -1,6 +1,7 @@
 import os
 from collections import defaultdict
 from typing import Dict, List, Optional
+from enum import StrEnum
 
 from pydantic import BaseModel, Field
 from supabase import Client
@@ -119,6 +120,11 @@ def get_menu_item_from_name(menu_item_name: str) -> MenuItem:
         group=item["group"],
     )
 
+class CupSize(StrEnum):
+    SHORT= "SHORT"
+    TALL = "TALL"
+    GRANDE = "GRANDE"
+    VENTI = "VENTI"
 
 class OptionOrder(BaseModel):
     name: str
@@ -127,6 +133,7 @@ class OptionOrder(BaseModel):
 
 class ItemOrder(BaseModel):
     name: str
+    size: CupSize
     options: List[OptionOrder]
 
 
