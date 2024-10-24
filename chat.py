@@ -231,7 +231,6 @@ def run_chat(args, model, elevenlabs_client):
             MessageDisplay.print_msg("system", current_node_schema.prompt)
 
             if current_node_schema.first_turn:
-                # TODO fix this
                 TC.add_assistant_direct_turn(current_node_schema.first_turn)
                 MessageDisplay.print_msg(
                     "assistant", current_node_schema.first_turn.msg_content
