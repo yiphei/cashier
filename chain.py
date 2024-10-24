@@ -3,10 +3,10 @@ from typing import Optional
 from pydantic import BaseModel, ConfigDict, Field
 
 from db_functions import Order
+from function_call_context import StateUpdateError
 from model import AssistantTurn
 from model_tool_decorator import ToolRegistry
 from model_util import ModelProvider
-from function_call_context import StateUpdateError
 
 BACKGROUND = (
     "You are a cashier working for the coffee shop Heaven Coffee. You are physically embedded inside the shop, "
