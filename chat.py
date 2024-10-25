@@ -225,7 +225,10 @@ def run_chat(args, model, elevenlabs_client):
             logger.debug(
                 f"[NODE_SCHEMA] Initializing {Style.BRIGHT}node_schema_id: {current_node_schema.id}{Style.NORMAL}"
             )
-            current_node_schema.run(new_node_input)
+            last_msg = TC.model_provider_to_message_manager[ModelProvider.OPENAI].get_last_user_message()
+            if last_msg:
+                last_msg = last_msg['content']
+            current_node_schema.run(new_node_input, last_msg)
             TC.add_node_turn(
                 current_node_schema.id,
                 current_node_schema.prompt,

@@ -55,7 +55,7 @@ class NodeSchema:
     def update_first_user_message(self):
         self.first_user_message = True
 
-    def run(self, input):
+    def run(self, input, last_user_msg = None):
         self.is_initialized = True
         if input is not None:
             assert isinstance(input, self.input_pydantic_model)
@@ -63,6 +63,7 @@ class NodeSchema:
         self.state = self.state_pydantic_model()
         self.prompt = self.generate_system_prompt(
             self.input_pydantic_model is not None,
+            last_user_msg,
             node_prompt=self.node_prompt,
             node_input=(
                 input.model_dump_json()
@@ -77,7 +78,7 @@ class NodeSchema:
             state_json_schema=self.state_pydantic_model.model_json_schema(),
         )
 
-    def generate_system_prompt(self, has_input, **kwargs):
+    def generate_system_prompt(self, has_input, last_user_msg, **kwargs):
         NODE_PROMPT = (
             BACKGROUND + "\n\n"
             "This instructions section describes what the conversation will be about and what you are expected to do\n"
@@ -106,6 +107,14 @@ class NodeSchema:
             "</state>\n\n"
         )
 
+        if last_user_msg:
+            NODE_PROMPT += (
+                "This is the last user message.\n"
+                "<last_user_msg>\n"
+                f"{last_user_msg}\n"
+                "</last_user_msg>\n\n"
+            ) 
+
         GUIDELINES = (
             "This guidelines section enumerates important guidelines on how you should behave. These must be strictly followed\n"
             "<guidelines>\n"
@@ -123,7 +132,7 @@ class NodeSchema:
             "For state updates, you will have field specific update functions, whose names are `update_state_<field>` and where <field> is a state field.\n"
             "- You must update the state whenever applicable and as soon as possible. You cannot proceed to the next stage of the conversation without updating the state\n"
             "- Only you can update the state, so there is no need to udpate the state to the same value that had already been updated to in the past.\n"
-            "- state updates can only happen in response to new messages, not messages prior to this message.\n"
+            "- state updates can only happen in response to new user messages (i.e. messages after <last_user_msg>).\n"
             "</state_guidelines>\n"
             "<tools_guidelines>\n"
             "- Minimize reliance on external knowledge. Always retrieve information from the system prompts and available tools. "
@@ -135,6 +144,7 @@ class NodeSchema:
             "- think very hard before you respond.\n"
             "- if there are messages before this message, consider those as part of the current conversation but treat them as references only.\n"
             "- you must decline to do anything that is not explicitly covered by <instructions> and <guidelines>.\n"
+            "- everthing stated in <instructions> and here in <guidelines> only applies to the conversation starting after <last_user_msg>\n"
             "</general_guidelines>\n"
             "</guidelines>\n"
         )

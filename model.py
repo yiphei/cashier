@@ -424,6 +424,7 @@ class MessageManager(ABC):
         self.tool_call_ids = []
         self.tool_fn_return_names = set()
         self.index_tracker = ListIndexTracker()
+        self.last_user_msg_idx = None
 
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
@@ -434,6 +435,7 @@ class MessageManager(ABC):
         user_msgs = turn.build_messages(self.model_provider)
         self.message_dicts.extend(user_msgs)
         self.conversation_dicts.extend(user_msgs)
+        self.last_user_msg_idx = len(self.message_dicts)-1
 
     def add_node_turn(
         self,
@@ -492,6 +494,12 @@ class MessageManager(ABC):
                 {"role": "assistant", "content": turn.msg_content}
             )
         self.parse_assistant_messages(turn.build_messages(self.model_provider))
+
+    def get_last_user_message(self):
+        if self.last_user_msg_idx:
+            return self.message_dicts[self.last_user_msg_idx]
+        else:
+            return None
 
 
 class OAIMessageManager(MessageManager):
