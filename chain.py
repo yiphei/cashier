@@ -109,10 +109,11 @@ class NodeSchema:
 
         if last_user_msg:
             NODE_PROMPT += (
-                "This is the last user message.\n"
-                "<last_user_msg>\n"
+                "This is the last customer message. All messages until the last customer message represent a historical conversation "
+                "that you may use as a reference.\n"
+                "<last_customer_msg>\n"
                 f"{last_user_msg}\n"
-                "</last_user_msg>\n\n"
+                "</last_customer_msg>\n\n"
             )
 
         GUIDELINES = (
@@ -132,7 +133,7 @@ class NodeSchema:
             "For state updates, you will have field specific update functions, whose names are `update_state_<field>` and where <field> is a state field.\n"
             "- You must update the state whenever applicable and as soon as possible. You cannot proceed to the next stage of the conversation without updating the state\n"
             "- Only you can update the state, so there is no need to udpate the state to the same value that had already been updated to in the past.\n"
-            "- state updates can only happen in response to new user messages (i.e. messages after <last_user_msg>).\n"
+            "- state updates can only happen in response to new customer messages (i.e. messages after <last_customer_msg>).\n"
             "</state_guidelines>\n"
             "<tools_guidelines>\n"
             "- Minimize reliance on external knowledge. Always retrieve information from the system prompts and available tools. "
@@ -142,9 +143,8 @@ class NodeSchema:
             "</tools_guidelines>\n"
             "<general_guidelines>\n"
             "- think very hard before you respond.\n"
-            "- if there are messages before this message, consider those as part of the current conversation but treat them as references only.\n"
             "- you must decline to do anything that is not explicitly covered by <instructions> and <guidelines>.\n"
-            "- everthing stated in <instructions> and here in <guidelines> only applies to the conversation starting after <last_user_msg>\n"
+            "- everthing stated in <instructions> and here in <guidelines> only applies to the conversation starting after <last_customer_msg>\n"
             "</general_guidelines>\n"
             "</guidelines>\n"
         )
