@@ -86,7 +86,7 @@ class NodeSchema:
         )
         if has_input:
             NODE_PROMPT += (
-                "This section provides the input to the conversation. The input contains valuable information that help you accomplish the expectation stated above. "
+                "This section provides the input to the conversation. The input contains valuable information that help you accomplish the instructions in <instructions>. "
                 "You will be provided with both the input (in JSON format) and its JSON schema\n"
                 "<input>\n"
                 "<input_json>\n"
@@ -97,6 +97,13 @@ class NodeSchema:
                 "</input_json_schema>\n"
                 "</input>\n\n"
             )
+
+        # NODE_PROMPT += (
+        #         "This section provides the state's json schema. The state keeps track of important data during the conversation.\n"
+        #         "<state>\n"
+        #         f"{self.state_pydantic_model.model_json_schema()}\n"
+        #         "</state>\n\n"
+        # )
 
         GUIDELINES = (
             "This guidelines section enumerates important guidelines on how you should behave. These must be strictly followed\n"
