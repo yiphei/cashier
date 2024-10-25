@@ -435,7 +435,7 @@ class MessageManager(ABC):
         user_msgs = turn.build_messages(self.model_provider)
         self.message_dicts.extend(user_msgs)
         self.conversation_dicts.extend(user_msgs)
-        self.last_user_msg_idx = len(self.message_dicts)-1
+        self.last_user_msg_idx = len(self.message_dicts) - 1
 
     def add_node_turn(
         self,

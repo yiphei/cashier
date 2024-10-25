@@ -55,7 +55,7 @@ class NodeSchema:
     def update_first_user_message(self):
         self.first_user_message = True
 
-    def run(self, input, last_user_msg = None):
+    def run(self, input, last_user_msg=None):
         self.is_initialized = True
         if input is not None:
             assert isinstance(input, self.input_pydantic_model)
@@ -113,7 +113,7 @@ class NodeSchema:
                 "<last_user_msg>\n"
                 f"{last_user_msg}\n"
                 "</last_user_msg>\n\n"
-            ) 
+            )
 
         GUIDELINES = (
             "This guidelines section enumerates important guidelines on how you should behave. These must be strictly followed\n"
