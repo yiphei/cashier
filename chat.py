@@ -124,23 +124,20 @@ def is_on_topic(model, TM, current_node_schema, all_node_schemas):
         model_provider
     ].conversation_dicts
     system_prompt = (
-        "You are an AI-agent orchestration engine. Each AI agent is defined by an expectation"
-        " and a set of tools (i.e. functions). Given the prior conversation, determine if the"
+        "You are an AI-agent orchestration engine. Each AI agent is defined by a system prompt"
+        " and a set of tools (i.e. functions). Given a conversation between a user and the current AI agent, determine if the"
         " last user message can be fully handled by the current AI agent. Return true if"
-        " the last user message is a case covered by the current AI agent's expectation OR "
+        " the last user message is a case explicitly covered by the current AI agent's system prompt OR "
         "tools. Return false if otherwise, meaning that we should explore letting another AI agent take over.\n\n"
-        "LAST USER MESSAGE:\n"
-        "```\n"
+        "<last_user_message>\n"
         f"{conversational_msgs[-1]['content']}\n"
-        "```\n\n"
-        "EXPECTATION:\n"
-        "```\n"
+        "</last_user_message>\n\n"
+        "<system_prompt>\n"
         f"{current_node_schema.node_prompt}\n"
-        "```\n\n"
-        "TOOLS:\n"
-        "```\n"
+        "</system_prompt>\n\n"
+        "<tools>\n"
         f"{json.dumps(ToolRegistry.get_tool_defs_from_names(current_node_schema.tool_fn_names, model_provider, current_node_schema.tool_registry))}\n"
-        "```"
+        "</tools>"
     )
 
     class Response1(BaseModel):
