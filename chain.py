@@ -74,6 +74,7 @@ class NodeSchema:
                 if self.input_pydantic_model is not None
                 else None
             ),
+            state_json_schema = self.state_pydantic_model.model_json_schema()
         )
 
     def generate_system_prompt(self, has_input, **kwargs):
@@ -98,12 +99,12 @@ class NodeSchema:
                 "</input>\n\n"
             )
 
-        # NODE_PROMPT += (
-        #         "This section provides the state's json schema. The state keeps track of important data during the conversation.\n"
-        #         "<state>\n"
-        #         f"{self.state_pydantic_model.model_json_schema()}\n"
-        #         "</state>\n\n"
-        # )
+        NODE_PROMPT += (
+                "This section provides the state's json schema. The state keeps track of important data during the conversation.\n"
+                "<state>\n"
+                "{state_json_schema}\n"
+                "</state>\n\n"
+        )
 
         GUIDELINES = (
             "This guidelines section enumerates important guidelines on how you should behave. These must be strictly followed\n"
