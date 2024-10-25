@@ -125,13 +125,13 @@ def is_on_topic(model, TM, current_node_schema, all_node_schemas):
     ].conversation_dicts
     prompt = (
         "You are an AI-agent orchestration engine. Each AI agent is defined by a system prompt"
-        " and a set of tools (i.e. functions). Given a conversation between a user and the current AI agent, determine if the"
-        " last user message can be fully handled by the current AI agent. Return true if"
-        " the last user message is a case explicitly covered by the current AI agent's system prompt OR "
+        " and a set of tools (i.e. functions). Given a conversation between a customer and the current AI agent, determine if the"
+        " last customer message can be fully handled by the current AI agent. Return true if"
+        " the last customer message is a case explicitly covered by the current AI agent's system prompt OR "
         "tools. Return false if otherwise, meaning that we should explore letting another AI agent take over.\n\n"
-        "<last_user_message>\n"
+        "<last_customer_message>\n"
         f"{conversational_msgs[-1]['content']}\n"
-        "</last_user_message>\n\n"
+        "</last_customer_message>\n\n"
         "<system_prompt>\n"
         f"{current_node_schema.prompt}\n"
         "</system_prompt>\n\n"
@@ -164,10 +164,10 @@ def is_on_topic(model, TM, current_node_schema, all_node_schemas):
         conversational_msgs.pop()
         prompt = (
             "You are an AI-agent orchestration engine. Each AI agent is defined by an expectation"
-            " and a set of tools (i.e. functions). An AI agent can handle a user message if it is "
+            " and a set of tools (i.e. functions). An AI agent can handle a customer message if it is "
             "a case covered by the AI agent's expectation OR tools. "
-            "Given a user conversation and a list of AI agents,"
-            " determine which AI agent can best handle the last user message. "
+            "Given a customer conversation and a list of AI agents,"
+            " determine which AI agent can best handle the last customer message. "
             "Respond by returning the AI agent ID.\n\n"
         )
         for node_schema in all_node_schemas:
@@ -183,9 +183,9 @@ def is_on_topic(model, TM, current_node_schema, all_node_schemas):
             )
 
         prompt += (
-            "<last_user_message>\n"
+            "<last_customer_message>\n"
             f"{conversational_msgs[-1]['content']}\n"
-            "</last_user_message>\n\n"
+            "</last_customer_message>\n\n"
         )
 
         class Response2(BaseModel):
