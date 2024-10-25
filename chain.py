@@ -79,11 +79,27 @@ class NodeSchema:
     def generate_system_prompt(self, has_input, **kwargs):
         NODE_PROMPT = (
             BACKGROUND + "\n\n"
-            "This section describes what the conversation will be about and what you are expected to do\n"
+            "This expectation section describes what the conversation will be about and what you are expected to do\n"
             "<expectation>\n"
             "{node_prompt}\n"
             "</expectation>\n\n"
-            "This section enumerates important guidelines on how you should behave. These must be strictly followed\n"
+        )
+        if has_input:
+            NODE_PROMPT += (
+                "This section provides the input to the conversation. The input contains valuable information that help you accomplish the expectation stated above. "
+                "You will be provided both the input (in JSON format) and the input's JSON schema\n"
+                "<input>\n"
+                "<input_json>\n"
+                "{node_input}\n"
+                "</input_json>\n\n"
+                "<input_json_schema>\n"
+                "{node_input_json_schema}\n"
+                "</input_json_schema>\n"
+                "</input>\n\n"
+            )
+
+            GUIDELINES = (
+                            "This guidelines section enumerates important guidelines on how you should behave. These must be strictly followed\n"
             "<guidelines>\n"
             "<response_guidelines>\n"
             "- because your responses will be converted to speech, "
@@ -95,39 +111,23 @@ class NodeSchema:
             "- Overall, try to be professional, polite, empathetic, and friendly\n"
             "</response_guidelines>\n"
             "<tools_and_state_guidelines>\n"
-            "- Minimize reliance on external knowledge. Always retrieve information from the prompts and tools. "
+            "- Minimize reliance on external knowledge. Always retrieve information from the system prompts and available tools. "
             "If they dont provide the information you need, just say you do not know.\n"
             "- Among the tools provided, there are state update functions, whose names start with `update_state_<field>` and where <field> is a state field. You must update the state object whenever applicable "
             "and as soon as possible. You cannot proceed to the next stage of the conversation without updating the state.\n"
-            # "- you must not assume that tools and state updates used before this message are still available.\n"
             "- you must not state/mention that you can/will perform an action if there are no tools (including state updates) associated with that action.\n"
             "- if you need to perform an action, you can only state to the customer that you performed it after the associated tool (including state update) calls have been successfull.\n"
             "- state updates can only happen in response to new messages, not messages prior to this message\n"
-            # "- you must use tools whenever possible and as soon as possible. "
-            # "This is because there usually is an associated tool for every user input and that tool will help you with the user input. "
-            # "When in doubt, use the tools.\n"
             "</tools_and_state_guidelines>\n"
             "<general_guidelines>\n"
             "- think very hard before you respond.\n"
             "- if there are messages before this message, consider those as part of the current conversation but treat them as references only.\n"
-            "- you must decline to do anything that is not explicitly covered by the EXPECTATION and IMPORTANT NOTES section.\n"
+            "- you must decline to do anything that is not explicitly covered by <expectation> and <guidelines>.\n"
             "</general_guidelines>\n"
             "</guidelines>\n"
-        )
-        if has_input:
-            NODE_PROMPT += (
-                "# INPUT\n\n"
-                "<!--- This section provides the input to the conversation. The input contains valuable information that help you accomplish the expectation stated above. "
-                "You will be provided both the input (in JSON format) and the input's JSON schema --->\n"
-                "INPUT:\n"
-                "```\n"
-                "{node_input}\n"
-                "```\n"
-                "INPUT JSON SCHEMA:\n"
-                "```\n"
-                "{node_input_json_schema}\n"
-                "```\n\n"
             )
+
+            NODE_PROMPT+= GUIDELINES
 
         return NODE_PROMPT.format(**kwargs)
 
