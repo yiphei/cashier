@@ -133,7 +133,7 @@ def is_on_topic(model, TM, current_node_schema, all_node_schemas):
         f"{conversational_msgs[-1]['content']}\n"
         "</last_user_message>\n\n"
         "<system_prompt>\n"
-        f"{current_node_schema.node_prompt}\n"
+        f"{current_node_schema.prompt}\n"
         "</system_prompt>\n\n"
         "<tools>\n"
         f"{json.dumps(ToolRegistry.get_tool_defs_from_names(current_node_schema.tool_fn_names, model_provider, current_node_schema.tool_registry))}\n"
