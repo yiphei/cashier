@@ -162,28 +162,26 @@ def is_on_topic(model, TM, current_node_schema, all_node_schemas):
             "You are an AI-agent orchestration engine. Each AI agent is defined by an expectation"
             " and a set of tools (i.e. functions). An AI agent can handle a user message if it is "
             "a case covered by the AI agent's expectation OR tools. "
-            "Given the prior conversation and a list of AI agents,"
-            " determine which agent can best handle the last user message. "
+            "Given a user conversation and a list of AI agents,"
+            " determine which AI agent can best handle the last user message. "
             "Respond by returning the AI agent ID.\n\n"
         )
         for node_schema in all_node_schemas:
             system_prompt += (
-                f"## AGENT ID: {node_schema.id}\n\n"
-                "EXPECTATION:\n"
-                "```\n"
+                f"<agent id={node_schema.id}>\n"
+                "<expectation>\n"
                 f"{node_schema.node_prompt}\n"
-                "```\n\n"
-                "TOOLS:\n"
-                "```\n"
+                "</expectation>\n\n"
+                "<tools>\n"
                 f"{json.dumps(ToolRegistry.get_tool_defs_from_names(node_schema.tool_fn_names, model_provider, node_schema.tool_registry))}\n"
-                "```\n\n"
+                "</tools>\n"
+                "</agent>\n\n"
             )
 
         system_prompt += (
-            "LAST USER MESSAGE:\n"
-            "```\n"
+            "<last_user_message>\n"
             f"{conversational_msgs[-1]['content']}\n"
-            "```"
+            "</last_user_message>\n\n"
         )
 
         class Response2(BaseModel):
