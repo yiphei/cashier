@@ -123,7 +123,7 @@ def is_on_topic(model, TM, current_node_schema, all_node_schemas):
     conversational_msgs = TM.model_provider_to_message_manager[
         model_provider
     ].conversation_dicts
-    system_prompt = (
+    prompt = (
         "You are an AI-agent orchestration engine. Each AI agent is defined by a system prompt"
         " and a set of tools (i.e. functions). Given a conversation between a user and the current AI agent, determine if the"
         " last user message can be fully handled by the current AI agent. Return true if"
@@ -139,6 +139,10 @@ def is_on_topic(model, TM, current_node_schema, all_node_schemas):
         f"{json.dumps(ToolRegistry.get_tool_defs_from_names(current_node_schema.tool_fn_names, model_provider, current_node_schema.tool_registry))}\n"
         "</tools>"
     )
+    if model_provider == ModelProvider.ANTHROPIC:
+        conversational_msgs.append({"role": "user", "content": prompt})
+    elif model_provider == ModelProvider.OPENAI:
+        conversational_msgs.append({"role": "system", "content": prompt})
 
     class Response1(BaseModel):
         output: bool
@@ -146,7 +150,6 @@ def is_on_topic(model, TM, current_node_schema, all_node_schemas):
     chat_completion = model.chat(
         model_name=model_name,
         message_dicts=conversational_msgs,
-        system=system_prompt,
         response_format=Response1,
         logprobs=True,
         temperature=0,
@@ -158,7 +161,8 @@ def is_on_topic(model, TM, current_node_schema, all_node_schemas):
     else:
         logger.debug(f"IS_ON_TOPIC: {is_on_topic}")
     if not is_on_topic:
-        system_prompt = (
+        conversational_msgs.pop()
+        prompt = (
             "You are an AI-agent orchestration engine. Each AI agent is defined by an expectation"
             " and a set of tools (i.e. functions). An AI agent can handle a user message if it is "
             "a case covered by the AI agent's expectation OR tools. "
@@ -167,7 +171,7 @@ def is_on_topic(model, TM, current_node_schema, all_node_schemas):
             "Respond by returning the AI agent ID.\n\n"
         )
         for node_schema in all_node_schemas:
-            system_prompt += (
+            prompt += (
                 f"<agent id={node_schema.id}>\n"
                 "<expectation>\n"
                 f"{node_schema.node_prompt}\n"
@@ -178,7 +182,7 @@ def is_on_topic(model, TM, current_node_schema, all_node_schemas):
                 "</agent>\n\n"
             )
 
-        system_prompt += (
+        prompt += (
             "<last_user_message>\n"
             f"{conversational_msgs[-1]['content']}\n"
             "</last_user_message>\n\n"
@@ -187,10 +191,14 @@ def is_on_topic(model, TM, current_node_schema, all_node_schemas):
         class Response2(BaseModel):
             agent_id: int
 
+        if model_provider == ModelProvider.ANTHROPIC:
+            conversational_msgs.append({"role": "user", "content": prompt})
+        elif model_provider == ModelProvider.OPENAI:
+            conversational_msgs.append({"role": "system", "content": prompt})
+
         chat_completion = model.chat(
             model_name=model_name,
             message_dicts=conversational_msgs,
-            system=system_prompt,
             response_format=Response2,
             logprobs=True,
             temperature=0,
