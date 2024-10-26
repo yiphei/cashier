@@ -64,7 +64,6 @@ class NodeSchema:
         self.prompt = self.generate_system_prompt(
             self.input_pydantic_model is not None,
             last_user_msg,
-            node_prompt=self.node_prompt,
             node_input=(
                 input.model_dump_json()
                 if self.input_pydantic_model is not None
@@ -83,7 +82,7 @@ class NodeSchema:
             BACKGROUND + "\n\n"
             "This instructions section describes what the conversation will be about and what you are expected to do\n"
             "<instructions>\n"
-            "{node_prompt}\n"
+            f"{self.node_prompt}\n"
             "</instructions>\n\n"
         )
         if has_input:
