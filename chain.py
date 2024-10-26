@@ -62,9 +62,7 @@ class NodeSchema:
 
         self.state = self.state_pydantic_model()
         self.prompt = self.generate_system_prompt(
-            input.model_dump_json()
-                if self.input_pydantic_model is not None
-                else None,
+            input.model_dump_json() if self.input_pydantic_model is not None else None,
             last_user_msg,
         )
 
@@ -148,10 +146,12 @@ class NodeSchema:
         )
 
         NODE_PROMPT += GUIDELINES
-        kwargs = {'state_json_schema': self.state_pydantic_model.model_json_schema()}
+        kwargs = {"state_json_schema": self.state_pydantic_model.model_json_schema()}
         if input is not None:
-            kwargs['node_input'] = input
-            kwargs["node_input_json_schema"] = self.input_pydantic_model.model_json_schema()
+            kwargs["node_input"] = input
+            kwargs["node_input_json_schema"] = (
+                self.input_pydantic_model.model_json_schema()
+            )
 
         return NODE_PROMPT.format(**kwargs)
 
