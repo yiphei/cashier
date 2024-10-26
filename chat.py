@@ -167,7 +167,6 @@ def is_on_topic(model, TM, current_node_schema, all_node_schemas):
         f"{conversational_msgs[-1]['content']}\n"
         "</last_customer_message>\n\n"
     )
-    print(prompt)
     if model_provider == ModelProvider.ANTHROPIC:
         conversational_msgs.append({"role": "user", "content": prompt})
     elif model_provider == ModelProvider.OPENAI:
