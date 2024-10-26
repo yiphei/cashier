@@ -154,7 +154,7 @@ class NodeSchema:
                 else ""
             )
             + "</general_guidelines>\n"
-            "</guidelines>\n"
+            "</guidelines>"
         )
 
         NODE_PROMPT += GUIDELINES
