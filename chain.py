@@ -55,7 +55,7 @@ class NodeSchema:
     def update_first_user_message(self):
         self.first_user_message = True
 
-    def run(self, input):
+    def run(self, input, last_user_msg=None):
         self.is_initialized = True
         if input is not None:
             assert isinstance(input, self.input_pydantic_model)
@@ -63,6 +63,7 @@ class NodeSchema:
         self.state = self.state_pydantic_model()
         self.prompt = self.generate_system_prompt(
             self.input_pydantic_model is not None,
+            last_user_msg,
             node_prompt=self.node_prompt,
             node_input=(
                 input.model_dump_json()
@@ -74,81 +75,89 @@ class NodeSchema:
                 if self.input_pydantic_model is not None
                 else None
             ),
+            state_json_schema=self.state_pydantic_model.model_json_schema(),
         )
 
-    def generate_system_prompt(self, has_input, **kwargs):
+    def generate_system_prompt(self, has_input, last_user_msg, **kwargs):
         NODE_PROMPT = (
             BACKGROUND + "\n\n"
-            "# EXPECTATION\n\n"
-            "<!--- This section describes what the conversation will be about and what you are expected to do --->\n"
-            "{node_prompt}\n\n"
-            "# GUIDELINES\n\n"
-            "<!--- This section enumerates important guidelines on how you should behave. These must be strictly followed --->\n"
-            "## Response\n\n"
-            "- because your responses will be converted to speech, "
-            "you must respond in a conversational way: natural, easy to understand when converted to speech, and generally concise and brief (no long responses).\n"
-            "- DO NOT use any rich text formatting like hashtags, bold, italic, bullet points, numbered points, headers, etc.\n"
-            "- When responding to customers, DO NOT provide unrequested information.\n"
-            "- If a response to a request is naturally long, then either ask claryfing questions to further refine the request, "
-            "summarize the response, or break down the response in many separate responses.\n"
-            "- Overall, try to be professional, polite, empathetic, and friendly\n\n"
-            "## Tools and state\n\n"
-            "- Minimize reliance on external knowledge. Always retrieve information from the prompts and tools. "
-            "If they dont provide the information you need, just say you do not know.\n"
-            "- Among the tools provided, there are state update functions, whose names start with `update_state_<field>` and where <field> is a state field. You must update the state object whenever applicable "
-            "and as soon as possible. You cannot proceed to the next stage of the conversation without updating the state.\n"
-            # "- you must not assume that tools and state updates used before this message are still available.\n"
-            "- you must not state/mention that you can/will perform an action if there are no tools (including state updates) associated with that action.\n"
-            "- if you need to perform an action, you can only state to the customer that you performed it after the associated tool (including state update) calls have been successfull.\n"
-            "- state updates can only happen in response to new messages, not messages prior to this message\n\n"
-            # "- you must use tools whenever possible and as soon as possible. "
-            # "This is because there usually is an associated tool for every user input and that tool will help you with the user input. "
-            # "When in doubt, use the tools.\n"
-            "## General\n\n"
-            "- think very hard before you respond.\n"
-            "- if there are messages before this message, consider those as part of the current conversation but treat them as references only.\n"
-            "- you must decline to do anything that is not explicitly covered by the EXPECTATION and IMPORTANT NOTES section.\n\n"
+            "This instructions section describes what the conversation will be about and what you are expected to do\n"
+            "<instructions>\n"
+            "{node_prompt}\n"
+            "</instructions>\n\n"
         )
         if has_input:
             NODE_PROMPT += (
-                "# INPUT\n\n"
-                "<!--- This section provides the input to the conversation. The input contains valuable information that help you accomplish the expectation stated above. "
-                "You will be provided both the input (in JSON format) and the input's JSON schema --->\n"
-                "INPUT:\n"
-                "```\n"
+                "This section provides the input to the conversation. The input contains valuable information that help you accomplish the instructions in <instructions>. "
+                "You will be provided with both the input (in JSON format) and its JSON schema\n"
+                "<input>\n"
+                "<input_json>\n"
                 "{node_input}\n"
-                "```\n"
-                "INPUT JSON SCHEMA:\n"
-                "```\n"
+                "</input_json>\n"
+                "<input_json_schema>\n"
                 "{node_input_json_schema}\n"
-                "```\n\n"
+                "</input_json_schema>\n"
+                "</input>\n\n"
             )
 
-        # NODE_PROMPT += (
-        #     "# IMPORTANT NOTES\n\n"
-        #     "Treat these notes with the utmost importance:\n"
-        #     "- because your responses will be converted to speech, "
-        #     "you must respond in a conversational way: natural, easy to understand when converted to speech, and generally concise and brief\n"
-        #     "- DO NOT use any rich text formatting like hashtags, bold, italic, bullet points, numbered points, headers, etc.\n"
-        #     "- When responding to customers, DO NOT provide unrequested information.\n"
-        #     "- If a response to a request is naturally long, then either ask claryfing questions to further refine the request, "
-        #     "summarize the response, or break down the response in many separate responses.\n"
-        #     "- Minimize reliance on external knowledge. Always get information from the prompts and tools."
-        #     "If they dont provide the information you need, just say you do not know.\n"
-        #     "- Overall, be professional, polite, empathetic, and friendly.\n"
-        #     "- if there are messages before this stage, use them as a reference ONLY.\n"
-        #     "- you must decline to do anything that is not explicitly covered by EXPECTATION or BACKGROUND.\n"
-        #     "- you must not assume that tools and state updates used previously are still available.\n"
-        #     "- you must not state/mention that you can/will perform an action if there are no tools or state updates associated with that action.\n"
-        #     "- if you need to perform an action, you can only state to the customer that you performed it after the associated tool and/or state update calls have been successfull.\n"
-        #     "- you must update the state object whenever possible. "
-        #     "There is a specific update tool for each state field, and all state update tool names start with `update_state_*`. "
-        #     "You cannot proceed to the next stage without updating the state.\n"
-        #     "- state updates should only happen in response to new messages, not messages prior to this stage"
-        #     "- you must use tools whenever possible and as soon as possible. "
-        #     "This is because there usually is an associated tool for every user input and that tool will help you with the user input. "
-        #     "When in doubt, use the tools.\n"
-        # )
+        NODE_PROMPT += (
+            "This section provides the state's json schema. The state keeps track of important data during the conversation.\n"
+            "<state>\n"
+            "{state_json_schema}\n"
+            "</state>\n\n"
+        )
+
+        if last_user_msg:
+            NODE_PROMPT += (
+                "This is the last customer message. All messages until the last customer message represent a historical conversation "
+                "that you may use as a reference.\n"
+                "<last_customer_msg>\n"
+                f"{last_user_msg}\n"
+                "</last_customer_msg>\n\n"
+            )
+
+        GUIDELINES = (
+            "This guidelines section enumerates important guidelines on how you should behave. These must be strictly followed\n"
+            "<guidelines>\n"
+            "<response_guidelines>\n"
+            "- because your responses will be converted to speech, "
+            "you must respond in a conversational way: natural, easy to understand when converted to speech, and generally concise and brief (no long responses).\n"
+            "- AVOID using any rich text formatting like hashtags, bold, italic, bullet points, numbered points, headers, etc.\n"
+            "- When responding to customers, AVOID providing unrequested information.\n"
+            "- If a response to a request is naturally long, then either ask claryfing questions to further refine the request, "
+            "summarize the response, or break down the response in many separate responses.\n"
+            "- Overall, try to be professional, polite, empathetic, and friendly\n"
+            "</response_guidelines>\n"
+            "<state_guidelines>\n"
+            "- Among the tools provided, there are functions for getting and updating the state defined in <state>. "
+            "For state updates, you will have field specific update functions, whose names are `update_state_<field>` and where <field> is a state field.\n"
+            "- You must update the state whenever applicable and as soon as possible. You cannot proceed to the next stage of the conversation without updating the state\n"
+            "- Only you can update the state, so there is no need to udpate the state to the same value that had already been updated to in the past.\n"
+            + (
+                "- state updates can only happen in response to new customer messages (i.e. messages after <last_customer_msg>).\n"
+                if last_user_msg
+                else ""
+            )
+            + "</state_guidelines>\n"
+            "<tools_guidelines>\n"
+            "- Minimize reliance on external knowledge. Always retrieve information from the system prompts and available tools. "
+            "If they dont provide the information you need, just say you do not know.\n"
+            "- AVOID stating/mentioning that you can/will perform an action if there are no tools (including state updates) associated with that action.\n"
+            "- if you need to perform an action, you can only state to the customer that you performed it after the associated tool (including state update) calls have been successfull.\n"
+            "</tools_guidelines>\n"
+            "<general_guidelines>\n"
+            "- think very hard before you respond.\n"
+            "- you must decline to do anything that is not explicitly covered by <instructions> and <guidelines>.\n"
+            + (
+                "- everthing stated in <instructions> and here in <guidelines> only applies to the conversation starting after <last_customer_msg>\n"
+                if last_user_msg
+                else ""
+            )
+            + "</general_guidelines>\n"
+            "</guidelines>"
+        )
+
+        NODE_PROMPT += GUIDELINES
 
         return NODE_PROMPT.format(**kwargs)
 
