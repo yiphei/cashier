@@ -93,7 +93,7 @@ class NodeSchema:
                 "<input>\n"
                 "<input_json>\n"
                 "{node_input}\n"
-                "</input_json>\n\n"
+                "</input_json>\n"
                 "<input_json_schema>\n"
                 "{node_input_json_schema}\n"
                 "</input_json_schema>\n"
