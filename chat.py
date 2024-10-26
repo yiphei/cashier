@@ -4,6 +4,7 @@ import os
 import tempfile
 from distutils.util import strtobool
 from types import GeneratorType
+import copy
 
 from colorama import Fore, Style
 from dotenv import load_dotenv  # Add this import
@@ -120,9 +121,9 @@ class MessageDisplay:
 def is_on_topic(model, TM, current_node_schema, all_node_schemas):
     model_name = "claude-3.5"
     model_provider = Model.get_model_provider(model_name)
-    conversational_msgs = TM.model_provider_to_message_manager[
+    conversational_msgs = copy.deepcopy(TM.model_provider_to_message_manager[
         model_provider
-    ].conversation_dicts
+    ].conversation_dicts)
     prompt = (
         "You are an AI-agent orchestration engine. Each AI agent is defined by a system prompt"
         " and a set of tools (i.e. functions). Given a conversation between a customer and the current AI agent, determine if the"
