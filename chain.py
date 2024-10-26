@@ -62,22 +62,13 @@ class NodeSchema:
 
         self.state = self.state_pydantic_model()
         self.prompt = self.generate_system_prompt(
-            self.input_pydantic_model is not None,
+            input.model_dump_json()
+                if self.input_pydantic_model is not None
+                else None,
             last_user_msg,
-            node_input=(
-                input.model_dump_json()
-                if self.input_pydantic_model is not None
-                else None
-            ),
-            node_input_json_schema=(
-                self.input_pydantic_model.model_json_schema()
-                if self.input_pydantic_model is not None
-                else None
-            ),
-            state_json_schema=self.state_pydantic_model.model_json_schema(),
         )
 
-    def generate_system_prompt(self, has_input, last_user_msg, **kwargs):
+    def generate_system_prompt(self, input, last_user_msg):
         NODE_PROMPT = (
             BACKGROUND + "\n\n"
             "This instructions section describes what the conversation will be about and what you are expected to do\n"
@@ -85,7 +76,7 @@ class NodeSchema:
             f"{self.node_prompt}\n"
             "</instructions>\n\n"
         )
-        if has_input:
+        if input is not None:
             NODE_PROMPT += (
                 "This section provides the input to the conversation. The input contains valuable information that help you accomplish the instructions in <instructions>. "
                 "You will be provided with both the input (in JSON format) and its JSON schema\n"
@@ -157,6 +148,10 @@ class NodeSchema:
         )
 
         NODE_PROMPT += GUIDELINES
+        kwargs = {'state_json_schema': self.state_pydantic_model.model_json_schema()}
+        if input is not None:
+            kwargs['node_input'] = input
+            kwargs["node_input_json_schema"] = self.input_pydantic_model.model_json_schema()
 
         return NODE_PROMPT.format(**kwargs)
 
