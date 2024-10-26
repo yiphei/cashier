@@ -501,6 +501,10 @@ class MessageManager(ABC):
         else:
             return None
 
+    def get_conversation_msgs_since_last_node(self):
+        last_node_idx = self.index_tracker.get_idx(self.last_node_id)
+        return self.conversation_dicts[last_node_idx+1:]
+
 
 class OAIMessageManager(MessageManager):
     model_provider = ModelProvider.OPENAI
@@ -624,6 +628,7 @@ class AnthropicMessageManager(MessageManager):
             turn, remove_prev_fn_return_schema, remove_prev_tool_calls
         )
         self.system = turn.msg_content
+        self.index_tracker.add_idx(turn.node_id, len(self.message_dicts) - 1)
 
     def parse_assistant_messages(self, messages):
         if len(messages) == 2:
