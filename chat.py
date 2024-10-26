@@ -161,7 +161,7 @@ def is_on_topic(model, TM, current_node_schema, all_node_schemas):
         "- think very hard before you respond.\n"
         "- you must decline to do anything that is not explicitly covered by <instructions> and <guidelines>.\n"
         + "</general_guidelines>\n"
-        "</guidelines>"
+        "</guidelines>\n\n"
         "<last_customer_message>\n"
         f"{conversational_msgs[-1]['content']}\n"
         "</last_customer_message>\n\n"
