@@ -503,7 +503,7 @@ class MessageManager(ABC):
 
     def get_conversation_msgs_since_last_node(self):
         last_node_idx = self.index_tracker.get_idx(self.last_node_id)
-        return self.conversation_dicts[last_node_idx+1:]
+        return self.conversation_dicts[last_node_idx + 1 :]
 
 
 class OAIMessageManager(MessageManager):
