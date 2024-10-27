@@ -134,7 +134,7 @@ class NodeSchema:
             "- if you need to perform an action, you can only state to the customer that you performed it after the associated tool (including state update) calls have been successfull.\n"
             "</tools_guidelines>\n"
             "<general_guidelines>\n"
-            "- think very hard before you respond.\n"
+            "- think step-by-step before you respond.\n"
             "- you must decline to do anything that is not explicitly covered by <instructions> and <guidelines>.\n"
             + (
                 "- everthing stated in <instructions> and here in <guidelines> only applies to the conversation starting after <last_customer_msg>\n"
