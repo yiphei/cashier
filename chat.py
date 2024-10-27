@@ -134,7 +134,7 @@ def is_on_topic(model, TM, current_node_schema, all_node_schemas):
         f"{BACKGROUND}\n"
         "</background>\n\n"
         "The AI agent is defined by 3 attributes: instructions, state, and tools (i.e. functions).\n\n"
-        "The instructions describe what the agent's conversation is about and what they are expected to do.\n"
+        "The instructions describe what the agent's conversation is supposed to be about and what they are expected to do.\n"
         "<instructions>\n"
         f"{current_node_schema.node_prompt}\n"
         "</instructions>\n\n"
@@ -197,7 +197,7 @@ def is_on_topic(model, TM, current_node_schema, all_node_schemas):
         prompt = (
             "You are an AI-agent orchestration engine and your job is to select the best AI agent. "
             "Each AI agent is defined by 3 attributes: instructions, state, and tools (i.e. functions). "
-            "The instructions <instructions> describe what the agent's conversation is about and what they are expected to do. "
+            "The instructions <instructions> describe what the agent's conversation is supposed to be about and what they are expected to do. "
             "The state <state> keeps track of important data during the conversation. "
             "The tools <tools> represent explicit actions that the agent can perform.\n\n"
         )

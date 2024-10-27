@@ -69,7 +69,7 @@ class NodeSchema:
     def generate_system_prompt(self, input, last_user_msg):
         NODE_PROMPT = (
             BACKGROUND + "\n\n"
-            "This instructions section describes what the conversation will be about and what you are expected to do\n"
+            "This instructions section describes what the conversation is supposed to be about and what you are expected to do\n"
             "<instructions>\n"
             f"{self.node_prompt}\n"
             "</instructions>\n\n"
