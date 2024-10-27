@@ -13,11 +13,11 @@ from pydantic import BaseModel
 
 from audio import get_audio_input, save_audio_to_wav
 from chain import (
+    BACKGROUND,
     FROM_NODE_ID_TO_EDGE_SCHEMA,
     confirm_order_node_schema,
     take_order_node_schema,
     terminal_order_node_schema,
-    BACKGROUND
 )
 from db_functions import create_db_client
 from function_call_context import FunctionCallContext, InexistentFunctionError
