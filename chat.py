@@ -82,7 +82,7 @@ class MessageDisplay:
     API_ROLE_TO_COLOR = {
         "system": Fore.GREEN,
         "user": Fore.WHITE,
-        "assistant": Fore.BLUE,
+        "assistant": Fore.MAGENTA,
     }
 
     @classmethod
