@@ -202,9 +202,9 @@ def is_on_topic(model, TM, current_node_schema, all_node_schemas):
         for node_schema in all_node_schemas:
             prompt += (
                 f"<agent id={node_schema.id}>\n"
-                "<expectation>\n"
+                "<instructions>\n"
                 f"{node_schema.node_prompt}\n"
-                "</expectation>\n\n"
+                "</instructions>\n\n"
                 "<state>\n"
                 f"{node_schema.state_pydantic_model.model_json_schema()}\n"
                 "</state>\n\n"
