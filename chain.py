@@ -48,7 +48,7 @@ class NodeSchema:
             self.tool_fn_names.append(new_tool_fn_name)
 
         self.tool_registry.add_tool_def(
-            "get_state", "Function to get the current state", {}
+            "get_state", "Function to get the current state, as defined in <state>", {}
         )
         self.tool_fn_names.append("get_state")
 
