@@ -127,7 +127,7 @@ def is_on_topic(model, TM, current_node_schema, all_node_schemas):
         ].get_conversation_msgs_since_last_node()
     )
     prompt = (
-        "You are an AI-agent orchestration engine and you need to evaluate the current AI agent's performance. "
+        "You are an AI-agent orchestration engine and your job is to evaluate the current AI agent's performance. "
         "The AI agent is defined by 3 attributes: instructions, state, and tools (i.e. functions).\n\n"
         "The instructions describe what the agent's conversation is about and what they are expected to do.\n"
         "<instructions>\n"
@@ -190,7 +190,7 @@ def is_on_topic(model, TM, current_node_schema, all_node_schemas):
     if not is_on_topic:
         conversational_msgs.pop()
         prompt = (
-            "You are an AI-agent orchestration engine and you need to select the best AI agent for the customer message. "
+            "You are an AI-agent orchestration engine and your job is to select the best AI agent. "
             "Each AI agent is defined by 3 attributes: instructions, state, and tools (i.e. functions). "
             "The instructions describe what the agent's conversation is about and what they are expected to do. "
             "The state keeps track of important data during the conversation. "
