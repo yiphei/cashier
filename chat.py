@@ -147,7 +147,7 @@ def is_on_topic(model, TM, current_node_schema, all_node_schemas):
         f"{json.dumps(ToolRegistry.get_tool_defs_from_names(current_node_schema.tool_fn_names, model_provider, current_node_schema.tool_registry))}\n"
         "</tools>\n\n"
         "Given a conversation between a customer and the current AI agent, determine if the"
-        " last customer message can be fully handled by the current AI agent's <instructions>, <state>, or <tools> according to the guidelines defined in <guidelines>. Return true if"
+        " conversation, especially the last customer message, can be fully handled by the current AI agent's <instructions>, <state>, or <tools> according to the guidelines defined in <guidelines>. Return true if"
         " so, and return false if otherwise, meaning that we should explore letting another AI agent take over.\n\n"
         "<guidelines>\n"
         "<state_guidelines>\n"
@@ -199,10 +199,7 @@ def is_on_topic(model, TM, current_node_schema, all_node_schemas):
             "Each AI agent is defined by 3 attributes: instructions, state, and tools (i.e. functions). "
             "The instructions <instructions> describe what the agent's conversation is about and what they are expected to do. "
             "The state <state> keeps track of important data during the conversation. "
-            "The tools <tools> represent explicit actions that the agent can perform. "
-            "Given a conversation with a customer and list of AI agents with their attributes, "
-            "determine which AI agent can best handle the last customer message according to the universal guidelines defined in <guidelines>. "
-            "Respond by returning the AI agent ID.\n\n"
+            "The tools <tools> represent explicit actions that the agent can perform.\n\n"
         )
         for node_schema in all_node_schemas:
             prompt += (
@@ -220,6 +217,13 @@ def is_on_topic(model, TM, current_node_schema, all_node_schemas):
             )
 
         prompt += (
+            "All agents share the following background:\n"
+            "<background>\n"
+            f"{BACKGROUND}\n"
+            "</background>\n\n"
+            "Given a conversation with a customer and the list above of AI agents with their attributes, "
+            "determine which AI agent can best handle the conversation, especially the last customer message, according to the universal guidelines defined in <guidelines>. "
+            "Respond by returning the AI agent ID.\n\n"
             "<guidelines>\n"
             "<state_guidelines>\n"
             "- Among the tools provided, there are functions for getting and updating the state defined in <state>. "
