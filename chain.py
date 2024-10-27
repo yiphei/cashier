@@ -48,7 +48,7 @@ class NodeSchema:
             self.tool_fn_names.append(new_tool_fn_name)
 
         self.tool_registry.add_tool_def(
-            "get_state", "Function to get the current state", {}
+            "get_state", "Function to get the current state, as defined in <state>", {}
         )
         self.tool_fn_names.append("get_state")
 
@@ -69,7 +69,7 @@ class NodeSchema:
     def generate_system_prompt(self, input, last_user_msg):
         NODE_PROMPT = (
             BACKGROUND + "\n\n"
-            "This instructions section describes what the conversation will be about and what you are expected to do\n"
+            "This instructions section describes what the conversation is supposed to be about and what you are expected to do\n"
             "<instructions>\n"
             f"{self.node_prompt}\n"
             "</instructions>\n\n"
@@ -129,12 +129,12 @@ class NodeSchema:
             + "</state_guidelines>\n"
             "<tools_guidelines>\n"
             "- Minimize reliance on external knowledge. Always retrieve information from the system prompts and available tools. "
-            "If they dont provide the information you need, just say you do not know.\n"
+            "If they dont provide the information needed, just say you do not know.\n"
             "- AVOID stating/mentioning that you can/will perform an action if there are no tools (including state updates) associated with that action.\n"
             "- if you need to perform an action, you can only state to the customer that you performed it after the associated tool (including state update) calls have been successfull.\n"
             "</tools_guidelines>\n"
             "<general_guidelines>\n"
-            "- think very hard before you respond.\n"
+            "- think step-by-step before you respond.\n"
             "- you must decline to do anything that is not explicitly covered by <instructions> and <guidelines>.\n"
             + (
                 "- everthing stated in <instructions> and here in <guidelines> only applies to the conversation starting after <last_customer_msg>\n"
