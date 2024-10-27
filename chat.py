@@ -17,6 +17,7 @@ from chain import (
     confirm_order_node_schema,
     take_order_node_schema,
     terminal_order_node_schema,
+    BACKGROUND
 )
 from db_functions import create_db_client
 from function_call_context import FunctionCallContext, InexistentFunctionError
@@ -128,6 +129,10 @@ def is_on_topic(model, TM, current_node_schema, all_node_schemas):
     )
     prompt = (
         "You are an AI-agent orchestration engine and your job is to evaluate the current AI agent's performance. "
+        "The AI agent's background is:\n"
+        "<background>\n"
+        f"{BACKGROUND}\n"
+        "</background>\n\n"
         "The AI agent is defined by 3 attributes: instructions, state, and tools (i.e. functions).\n\n"
         "The instructions describe what the agent's conversation is about and what they are expected to do.\n"
         "<instructions>\n"
