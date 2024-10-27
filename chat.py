@@ -222,7 +222,7 @@ def is_on_topic(model, TM, current_node_schema, all_node_schemas):
             f"{BACKGROUND}\n"
             "</background>\n\n"
             "Given a conversation with a customer and the list above of AI agents with their attributes, "
-            "determine which AI agent can best handle the conversation, especially the last customer message, according to the universal guidelines defined in <guidelines>. "
+            "determine which AI agent can best continue the conversation, especially given last customer message, in accordance with the universal guidelines defined in <guidelines>. "
             "Respond by returning the AI agent ID.\n\n"
             "<guidelines>\n"
             "<state_guidelines>\n"
