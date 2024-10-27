@@ -192,9 +192,9 @@ def is_on_topic(model, TM, current_node_schema, all_node_schemas):
         prompt = (
             "You are an AI-agent orchestration engine and your job is to select the best AI agent. "
             "Each AI agent is defined by 3 attributes: instructions, state, and tools (i.e. functions). "
-            "The instructions describe what the agent's conversation is about and what they are expected to do. "
-            "The state keeps track of important data during the conversation. "
-            "The tools represent explicit actions that the agent can perform. "
+            "The instructions <instructions> describe what the agent's conversation is about and what they are expected to do. "
+            "The state <state> keeps track of important data during the conversation. "
+            "The tools <tools> represent explicit actions that the agent can perform. "
             "Given a conversation with a customer and list of AI agents with their attributes, "
             "determine which AI agent can best handle the last customer message according to the universal guidelines defined in <guidelines>. "
             "Respond by returning the AI agent ID.\n\n"
