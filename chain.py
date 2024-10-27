@@ -97,11 +97,11 @@ class NodeSchema:
 
         if last_user_msg:
             NODE_PROMPT += (
-                "This is the last customer message. All messages until the last customer message represent a historical conversation "
+                "This is the cutoff customer message. Everything stated here only applies to messages after the cutoff message. All messages until the cutoff message represent a historical conversation "
                 "that you may use as a reference.\n"
-                "<last_customer_msg>\n"
+                "<cutoff_customer_msg>\n"
                 f"{last_user_msg}\n"
-                "</last_customer_msg>\n\n"
+                "</cutoff_customer_msg>\n\n"
             )
 
         GUIDELINES = (
@@ -122,7 +122,7 @@ class NodeSchema:
             "- You must update the state whenever applicable and as soon as possible. You cannot proceed to the next stage of the conversation without updating the state\n"
             "- Only you can update the state, so there is no need to udpate the state to the same value that had already been updated to in the past.\n"
             + (
-                "- state updates can only happen in response to new customer messages (i.e. messages after <last_customer_msg>).\n"
+                "- state updates can only happen in response to new customer messages (i.e. messages after <cutoff_customer_msg>).\n"
                 if last_user_msg
                 else ""
             )
@@ -137,7 +137,7 @@ class NodeSchema:
             "- think step-by-step before you respond.\n"
             "- you must decline to do anything that is not explicitly covered by <instructions> and <guidelines>.\n"
             + (
-                "- everthing stated in <instructions> and here in <guidelines> only applies to the conversation starting after <last_customer_msg>\n"
+                "- everthing stated in <instructions> and here in <guidelines> only applies to the conversation starting after <cutoff_customer_msg>\n"
                 if last_user_msg
                 else ""
             )
