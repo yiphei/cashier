@@ -129,7 +129,7 @@ def is_on_topic(model, TM, current_node_schema, all_node_schemas):
     prompt = (
         "You are an AI-agent orchestration engine and you need to evaluate the current AI agent's performance. "
         "The AI agent is defined by 3 attributes: instructions, state, and a set of tools (i.e. functions).\n"
-        "The instructions describe what the conversation will be about and what the agent is expected to do.\n"
+        "The instructions describe what the conversation will be about and what the agent is expected to do.\n\n"
         "<instructions>\n"
         f"{current_node_schema.node_prompt}\n"
         "</instructions>\n\n"
