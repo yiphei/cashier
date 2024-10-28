@@ -1103,7 +1103,7 @@ class MessageList(list):
                 + self.item_type_to_last_count[item_type]
             )
         if idx is None:
-            idx = len(self)
+            idx = len(self) - 1
 
         self.named_idx_to_idx[uri] = idx
         self.idx_to_named_idx[idx].add(uri)
