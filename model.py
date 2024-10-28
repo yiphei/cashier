@@ -1112,14 +1112,14 @@ class MessageList(list):
             self.idxs.append(idx)
             self.idx_to_pos[idx] = len(self.idxs) - 1
 
-    def add_idxs(self, item_type, start_idx, end_idx=None, uris = None):
+    def add_idxs(self, item_type, start_idx, end_idx=None, uris=None):
         if end_idx is None:
-            end_idx = len(self)-1
+            end_idx = len(self) - 1
         if uris is None:
             range_idx = end_idx - start_idx + 1
             uris = [None] * range_idx
-            
-        for i, uri in zip(range(start_idx, end_idx+1), uris):
+
+        for i, uri in zip(range(start_idx, end_idx + 1), uris):
             self.add_idx(item_type, i, uri)
 
     def pop_idx(self, named_idx, shift_idxs=True):
@@ -1155,11 +1155,11 @@ class MessageList(list):
         if item_type is not None:
             self.add_idx(item_type)
 
-    def extend(self, items, item_type = None):
-        curr_len = len(self)-1
+    def extend(self, items, item_type=None):
+        curr_len = len(self) - 1
         super().extend(items)
         if items and item_type is not None:
-            self.add_idxs(item_type, curr_len+1)
+            self.add_idxs(item_type, curr_len + 1)
 
     def pop(self, index=-1):
         item = super().pop(index)
