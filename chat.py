@@ -119,7 +119,7 @@ class MessageDisplay:
         )
 
 
-def is_on_topic(model, TM, current_node_schema, all_node_schemas):
+def should_backtrack_node(model, TM, current_node_schema, all_node_schemas):
     model_name = "claude-3.5"
     model_provider = Model.get_model_provider(model_name)
     conversational_msgs = copy.deepcopy(
@@ -317,7 +317,7 @@ def run_chat(args, model, elevenlabs_client):
                 break
             MessageDisplay.print_msg("user", text_input)
             TC.add_user_turn(text_input)
-            is_on_topic(
+            should_backtrack_node(
                 model,
                 TC,
                 current_node_schema,
