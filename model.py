@@ -1068,7 +1068,7 @@ class MessageList(list):
         ASSISTANT = "ASSISTANT"
         TOOL_CALL = "TOOL_CALL"
         TOOL_OUTPUT = "TOOL_OUTPUT"
-        TOOL_OUTPUT_SCHENA = "TOOL_OUTPUT_SCHEMA"
+        TOOL_OUTPUT_SCHEMA = "TOOL_OUTPUT_SCHEMA"
         NODE = "NODE"
 
     item_type_to_uri_prefix = {
