@@ -1056,3 +1056,33 @@ class ListIndexTracker:
                     self.idx_to_pos[curr_idx] = i
 
             return popped_idx
+
+
+class TrackedList(list):
+    def __init__(self, *args):
+        super().__init__(*args)
+        
+    def __getitem__(self, index):
+        return super().__getitem__(index)
+    
+    def __setitem__(self, index, value):
+        super().__setitem__(index, value)
+    
+    def append(self, item):
+        super().append(item)
+    
+    def pop(self, index=-1):
+        item = super().pop(index)
+        return item
+    
+    def insert(self, index, item):
+        super().insert(index, item)
+    
+    def remove(self, item):
+        super().remove(item)
+    
+    def clear(self):
+        super().clear()
+    
+    def __str__(self):
+        return f"TrackedList({super().__str__()}, ops={self.operation_count})"
