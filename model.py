@@ -1084,7 +1084,7 @@ class MessageList(list):
         self.idx_to_pos = {}
 
         # new stuff
-        self.item_type_to_uris = defaultdict(set)
+        self.item_type_to_uris = defaultdict(list)
         self.item_type_to_last_count = {
             k: 0 for k in self.item_type_to_uri_prefix.keys()
         }
@@ -1107,7 +1107,7 @@ class MessageList(list):
 
         self.named_idx_to_idx[uri] = idx
         self.idx_to_named_idx[idx].add(uri)
-        self.item_type_to_uris[item_type].add(uri)
+        self.item_type_to_uris[item_type].append(uri)
         if idx not in self.idxs:
             self.idxs.append(idx)
             self.idx_to_pos[idx] = len(self.idxs) - 1
@@ -1179,7 +1179,7 @@ class MessageList(list):
                 idx_to_remove = self.pop_idx(uri)
                 del self[idx_to_remove]
 
-            self.item_type_to_uris[item_type] = set()
+            self.item_type_to_uris[item_type] = []
 
     def __str__(self):
         return f"TrackedList({super().__str__()}, ops={self.operation_count})"
