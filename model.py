@@ -1157,10 +1157,10 @@ class MessageList(list):
 
             return popped_idx
 
-    def append(self, item, item_type=None):
+    def append(self, item, item_type=None, uri=None):
         super().append(item)
         if item_type is not None:
-            self.add_idx(item_type)
+            self.add_idx(item_type, uri=uri)
 
     def extend(self, items, item_type=None):
         curr_len = len(self) - 1
