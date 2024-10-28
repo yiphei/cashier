@@ -187,6 +187,8 @@ class Model:
             raise Exception("cannot both have response_format and stream defined")
         if not tools:
             args.pop("tools")
+        if not stream:
+            args.pop("stream")
 
         return OAIModelOutput(chat_fn(**args), stream, response_format)
 
