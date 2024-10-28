@@ -119,7 +119,7 @@ class MessageDisplay:
         )
 
 
-def is_on_topic(model, TM, current_node_schema, all_node_schemas):
+def should_backtrack_node(model, TM, current_node_schema, all_node_schemas):
     model_name = "claude-3.5"
     model_provider = Model.get_model_provider(model_name)
     conversational_msgs = copy.deepcopy(
@@ -192,84 +192,88 @@ def is_on_topic(model, TM, current_node_schema, all_node_schemas):
         logger.debug(f"IS_ON_TOPIC: {is_on_topic} with {prob}")
     else:
         logger.debug(f"IS_ON_TOPIC: {is_on_topic}")
-    if not is_on_topic:
-        conversational_msgs.pop()
-        prompt = (
-            "You are an AI-agent orchestration engine and your job is to select the best AI agent. "
-            "Each AI agent is defined by 3 attributes: instructions, state, and tools (i.e. functions). "
-            "The instructions <instructions> describe what the agent's conversation is supposed to be about and what they are expected to do. "
-            "The state <state> keeps track of important data during the conversation. "
-            "The tools <tools> represent explicit actions that the agent can perform.\n\n"
-        )
-        for node_schema in all_node_schemas:
-            prompt += (
-                f"<agent id={node_schema.id}>\n"
-                "<instructions>\n"
-                f"{node_schema.node_prompt}\n"
-                "</instructions>\n\n"
-                "<state>\n"
-                f"{node_schema.state_pydantic_model.model_json_schema()}\n"
-                "</state>\n\n"
-                "<tools>\n"
-                f"{json.dumps(ToolRegistry.get_tool_defs_from_names(node_schema.tool_fn_names, model_provider, node_schema.tool_registry))}\n"
-                "</tools>\n"
-                "</agent>\n\n"
-            )
 
+    if is_on_topic:
+        return None
+
+    conversational_msgs.pop()
+    prompt = (
+        "You are an AI-agent orchestration engine and your job is to select the best AI agent. "
+        "Each AI agent is defined by 3 attributes: instructions, state, and tools (i.e. functions). "
+        "The instructions <instructions> describe what the agent's conversation is supposed to be about and what they are expected to do. "
+        "The state <state> keeps track of important data during the conversation. "
+        "The tools <tools> represent explicit actions that the agent can perform.\n\n"
+    )
+    for node_schema in all_node_schemas:
         prompt += (
-            "All agents share the following background:\n"
-            "<background>\n"
-            f"{BACKGROUND}\n"
-            "</background>\n\n"
-            "Given a conversation with a customer and the list above of AI agents with their attributes, "
-            "determine which AI agent can best continue the conversation, especially given last customer message, in accordance with the universal guidelines defined in <guidelines>. "
-            "Respond by returning the AI agent ID.\n\n"
-            "<guidelines>\n"
-            "<state_guidelines>\n"
-            "- Among the tools provided, there are functions for getting and updating the state defined in <state>. "
-            "For state updates, the agent will have field specific update functions, whose names are `update_state_<field>` and where <field> is a state field.\n"
-            "- The agent must update the state whenever applicable and as soon as possible. They cannot proceed to the next stage of the conversation without updating the state\n"
-            "- Only the agent can update the state, so there is no need to udpate the state to the same value that had already been updated to in the past.\n"
-            + "</state_guidelines>\n"
-            "<tools_guidelines>\n"
-            "- Minimize reliance on external knowledge. Always retrieve information from the system prompts and available tools. "
-            "If they dont provide the information needed, the agent must say they do not know.\n"
-            "- the agent must AVOID stating/mentioning that they can/will perform an action if there are no tools (including state updates) associated with that action.\n"
-            "- if the agent needs to perform an action, they can only state to the customer that they performed it after the associated tool (including state update) calls have been successfull.\n"
-            "</tools_guidelines>\n"
-            "<general_guidelines>\n"
-            "- the agent needs to think step-by-step before responding.\n"
-            "- the agent must decline to do anything that is not explicitly covered by <instructions> and <guidelines>.\n"
-            + "</general_guidelines>\n"
-            "</guidelines>\n\n"
-            "<last_customer_message>\n"
-            f"{conversational_msgs[-1]['content']}\n"
-            "</last_customer_message>\n\n"
+            f"<agent id={node_schema.id}>\n"
+            "<instructions>\n"
+            f"{node_schema.node_prompt}\n"
+            "</instructions>\n\n"
+            "<state>\n"
+            f"{node_schema.state_pydantic_model.model_json_schema()}\n"
+            "</state>\n\n"
+            "<tools>\n"
+            f"{json.dumps(ToolRegistry.get_tool_defs_from_names(node_schema.tool_fn_names, model_provider, node_schema.tool_registry))}\n"
+            "</tools>\n"
+            "</agent>\n\n"
         )
 
-        class Response2(BaseModel):
-            agent_id: int
+    prompt += (
+        "All agents share the following background:\n"
+        "<background>\n"
+        f"{BACKGROUND}\n"
+        "</background>\n\n"
+        "Given a conversation with a customer and the list above of AI agents with their attributes, "
+        "determine which AI agent can best continue the conversation, especially given last customer message, in accordance with the universal guidelines defined in <guidelines>. "
+        "Respond by returning the AI agent ID.\n\n"
+        "<guidelines>\n"
+        "<state_guidelines>\n"
+        "- Among the tools provided, there are functions for getting and updating the state defined in <state>. "
+        "For state updates, the agent will have field specific update functions, whose names are `update_state_<field>` and where <field> is a state field.\n"
+        "- The agent must update the state whenever applicable and as soon as possible. They cannot proceed to the next stage of the conversation without updating the state\n"
+        "- Only the agent can update the state, so there is no need to udpate the state to the same value that had already been updated to in the past.\n"
+        + "</state_guidelines>\n"
+        "<tools_guidelines>\n"
+        "- Minimize reliance on external knowledge. Always retrieve information from the system prompts and available tools. "
+        "If they dont provide the information needed, the agent must say they do not know.\n"
+        "- the agent must AVOID stating/mentioning that they can/will perform an action if there are no tools (including state updates) associated with that action.\n"
+        "- if the agent needs to perform an action, they can only state to the customer that they performed it after the associated tool (including state update) calls have been successfull.\n"
+        "</tools_guidelines>\n"
+        "<general_guidelines>\n"
+        "- the agent needs to think step-by-step before responding.\n"
+        "- the agent must decline to do anything that is not explicitly covered by <instructions> and <guidelines>.\n"
+        + "</general_guidelines>\n"
+        "</guidelines>\n\n"
+        "<last_customer_message>\n"
+        f"{conversational_msgs[-1]['content']}\n"
+        "</last_customer_message>\n\n"
+    )
 
-        if model_provider == ModelProvider.ANTHROPIC:
-            conversational_msgs.append({"role": "user", "content": prompt})
-        elif model_provider == ModelProvider.OPENAI:
-            conversational_msgs.append({"role": "system", "content": prompt})
+    class Response2(BaseModel):
+        agent_id: int
 
-        chat_completion = model.chat(
-            model_name=model_name,
-            message_dicts=conversational_msgs,
-            response_format=Response2,
-            logprobs=True,
-            temperature=0,
-        )
+    if model_provider == ModelProvider.ANTHROPIC:
+        conversational_msgs.append({"role": "user", "content": prompt})
+    elif model_provider == ModelProvider.OPENAI:
+        conversational_msgs.append({"role": "system", "content": prompt})
 
-        agent_id = chat_completion.get_message_prop("agent_id")
-        if model_provider == ModelProvider.OPENAI:
-            prob = chat_completion.get_prob(-2)
-            logger.debug(f"AGENT_ID: {agent_id} with {prob}")
-        else:
-            logger.debug(f"AGENT_ID: {agent_id}")
+    chat_completion = model.chat(
+        model_name=model_name,
+        message_dicts=conversational_msgs,
+        response_format=Response2,
+        logprobs=True,
+        temperature=0,
+    )
 
+    agent_id = chat_completion.get_message_prop("agent_id")
+    if model_provider == ModelProvider.OPENAI:
+        prob = chat_completion.get_prob(-2)
+        logger.debug(f"AGENT_ID: {agent_id} with {prob}")
+    else:
+        logger.debug(f"AGENT_ID: {agent_id}")
+
+    return agent_id if agent_id != current_node_schema.id else None
 
 def run_chat(args, model, elevenlabs_client):
     TC = TurnContainer()
@@ -278,6 +282,7 @@ def run_chat(args, model, elevenlabs_client):
     current_node_schema = take_order_node_schema
     current_edge_schemas = FROM_NODE_ID_TO_EDGE_SCHEMA[current_node_schema.id]
     new_node_input = None
+    node_schema_id_to_node_schema = {}
 
     while True:
         if not current_node_schema.is_initialized:
@@ -296,7 +301,7 @@ def run_chat(args, model, elevenlabs_client):
                 remove_prev_tool_calls=args.remove_prev_tool_calls,
             )
             MessageDisplay.print_msg("system", current_node_schema.prompt)
-
+            node_schema_id_to_node_schema[current_node_schema.id] = current_node_schema
             if current_node_schema.first_turn:
                 TC.add_assistant_direct_turn(current_node_schema.first_turn)
                 MessageDisplay.print_msg(
@@ -312,7 +317,7 @@ def run_chat(args, model, elevenlabs_client):
                 break
             MessageDisplay.print_msg("user", text_input)
             TC.add_user_turn(text_input)
-            is_on_topic(
+            agent_id = should_backtrack_node(
                 model,
                 TC,
                 current_node_schema,
@@ -322,7 +327,6 @@ def run_chat(args, model, elevenlabs_client):
                     terminal_order_node_schema,
                 ],
             )
-            current_node_schema.update_first_user_message()
 
         chat_completion = model.chat(
             model_name=args.model,
