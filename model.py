@@ -5,6 +5,7 @@ import json
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from typing import Any, Dict, List, Literal, Optional, Union, overload
+from enum import StrEnum
 
 import anthropic
 import numpy as np
@@ -1058,18 +1059,90 @@ class ListIndexTracker:
             return popped_idx
 
 
-class TrackedList(list):
+class MessageList(list):
+    class ItemType(StrEnum):
+        USER = "USER"
+        ASSISTANT = "ASSISTANT"
+        TOOL_CALL = "TOOL_CALL"
+        TOOL_OUTPUT = "TOOL_OUTPUT"
+        TOOL_OUTPUT_SCHENA = "TOOL_OUTPUT_SCHEMA"
+        NODE = "NODE"
+
+    item_type_to_uri_prefix = {
+        ItemType.USER: "usr_",
+        ItemType.ASSISTANT: "asst_",
+        ItemType.TOOL_OUTPUT: "tout_",
+        ItemType.TOOL_OUTPUT_SCHENA: "touts_",
+        ItemType.NODE: "node_",
+    }
+
     def __init__(self, *args):
         super().__init__(*args)
+        self.named_idx_to_idx = {}
+        self.idx_to_named_idx = defaultdict(set)
+        self.idxs = []
+        self.idx_to_pos = {}
+        
+        # new stuff
+        self.item_type_to_uris = defaultdict(set)
+        self.item_type_to_last_count = {
+          k: 0 for k in self.item_type_to_uri_prefix.keys()
+        }
+
         
     def __getitem__(self, index):
         return super().__getitem__(index)
     
     def __setitem__(self, index, value):
         super().__setitem__(index, value)
+
+    def add_idx(self, item_type, idx=None, uri=None):
+        if uri is None:
+            self.item_type_to_last_count[item_type] += 1
+            uri = self.item_type_to_uri_prefix[item_type] + self.item_type_to_last_count[item_type]
+        if idx is None:
+            idx = len(self)
+
+        self.named_idx_to_idx[uri] = idx
+        self.idx_to_named_idx[idx].add(uri)
+        self.item_type_to_uris[item_type].add(uri)
+        if idx not in self.idxs:
+            self.idxs.append(idx)
+            self.idx_to_pos[idx] = len(self.idxs) - 1
+
+
+    def pop_idx(self, named_idx, shift_idxs=True):
+        popped_idx = self.named_idx_to_idx.pop(named_idx)
+        named_idxs = self.idx_to_named_idx[popped_idx]
+
+        named_idxs.remove(named_idx)
+        if not named_idxs:
+            popped_idx_pos = self.idx_to_pos.pop(popped_idx)
+            self.idx_to_named_idx.pop(popped_idx)
+            del self.idxs[popped_idx_pos]
+
+            for i in range(popped_idx_pos, len(self.idxs)):
+                curr_idx = self.idxs[i]
+                self.idx_to_pos.pop(curr_idx)
+                if shift_idxs:
+                    curr_named_idxs = self.idx_to_named_idx[curr_idx]
+
+                    self.idxs[i] -= 1
+                    self.idx_to_pos[self.idxs[i]] = i
+
+                    for curr_named_idx in curr_named_idxs:
+                        self.named_idx_to_idx[curr_named_idx] = self.idxs[i]
+                    self.idx_to_named_idx.pop(curr_idx)
+                    self.idx_to_named_idx[self.idxs[i]] = curr_named_idxs
+                else:
+                    self.idx_to_pos[curr_idx] = i
+
+            return popped_idx
     
-    def append(self, item):
+    def append(self, item, item_type=None):
         super().append(item)
+        if item_type is not None:
+            self.add_idx(item_type)
     
     def pop(self, index=-1):
         item = super().pop(index)
@@ -1081,8 +1154,15 @@ class TrackedList(list):
     def remove(self, item):
         super().remove(item)
     
-    def clear(self):
-        super().clear()
+    def clear(self, item_type=None):
+        if item_type is None:
+            super().clear()
+        else:
+            for uri in self.item_type_to_uris[item_type]:
+                idx_to_remove = self.pop_idx(uri)
+                del self[idx_to_remove]
+
+            self.item_type_to_uris[item_type] = set()
     
     def __str__(self):
         return f"TrackedList({super().__str__()}, ops={self.operation_count})"
