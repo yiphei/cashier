@@ -1103,16 +1103,27 @@ class MessageList(list):
         message = self[idx_to_remove]
         new_contents = []
         for content in message["content"]:
-            if item_type == MessageList.ItemType.TOOL_CALL and content["type"] == "tool_use" and content["id"] == uri:
+            if (
+                item_type == MessageList.ItemType.TOOL_CALL
+                and content["type"] == "tool_use"
+                and content["id"] == uri
+            ):
                 continue
-            elif item_type == MessageList.ItemType.TOOL_OUTPUT and content["type"] == "tool_result" and content["tool_use_id"] == uri:
+            elif (
+                item_type == MessageList.ItemType.TOOL_OUTPUT
+                and content["type"] == "tool_result"
+                and content["tool_use_id"] == uri
+            ):
                 continue
             new_contents.append(content)
 
         if new_contents:
             if item_type == MessageList.ItemType.TOOL_CALL:
                 if len(new_contents) == 1 and new_contents[0]["type"] == "text":
-                    new_message = {"role": "assistant", "content": new_contents[0]["text"]}
+                    new_message = {
+                        "role": "assistant",
+                        "content": new_contents[0]["text"],
+                    }
                 else:
                     new_message = {"role": "assistant", "content": new_contents}
             elif item_type == MessageList.ItemType.TOOL_OUTPUT:
