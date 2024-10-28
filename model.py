@@ -4,8 +4,8 @@ import itertools
 import json
 from abc import ABC, abstractmethod
 from collections import defaultdict
-from typing import Any, Dict, List, Literal, Optional, Union, overload
 from enum import StrEnum
+from typing import Any, Dict, List, Literal, Optional, Union, overload
 
 import anthropic
 import numpy as np
@@ -1082,24 +1082,26 @@ class MessageList(list):
         self.idx_to_named_idx = defaultdict(set)
         self.idxs = []
         self.idx_to_pos = {}
-        
+
         # new stuff
         self.item_type_to_uris = defaultdict(set)
         self.item_type_to_last_count = {
-          k: 0 for k in self.item_type_to_uri_prefix.keys()
+            k: 0 for k in self.item_type_to_uri_prefix.keys()
         }
 
-        
     def __getitem__(self, index):
         return super().__getitem__(index)
-    
+
     def __setitem__(self, index, value):
         super().__setitem__(index, value)
 
     def add_idx(self, item_type, idx=None, uri=None):
         if uri is None:
             self.item_type_to_last_count[item_type] += 1
-            uri = self.item_type_to_uri_prefix[item_type] + self.item_type_to_last_count[item_type]
+            uri = (
+                self.item_type_to_uri_prefix[item_type]
+                + self.item_type_to_last_count[item_type]
+            )
         if idx is None:
             idx = len(self)
 
@@ -1109,7 +1111,6 @@ class MessageList(list):
         if idx not in self.idxs:
             self.idxs.append(idx)
             self.idx_to_pos[idx] = len(self.idxs) - 1
-
 
     def pop_idx(self, named_idx, shift_idxs=True):
         popped_idx = self.named_idx_to_idx.pop(named_idx)
@@ -1138,22 +1139,22 @@ class MessageList(list):
                     self.idx_to_pos[curr_idx] = i
 
             return popped_idx
-    
+
     def append(self, item, item_type=None):
         super().append(item)
         if item_type is not None:
             self.add_idx(item_type)
-    
+
     def pop(self, index=-1):
         item = super().pop(index)
         return item
-    
+
     def insert(self, index, item):
         super().insert(index, item)
-    
+
     def remove(self, item):
         super().remove(item)
-    
+
     def clear(self, item_type=None):
         if item_type is None:
             super().clear()
@@ -1163,6 +1164,6 @@ class MessageList(list):
                 del self[idx_to_remove]
 
             self.item_type_to_uris[item_type] = set()
-    
+
     def __str__(self):
         return f"TrackedList({super().__str__()}, ops={self.operation_count})"
