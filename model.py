@@ -1123,7 +1123,11 @@ class MessageList(list):
             self.add_idx(item_type, i, uri)
 
     def get_idx_for_item_type(self, item_type, order=-1):
-        return self.item_type_to_uris[item_type][order] if self.item_type_to_uris[item_type] else None
+        return (
+            self.item_type_to_uris[item_type][order]
+            if self.item_type_to_uris[item_type]
+            else None
+        )
 
     def pop_idx(self, named_idx, shift_idxs=True):
         popped_idx = self.named_idx_to_idx.pop(named_idx)
