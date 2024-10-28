@@ -1,12 +1,12 @@
 from __future__ import annotations
 
+import copy
 import itertools
 import json
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from enum import StrEnum
 from typing import Any, Dict, List, Literal, Optional, Union, overload
-import copy
 
 import anthropic
 import numpy as np
