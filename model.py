@@ -6,6 +6,7 @@ from abc import ABC, abstractmethod
 from collections import defaultdict
 from enum import StrEnum
 from typing import Any, Dict, List, Literal, Optional, Union, overload
+import copy
 
 import anthropic
 import numpy as np
@@ -1072,7 +1073,6 @@ class MessageList(list):
         ItemType.USER: "usr_",
         ItemType.ASSISTANT: "asst_",
         ItemType.TOOL_OUTPUT: "tout_",
-        ItemType.TOOL_OUTPUT_SCHENA: "touts_",
         ItemType.NODE: "node_",
     }
 
@@ -1129,9 +1129,10 @@ class MessageList(list):
             else None
         )
 
-    def pop_idx(self, named_idx, shift_idxs=True):
+    def pop_idx(self, named_idx, item_type, shift_idxs=True):
         popped_idx = self.named_idx_to_idx.pop(named_idx)
         named_idxs = self.idx_to_named_idx[popped_idx]
+        self.item_type_to_uris[item_type].remove(named_idx)
 
         named_idxs.remove(named_idx)
         if not named_idxs:
@@ -1182,11 +1183,10 @@ class MessageList(list):
         if item_type is None:
             super().clear()
         else:
-            for uri in self.item_type_to_uris[item_type]:
-                idx_to_remove = self.pop_idx(uri)
+            uris = copy.copy(self.item_type_to_uris[item_type])
+            for uri in uris:
+                idx_to_remove = self.pop_idx(uri, item_type)
                 del self[idx_to_remove]
-
-            self.item_type_to_uris[item_type] = []
 
     def __str__(self):
         return f"TrackedList({super().__str__()}, ops={self.operation_count})"
