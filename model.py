@@ -1188,7 +1188,8 @@ class MessageList(list):
             uris = copy.copy(self.item_type_to_uris[item_type])
             for uri in uris:
                 idx_to_remove = self.pop_idx(uri, item_type)
-                del self[idx_to_remove]
+                if idx_to_remove is not None:
+                    del self[idx_to_remove]
 
     def __str__(self):
         return f"TrackedList({super().__str__()}, ops={self.operation_count})"
