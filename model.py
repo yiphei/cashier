@@ -1078,7 +1078,7 @@ class MessageList(list):
         ItemType.NODE: "node_",
     }
 
-    def __init__(self, *args):
+    def __init__(self, *args, model_provider):
         super().__init__(*args)
         self.named_idx_to_idx = {}
         self.idx_to_named_idx = defaultdict(set)
@@ -1086,6 +1086,7 @@ class MessageList(list):
         self.idx_to_pos = {}
 
         # new stuff
+        self.model_provider = model_provider
         self.item_type_to_uris = defaultdict(list)
         self.item_type_to_last_count = {
             k: 0 for k in self.item_type_to_uri_prefix.keys()
@@ -1096,6 +1097,32 @@ class MessageList(list):
 
     def __setitem__(self, index, value):
         super().__setitem__(index, value)
+
+    def pop_idx_ant(self, uri, item_type):
+        idx_to_remove = self.get_idx(uri)
+        message = self[idx_to_remove]
+        new_contents = []
+        for content in message["content"]:
+            if item_type == MessageList.ItemType.TOOL_CALL and content["type"] == "tool_use" and content["id"] == uri:
+                continue
+            elif item_type == MessageList.ItemType.TOOL_OUTPUT and content["type"] == "tool_result" and content["tool_use_id"] == uri:
+                continue
+            new_contents.append(content)
+
+        if new_contents:
+            if item_type == MessageList.ItemType.TOOL_CALL:
+                if len(new_contents) == 1 and new_contents[0]["type"] == "text":
+                    new_message = {"role": "assistant", "content": new_contents[0]["text"]}
+                else:
+                    new_message = {"role": "assistant", "content": new_contents}
+            elif item_type == MessageList.ItemType.TOOL_OUTPUT:
+                new_message = {"role": "user", "content": new_contents}
+
+            self[idx_to_remove] = new_message
+            self.pop_idx(uri, shift_idxs=False)
+        else:
+            del self[idx_to_remove]
+            self.pop_idx(uri)
 
     def add_idx(self, item_type, idx=None, uri=None):
         if uri is None:
@@ -1122,6 +1149,9 @@ class MessageList(list):
 
         for i, uri in zip(range(start_idx, end_idx + 1), uris):
             self.add_idx(item_type, i, uri)
+
+    def get_idx(self, named_idx):
+        return self.named_idx_to_idx[named_idx]
 
     def get_idx_for_item_type(self, item_type, order=-1):
         target_uri = (
@@ -1187,9 +1217,12 @@ class MessageList(list):
         else:
             uris = copy.copy(self.item_type_to_uris[item_type])
             for uri in uris:
-                idx_to_remove = self.pop_idx(uri, item_type)
-                if idx_to_remove is not None:
-                    del self[idx_to_remove]
+                if self.model_provider != ModelProvider.ANTHROPIC:
+                    idx_to_remove = self.pop_idx(uri, item_type)
+                    if idx_to_remove is not None:
+                        del self[idx_to_remove]
+                else:
+                    self.pop_idx_ant(uri, item_type)
 
     def __str__(self):
         return f"TrackedList({super().__str__()}, ops={self.operation_count})"
