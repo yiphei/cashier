@@ -1098,9 +1098,8 @@ class MessageList(list):
     def add_idx(self, item_type, idx=None, uri=None):
         if uri is None:
             self.item_type_to_last_count[item_type] += 1
-            uri = (
-                self.item_type_to_uri_prefix[item_type]
-                + str(self.item_type_to_last_count[item_type])
+            uri = self.item_type_to_uri_prefix[item_type] + str(
+                self.item_type_to_last_count[item_type]
             )
         if idx is None:
             idx = len(self) - 1
@@ -1123,7 +1122,7 @@ class MessageList(list):
             self.add_idx(item_type, i, uri)
 
     def get_idx_for_item_type(self, item_type, order=-1):
-        target_uri= (
+        target_uri = (
             self.item_type_to_uris[item_type][order]
             if self.item_type_to_uris[item_type]
             else None
