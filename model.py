@@ -1028,6 +1028,9 @@ class MessageList(list):
         if list_idx is None:
             list_idx = len(self) - 1
 
+        if uri in self.uri_to_list_idx:
+            raise ValueError()
+
         self.uri_to_list_idx[uri] = list_idx
         self.list_idx_to_uris[list_idx].add(uri)
         self.item_type_to_uris[item_type].append(uri)
