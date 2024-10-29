@@ -477,7 +477,9 @@ class MessageManager(ABC):
         self.parse_assistant_messages(turn.build_messages(self.model_provider))
 
     def get_user_message(self, order=-1):
-        idx = self.message_dicts.get_track_idx_for_item_type(MessageList.ItemType.USER, order)
+        idx = self.message_dicts.get_track_idx_for_item_type(
+            MessageList.ItemType.USER, order
+        )
         if idx:
             return self.message_dicts[idx]
         else:
@@ -1055,7 +1057,8 @@ class MessageList(list):
         order_validation = abs(order) if order < 0 else order + 1
         target_uri = (
             self.item_type_to_uris[item_type][order]
-            if self.item_type_to_uris[item_type] and order_validation <= len(self.item_type_to_uris[item_type])
+            if self.item_type_to_uris[item_type]
+            and order_validation <= len(self.item_type_to_uris[item_type])
             else None
         )
         return self.uri_to_list_idx[target_uri] if target_uri else None
