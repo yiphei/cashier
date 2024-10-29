@@ -1020,9 +1020,7 @@ class MessageList(list):
         self.model_provider = model_provider
         self.item_type_to_uris = defaultdict(list)
         self.uri_to_item_type = {}
-        self.item_type_to_count = {
-            k: 0 for k in self.item_type_to_uri_prefix.keys()
-        }
+        self.item_type_to_count = {k: 0 for k in self.item_type_to_uri_prefix.keys()}
 
     def get_tool_id_from_tool_output_uri(self, uri):
         return uri[
