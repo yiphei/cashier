@@ -1104,7 +1104,8 @@ class MessageList(list):
                 raise ValueError()
             return
 
-        if self.model_provider != ModelProvider.ANTHROPIC:
+        item_type = self.uri_to_item_type[uri]
+        if self.model_provider != ModelProvider.ANTHROPIC or (self.model_provider == ModelProvider.ANTHROPIC and not (item_type == MessageList.ItemType.TOOL_CALL or item_type == MessageList.ItemType.TOOL_OUTPUT)):
             self._remove_by_uri(uri)
         else:
             self.pop_track_idx_ant(uri)
