@@ -476,19 +476,19 @@ class MessageManager(ABC):
         self.parse_assistant_messages(turn.build_messages(self.model_provider))
 
     def get_last_user_message(self):
-        target_idx = self.message_dicts.get_track_idx_for_item_type(
+        idx = self.message_dicts.get_track_idx_for_item_type(
             MessageList.ItemType.USER
         )
-        if target_idx:
-            return self.message_dicts[target_idx]
+        if idx:
+            return self.message_dicts[idx]
         else:
             return None
 
     def get_conversation_msgs_since_last_node(self):
-        target_idx = self.conversation_dicts.get_track_idx_for_item_type(
+        idx = self.conversation_dicts.get_track_idx_for_item_type(
             MessageList.ItemType.NODE
         )
-        return self.conversation_dicts[target_idx + 1 :]
+        return self.conversation_dicts[idx + 1 :]
 
 
 class OAIMessageManager(MessageManager):
