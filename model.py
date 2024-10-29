@@ -469,7 +469,8 @@ class MessageManager(ABC):
             or (turn.model_provider == ModelProvider.ANTHROPIC and not turn.fn_calls)
         ):
             self.conversation_dicts.append(
-                {"role": "assistant", "content": turn.msg_content}, MessageList.ItemType.ASSISTANT
+                {"role": "assistant", "content": turn.msg_content},
+                MessageList.ItemType.ASSISTANT,
             )
         self.parse_assistant_messages(turn.build_messages(self.model_provider))
 
@@ -510,16 +511,34 @@ class OAIMessageManager(MessageManager):
             if message.get("tool_calls", None) is not None:
                 tool_call_id = message["tool_calls"][0]["id"]
                 curr_fn_name = message["tool_calls"][0]["function"]["name"]
-                self.message_dicts.append(message, MessageList.ItemType.TOOL_CALL, tool_call_id)
+                self.message_dicts.append(
+                    message, MessageList.ItemType.TOOL_CALL, tool_call_id
+                )
             elif message["role"] == "tool":
                 tool_call_id = message["tool_call_id"]
-                self.message_dicts.append(message, MessageList.ItemType.TOOL_OUTPUT, self.message_dicts.item_type_to_uri_prefix[MessageList.ItemType.TOOL_OUTPUT] + tool_call_id)
+                self.message_dicts.append(
+                    message,
+                    MessageList.ItemType.TOOL_OUTPUT,
+                    self.message_dicts.item_type_to_uri_prefix[
+                        MessageList.ItemType.TOOL_OUTPUT
+                    ]
+                    + tool_call_id,
+                )
             elif message["role"] == "system" and curr_fn_name is not None:
-                if curr_fn_name in self.message_dicts.item_type_to_uris[MessageList.ItemType.TOOL_OUTPUT_SCHEMA]:
-                    idx_to_remove = self.message_dicts.pop_idx(curr_fn_name, MessageList.ItemType.TOOL_OUTPUT_SCHEMA)
+                if (
+                    curr_fn_name
+                    in self.message_dicts.item_type_to_uris[
+                        MessageList.ItemType.TOOL_OUTPUT_SCHEMA
+                    ]
+                ):
+                    idx_to_remove = self.message_dicts.pop_idx(
+                        curr_fn_name, MessageList.ItemType.TOOL_OUTPUT_SCHEMA
+                    )
                     del self.message_dicts[idx_to_remove]
 
-                self.message_dicts.append(message, MessageList.ItemType.TOOL_OUTPUT_SCHEMA, curr_fn_name)
+                self.message_dicts.append(
+                    message, MessageList.ItemType.TOOL_OUTPUT_SCHEMA, curr_fn_name
+                )
                 curr_fn_name = None
             else:
                 self.message_dicts.append(message, MessageList.ItemType.ASSISTANT)
@@ -562,15 +581,22 @@ class AnthropicMessageManager(MessageManager):
             for content in contents:
                 if content["type"] == "tool_use":
                     tool_call_id = content["id"]
-                    self.message_dicts.add_idx(MessageList.ItemType.TOOL_CALL, tool_call_id)
-
+                    self.message_dicts.add_idx(
+                        MessageList.ItemType.TOOL_CALL, tool_call_id
+                    )
 
         if message_2 is not None:
             self.message_dicts.append(message_2)
             for content in message_2["content"]:
                 if content["type"] == "tool_result":
                     tool_id = content["tool_use_id"]
-                    self.message_dicts.add_idx(MessageList.ItemType.TOOL_OUTPUT, uri= self.message_dicts.item_type_to_uri_prefix[MessageList.ItemType.TOOL_OUTPUT] + tool_id)
+                    self.message_dicts.add_idx(
+                        MessageList.ItemType.TOOL_OUTPUT,
+                        uri=self.message_dicts.item_type_to_uri_prefix[
+                            MessageList.ItemType.TOOL_OUTPUT
+                        ]
+                        + tool_id,
+                    )
 
 
 class TurnContainer:
