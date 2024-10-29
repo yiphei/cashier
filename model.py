@@ -950,9 +950,6 @@ class CustomJSONEncoder(json.JSONEncoder):
         return super().default(obj)
 
 
-
-
-
 class MessageList(list):
     class ItemType(StrEnum):
         USER = "USER"
