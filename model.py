@@ -1062,10 +1062,10 @@ class MessageList(list):
                 new_message = {"role": "user", "content": new_contents}
 
             self[idx_to_remove] = new_message
-            self.pop_idx(uri, shift_idxs=False)
+            self.pop_track_idx(uri, shift_idxs=False)
         else:
             del self[idx_to_remove]
-            self.pop_idx(uri)
+            self.pop_track_idx(uri)
 
     def track_idx(self, item_type, list_idx=None, uri=None):
         if uri is None:
@@ -1105,7 +1105,7 @@ class MessageList(list):
         )
         return self.uri_to_list_idx[target_uri] if target_uri else None
 
-    def pop_idx(self, uri, shift_idxs=True):
+    def pop_track_idx(self, uri, shift_idxs=True):
         popped_list_idx = self.uri_to_list_idx.pop(uri)
         all_uris = self.list_idx_to_uris[popped_list_idx]
 
@@ -1154,7 +1154,7 @@ class MessageList(list):
             return
 
         if self.model_provider != ModelProvider.ANTHROPIC:
-            idx_to_remove = self.pop_idx(uri)
+            idx_to_remove = self.pop_track_idx(uri)
             if idx_to_remove is not None:
                 del self[idx_to_remove]
         else:
