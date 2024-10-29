@@ -1039,8 +1039,9 @@ class MessageList(list):
             len(self.item_type_to_uri_prefix[MessageList.ItemType.TOOL_OUTPUT]) :
         ]
 
-    def pop_idx_ant(self, uri, item_type):
+    def pop_idx_ant(self, uri):
         idx_to_remove = self.get_idx(uri)
+        item_type = self.uri_to_item_type[uri]
         message = self[idx_to_remove]
         new_contents = []
         for content in message["content"]:
@@ -1177,7 +1178,7 @@ class MessageList(list):
                         if idx_to_remove is not None:
                             del self[idx_to_remove]
                     else:
-                        self.pop_idx_ant(uri, item_type)
+                        self.pop_idx_ant(uri)
 
     def __str__(self):
         return f"TrackedList({super().__str__()}, ops={self.operation_count})"
