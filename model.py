@@ -422,13 +422,8 @@ class MessageManager(ABC):
     model_provider = None
 
     def __init__(self):
-        self.message_dicts = []
-        self.conversation_dicts = []
-        self.last_node_id = None
-        self.tool_call_ids = []
-        self.tool_fn_return_names = set()
-        self.index_tracker = ListIndexTracker()
-        self.last_user_msg_idx = None
+        self.message_dicts = MessageList(model_provider=self.model_provider)
+        self.conversation_dicts = MessageList(model_provider=self.model_provider)
 
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
@@ -437,9 +432,8 @@ class MessageManager(ABC):
 
     def add_user_turn(self, turn):
         user_msgs = turn.build_messages(self.model_provider)
-        self.message_dicts.extend(user_msgs)
-        self.conversation_dicts.extend(user_msgs)
-        self.last_user_msg_idx = len(self.message_dicts) - 1
+        self.message_dicts.extend(user_msgs, MessageList.ItemType.USER)
+        self.conversation_dicts.extend(user_msgs, MessageList.ItemType.USER)
 
     def add_node_turn(
         self,
@@ -451,31 +445,11 @@ class MessageManager(ABC):
             assert remove_prev_fn_return_schema is not False
 
         if remove_prev_fn_return_schema is True or remove_prev_tool_calls:
-            for toll_return in self.tool_fn_return_names:
-                self.remove_fn_output_schema(toll_return)
-
-            self.tool_fn_return_names = set()
+            self.message_dicts.clear(MessageList.ItemType.TOOL_OUTPUT_SCHEMA)
 
         if remove_prev_tool_calls:
-            for tool_call_id in self.tool_call_ids:
-                self.remove_fn_call(tool_call_id)
-                self.remove_fn_output(tool_call_id)
-
-            self.tool_call_ids = []
-
-        self.last_node_id = turn.node_id
-
-    @abstractmethod
-    def remove_fn_call(self, tool_call_id):
-        raise NotImplementedError
-
-    @abstractmethod
-    def remove_fn_output(self, tool_call_id):
-        raise NotImplementedError
-
-    @abstractmethod
-    def remove_fn_output_schema(self, fn_name):
-        raise NotImplementedError
+            self.message_dicts.clear(MessageList.ItemType.TOOL_CALL)
+            self.message_dicts.clear(MessageList.ItemType.TOOL_OUTPUT)
 
     @abstractmethod
     def parse_system_messages(self, msgs):
@@ -495,19 +469,20 @@ class MessageManager(ABC):
             or (turn.model_provider == ModelProvider.ANTHROPIC and not turn.fn_calls)
         ):
             self.conversation_dicts.append(
-                {"role": "assistant", "content": turn.msg_content}
+                {"role": "assistant", "content": turn.msg_content}, MessageList.ItemType.ASSISTANT
             )
         self.parse_assistant_messages(turn.build_messages(self.model_provider))
 
     def get_last_user_message(self):
-        if self.last_user_msg_idx:
-            return self.message_dicts[self.last_user_msg_idx]
+        target_idx = self.message_dicts.get_idx_for_item_type(MessageList.ItemType.USER)
+        if target_idx:
+            return self.message_dicts[target_idx]
         else:
             return None
 
     def get_conversation_msgs_since_last_node(self):
-        last_node_idx = self.index_tracker.get_idx(self.last_node_id)
-        return self.conversation_dicts[last_node_idx + 1 :]
+        target_idx = self.message_dicts.get_idx_for_item_type(MessageList.ItemType.NODE)
+        return self.conversation_dicts[target_idx + 1 :]
 
 
 class OAIMessageManager(MessageManager):
@@ -516,57 +491,38 @@ class OAIMessageManager(MessageManager):
     def parse_system_messages(self, msgs):
         self.message_dicts.extend(msgs)
 
-    def remove_fn_call(self, tool_call_id):
-        idx_to_remove = self.index_tracker.pop_idx(tool_call_id)
-        del self.message_dicts[idx_to_remove]
-
-    def remove_fn_output(self, tool_call_id):
-        idx_to_remove = self.index_tracker.pop_idx(tool_call_id + "return")
-        del self.message_dicts[idx_to_remove]
-
-    def remove_fn_output_schema(self, fn_name):
-        idx_to_remove = self.index_tracker.pop_idx(fn_name)
-        del self.message_dicts[idx_to_remove]
-
     def add_node_turn(
         self,
         turn,
         remove_prev_fn_return_schema=None,
         remove_prev_tool_calls=False,
     ):
-        if self.last_node_id is not None:
-            idx_to_remove = self.index_tracker.pop_idx(self.last_node_id)
-            del self.message_dicts[idx_to_remove]
+        self.message_dicts.clear(MessageList.ItemType.NODE)
         super().add_node_turn(
             turn, remove_prev_fn_return_schema, remove_prev_tool_calls
         )
-
-        self.message_dicts.extend(turn.build_oai_messages())
-        self.index_tracker.add_idx(turn.node_id, len(self.message_dicts) - 1)
+        self.message_dicts.extend(turn.build_oai_messages(), MessageList.ItemType.NODE)
+        self.conversation_dicts.add_idx(MessageList.ItemType.NODE)
 
     def parse_assistant_messages(self, msgs):
         curr_fn_name = None
         for message in msgs:
             if message.get("tool_calls", None) is not None:
                 tool_call_id = message["tool_calls"][0]["id"]
-                self.tool_call_ids.append(tool_call_id)
                 curr_fn_name = message["tool_calls"][0]["function"]["name"]
-                self.index_tracker.add_idx(tool_call_id, len(self.message_dicts))
+                self.message_dicts.append(message, MessageList.ItemType.TOOL_CALL, tool_call_id)
             elif message["role"] == "tool":
                 tool_call_id = message["tool_call_id"]
-                self.index_tracker.add_idx(
-                    tool_call_id + "return", len(self.message_dicts)
-                )
+                self.message_dicts.append(message, MessageList.ItemType.TOOL_OUTPUT, self.message_dicts.item_type_to_uri_prefix[MessageList.ItemType.TOOL_OUTPUT] + tool_call_id)
             elif message["role"] == "system" and curr_fn_name is not None:
-                if curr_fn_name in self.tool_fn_return_names:
-                    idx_to_remove = self.index_tracker.get_idx(curr_fn_name)
+                if curr_fn_name in self.message_dicts.item_type_to_uris[MessageList.ItemType.TOOL_OUTPUT_SCHEMA]:
+                    idx_to_remove = self.message_dicts.pop_idx(curr_fn_name, MessageList.ItemType.TOOL_OUTPUT_SCHEMA)
                     del self.message_dicts[idx_to_remove]
 
-                self.tool_fn_return_names.add(curr_fn_name)
-                self.index_tracker.add_idx(curr_fn_name, len(self.message_dicts))
+                self.message_dicts.append(message, MessageList.ItemType.TOOL_OUTPUT_SCHEMA, curr_fn_name)
                 curr_fn_name = None
-
-            self.message_dicts.append(message)
+            else:
+                self.message_dicts.append(message, MessageList.ItemType.ASSISTANT)
 
 
 class AnthropicMessageManager(MessageManager):
@@ -579,49 +535,6 @@ class AnthropicMessageManager(MessageManager):
     def parse_system_messages(self, msgs):
         return
 
-    def remove_fn_call(self, tool_call_id):
-        idx_to_remove = self.index_tracker.get_idx(tool_call_id)
-        message = self.message_dicts[idx_to_remove]
-        new_contents = []
-        for content in message["content"]:
-            if content["type"] == "tool_use" and content["id"] == tool_call_id:
-                continue
-            new_contents.append(content)
-
-        if new_contents:
-            if len(new_contents) == 1 and new_contents[0]["type"] == "text":
-                new_message = {"role": "assistant", "content": new_contents[0]["text"]}
-            else:
-                new_message = {"role": "assistant", "content": new_contents}
-            self.message_dicts[idx_to_remove] = new_message
-            self.index_tracker.pop_idx(tool_call_id, shift_idxs=False)
-        else:
-            del self.message_dicts[idx_to_remove]
-            self.index_tracker.pop_idx(tool_call_id)
-
-    def remove_fn_output(self, tool_call_id):
-        idx_to_remove = self.index_tracker.get_idx(tool_call_id + "return")
-        message = self.message_dicts[idx_to_remove]
-        new_contents = []
-        for content in message["content"]:
-            if (
-                content["type"] == "tool_result"
-                and content["tool_use_id"] == tool_call_id
-            ):
-                continue
-            new_contents.append(content)
-
-        if new_contents:
-            new_message = {"role": "user", "content": new_contents}
-            self.message_dicts[idx_to_remove] = new_message
-            self.index_tracker.pop_idx(tool_call_id + "return", shift_idxs=False)
-        else:
-            del self.message_dicts[idx_to_remove]
-            self.index_tracker.pop_idx(tool_call_id + "return")
-
-    def remove_fn_output_schema(self, fn_name):
-        return
-
     def add_node_turn(
         self,
         turn,
@@ -632,7 +545,8 @@ class AnthropicMessageManager(MessageManager):
             turn, remove_prev_fn_return_schema, remove_prev_tool_calls
         )
         self.system = turn.msg_content
-        self.index_tracker.add_idx(turn.node_id, len(self.message_dicts) - 1)
+        self.message_dicts.add_idx(MessageList.ItemType.NODE)
+        self.conversation_dicts.add_idx(MessageList.ItemType.NODE)
 
     def parse_assistant_messages(self, messages):
         if len(messages) == 2:
@@ -642,23 +556,21 @@ class AnthropicMessageManager(MessageManager):
             message_2 = None
 
         contents = message_1["content"]
+        # TODO: if i add Assistant type here, it causes a bug downstreas when transitionning to a new node. Investigate
+        self.message_dicts.append(message_1)
         if type(contents) == list:
             for content in contents:
                 if content["type"] == "tool_use":
                     tool_call_id = content["id"]
-                    self.tool_call_ids.append(tool_call_id)
-                    self.index_tracker.add_idx(tool_call_id, len(self.message_dicts))
+                    self.message_dicts.add_idx(MessageList.ItemType.TOOL_CALL, tool_call_id)
 
-        self.message_dicts.append(message_1)
 
         if message_2 is not None:
+            self.message_dicts.append(message_2)
             for content in message_2["content"]:
                 if content["type"] == "tool_result":
                     tool_id = content["tool_use_id"]
-                    self.index_tracker.add_idx(
-                        tool_id + "return", len(self.message_dicts)
-                    )
-            self.message_dicts.append(message_2)
+                    self.message_dicts.add_idx(MessageList.ItemType.TOOL_OUTPUT, uri= self.message_dicts.item_type_to_uri_prefix[MessageList.ItemType.TOOL_OUTPUT] + tool_id)
 
 
 class TurnContainer:
