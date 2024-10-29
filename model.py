@@ -453,9 +453,14 @@ class MessageManager(ABC):
             )
 
         self.conversation_dicts.track_idx(MessageList.ItemType.NODE)
+        self.parse_node_messages(turn.build_messages(self.model_provider))
 
     @abstractmethod
     def parse_system_messages(self, msgs):
+        raise NotImplementedError
+    
+    @abstractmethod
+    def parse_node_messages(self, msgs):
         raise NotImplementedError
 
     @abstractmethod
@@ -497,17 +502,12 @@ class OAIMessageManager(MessageManager):
     def parse_system_messages(self, msgs):
         self.message_dicts.extend(msgs)
 
-    def add_node_turn(
+    def parse_node_messages(
         self,
-        turn,
-        remove_prev_fn_return_schema=None,
-        remove_prev_tool_calls=False,
+        msgs,
     ):
         self.message_dicts.clear(MessageList.ItemType.NODE)
-        super().add_node_turn(
-            turn, remove_prev_fn_return_schema, remove_prev_tool_calls
-        )
-        [msg] = turn.build_oai_messages()
+        [msg] = msgs
         self.message_dicts.append(msg, MessageList.ItemType.NODE)
 
     def parse_assistant_messages(self, msgs):
@@ -549,16 +549,12 @@ class AnthropicMessageManager(MessageManager):
     def parse_system_messages(self, msgs):
         return
 
-    def add_node_turn(
+    def parse_node_messages(
         self,
-        turn,
-        remove_prev_fn_return_schema=None,
-        remove_prev_tool_calls=False,
+        msgs
     ):
-        super().add_node_turn(
-            turn, remove_prev_fn_return_schema, remove_prev_tool_calls
-        )
-        self.system = turn.msg_content
+        [msg] = msgs
+        self.system = msg['content']
         self.message_dicts.track_idx(MessageList.ItemType.NODE)
 
     def parse_assistant_messages(self, messages):
