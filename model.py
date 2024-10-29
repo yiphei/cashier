@@ -1130,10 +1130,10 @@ class MessageList(list):
                 new_message = {"role": "user", "content": new_contents}
 
             self[idx_to_remove] = new_message
-            self.pop_idx(uri, shift_idxs=False)
+            self.pop_idx(uri, item_type, shift_idxs=False)
         else:
             del self[idx_to_remove]
-            self.pop_idx(uri)
+            self.pop_idx(uri, item_type)
 
     def add_idx(self, item_type, idx=None, uri=None):
         if uri is None:
