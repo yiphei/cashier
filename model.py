@@ -476,8 +476,8 @@ class MessageManager(ABC):
             )
         self.parse_assistant_messages(turn.build_messages(self.model_provider))
 
-    def get_last_user_message(self):
-        idx = self.message_dicts.get_track_idx_for_item_type(MessageList.ItemType.USER)
+    def get_user_message(self, order=-1):
+        idx = self.message_dicts.get_track_idx_for_item_type(MessageList.ItemType.USER, order)
         if idx:
             return self.message_dicts[idx]
         else:
@@ -613,7 +613,7 @@ class TurnContainer:
     ):
         last_msg = self.model_provider_to_message_manager[
             ModelProvider.OPENAI
-        ].get_last_user_message()
+        ].get_user_message()
         if last_msg:
             last_msg = last_msg["content"]
         node_schema.run(last_msg)
