@@ -950,50 +950,7 @@ class CustomJSONEncoder(json.JSONEncoder):
         return super().default(obj)
 
 
-class ListIndexTracker:
-    def __init__(self):
-        self.named_idx_to_idx = {}
-        self.idx_to_named_idx = defaultdict(set)
-        self.idxs = []
-        self.idx_to_pos = {}
 
-    def add_idx(self, named_idx, idx):
-        self.named_idx_to_idx[named_idx] = idx
-        self.idx_to_named_idx[idx].add(named_idx)
-        if idx not in self.idxs:
-            self.idxs.append(idx)
-            self.idx_to_pos[idx] = len(self.idxs) - 1
-
-    def get_idx(self, named_idx):
-        return self.named_idx_to_idx[named_idx]
-
-    def pop_idx(self, named_idx, shift_idxs=True):
-        popped_idx = self.named_idx_to_idx.pop(named_idx)
-        named_idxs = self.idx_to_named_idx[popped_idx]
-
-        named_idxs.remove(named_idx)
-        if not named_idxs:
-            popped_idx_pos = self.idx_to_pos.pop(popped_idx)
-            self.idx_to_named_idx.pop(popped_idx)
-            del self.idxs[popped_idx_pos]
-
-            for i in range(popped_idx_pos, len(self.idxs)):
-                curr_idx = self.idxs[i]
-                self.idx_to_pos.pop(curr_idx)
-                if shift_idxs:
-                    curr_named_idxs = self.idx_to_named_idx[curr_idx]
-
-                    self.idxs[i] -= 1
-                    self.idx_to_pos[self.idxs[i]] = i
-
-                    for curr_named_idx in curr_named_idxs:
-                        self.named_idx_to_idx[curr_named_idx] = self.idxs[i]
-                    self.idx_to_named_idx.pop(curr_idx)
-                    self.idx_to_named_idx[self.idxs[i]] = curr_named_idxs
-                else:
-                    self.idx_to_pos[curr_idx] = i
-
-            return popped_idx
 
 
 class MessageList(list):
