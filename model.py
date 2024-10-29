@@ -573,7 +573,7 @@ class AnthropicMessageManager(MessageManager):
 
         if is_backward:
             self.message_dicts.track_idx(
-                MessageList.ItemType.NODE, len(self.conversation_dicts) - 2
+                MessageList.ItemType.NODE, len(self.message_dicts) - 2
             )
         else:
             self.message_dicts.track_idx(MessageList.ItemType.NODE)
