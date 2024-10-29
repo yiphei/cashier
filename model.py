@@ -1135,6 +1135,8 @@ class MessageList(list):
                     self.list_idx_to_track_idx[curr_list_idx] = i
 
             return popped_list_idx
+        else:
+            return None
 
     def append(self, item, item_type=None, uri=None):
         super().append(item)
@@ -1154,9 +1156,9 @@ class MessageList(list):
             return
 
         if self.model_provider != ModelProvider.ANTHROPIC:
-            idx_to_remove = self.pop_track_idx(uri)
-            if idx_to_remove is not None:
-                del self[idx_to_remove]
+            popped_idx = self.pop_track_idx(uri)
+            if popped_idx is not None:
+                del self[popped_idx]
         else:
             self.pop_idx_ant(uri)
 
