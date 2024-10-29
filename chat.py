@@ -281,23 +281,16 @@ def run_chat(args, model, elevenlabs_client):
 
     need_user_input = True
     current_node_schema = take_order_node_schema
+    current_node_schema.input = None
     current_edge_schemas = FROM_NODE_ID_TO_EDGE_SCHEMA[current_node_schema.id]
-    new_node_input = None
 
     while True:
         if not current_node_schema.is_initialized:
             logger.debug(
                 f"[NODE_SCHEMA] Initializing {Style.BRIGHT}node_schema_id: {current_node_schema.id}{Style.NORMAL}"
             )
-            last_msg = TC.model_provider_to_message_manager[
-                ModelProvider.OPENAI
-            ].get_last_user_message()
-            if last_msg:
-                last_msg = last_msg["content"]
-            current_node_schema.run(new_node_input, last_msg)
             TC.add_node_turn(
-                current_node_schema.id,
-                current_node_schema.prompt,
+                current_node_schema,
                 remove_prev_tool_calls=args.remove_prev_tool_calls,
             )
             MessageDisplay.print_msg("system", current_node_schema.prompt)
@@ -381,6 +374,7 @@ def run_chat(args, model, elevenlabs_client):
                         current_node_schema.state
                     )
                     current_node_schema = first_true_edge_schema.to_node_schema
+                    current_node_schema.input = new_node_input
                     current_edge_schemas = FROM_NODE_ID_TO_EDGE_SCHEMA.get(
                         current_node_schema.id, []
                     )

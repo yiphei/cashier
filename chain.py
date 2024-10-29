@@ -36,6 +36,7 @@ class NodeSchema:
         self.first_turn = first_turn
         self.tool_registry = ToolRegistry()
         self.first_user_message = False
+        self.input = None
 
         for field_name, field_info in self.state_pydantic_model.model_fields.items():
             new_tool_fn_name = f"update_state_{field_name}"
@@ -55,14 +56,14 @@ class NodeSchema:
     def update_first_user_message(self):
         self.first_user_message = True
 
-    def run(self, input, last_user_msg=None):
+    def run(self, last_user_msg=None):
         self.is_initialized = True
-        if input is not None:
-            assert isinstance(input, self.input_pydantic_model)
+        if self.input is not None:
+            assert isinstance(self.input, self.input_pydantic_model)
 
         self.state = self.state_pydantic_model()
         self.prompt = self.generate_system_prompt(
-            input.model_dump_json() if self.input_pydantic_model is not None else None,
+            self.input.model_dump_json() if self.input_pydantic_model is not None else None,
             last_user_msg,
         )
 
