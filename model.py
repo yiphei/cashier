@@ -1092,6 +1092,9 @@ class MessageList(list):
             k: 0 for k in self.item_type_to_uri_prefix.keys()
         }
 
+    def get_tool_id_from_tool_output_uri(self, uri):
+        return uri[len(self.item_type_to_uri_prefix[MessageList.ItemType.TOOL_OUTPUT]):]
+
     def __getitem__(self, index):
         return super().__getitem__(index)
 
@@ -1112,7 +1115,7 @@ class MessageList(list):
             elif (
                 item_type == MessageList.ItemType.TOOL_OUTPUT
                 and content["type"] == "tool_result"
-                and content["tool_use_id"] == uri
+                and content["tool_use_id"] == self.get_tool_id_from_tool_output_uri(uri)
             ):
                 continue
             new_contents.append(content)
