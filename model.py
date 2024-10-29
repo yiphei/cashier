@@ -582,7 +582,7 @@ class AnthropicMessageManager(MessageManager):
                 if content["type"] == "tool_use":
                     tool_call_id = content["id"]
                     self.message_dicts.add_idx(
-                        MessageList.ItemType.TOOL_CALL, uri= tool_call_id
+                        MessageList.ItemType.TOOL_CALL, uri=tool_call_id
                     )
 
         if message_2 is not None:
