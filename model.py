@@ -482,7 +482,9 @@ class MessageManager(ABC):
             return None
 
     def get_conversation_msgs_since_last_node(self):
-        target_idx = self.conversation_dicts.get_idx_for_item_type(MessageList.ItemType.NODE)
+        target_idx = self.conversation_dicts.get_idx_for_item_type(
+            MessageList.ItemType.NODE
+        )
         return self.conversation_dicts[target_idx + 1 :]
 
 
