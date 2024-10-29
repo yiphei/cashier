@@ -1020,10 +1020,10 @@ class MessageList(list):
 
     def __init__(self, *args, model_provider):
         super().__init__(*args)
-        self.named_idx_to_idx = {}
-        self.idx_to_named_idx = defaultdict(set)
-        self.idxs = []
-        self.idx_to_pos = {}
+        self.uri_to_list_idx = {}
+        self.list_idx_to_uris = defaultdict(set)
+        self.list_idxs = []
+        self.list_idx_to_track_idx = {}
 
         # new stuff
         self.model_provider = model_provider
@@ -1089,12 +1089,12 @@ class MessageList(list):
         if idx is None:
             idx = len(self) - 1
 
-        self.named_idx_to_idx[uri] = idx
-        self.idx_to_named_idx[idx].add(uri)
+        self.uri_to_list_idx[uri] = idx
+        self.list_idx_to_uris[idx].add(uri)
         self.item_type_to_uris[item_type].append(uri)
-        if idx not in self.idxs:
-            self.idxs.append(idx)
-            self.idx_to_pos[idx] = len(self.idxs) - 1
+        if idx not in self.list_idxs:
+            self.list_idxs.append(idx)
+            self.list_idx_to_track_idx[idx] = len(self.list_idxs) - 1
 
     def add_idxs(self, item_type, start_idx, end_idx=None, uris=None):
         if end_idx is None:
@@ -1107,7 +1107,7 @@ class MessageList(list):
             self.add_idx(item_type, i, uri)
 
     def get_idx(self, named_idx):
-        return self.named_idx_to_idx[named_idx]
+        return self.uri_to_list_idx[named_idx]
 
     def get_idx_for_item_type(self, item_type, order=-1):
         target_uri = (
@@ -1115,34 +1115,34 @@ class MessageList(list):
             if self.item_type_to_uris[item_type]
             else None
         )
-        return self.named_idx_to_idx[target_uri] if target_uri else None
+        return self.uri_to_list_idx[target_uri] if target_uri else None
 
     def pop_idx(self, named_idx, item_type, shift_idxs=True):
-        popped_idx = self.named_idx_to_idx.pop(named_idx)
-        named_idxs = self.idx_to_named_idx[popped_idx]
+        popped_idx = self.uri_to_list_idx.pop(named_idx)
+        named_idxs = self.list_idx_to_uris[popped_idx]
         self.item_type_to_uris[item_type].remove(named_idx)
 
         named_idxs.remove(named_idx)
         if not named_idxs:
-            popped_idx_pos = self.idx_to_pos.pop(popped_idx)
-            self.idx_to_named_idx.pop(popped_idx)
-            del self.idxs[popped_idx_pos]
+            popped_idx_pos = self.list_idx_to_track_idx.pop(popped_idx)
+            self.list_idx_to_uris.pop(popped_idx)
+            del self.list_idxs[popped_idx_pos]
 
-            for i in range(popped_idx_pos, len(self.idxs)):
-                curr_idx = self.idxs[i]
-                self.idx_to_pos.pop(curr_idx)
+            for i in range(popped_idx_pos, len(self.list_idxs)):
+                curr_list_idx = self.list_idxs[i]
+                self.list_idx_to_track_idx.pop(curr_list_idx)
                 if shift_idxs:
-                    curr_named_idxs = self.idx_to_named_idx[curr_idx]
+                    curr_uris = self.list_idx_to_uris[curr_list_idx]
 
-                    self.idxs[i] -= 1
-                    self.idx_to_pos[self.idxs[i]] = i
+                    self.list_idxs[i] -= 1
+                    self.list_idx_to_track_idx[self.list_idxs[i]] = i
 
-                    for curr_named_idx in curr_named_idxs:
-                        self.named_idx_to_idx[curr_named_idx] = self.idxs[i]
-                    self.idx_to_named_idx.pop(curr_idx)
-                    self.idx_to_named_idx[self.idxs[i]] = curr_named_idxs
+                    for curr_named_idx in curr_uris:
+                        self.uri_to_list_idx[curr_named_idx] = self.list_idxs[i]
+                    self.list_idx_to_uris.pop(curr_list_idx)
+                    self.list_idx_to_uris[self.list_idxs[i]] = curr_uris
                 else:
-                    self.idx_to_pos[curr_idx] = i
+                    self.list_idx_to_track_idx[curr_list_idx] = i
 
             return popped_idx
 
