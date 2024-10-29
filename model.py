@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import copy
 import itertools
 import json
 from abc import ABC, abstractmethod
 from collections import defaultdict
+from enum import StrEnum
 from typing import Any, Dict, List, Literal, Optional, Union, overload
 
 import anthropic
@@ -185,6 +187,8 @@ class Model:
             raise Exception("cannot both have response_format and stream defined")
         if not tools:
             args.pop("tools")
+        if not stream:
+            args.pop("stream")
 
         return OAIModelOutput(chat_fn(**args), stream, response_format)
 
@@ -418,13 +422,8 @@ class MessageManager(ABC):
     model_provider = None
 
     def __init__(self):
-        self.message_dicts = []
-        self.conversation_dicts = []
-        self.last_node_id = None
-        self.tool_call_ids = []
-        self.tool_fn_return_names = set()
-        self.index_tracker = ListIndexTracker()
-        self.last_user_msg_idx = None
+        self.message_dicts = MessageList(model_provider=self.model_provider)
+        self.conversation_dicts = MessageList(model_provider=self.model_provider)
 
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
@@ -433,9 +432,8 @@ class MessageManager(ABC):
 
     def add_user_turn(self, turn):
         user_msgs = turn.build_messages(self.model_provider)
-        self.message_dicts.extend(user_msgs)
-        self.conversation_dicts.extend(user_msgs)
-        self.last_user_msg_idx = len(self.message_dicts) - 1
+        self.message_dicts.extend(user_msgs, MessageList.ItemType.USER)
+        self.conversation_dicts.extend(user_msgs, MessageList.ItemType.USER)
 
     def add_node_turn(
         self,
@@ -447,31 +445,14 @@ class MessageManager(ABC):
             assert remove_prev_fn_return_schema is not False
 
         if remove_prev_fn_return_schema is True or remove_prev_tool_calls:
-            for toll_return in self.tool_fn_return_names:
-                self.remove_fn_output_schema(toll_return)
-
-            self.tool_fn_return_names = set()
+            self.message_dicts.clear(MessageList.ItemType.TOOL_OUTPUT_SCHEMA)
 
         if remove_prev_tool_calls:
-            for tool_call_id in self.tool_call_ids:
-                self.remove_fn_call(tool_call_id)
-                self.remove_fn_output(tool_call_id)
+            self.message_dicts.clear(
+                [MessageList.ItemType.TOOL_CALL, MessageList.ItemType.TOOL_OUTPUT]
+            )
 
-            self.tool_call_ids = []
-
-        self.last_node_id = turn.node_id
-
-    @abstractmethod
-    def remove_fn_call(self, tool_call_id):
-        raise NotImplementedError
-
-    @abstractmethod
-    def remove_fn_output(self, tool_call_id):
-        raise NotImplementedError
-
-    @abstractmethod
-    def remove_fn_output_schema(self, fn_name):
-        raise NotImplementedError
+        self.conversation_dicts.track_idx(MessageList.ItemType.NODE)
 
     @abstractmethod
     def parse_system_messages(self, msgs):
@@ -496,14 +477,17 @@ class MessageManager(ABC):
         self.parse_assistant_messages(turn.build_messages(self.model_provider))
 
     def get_last_user_message(self):
-        if self.last_user_msg_idx:
-            return self.message_dicts[self.last_user_msg_idx]
+        idx = self.message_dicts.get_track_idx_for_item_type(MessageList.ItemType.USER)
+        if idx:
+            return self.message_dicts[idx]
         else:
             return None
 
     def get_conversation_msgs_since_last_node(self):
-        last_node_idx = self.index_tracker.get_idx(self.last_node_id)
-        return self.conversation_dicts[last_node_idx + 1 :]
+        idx = self.conversation_dicts.get_track_idx_for_item_type(
+            MessageList.ItemType.NODE
+        )
+        return self.conversation_dicts[idx + 1 :]
 
 
 class OAIMessageManager(MessageManager):
@@ -512,57 +496,43 @@ class OAIMessageManager(MessageManager):
     def parse_system_messages(self, msgs):
         self.message_dicts.extend(msgs)
 
-    def remove_fn_call(self, tool_call_id):
-        idx_to_remove = self.index_tracker.pop_idx(tool_call_id)
-        del self.message_dicts[idx_to_remove]
-
-    def remove_fn_output(self, tool_call_id):
-        idx_to_remove = self.index_tracker.pop_idx(tool_call_id + "return")
-        del self.message_dicts[idx_to_remove]
-
-    def remove_fn_output_schema(self, fn_name):
-        idx_to_remove = self.index_tracker.pop_idx(fn_name)
-        del self.message_dicts[idx_to_remove]
-
     def add_node_turn(
         self,
         turn,
         remove_prev_fn_return_schema=None,
         remove_prev_tool_calls=False,
     ):
-        if self.last_node_id is not None:
-            idx_to_remove = self.index_tracker.pop_idx(self.last_node_id)
-            del self.message_dicts[idx_to_remove]
         super().add_node_turn(
             turn, remove_prev_fn_return_schema, remove_prev_tool_calls
         )
-
-        self.message_dicts.extend(turn.build_oai_messages())
-        self.index_tracker.add_idx(turn.node_id, len(self.message_dicts) - 1)
+        self.message_dicts.clear(MessageList.ItemType.NODE)
+        [msg] = turn.build_oai_messages()
+        self.message_dicts.append(msg, MessageList.ItemType.NODE)
 
     def parse_assistant_messages(self, msgs):
         curr_fn_name = None
         for message in msgs:
             if message.get("tool_calls", None) is not None:
                 tool_call_id = message["tool_calls"][0]["id"]
-                self.tool_call_ids.append(tool_call_id)
                 curr_fn_name = message["tool_calls"][0]["function"]["name"]
-                self.index_tracker.add_idx(tool_call_id, len(self.message_dicts))
+                self.message_dicts.append(
+                    message, MessageList.ItemType.TOOL_CALL, tool_call_id
+                )
             elif message["role"] == "tool":
                 tool_call_id = message["tool_call_id"]
-                self.index_tracker.add_idx(
-                    tool_call_id + "return", len(self.message_dicts)
+                self.message_dicts.append(
+                    message,
+                    MessageList.ItemType.TOOL_OUTPUT,
+                    MessageList.get_tool_output_uri_from_tool_id(tool_call_id),
                 )
             elif message["role"] == "system" and curr_fn_name is not None:
-                if curr_fn_name in self.tool_fn_return_names:
-                    idx_to_remove = self.index_tracker.get_idx(curr_fn_name)
-                    del self.message_dicts[idx_to_remove]
-
-                self.tool_fn_return_names.add(curr_fn_name)
-                self.index_tracker.add_idx(curr_fn_name, len(self.message_dicts))
+                self.message_dicts.remove_by_uri(curr_fn_name, False)
+                self.message_dicts.append(
+                    message, MessageList.ItemType.TOOL_OUTPUT_SCHEMA, curr_fn_name
+                )
                 curr_fn_name = None
-
-            self.message_dicts.append(message)
+            else:
+                self.message_dicts.append(message)
 
 
 class AnthropicMessageManager(MessageManager):
@@ -575,49 +545,6 @@ class AnthropicMessageManager(MessageManager):
     def parse_system_messages(self, msgs):
         return
 
-    def remove_fn_call(self, tool_call_id):
-        idx_to_remove = self.index_tracker.get_idx(tool_call_id)
-        message = self.message_dicts[idx_to_remove]
-        new_contents = []
-        for content in message["content"]:
-            if content["type"] == "tool_use" and content["id"] == tool_call_id:
-                continue
-            new_contents.append(content)
-
-        if new_contents:
-            if len(new_contents) == 1 and new_contents[0]["type"] == "text":
-                new_message = {"role": "assistant", "content": new_contents[0]["text"]}
-            else:
-                new_message = {"role": "assistant", "content": new_contents}
-            self.message_dicts[idx_to_remove] = new_message
-            self.index_tracker.pop_idx(tool_call_id, shift_idxs=False)
-        else:
-            del self.message_dicts[idx_to_remove]
-            self.index_tracker.pop_idx(tool_call_id)
-
-    def remove_fn_output(self, tool_call_id):
-        idx_to_remove = self.index_tracker.get_idx(tool_call_id + "return")
-        message = self.message_dicts[idx_to_remove]
-        new_contents = []
-        for content in message["content"]:
-            if (
-                content["type"] == "tool_result"
-                and content["tool_use_id"] == tool_call_id
-            ):
-                continue
-            new_contents.append(content)
-
-        if new_contents:
-            new_message = {"role": "user", "content": new_contents}
-            self.message_dicts[idx_to_remove] = new_message
-            self.index_tracker.pop_idx(tool_call_id + "return", shift_idxs=False)
-        else:
-            del self.message_dicts[idx_to_remove]
-            self.index_tracker.pop_idx(tool_call_id + "return")
-
-    def remove_fn_output_schema(self, fn_name):
-        return
-
     def add_node_turn(
         self,
         turn,
@@ -628,7 +555,7 @@ class AnthropicMessageManager(MessageManager):
             turn, remove_prev_fn_return_schema, remove_prev_tool_calls
         )
         self.system = turn.msg_content
-        self.index_tracker.add_idx(turn.node_id, len(self.message_dicts) - 1)
+        self.message_dicts.track_idx(MessageList.ItemType.NODE)
 
     def parse_assistant_messages(self, messages):
         if len(messages) == 2:
@@ -638,23 +565,24 @@ class AnthropicMessageManager(MessageManager):
             message_2 = None
 
         contents = message_1["content"]
+        self.message_dicts.append(message_1)
         if type(contents) == list:
             for content in contents:
                 if content["type"] == "tool_use":
                     tool_call_id = content["id"]
-                    self.tool_call_ids.append(tool_call_id)
-                    self.index_tracker.add_idx(tool_call_id, len(self.message_dicts))
-
-        self.message_dicts.append(message_1)
+                    self.message_dicts.track_idx(
+                        MessageList.ItemType.TOOL_CALL, uri=tool_call_id
+                    )
 
         if message_2 is not None:
+            self.message_dicts.append(message_2)
             for content in message_2["content"]:
                 if content["type"] == "tool_result":
                     tool_id = content["tool_use_id"]
-                    self.index_tracker.add_idx(
-                        tool_id + "return", len(self.message_dicts)
+                    self.message_dicts.track_idx(
+                        MessageList.ItemType.TOOL_OUTPUT,
+                        uri=MessageList.get_tool_output_uri_from_tool_id(tool_id),
                     )
-            self.message_dicts.append(message_2)
 
 
 class TurnContainer:
@@ -1012,47 +940,196 @@ class CustomJSONEncoder(json.JSONEncoder):
         return super().default(obj)
 
 
-class ListIndexTracker:
-    def __init__(self):
-        self.named_idx_to_idx = {}
-        self.idx_to_named_idx = defaultdict(set)
-        self.idxs = []
-        self.idx_to_pos = {}
+class MessageList(list):
+    class ItemType(StrEnum):
+        USER = "USER"
+        TOOL_CALL = "TOOL_CALL"
+        TOOL_OUTPUT = "TOOL_OUTPUT"
+        TOOL_OUTPUT_SCHEMA = "TOOL_OUTPUT_SCHEMA"
+        NODE = "NODE"
 
-    def add_idx(self, named_idx, idx):
-        self.named_idx_to_idx[named_idx] = idx
-        self.idx_to_named_idx[idx].add(named_idx)
-        if idx not in self.idxs:
-            self.idxs.append(idx)
-            self.idx_to_pos[idx] = len(self.idxs) - 1
+    item_type_to_uri_prefix = {
+        ItemType.USER: "usr_",
+        ItemType.TOOL_OUTPUT: "tout_",
+        ItemType.NODE: "node_",
+    }
 
-    def get_idx(self, named_idx):
-        return self.named_idx_to_idx[named_idx]
+    def __init__(self, *args, model_provider):
+        super().__init__(*args)
+        self.uri_to_list_idx = {}
+        self.list_idx_to_uris = defaultdict(set)
+        self.list_idxs = []
+        self.list_idx_to_track_idx = {}
 
-    def pop_idx(self, named_idx, shift_idxs=True):
-        popped_idx = self.named_idx_to_idx.pop(named_idx)
-        named_idxs = self.idx_to_named_idx[popped_idx]
+        self.model_provider = model_provider
+        self.item_type_to_uris = defaultdict(list)
+        self.uri_to_item_type = {}
+        self.item_type_to_count = {k: 0 for k in self.item_type_to_uri_prefix.keys()}
 
-        named_idxs.remove(named_idx)
-        if not named_idxs:
-            popped_idx_pos = self.idx_to_pos.pop(popped_idx)
-            self.idx_to_named_idx.pop(popped_idx)
-            del self.idxs[popped_idx_pos]
+    def get_tool_id_from_tool_output_uri(self, uri):
+        return uri[
+            len(self.item_type_to_uri_prefix[MessageList.ItemType.TOOL_OUTPUT]) :
+        ]
 
-            for i in range(popped_idx_pos, len(self.idxs)):
-                curr_idx = self.idxs[i]
-                self.idx_to_pos.pop(curr_idx)
-                if shift_idxs:
-                    curr_named_idxs = self.idx_to_named_idx[curr_idx]
+    @classmethod
+    def get_tool_output_uri_from_tool_id(cls, tool_id):
+        return cls.item_type_to_uri_prefix[MessageList.ItemType.TOOL_OUTPUT] + tool_id
 
-                    self.idxs[i] -= 1
-                    self.idx_to_pos[self.idxs[i]] = i
+    def pop_track_idx_ant(self, uri):
+        track_idx = self.get_track_idx_from_uri(uri)
+        item_type = self.uri_to_item_type[uri]
+        message = self[track_idx]
+        new_contents = []
+        for content in message["content"]:
+            if (
+                item_type == MessageList.ItemType.TOOL_CALL
+                and content["type"] == "tool_use"
+                and content["id"] == uri
+            ):
+                continue
+            elif (
+                item_type == MessageList.ItemType.TOOL_OUTPUT
+                and content["type"] == "tool_result"
+                and content["tool_use_id"] == self.get_tool_id_from_tool_output_uri(uri)
+            ):
+                continue
+            new_contents.append(content)
 
-                    for curr_named_idx in curr_named_idxs:
-                        self.named_idx_to_idx[curr_named_idx] = self.idxs[i]
-                    self.idx_to_named_idx.pop(curr_idx)
-                    self.idx_to_named_idx[self.idxs[i]] = curr_named_idxs
+        if new_contents:
+            if item_type == MessageList.ItemType.TOOL_CALL:
+                if len(new_contents) == 1 and new_contents[0]["type"] == "text":
+                    new_message = {
+                        "role": "assistant",
+                        "content": new_contents[0]["text"],
+                    }
                 else:
-                    self.idx_to_pos[curr_idx] = i
+                    new_message = {"role": "assistant", "content": new_contents}
+            elif item_type == MessageList.ItemType.TOOL_OUTPUT:
+                new_message = {"role": "user", "content": new_contents}
 
-            return popped_idx
+            self[track_idx] = new_message
+            self.pop_track_idx(uri, shift_idxs=False)
+        else:
+            self._remove_by_uri(uri, True)
+
+    def track_idx(self, item_type, list_idx=None, uri=None):
+        if uri is None:
+            self.item_type_to_count[item_type] += 1
+            uri = self.item_type_to_uri_prefix[item_type] + str(
+                self.item_type_to_count[item_type]
+            )
+        if list_idx is None:
+            list_idx = len(self) - 1
+
+        if uri in self.uri_to_list_idx:
+            raise ValueError()
+
+        self.uri_to_list_idx[uri] = list_idx
+        self.list_idx_to_uris[list_idx].add(uri)
+        self.item_type_to_uris[item_type].append(uri)
+        self.uri_to_item_type[uri] = item_type
+        if list_idx not in self.list_idxs:
+            self.list_idxs.append(list_idx)
+            self.list_idx_to_track_idx[list_idx] = len(self.list_idxs) - 1
+
+    def track_idxs(self, item_type, start_list_idx, end_list_idx=None, uris=None):
+        if end_list_idx is None:
+            end_list_idx = len(self) - 1
+        if uris is None:
+            range_idx = end_list_idx - start_list_idx + 1
+            uris = [None] * range_idx
+
+        for i, uri in zip(range(start_list_idx, end_list_idx + 1), uris):
+            self.track_idx(item_type, i, uri)
+
+    def get_track_idx_from_uri(self, uri):
+        return self.uri_to_list_idx[uri]
+
+    def get_track_idx_for_item_type(self, item_type, order=-1):
+        target_uri = (
+            self.item_type_to_uris[item_type][order]
+            if self.item_type_to_uris[item_type]
+            else None
+        )
+        return self.uri_to_list_idx[target_uri] if target_uri else None
+
+    def pop_track_idx(self, uri, shift_idxs=True):
+        popped_list_idx = self.uri_to_list_idx.pop(uri)
+        all_uris = self.list_idx_to_uris[popped_list_idx]
+
+        item_type = self.uri_to_item_type.pop(uri)
+        self.item_type_to_uris[item_type].remove(uri)
+
+        all_uris.remove(uri)
+        if not all_uris:
+            popped_track_idx = self.list_idx_to_track_idx.pop(popped_list_idx)
+            self.list_idx_to_uris.pop(popped_list_idx)
+            del self.list_idxs[popped_track_idx]
+
+            for i in range(popped_track_idx, len(self.list_idxs)):
+                curr_list_idx = self.list_idxs[i]
+                self.list_idx_to_track_idx.pop(curr_list_idx)
+                if shift_idxs:
+                    curr_uris = self.list_idx_to_uris[curr_list_idx]
+
+                    self.list_idxs[i] -= 1
+                    self.list_idx_to_track_idx[self.list_idxs[i]] = i
+
+                    for uri in curr_uris:
+                        self.uri_to_list_idx[uri] = self.list_idxs[i]
+                    self.list_idx_to_uris.pop(curr_list_idx)
+                    self.list_idx_to_uris[self.list_idxs[i]] = curr_uris
+                else:
+                    self.list_idx_to_track_idx[curr_list_idx] = i
+
+            return popped_list_idx
+        else:
+            return None
+
+    def append(self, item, item_type=None, uri=None):
+        super().append(item)
+        if item_type is not None:
+            self.track_idx(item_type, uri=uri)
+
+    def extend(self, items, item_type=None):
+        curr_len = len(self) - 1
+        super().extend(items)
+        if items and item_type is not None:
+            self.track_idxs(item_type, curr_len + 1)
+
+    def _remove_by_uri(self, uri, raise_on_unpopped_idx=False):
+        popped_idx = self.pop_track_idx(uri)
+        if popped_idx is not None:
+            del self[popped_idx]
+        else:
+            if raise_on_unpopped_idx:
+                raise ValueError
+
+    def remove_by_uri(self, uri, raise_if_not_found=True):
+        if uri not in self.uri_to_item_type:
+            if raise_if_not_found:
+                raise ValueError()
+            return
+
+        item_type = self.uri_to_item_type[uri]
+        if self.model_provider != ModelProvider.ANTHROPIC or (
+            self.model_provider == ModelProvider.ANTHROPIC
+            and not (
+                item_type == MessageList.ItemType.TOOL_CALL
+                or item_type == MessageList.ItemType.TOOL_OUTPUT
+            )
+        ):
+            self._remove_by_uri(uri)
+        else:
+            self.pop_track_idx_ant(uri)
+
+    def clear(self, item_type_or_types=None):
+        if item_type_or_types is None:
+            super().clear()
+        else:
+            if not isinstance(item_type_or_types, list):
+                item_type_or_types = [item_type_or_types]
+            for item_type in item_type_or_types:
+                uris = copy.copy(self.item_type_to_uris[item_type])
+                for uri in uris:
+                    self.remove_by_uri(uri)
