@@ -4,6 +4,7 @@ import copy
 import itertools
 import json
 from abc import ABC, abstractmethod
+from bisect import bisect_right
 from collections import defaultdict
 from enum import StrEnum
 from typing import Any, Dict, List, Literal, Optional, Union, overload
@@ -1029,8 +1030,14 @@ class MessageList(list):
         self.item_type_to_uris[item_type].append(uri)
         self.uri_to_item_type[uri] = item_type
         if list_idx not in self.list_idxs:
-            self.list_idxs.append(list_idx)
-            self.list_idx_to_track_idx[list_idx] = len(self.list_idxs) - 1
+            if (self.list_idxs and self.list_idxs[-1] < list_idx) or not self.list_idxs:
+                self.list_idxs.append(list_idx)
+                self.list_idx_to_track_idx[list_idx] = len(self.list_idxs) - 1
+            else:
+                insert_idx = bisect_right(self.list_idxs, list_idx)
+                self.list_idxs.insert(insert_idx, list_idx)
+                self.list_idx_to_track_idx[list_idx] = insert_idx
+                self.shift_track_idxs(insert_idx + 1, 1)
 
     def track_idxs(self, item_type, start_list_idx, end_list_idx=None, uris=None):
         if end_list_idx is None:
@@ -1053,6 +1060,20 @@ class MessageList(list):
         )
         return self.uri_to_list_idx[target_uri] if target_uri else None
 
+    def shift_track_idxs(self, start_track_idx, shift_direction):
+        for i in range(start_track_idx, len(self.list_idxs)):
+            curr_list_idx = self.list_idxs[i]
+            self.list_idx_to_track_idx.pop(curr_list_idx)
+            curr_uris = self.list_idx_to_uris[curr_list_idx]
+
+            self.list_idxs[i] += shift_direction
+            self.list_idx_to_track_idx[self.list_idxs[i]] = i
+
+            for uri in curr_uris:
+                self.uri_to_list_idx[uri] = self.list_idxs[i]
+            self.list_idx_to_uris.pop(curr_list_idx)
+            self.list_idx_to_uris[self.list_idxs[i]] = curr_uris
+
     def pop_track_idx(self, uri, shift_idxs=True):
         popped_list_idx = self.uri_to_list_idx.pop(uri)
         all_uris = self.list_idx_to_uris[popped_list_idx]
@@ -1066,20 +1087,12 @@ class MessageList(list):
             self.list_idx_to_uris.pop(popped_list_idx)
             del self.list_idxs[popped_track_idx]
 
-            for i in range(popped_track_idx, len(self.list_idxs)):
-                curr_list_idx = self.list_idxs[i]
-                self.list_idx_to_track_idx.pop(curr_list_idx)
-                if shift_idxs:
-                    curr_uris = self.list_idx_to_uris[curr_list_idx]
-
-                    self.list_idxs[i] -= 1
-                    self.list_idx_to_track_idx[self.list_idxs[i]] = i
-
-                    for uri in curr_uris:
-                        self.uri_to_list_idx[uri] = self.list_idxs[i]
-                    self.list_idx_to_uris.pop(curr_list_idx)
-                    self.list_idx_to_uris[self.list_idxs[i]] = curr_uris
-                else:
+            if shift_idxs:
+                self.shift_track_idxs(popped_track_idx, -1)
+            else:
+                for i in range(popped_track_idx, len(self.list_idxs)):
+                    curr_list_idx = self.list_idxs[i]
+                    self.list_idx_to_track_idx.pop(curr_list_idx)
                     self.list_idx_to_track_idx[curr_list_idx] = i
 
             return popped_list_idx
@@ -1090,6 +1103,11 @@ class MessageList(list):
         super().append(item)
         if item_type is not None:
             self.track_idx(item_type, uri=uri)
+
+    def insert(self, idx, item, item_type=None, uri=None):
+        super().insert(idx, item)
+        if item_type is not None:
+            self.track_idx(item_type, idx, uri)
 
     def extend(self, items, item_type=None):
         curr_len = len(self) - 1
