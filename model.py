@@ -535,7 +535,7 @@ class OAIMessageManager(MessageManager):
                     ]
                 ):
                     idx_to_remove = self.message_dicts.pop_idx(
-                        curr_fn_name, MessageList.ItemType.TOOL_OUTPUT_SCHEMA
+                        curr_fn_name
                     )
                     del self.message_dicts[idx_to_remove]
 
@@ -1029,6 +1029,7 @@ class MessageList(list):
         # new stuff
         self.model_provider = model_provider
         self.item_type_to_uris = defaultdict(list)
+        self.uri_to_item_type = {}
         self.item_type_to_last_count = {
             k: 0 for k in self.item_type_to_uri_prefix.keys()
         }
@@ -1070,10 +1071,10 @@ class MessageList(list):
                 new_message = {"role": "user", "content": new_contents}
 
             self[idx_to_remove] = new_message
-            self.pop_idx(uri, item_type, shift_idxs=False)
+            self.pop_idx(uri, shift_idxs=False)
         else:
             del self[idx_to_remove]
-            self.pop_idx(uri, item_type)
+            self.pop_idx(uri)
 
     def add_idx(self, item_type, idx=None, uri=None):
         if uri is None:
@@ -1087,6 +1088,7 @@ class MessageList(list):
         self.uri_to_list_idx[uri] = idx
         self.list_idx_to_uris[idx].add(uri)
         self.item_type_to_uris[item_type].append(uri)
+        self.uri_to_item_type[uri] = item_type
         if idx not in self.list_idxs:
             self.list_idxs.append(idx)
             self.list_idx_to_track_idx[idx] = len(self.list_idxs) - 1
@@ -1112,9 +1114,11 @@ class MessageList(list):
         )
         return self.uri_to_list_idx[target_uri] if target_uri else None
 
-    def pop_idx(self, uri, item_type, shift_idxs=True):
+    def pop_idx(self, uri, shift_idxs=True):
         popped_list_idx = self.uri_to_list_idx.pop(uri)
         all_uris = self.list_idx_to_uris[popped_list_idx]
+
+        item_type = self.uri_to_item_type.pop(uri)
         self.item_type_to_uris[item_type].remove(uri)
 
         all_uris.remove(uri)
@@ -1169,7 +1173,7 @@ class MessageList(list):
                 uris = copy.copy(self.item_type_to_uris[item_type])
                 for uri in uris:
                     if self.model_provider != ModelProvider.ANTHROPIC:
-                        idx_to_remove = self.pop_idx(uri, item_type)
+                        idx_to_remove = self.pop_idx(uri)
                         if idx_to_remove is not None:
                             del self[idx_to_remove]
                     else:
