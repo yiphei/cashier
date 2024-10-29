@@ -506,7 +506,7 @@ class OAIMessageManager(MessageManager):
             turn, remove_prev_fn_return_schema, remove_prev_tool_calls
         )
         self.message_dicts.extend(turn.build_oai_messages(), MessageList.ItemType.NODE)
-        self.conversation_dicts.add_idx(MessageList.ItemType.NODE)
+        self.conversation_dicts.track_idx(MessageList.ItemType.NODE)
 
     def parse_assistant_messages(self, msgs):
         curr_fn_name = None
@@ -557,8 +557,8 @@ class AnthropicMessageManager(MessageManager):
             turn, remove_prev_fn_return_schema, remove_prev_tool_calls
         )
         self.system = turn.msg_content
-        self.message_dicts.add_idx(MessageList.ItemType.NODE)
-        self.conversation_dicts.add_idx(MessageList.ItemType.NODE)
+        self.message_dicts.track_idx(MessageList.ItemType.NODE)
+        self.conversation_dicts.track_idx(MessageList.ItemType.NODE)
 
     def parse_assistant_messages(self, messages):
         if len(messages) == 2:
@@ -574,7 +574,7 @@ class AnthropicMessageManager(MessageManager):
             for content in contents:
                 if content["type"] == "tool_use":
                     tool_call_id = content["id"]
-                    self.message_dicts.add_idx(
+                    self.message_dicts.track_idx(
                         MessageList.ItemType.TOOL_CALL, uri=tool_call_id
                     )
 
@@ -583,7 +583,7 @@ class AnthropicMessageManager(MessageManager):
             for content in message_2["content"]:
                 if content["type"] == "tool_result":
                     tool_id = content["tool_use_id"]
-                    self.message_dicts.add_idx(
+                    self.message_dicts.track_idx(
                         MessageList.ItemType.TOOL_OUTPUT,
                         uri=self.message_dicts.item_type_to_uri_prefix[
                             MessageList.ItemType.TOOL_OUTPUT
@@ -1030,7 +1030,7 @@ class MessageList(list):
         ]
 
     def pop_idx_ant(self, uri):
-        idx_to_remove = self.get_idx(uri)
+        idx_to_remove = self.get_list_idx_from_uri(uri)
         item_type = self.uri_to_item_type[uri]
         message = self[idx_to_remove]
         new_contents = []
@@ -1067,34 +1067,34 @@ class MessageList(list):
             del self[idx_to_remove]
             self.pop_idx(uri)
 
-    def add_idx(self, item_type, idx=None, uri=None):
+    def track_idx(self, item_type, list_idx=None, uri=None):
         if uri is None:
             self.item_type_to_count[item_type] += 1
             uri = self.item_type_to_uri_prefix[item_type] + str(
                 self.item_type_to_count[item_type]
             )
-        if idx is None:
-            idx = len(self) - 1
+        if list_idx is None:
+            list_idx = len(self) - 1
 
-        self.uri_to_list_idx[uri] = idx
-        self.list_idx_to_uris[idx].add(uri)
+        self.uri_to_list_idx[uri] = list_idx
+        self.list_idx_to_uris[list_idx].add(uri)
         self.item_type_to_uris[item_type].append(uri)
         self.uri_to_item_type[uri] = item_type
-        if idx not in self.list_idxs:
-            self.list_idxs.append(idx)
-            self.list_idx_to_track_idx[idx] = len(self.list_idxs) - 1
+        if list_idx not in self.list_idxs:
+            self.list_idxs.append(list_idx)
+            self.list_idx_to_track_idx[list_idx] = len(self.list_idxs) - 1
 
-    def add_idxs(self, item_type, start_idx, end_idx=None, uris=None):
-        if end_idx is None:
-            end_idx = len(self) - 1
+    def track_idxs(self, item_type, start_list_idx, end_list_idx=None, uris=None):
+        if end_list_idx is None:
+            end_list_idx = len(self) - 1
         if uris is None:
-            range_idx = end_idx - start_idx + 1
+            range_idx = end_list_idx - start_list_idx + 1
             uris = [None] * range_idx
 
-        for i, uri in zip(range(start_idx, end_idx + 1), uris):
-            self.add_idx(item_type, i, uri)
+        for i, uri in zip(range(start_list_idx, end_list_idx + 1), uris):
+            self.track_idx(item_type, i, uri)
 
-    def get_idx(self, uri):
+    def get_list_idx_from_uri(self, uri):
         return self.uri_to_list_idx[uri]
 
     def get_idx_for_item_type(self, item_type, order=-1):
@@ -1139,13 +1139,13 @@ class MessageList(list):
     def append(self, item, item_type=None, uri=None):
         super().append(item)
         if item_type is not None:
-            self.add_idx(item_type, uri=uri)
+            self.track_idx(item_type, uri=uri)
 
     def extend(self, items, item_type=None):
         curr_len = len(self) - 1
         super().extend(items)
         if items and item_type is not None:
-            self.add_idxs(item_type, curr_len + 1)
+            self.track_idxs(item_type, curr_len + 1)
 
     def remove_by_uri(self, uri, raise_if_not_found=True):
         if uri not in self.uri_to_item_type:
