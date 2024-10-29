@@ -1028,10 +1028,10 @@ class MessageList(list):
             len(self.item_type_to_uri_prefix[MessageList.ItemType.TOOL_OUTPUT]) :
         ]
 
-    def pop_idx_ant(self, uri):
-        idx_to_remove = self.get_track_idx_from_uri(uri)
+    def pop_track_idx_ant(self, uri):
+        track_idx = self.get_track_idx_from_uri(uri)
         item_type = self.uri_to_item_type[uri]
-        message = self[idx_to_remove]
+        message = self[track_idx]
         new_contents = []
         for content in message["content"]:
             if (
@@ -1060,11 +1060,10 @@ class MessageList(list):
             elif item_type == MessageList.ItemType.TOOL_OUTPUT:
                 new_message = {"role": "user", "content": new_contents}
 
-            self[idx_to_remove] = new_message
+            self[track_idx] = new_message
             self.pop_track_idx(uri, shift_idxs=False)
         else:
-            del self[idx_to_remove]
-            self.pop_track_idx(uri)
+            self._remove_by_uri(uri)
 
     def track_idx(self, item_type, list_idx=None, uri=None):
         if uri is None:
@@ -1148,6 +1147,12 @@ class MessageList(list):
         if items and item_type is not None:
             self.track_idxs(item_type, curr_len + 1)
 
+    def _remove_by_uri(self, uri):
+        popped_idx = self.pop_track_idx(uri)
+        if popped_idx is not None:
+            del self[popped_idx]
+
+
     def remove_by_uri(self, uri, raise_if_not_found=True):
         if uri not in self.uri_to_item_type:
             if raise_if_not_found:
@@ -1155,11 +1160,9 @@ class MessageList(list):
             return
 
         if self.model_provider != ModelProvider.ANTHROPIC:
-            popped_idx = self.pop_track_idx(uri)
-            if popped_idx is not None:
-                del self[popped_idx]
+            self._remove_by_uri(uri)
         else:
-            self.pop_idx_ant(uri)
+            self.pop_track_idx_ant(uri)
 
     def clear(self, item_type_or_types=None):
         if item_type_or_types is None:
