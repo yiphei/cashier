@@ -1020,7 +1020,7 @@ class MessageList(list):
         self.model_provider = model_provider
         self.item_type_to_uris = defaultdict(list)
         self.uri_to_item_type = {}
-        self.item_type_to_last_count = {
+        self.item_type_to_count = {
             k: 0 for k in self.item_type_to_uri_prefix.keys()
         }
 
@@ -1069,9 +1069,9 @@ class MessageList(list):
 
     def add_idx(self, item_type, idx=None, uri=None):
         if uri is None:
-            self.item_type_to_last_count[item_type] += 1
+            self.item_type_to_count[item_type] += 1
             uri = self.item_type_to_uri_prefix[item_type] + str(
-                self.item_type_to_last_count[item_type]
+                self.item_type_to_count[item_type]
             )
         if idx is None:
             idx = len(self) - 1
