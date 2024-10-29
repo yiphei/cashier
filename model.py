@@ -448,8 +448,7 @@ class MessageManager(ABC):
             self.message_dicts.clear(MessageList.ItemType.TOOL_OUTPUT_SCHEMA)
 
         if remove_prev_tool_calls:
-            self.message_dicts.clear(MessageList.ItemType.TOOL_CALL)
-            self.message_dicts.clear(MessageList.ItemType.TOOL_OUTPUT)
+            self.message_dicts.clear([MessageList.ItemType.TOOL_CALL , MessageList.ItemType.TOOL_OUTPUT])
 
     @abstractmethod
     def parse_system_messages(self, msgs):
@@ -1158,18 +1157,21 @@ class MessageList(list):
     def remove(self, item):
         super().remove(item)
 
-    def clear(self, item_type=None):
-        if item_type is None:
+    def clear(self, item_type_or_types=None):
+        if item_type_or_types is None:
             super().clear()
         else:
-            uris = copy.copy(self.item_type_to_uris[item_type])
-            for uri in uris:
-                if self.model_provider != ModelProvider.ANTHROPIC:
-                    idx_to_remove = self.pop_idx(uri, item_type)
-                    if idx_to_remove is not None:
-                        del self[idx_to_remove]
-                else:
-                    self.pop_idx_ant(uri, item_type)
+            if not isinstance(item_type_or_types, list):
+                item_type_or_types = [item_type_or_types]
+            for item_type in item_type_or_types:
+                uris = copy.copy(self.item_type_to_uris[item_type])
+                for uri in uris:
+                    if self.model_provider != ModelProvider.ANTHROPIC:
+                        idx_to_remove = self.pop_idx(uri, item_type)
+                        if idx_to_remove is not None:
+                            del self[idx_to_remove]
+                    else:
+                        self.pop_idx_ant(uri, item_type)
 
     def __str__(self):
         return f"TrackedList({super().__str__()}, ops={self.operation_count})"
