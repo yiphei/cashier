@@ -448,7 +448,9 @@ class MessageManager(ABC):
             self.message_dicts.clear(MessageList.ItemType.TOOL_OUTPUT_SCHEMA)
 
         if remove_prev_tool_calls:
-            self.message_dicts.clear([MessageList.ItemType.TOOL_CALL , MessageList.ItemType.TOOL_OUTPUT])
+            self.message_dicts.clear(
+                [MessageList.ItemType.TOOL_CALL, MessageList.ItemType.TOOL_OUTPUT]
+            )
 
     @abstractmethod
     def parse_system_messages(self, msgs):
