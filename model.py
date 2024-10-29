@@ -1035,8 +1035,8 @@ class MessageList(list):
                 self.list_idx_to_track_idx[list_idx] = len(self.list_idxs) - 1
             else:
                 first_target_idx = bisect_right(self.list_idxs, list_idx)
-                self.list_idxs.insert(first_target_idx - 1, list_idx)
-                self.list_idx_to_track_idx[list_idx] = first_target_idx - 1
+                self.list_idxs.insert(first_target_idx, list_idx)
+                self.list_idx_to_track_idx[list_idx] = first_target_idx
                 self.shift_idx(first_target_idx + 1, 1)
 
     def track_idxs(self, item_type, start_list_idx, end_list_idx=None, uris=None):
