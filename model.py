@@ -570,7 +570,6 @@ class AnthropicMessageManager(MessageManager):
             turn, remove_prev_fn_return_schema, remove_prev_tool_calls, is_backward
         )
         self.system = turn.msg_content
-        self.message_dicts.track_idx(MessageList.ItemType.NODE)
 
         if is_backward:
             self.message_dicts.track_idx(
