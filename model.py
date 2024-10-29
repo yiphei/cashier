@@ -1106,8 +1106,8 @@ class MessageList(list):
         for i, uri in zip(range(start_idx, end_idx + 1), uris):
             self.add_idx(item_type, i, uri)
 
-    def get_idx(self, named_idx):
-        return self.uri_to_list_idx[named_idx]
+    def get_idx(self, uri):
+        return self.uri_to_list_idx[uri]
 
     def get_idx_for_item_type(self, item_type, order=-1):
         target_uri = (
@@ -1117,18 +1117,18 @@ class MessageList(list):
         )
         return self.uri_to_list_idx[target_uri] if target_uri else None
 
-    def pop_idx(self, named_idx, item_type, shift_idxs=True):
-        popped_idx = self.uri_to_list_idx.pop(named_idx)
-        named_idxs = self.list_idx_to_uris[popped_idx]
-        self.item_type_to_uris[item_type].remove(named_idx)
+    def pop_idx(self, uri, item_type, shift_idxs=True):
+        popped_list_idx = self.uri_to_list_idx.pop(uri)
+        all_uris = self.list_idx_to_uris[popped_list_idx]
+        self.item_type_to_uris[item_type].remove(uri)
 
-        named_idxs.remove(named_idx)
-        if not named_idxs:
-            popped_idx_pos = self.list_idx_to_track_idx.pop(popped_idx)
-            self.list_idx_to_uris.pop(popped_idx)
-            del self.list_idxs[popped_idx_pos]
+        all_uris.remove(uri)
+        if not all_uris:
+            popped_track_idx = self.list_idx_to_track_idx.pop(popped_list_idx)
+            self.list_idx_to_uris.pop(popped_list_idx)
+            del self.list_idxs[popped_track_idx]
 
-            for i in range(popped_idx_pos, len(self.list_idxs)):
+            for i in range(popped_track_idx, len(self.list_idxs)):
                 curr_list_idx = self.list_idxs[i]
                 self.list_idx_to_track_idx.pop(curr_list_idx)
                 if shift_idxs:
@@ -1137,14 +1137,14 @@ class MessageList(list):
                     self.list_idxs[i] -= 1
                     self.list_idx_to_track_idx[self.list_idxs[i]] = i
 
-                    for curr_named_idx in curr_uris:
-                        self.uri_to_list_idx[curr_named_idx] = self.list_idxs[i]
+                    for uri in curr_uris:
+                        self.uri_to_list_idx[uri] = self.list_idxs[i]
                     self.list_idx_to_uris.pop(curr_list_idx)
                     self.list_idx_to_uris[self.list_idxs[i]] = curr_uris
                 else:
                     self.list_idx_to_track_idx[curr_list_idx] = i
 
-            return popped_idx
+            return popped_list_idx
 
     def append(self, item, item_type=None, uri=None):
         super().append(item)
