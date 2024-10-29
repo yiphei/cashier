@@ -528,15 +528,7 @@ class OAIMessageManager(MessageManager):
                     + tool_call_id,
                 )
             elif message["role"] == "system" and curr_fn_name is not None:
-                if (
-                    curr_fn_name
-                    in self.message_dicts.item_type_to_uris[
-                        MessageList.ItemType.TOOL_OUTPUT_SCHEMA
-                    ]
-                ):
-                    idx_to_remove = self.message_dicts.pop_idx(curr_fn_name)
-                    del self.message_dicts[idx_to_remove]
-
+                self.message_dicts.remove_by_uri(curr_fn_name, False)
                 self.message_dicts.append(
                     message, MessageList.ItemType.TOOL_OUTPUT_SCHEMA, curr_fn_name
                 )
@@ -1155,7 +1147,12 @@ class MessageList(list):
         if items and item_type is not None:
             self.add_idxs(item_type, curr_len + 1)
 
-    def remove_by_uri(self, uri):
+    def remove_by_uri(self, uri, raise_if_not_found=True):
+        if uri not in self.uri_to_item_type:
+            if raise_if_not_found:
+                raise ValueError()
+            return
+
         if self.model_provider != ModelProvider.ANTHROPIC:
             idx_to_remove = self.pop_idx(uri)
             if idx_to_remove is not None:
