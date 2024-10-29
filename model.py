@@ -506,7 +506,9 @@ class OAIMessageManager(MessageManager):
         remove_prev_fn_return_schema=None,
         remove_prev_tool_calls=False,
     ):
-        super().add_node_turn(turn, remove_prev_fn_return_schema, remove_prev_tool_calls)
+        super().add_node_turn(
+            turn, remove_prev_fn_return_schema, remove_prev_tool_calls
+        )
         self.message_dicts.clear(MessageList.ItemType.NODE)
         [msg] = turn.build_oai_messages(self.model_provider)
         self.message_dicts.append(msg, MessageList.ItemType.NODE)
@@ -556,7 +558,9 @@ class AnthropicMessageManager(MessageManager):
         remove_prev_fn_return_schema=None,
         remove_prev_tool_calls=False,
     ):
-        super().add_node_turn(turn, remove_prev_fn_return_schema, remove_prev_tool_calls)
+        super().add_node_turn(
+            turn, remove_prev_fn_return_schema, remove_prev_tool_calls
+        )
         self.system = turn.msg_content
         self.message_dicts.track_idx(MessageList.ItemType.NODE)
 
