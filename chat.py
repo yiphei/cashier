@@ -329,7 +329,7 @@ def run_chat(args, model, elevenlabs_client):
                 TC.add_node_turn(
                     current_node_schema,
                     remove_prev_tool_calls=args.remove_prev_tool_calls,
-                    is_backward=True
+                    is_backward=True,
                 )
                 MessageDisplay.print_msg("system", current_node_schema.prompt)
             current_node_schema.update_first_user_message()
@@ -392,7 +392,9 @@ def run_chat(args, model, elevenlabs_client):
                     )
                     has_node_transition = True
 
-                    node_schema_id_to_node_schema[current_node_schema.id] = current_node_schema
+                    node_schema_id_to_node_schema[current_node_schema.id] = (
+                        current_node_schema
+                    )
 
             if fn_call_context.has_exception():
                 logger.debug(
