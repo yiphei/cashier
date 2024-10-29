@@ -1161,8 +1161,13 @@ class MessageList(list):
         item = super().pop(index)
         return item
 
-    def remove(self, item):
-        super().remove(item)
+    def remove_by_uri(self, uri):
+        if self.model_provider != ModelProvider.ANTHROPIC:
+            idx_to_remove = self.pop_idx(uri)
+            if idx_to_remove is not None:
+                del self[idx_to_remove]
+        else:
+            self.pop_idx_ant(uri)
 
     def clear(self, item_type_or_types=None):
         if item_type_or_types is None:
@@ -1173,12 +1178,7 @@ class MessageList(list):
             for item_type in item_type_or_types:
                 uris = copy.copy(self.item_type_to_uris[item_type])
                 for uri in uris:
-                    if self.model_provider != ModelProvider.ANTHROPIC:
-                        idx_to_remove = self.pop_idx(uri)
-                        if idx_to_remove is not None:
-                            del self[idx_to_remove]
-                    else:
-                        self.pop_idx_ant(uri)
+                    self.remove_by_uri(uri)
 
     def __str__(self):
         return f"TrackedList({super().__str__()}, ops={self.operation_count})"
