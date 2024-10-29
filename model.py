@@ -452,6 +452,8 @@ class MessageManager(ABC):
                 [MessageList.ItemType.TOOL_CALL, MessageList.ItemType.TOOL_OUTPUT]
             )
 
+        self.conversation_dicts.track_idx(MessageList.ItemType.NODE)
+
     @abstractmethod
     def parse_system_messages(self, msgs):
         raise NotImplementedError
@@ -507,7 +509,6 @@ class OAIMessageManager(MessageManager):
         )
         [msg] = turn.build_oai_messages()
         self.message_dicts.append(msg, MessageList.ItemType.NODE)
-        self.conversation_dicts.track_idx(MessageList.ItemType.NODE)
 
     def parse_assistant_messages(self, msgs):
         curr_fn_name = None
@@ -559,7 +560,6 @@ class AnthropicMessageManager(MessageManager):
         )
         self.system = turn.msg_content
         self.message_dicts.track_idx(MessageList.ItemType.NODE)
-        self.conversation_dicts.track_idx(MessageList.ItemType.NODE)
 
     def parse_assistant_messages(self, messages):
         if len(messages) == 2:
