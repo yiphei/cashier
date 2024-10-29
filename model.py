@@ -1091,6 +1091,11 @@ class MessageList(list):
         if item_type is not None:
             self.track_idx(item_type, uri=uri)
 
+    def insert(self, idx, item, item_type=None, uri=None):
+        super().insert(idx, item)
+        if item_type is not None:
+            self.track_idx(item_type, idx, uri)
+
     def extend(self, items, item_type=None):
         curr_len = len(self) - 1
         super().extend(items)
