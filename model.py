@@ -565,7 +565,6 @@ class AnthropicMessageManager(MessageManager):
             message_2 = None
 
         contents = message_1["content"]
-        # TODO: if i add Assistant type here, it causes a bug downstreas when transitionning to a new node. Investigate
         self.message_dicts.append(message_1)
         if type(contents) == list:
             for content in contents:
@@ -1011,7 +1010,7 @@ class MessageList(list):
             self[track_idx] = new_message
             self.pop_track_idx(uri, shift_idxs=False)
         else:
-            self._remove_by_uri(uri)
+            self._remove_by_uri(uri, True)
 
     def track_idx(self, item_type, list_idx=None, uri=None):
         if uri is None:
@@ -1098,10 +1097,13 @@ class MessageList(list):
         if items and item_type is not None:
             self.track_idxs(item_type, curr_len + 1)
 
-    def _remove_by_uri(self, uri):
+    def _remove_by_uri(self, uri, raise_on_unpopped_idx=False):
         popped_idx = self.pop_track_idx(uri)
         if popped_idx is not None:
             del self[popped_idx]
+        else:
+            if raise_on_unpopped_idx:
+                raise ValueError
 
     def remove_by_uri(self, uri, raise_if_not_found=True):
         if uri not in self.uri_to_item_type:
