@@ -1155,10 +1155,6 @@ class MessageList(list):
         if items and item_type is not None:
             self.add_idxs(item_type, curr_len + 1)
 
-    def pop(self, index=-1):
-        item = super().pop(index)
-        return item
-
     def remove_by_uri(self, uri):
         if self.model_provider != ModelProvider.ANTHROPIC:
             idx_to_remove = self.pop_idx(uri)
