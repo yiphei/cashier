@@ -7,6 +7,7 @@ from abc import ABC, abstractmethod
 from collections import defaultdict
 from enum import StrEnum
 from typing import Any, Dict, List, Literal, Optional, Union, overload
+from bisect import bisect_right
 
 import anthropic
 import numpy as np
@@ -1029,8 +1030,15 @@ class MessageList(list):
         self.item_type_to_uris[item_type].append(uri)
         self.uri_to_item_type[uri] = item_type
         if list_idx not in self.list_idxs:
-            self.list_idxs.append(list_idx)
-            self.list_idx_to_track_idx[list_idx] = len(self.list_idxs) - 1
+            if (self.list_idxs and self.list_idxs[-1] < list_idx) or not self.list_idxs:
+                self.list_idxs.append(list_idx)
+                self.list_idx_to_track_idx[list_idx] = len(self.list_idxs) - 1
+            else:
+                first_target_idx = bisect_right(self.list_idxs, list_idx)
+                self.list_idxs.insert(first_target_idx-1,list_idx)
+                self.list_idx_to_track_idx[list_idx] = first_target_idx-1
+                self.shift_idx(first_target_idx+1, 1)
+
 
     def track_idxs(self, item_type, start_list_idx, end_list_idx=None, uris=None):
         if end_list_idx is None:
@@ -1052,6 +1060,21 @@ class MessageList(list):
             else None
         )
         return self.uri_to_list_idx[target_uri] if target_uri else None
+    
+    def shift_idx(self, start_idx, shift_direction):
+        for i in range(start_idx, len(self.list_idxs)):
+            curr_list_idx = self.list_idxs[i]
+            self.list_idx_to_track_idx.pop(curr_list_idx)
+            curr_uris = self.list_idx_to_uris[curr_list_idx]
+
+            self.list_idxs[i] += shift_direction
+            self.list_idx_to_track_idx[self.list_idxs[i]] = i
+
+            for uri in curr_uris:
+                self.uri_to_list_idx[uri] = self.list_idxs[i]
+            self.list_idx_to_uris.pop(curr_list_idx)
+            self.list_idx_to_uris[self.list_idxs[i]] = curr_uris
+
 
     def pop_track_idx(self, uri, shift_idxs=True):
         popped_list_idx = self.uri_to_list_idx.pop(uri)
@@ -1066,20 +1089,12 @@ class MessageList(list):
             self.list_idx_to_uris.pop(popped_list_idx)
             del self.list_idxs[popped_track_idx]
 
-            for i in range(popped_track_idx, len(self.list_idxs)):
-                curr_list_idx = self.list_idxs[i]
-                self.list_idx_to_track_idx.pop(curr_list_idx)
-                if shift_idxs:
-                    curr_uris = self.list_idx_to_uris[curr_list_idx]
-
-                    self.list_idxs[i] -= 1
-                    self.list_idx_to_track_idx[self.list_idxs[i]] = i
-
-                    for uri in curr_uris:
-                        self.uri_to_list_idx[uri] = self.list_idxs[i]
-                    self.list_idx_to_uris.pop(curr_list_idx)
-                    self.list_idx_to_uris[self.list_idxs[i]] = curr_uris
-                else:
+            if shift_idxs:
+                self.shift_idx(popped_track_idx, -1)
+            else:
+                for i in range(popped_track_idx, len(self.list_idxs)):
+                    curr_list_idx = self.list_idxs[i]
+                    self.list_idx_to_track_idx.pop(curr_list_idx)
                     self.list_idx_to_track_idx[curr_list_idx] = i
 
             return popped_list_idx
