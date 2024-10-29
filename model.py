@@ -476,9 +476,7 @@ class MessageManager(ABC):
         self.parse_assistant_messages(turn.build_messages(self.model_provider))
 
     def get_last_user_message(self):
-        idx = self.message_dicts.get_track_idx_for_item_type(
-            MessageList.ItemType.USER
-        )
+        idx = self.message_dicts.get_track_idx_for_item_type(MessageList.ItemType.USER)
         if idx:
             return self.message_dicts[idx]
         else:
