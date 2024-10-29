@@ -476,7 +476,9 @@ class MessageManager(ABC):
         self.parse_assistant_messages(turn.build_messages(self.model_provider))
 
     def get_last_user_message(self):
-        target_idx = self.message_dicts.get_track_idx_for_item_type(MessageList.ItemType.USER)
+        target_idx = self.message_dicts.get_track_idx_for_item_type(
+            MessageList.ItemType.USER
+        )
         if target_idx:
             return self.message_dicts[target_idx]
         else:
@@ -1151,7 +1153,6 @@ class MessageList(list):
         popped_idx = self.pop_track_idx(uri)
         if popped_idx is not None:
             del self[popped_idx]
-
 
     def remove_by_uri(self, uri, raise_if_not_found=True):
         if uri not in self.uri_to_item_type:
