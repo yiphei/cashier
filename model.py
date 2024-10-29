@@ -1173,6 +1173,3 @@ class MessageList(list):
                 uris = copy.copy(self.item_type_to_uris[item_type])
                 for uri in uris:
                     self.remove_by_uri(uri)
-
-    def __str__(self):
-        return f"TrackedList({super().__str__()}, ops={self.operation_count})"
