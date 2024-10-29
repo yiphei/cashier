@@ -458,7 +458,7 @@ class MessageManager(ABC):
     @abstractmethod
     def parse_system_messages(self, msgs):
         raise NotImplementedError
-    
+
     @abstractmethod
     def parse_node_messages(self, msgs):
         raise NotImplementedError
@@ -549,12 +549,9 @@ class AnthropicMessageManager(MessageManager):
     def parse_system_messages(self, msgs):
         return
 
-    def parse_node_messages(
-        self,
-        msgs
-    ):
+    def parse_node_messages(self, msgs):
         [msg] = msgs
-        self.system = msg['content']
+        self.system = msg["content"]
         self.message_dicts.track_idx(MessageList.ItemType.NODE)
 
     def parse_assistant_messages(self, messages):
