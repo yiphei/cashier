@@ -459,10 +459,6 @@ class MessageManager(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def parse_node_messages(self, msgs):
-        raise NotImplementedError
-
-    @abstractmethod
     def parse_assistant_messages(self, msgs):
         raise NotImplementedError
 
