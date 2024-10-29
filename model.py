@@ -1093,7 +1093,9 @@ class MessageList(list):
         }
 
     def get_tool_id_from_tool_output_uri(self, uri):
-        return uri[len(self.item_type_to_uri_prefix[MessageList.ItemType.TOOL_OUTPUT]):]
+        return uri[
+            len(self.item_type_to_uri_prefix[MessageList.ItemType.TOOL_OUTPUT]) :
+        ]
 
     def __getitem__(self, index):
         return super().__getitem__(index)
