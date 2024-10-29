@@ -476,14 +476,14 @@ class MessageManager(ABC):
         self.parse_assistant_messages(turn.build_messages(self.model_provider))
 
     def get_last_user_message(self):
-        target_idx = self.message_dicts.get_idx_for_item_type(MessageList.ItemType.USER)
+        target_idx = self.message_dicts.get_track_idx_for_item_type(MessageList.ItemType.USER)
         if target_idx:
             return self.message_dicts[target_idx]
         else:
             return None
 
     def get_conversation_msgs_since_last_node(self):
-        target_idx = self.conversation_dicts.get_idx_for_item_type(
+        target_idx = self.conversation_dicts.get_track_idx_for_item_type(
             MessageList.ItemType.NODE
         )
         return self.conversation_dicts[target_idx + 1 :]
@@ -1029,7 +1029,7 @@ class MessageList(list):
         ]
 
     def pop_idx_ant(self, uri):
-        idx_to_remove = self.get_list_idx_from_uri(uri)
+        idx_to_remove = self.get_track_idx_from_uri(uri)
         item_type = self.uri_to_item_type[uri]
         message = self[idx_to_remove]
         new_contents = []
@@ -1093,10 +1093,10 @@ class MessageList(list):
         for i, uri in zip(range(start_list_idx, end_list_idx + 1), uris):
             self.track_idx(item_type, i, uri)
 
-    def get_list_idx_from_uri(self, uri):
+    def get_track_idx_from_uri(self, uri):
         return self.uri_to_list_idx[uri]
 
-    def get_idx_for_item_type(self, item_type, order=-1):
+    def get_track_idx_for_item_type(self, item_type, order=-1):
         target_uri = (
             self.item_type_to_uris[item_type][order]
             if self.item_type_to_uris[item_type]
