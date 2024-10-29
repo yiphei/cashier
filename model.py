@@ -454,7 +454,9 @@ class MessageManager(ABC):
                 [MessageList.ItemType.TOOL_CALL, MessageList.ItemType.TOOL_OUTPUT]
             )
         if is_backward:
-            self.conversation_dicts.track_idx(MessageList.ItemType.NODE, len(self.conversation_dicts)-2)
+            self.conversation_dicts.track_idx(
+                MessageList.ItemType.NODE, len(self.conversation_dicts) - 2
+            )
         else:
             self.conversation_dicts.track_idx(MessageList.ItemType.NODE)
 
@@ -507,7 +509,7 @@ class OAIMessageManager(MessageManager):
         turn,
         remove_prev_fn_return_schema=None,
         remove_prev_tool_calls=False,
-        is_backward = False
+        is_backward=False,
     ):
         super().add_node_turn(
             turn, remove_prev_fn_return_schema, remove_prev_tool_calls, is_backward
@@ -515,7 +517,9 @@ class OAIMessageManager(MessageManager):
         self.message_dicts.clear(MessageList.ItemType.NODE)
         [msg] = turn.build_oai_messages()
         if is_backward:
-            self.message_dicts.insert(len(self.message_dicts)-1, msg, MessageList.ItemType.NODE)
+            self.message_dicts.insert(
+                len(self.message_dicts) - 1, msg, MessageList.ItemType.NODE
+            )
         else:
             self.message_dicts.append(msg, MessageList.ItemType.NODE)
 
@@ -560,7 +564,7 @@ class AnthropicMessageManager(MessageManager):
         turn,
         remove_prev_fn_return_schema=None,
         remove_prev_tool_calls=False,
-        is_backward = False
+        is_backward=False,
     ):
         super().add_node_turn(
             turn, remove_prev_fn_return_schema, remove_prev_tool_calls, is_backward
@@ -569,7 +573,9 @@ class AnthropicMessageManager(MessageManager):
         self.message_dicts.track_idx(MessageList.ItemType.NODE)
 
         if is_backward:
-            self.message_dicts.track_idx(MessageList.ItemType.NODE, len(self.conversation_dicts)-2)
+            self.message_dicts.track_idx(
+                MessageList.ItemType.NODE, len(self.conversation_dicts) - 2
+            )
         else:
             self.message_dicts.track_idx(MessageList.ItemType.NODE)
 
@@ -626,7 +632,7 @@ class TurnContainer:
         node_schema,
         remove_prev_tool_fn_return=None,
         remove_prev_tool_calls=False,
-        is_backward = False
+        is_backward=False,
     ):
         last_msg = self.model_provider_to_message_manager[
             ModelProvider.OPENAI
@@ -638,7 +644,9 @@ class TurnContainer:
         turn = NodeSystemTurn(node_id=node_schema.id, msg_content=node_schema.prompt)
         self.turns.append(turn)
         for mm in self.model_provider_to_message_manager.values():
-            mm.add_node_turn(turn, remove_prev_tool_fn_return, remove_prev_tool_calls, is_backward)
+            mm.add_node_turn(
+                turn, remove_prev_tool_fn_return, remove_prev_tool_calls, is_backward
+            )
 
     def add_user_turn(self, msg_content):
         turn = UserTurn(msg_content=msg_content)
