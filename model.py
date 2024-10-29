@@ -1034,10 +1034,10 @@ class MessageList(list):
                 self.list_idxs.append(list_idx)
                 self.list_idx_to_track_idx[list_idx] = len(self.list_idxs) - 1
             else:
-                first_target_idx = bisect_right(self.list_idxs, list_idx)
-                self.list_idxs.insert(first_target_idx, list_idx)
-                self.list_idx_to_track_idx[list_idx] = first_target_idx
-                self.shift_idx(first_target_idx + 1, 1)
+                insert_idx = bisect_right(self.list_idxs, list_idx)
+                self.list_idxs.insert(insert_idx, list_idx)
+                self.list_idx_to_track_idx[list_idx] = insert_idx
+                self.shift_track_idxs(insert_idx + 1, 1)
 
     def track_idxs(self, item_type, start_list_idx, end_list_idx=None, uris=None):
         if end_list_idx is None:
@@ -1060,8 +1060,8 @@ class MessageList(list):
         )
         return self.uri_to_list_idx[target_uri] if target_uri else None
 
-    def shift_idx(self, start_idx, shift_direction):
-        for i in range(start_idx, len(self.list_idxs)):
+    def shift_track_idxs(self, start_track_idx, shift_direction):
+        for i in range(start_track_idx, len(self.list_idxs)):
             curr_list_idx = self.list_idxs[i]
             self.list_idx_to_track_idx.pop(curr_list_idx)
             curr_uris = self.list_idx_to_uris[curr_list_idx]
@@ -1088,7 +1088,7 @@ class MessageList(list):
             del self.list_idxs[popped_track_idx]
 
             if shift_idxs:
-                self.shift_idx(popped_track_idx, -1)
+                self.shift_track_idxs(popped_track_idx, -1)
             else:
                 for i in range(popped_track_idx, len(self.list_idxs)):
                     curr_list_idx = self.list_idxs[i]
