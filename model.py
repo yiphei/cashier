@@ -1037,12 +1037,6 @@ class MessageList(list):
             len(self.item_type_to_uri_prefix[MessageList.ItemType.TOOL_OUTPUT]) :
         ]
 
-    def __getitem__(self, index):
-        return super().__getitem__(index)
-
-    def __setitem__(self, index, value):
-        super().__setitem__(index, value)
-
     def pop_idx_ant(self, uri, item_type):
         idx_to_remove = self.get_idx(uri)
         message = self[idx_to_remove]
@@ -1160,9 +1154,6 @@ class MessageList(list):
     def pop(self, index=-1):
         item = super().pop(index)
         return item
-
-    def insert(self, index, item):
-        super().insert(index, item)
 
     def remove(self, item):
         super().remove(item)
