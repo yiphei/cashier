@@ -63,7 +63,11 @@ class NodeSchema:
 
         self.state = self.state_pydantic_model()
         self.prompt = self.generate_system_prompt(
-            self.input.model_dump_json() if self.input_pydantic_model is not None else None,
+            (
+                self.input.model_dump_json()
+                if self.input_pydantic_model is not None
+                else None
+            ),
             last_user_msg,
         )
 
