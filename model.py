@@ -523,7 +523,7 @@ class OAIMessageManager(MessageManager):
                 self.message_dicts.append(
                     message,
                     MessageList.ItemType.TOOL_OUTPUT,
-                    self.message_dicts.get_tool_output_uri_from_tool_id(tool_call_id),
+                    MessageList.get_tool_output_uri_from_tool_id(tool_call_id),
                 )
             elif message["role"] == "system" and curr_fn_name is not None:
                 self.message_dicts.remove_by_uri(curr_fn_name, False)
@@ -582,7 +582,7 @@ class AnthropicMessageManager(MessageManager):
                     tool_id = content["tool_use_id"]
                     self.message_dicts.track_idx(
                         MessageList.ItemType.TOOL_OUTPUT,
-                        uri=self.message_dicts.get_tool_output_uri_from_tool_id(
+                        uri=MessageList.get_tool_output_uri_from_tool_id(
                             tool_id
                         ),
                     )
@@ -973,9 +973,10 @@ class MessageList(list):
         return uri[
             len(self.item_type_to_uri_prefix[MessageList.ItemType.TOOL_OUTPUT]) :
         ]
-
-    def get_tool_output_uri_from_tool_id(self, tool_id):
-        return self.item_type_to_uri_prefix[MessageList.ItemType.TOOL_OUTPUT] + tool_id
+    
+    @classmethod
+    def get_tool_output_uri_from_tool_id(cls, tool_id):
+        return cls.item_type_to_uri_prefix[MessageList.ItemType.TOOL_OUTPUT] + tool_id
 
     def pop_track_idx_ant(self, uri):
         track_idx = self.get_track_idx_from_uri(uri)
