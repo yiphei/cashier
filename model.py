@@ -506,7 +506,7 @@ class OAIMessageManager(MessageManager):
             turn, remove_prev_fn_return_schema, remove_prev_tool_calls
         )
         self.message_dicts.clear(MessageList.ItemType.NODE)
-        [msg] = turn.build_oai_messages(self.model_provider)
+        [msg] = turn.build_oai_messages()
         self.message_dicts.append(msg, MessageList.ItemType.NODE)
 
     def parse_assistant_messages(self, msgs):
