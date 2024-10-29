@@ -1052,9 +1052,10 @@ class MessageList(list):
         return self.uri_to_list_idx[uri]
 
     def get_track_idx_for_item_type(self, item_type, order=-1):
+        order_validation = abs(order) if order < 0 else order + 1
         target_uri = (
             self.item_type_to_uris[item_type][order]
-            if self.item_type_to_uris[item_type]
+            if self.item_type_to_uris[item_type] and order_validation <= len(self.item_type_to_uris[item_type])
             else None
         )
         return self.uri_to_list_idx[target_uri] if target_uri else None
