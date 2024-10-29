@@ -961,7 +961,6 @@ class MessageList(list):
         self.list_idxs = []
         self.list_idx_to_track_idx = {}
 
-        # new stuff
         self.model_provider = model_provider
         self.item_type_to_uris = defaultdict(list)
         self.uri_to_item_type = {}
