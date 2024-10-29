@@ -582,9 +582,7 @@ class AnthropicMessageManager(MessageManager):
                     tool_id = content["tool_use_id"]
                     self.message_dicts.track_idx(
                         MessageList.ItemType.TOOL_OUTPUT,
-                        uri=MessageList.get_tool_output_uri_from_tool_id(
-                            tool_id
-                        ),
+                        uri=MessageList.get_tool_output_uri_from_tool_id(tool_id),
                     )
 
 
@@ -973,7 +971,7 @@ class MessageList(list):
         return uri[
             len(self.item_type_to_uri_prefix[MessageList.ItemType.TOOL_OUTPUT]) :
         ]
-    
+
     @classmethod
     def get_tool_output_uri_from_tool_id(cls, tool_id):
         return cls.item_type_to_uri_prefix[MessageList.ItemType.TOOL_OUTPUT] + tool_id
