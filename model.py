@@ -534,9 +534,7 @@ class OAIMessageManager(MessageManager):
                         MessageList.ItemType.TOOL_OUTPUT_SCHEMA
                     ]
                 ):
-                    idx_to_remove = self.message_dicts.pop_idx(
-                        curr_fn_name
-                    )
+                    idx_to_remove = self.message_dicts.pop_idx(curr_fn_name)
                     del self.message_dicts[idx_to_remove]
 
                 self.message_dicts.append(
