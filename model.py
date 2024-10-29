@@ -477,8 +477,7 @@ class MessageManager(ABC):
             or (turn.model_provider == ModelProvider.ANTHROPIC and not turn.fn_calls)
         ):
             self.conversation_dicts.append(
-                {"role": "assistant", "content": turn.msg_content},
-                MessageList.ItemType.ASSISTANT,
+                {"role": "assistant", "content": turn.msg_content}
             )
         self.parse_assistant_messages(turn.build_messages(self.model_provider))
 
@@ -536,7 +535,7 @@ class OAIMessageManager(MessageManager):
                 )
                 curr_fn_name = None
             else:
-                self.message_dicts.append(message, MessageList.ItemType.ASSISTANT)
+                self.message_dicts.append(message)
 
 
 class AnthropicMessageManager(MessageManager):
@@ -944,7 +943,6 @@ class CustomJSONEncoder(json.JSONEncoder):
 class MessageList(list):
     class ItemType(StrEnum):
         USER = "USER"
-        ASSISTANT = "ASSISTANT"
         TOOL_CALL = "TOOL_CALL"
         TOOL_OUTPUT = "TOOL_OUTPUT"
         TOOL_OUTPUT_SCHEMA = "TOOL_OUTPUT_SCHEMA"
@@ -952,7 +950,6 @@ class MessageList(list):
 
     item_type_to_uri_prefix = {
         ItemType.USER: "usr_",
-        ItemType.ASSISTANT: "asst_",
         ItemType.TOOL_OUTPUT: "tout_",
         ItemType.NODE: "node_",
     }
