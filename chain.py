@@ -54,6 +54,10 @@ class NodeSchema:
     def create_node(self, input, last_msg=None, prev_node=None):
         if input is not None:
             assert isinstance(input, self.input_pydantic_model)
+            assert prev_node is None
+        elif prev_node is not None:
+            assert input is None
+            input = prev_node.input
 
         if prev_node is None:
             state = self.state_pydantic_model()
