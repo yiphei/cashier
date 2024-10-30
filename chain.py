@@ -164,13 +164,13 @@ class NodeSchema:
 class Node:
     _counter = 0
 
-    def __init__(self, node_schema, input, state, prompt):
+    def __init__(self, schema, input, state, prompt):
         Node._counter += 1
         self.id = Node._counter
         self.state = state
         self.prompt = prompt
         self.input = input
-        self.node_schema = node_schema
+        self.schema = schema
         self.first_user_message = False
 
     def update_state(self, **kwargs):

@@ -315,12 +315,12 @@ def run_chat(args, model, elevenlabs_client):
     current_node = init_node(
         take_order_node_schema, TC, None, args.remove_prev_tool_calls
     )
-    current_edge_schemas = FROM_NODE_ID_TO_EDGE_SCHEMA[current_node.node_schema.id]
+    current_edge_schemas = FROM_NODE_ID_TO_EDGE_SCHEMA[current_node.schema.id]
     node_schema_id_to_node_schema = {
-        current_node.node_schema.id: current_node.node_schema
+        current_node.schema.id: current_node.schema
     }
     node_schema_to_nodes = defaultdict(list)
-    node_schema_to_nodes[current_node.node_schema.id].append(current_node)
+    node_schema_to_nodes[current_node.schema.id].append(current_node)
 
     while True:
         force_tool_choice = None
@@ -337,7 +337,7 @@ def run_chat(args, model, elevenlabs_client):
             node_id = should_backtrack_node(
                 model,
                 TC,
-                current_node.node_schema,
+                current_node.schema,
                 [
                     take_order_node_schema,
                     confirm_order_node_schema,
@@ -363,9 +363,9 @@ def run_chat(args, model, elevenlabs_client):
         chat_completion = model.chat(
             model_name=args.model,
             turn_container=TC,
-            tool_names_or_tool_defs=current_node.node_schema.tool_fn_names,
+            tool_names_or_tool_defs=current_node.schema.tool_fn_names,
             stream=args.stream,
-            extra_tool_registry=current_node.node_schema.tool_registry,
+            extra_tool_registry=current_node.schema.tool_registry,
             force_tool_choice=force_tool_choice,
         )
         message = chat_completion.get_or_stream_message()
@@ -386,7 +386,7 @@ def run_chat(args, model, elevenlabs_client):
             with FunctionCallContext() as fn_call_context:
                 if (
                     function_call.function_name
-                    not in current_node.node_schema.tool_fn_names
+                    not in current_node.schema.tool_fn_names
                 ):
                     raise InexistentFunctionError(function_call.function_name)
 
