@@ -385,7 +385,6 @@ def run_chat(args, model, elevenlabs_client):
             need_user_input = True
 
         fn_id_to_output = {}
-        has_node_transition = False
         for function_call in chat_completion.get_or_stream_fn_calls():
             function_args = function_call.function_args
             logger.debug(
@@ -404,6 +403,19 @@ def run_chat(args, model, elevenlabs_client):
                 else:
                     fn = ToolRegistry.GLOBAL_FN_NAME_TO_FN[function_call.function_name]
                     fn_output = fn(**function_args)
+
+            if fn_call_context.has_exception():
+                logger.debug(
+                    f"[FUNCTION_EXCEPTION] {Style.BRIGHT}name: {function_call.function_name}, id: {function_call.tool_call_id}{Style.NORMAL} with exception:\n{str(fn_call_context.exception)}"
+                )
+                fn_id_to_output[function_call.tool_call_id] = fn_call_context.exception
+            else:
+                logger.debug(
+                    f"[FUNCTION_RETURN] {Style.BRIGHT}name: {function_call.function_name}, id: {function_call.tool_call_id}{Style.NORMAL} with output:\n{json.dumps(fn_output, cls=CustomJSONEncoder, indent=4)}"
+                )
+                fn_id_to_output[function_call.tool_call_id] = fn_output
+
+            need_user_input = False
 
             if (
                 not fn_call_context.has_exception()
@@ -432,24 +444,8 @@ def run_chat(args, model, elevenlabs_client):
                     current_edge_schemas = FROM_NODE_ID_TO_EDGE_SCHEMA.get(
                         new_node_schema.id, []
                     )
-                    has_node_transition = True
-
                     node_schema_id_to_node_schema[new_node_schema.id] = new_node_schema
-
-            if fn_call_context.has_exception():
-                logger.debug(
-                    f"[FUNCTION_EXCEPTION] {Style.BRIGHT}name: {function_call.function_name}, id: {function_call.tool_call_id}{Style.NORMAL} with exception:\n{str(fn_call_context.exception)}"
-                )
-                fn_id_to_output[function_call.tool_call_id] = fn_call_context.exception
-            else:
-                logger.debug(
-                    f"[FUNCTION_RETURN] {Style.BRIGHT}name: {function_call.function_name}, id: {function_call.tool_call_id}{Style.NORMAL} with output:\n{json.dumps(fn_output, cls=CustomJSONEncoder, indent=4)}"
-                )
-                fn_id_to_output[function_call.tool_call_id] = fn_output
-
-            need_user_input = False
-            if has_node_transition:
-                break
+                    break
 
         model_provider = Model.get_model_provider(args.model)
         TC.add_assistant_turn(
