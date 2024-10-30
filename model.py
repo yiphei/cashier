@@ -162,7 +162,7 @@ class Model:
     def get_tool_choice_arg(self, args, model_provider):
         if "force_tool_choice" in args:
             if args["force_tool_choice"] is not None:
-                fn_name = args["tool_choice"]
+                fn_name = args["force_tool_choice"]
                 if model_provider == ModelProvider.ANTHROPIC:
                     args["tool_choice"] = {"type": "tool", "name": fn_name}
                 elif model_provider == ModelProvider.OPENAI:
@@ -170,8 +170,8 @@ class Model:
                         "type": "function",
                         "function": {"name": fn_name},
                     }
-            else:
-                args.pop("force_tool_choice")
+            
+            args.pop("force_tool_choice")
 
     def oai_chat(
         self,
