@@ -301,7 +301,7 @@ def init_node(
     )
     MessageDisplay.print_msg("system", new_node.prompt)
 
-    if node_schema.first_turn:
+    if node_schema.first_turn and prev_node is None:
         TC.add_assistant_direct_turn(node_schema.first_turn)
         MessageDisplay.print_msg("assistant", node_schema.first_turn.msg_content)
 
@@ -319,8 +319,8 @@ def run_chat(args, model, elevenlabs_client):
     node_schema_id_to_node_schema = {
         current_node.schema.id: current_node.schema
     }
-    node_schema_to_nodes = defaultdict(list)
-    node_schema_to_nodes[current_node.schema.id].append(current_node)
+    node_schema_id_to_nodes = defaultdict(list)
+    node_schema_id_to_nodes[current_node.schema.id].append(current_node)
 
     while True:
         force_tool_choice = None
@@ -349,7 +349,7 @@ def run_chat(args, model, elevenlabs_client):
                 current_edge_schemas = FROM_NODE_ID_TO_EDGE_SCHEMA.get(
                     new_node_schema.id, []
                 )
-                prev_node = node_schema_to_nodes[new_node_schema.id][-1]
+                prev_node = node_schema_id_to_nodes[new_node_schema.id][-1]
                 current_node = init_node(
                     new_node_schema,
                     TC,
@@ -429,7 +429,7 @@ def run_chat(args, model, elevenlabs_client):
                     has_node_transition = True
 
                     node_schema_id_to_node_schema[new_node_schema.id] = new_node_schema
-                    node_schema_to_nodes[new_node_schema.id].append(current_node)
+                    node_schema_id_to_nodes[new_node_schema.id].append(current_node)
 
             if fn_call_context.has_exception():
                 logger.debug(
