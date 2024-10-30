@@ -283,7 +283,7 @@ def init_node(
     input,
     node_schema_id_to_nodes,
     remove_prev_tool_calls=False,
-    is_backward=False
+    is_backward=False,
 ):
     logger.debug(
         f"[NODE_SCHEMA] Initializing node with {Style.BRIGHT}node_schema_id: {node_schema.id}{Style.NORMAL}"
@@ -366,7 +366,7 @@ def run_chat(args, model, elevenlabs_client):
                     None,
                     node_schema_id_to_nodes,
                     args.remove_prev_tool_calls,
-                    True
+                    True,
                 )
                 force_tool_choice = "get_state"
             current_node.update_first_user_message()
