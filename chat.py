@@ -429,6 +429,7 @@ def run_chat(args, model, elevenlabs_client):
                     has_node_transition = True
 
                     node_schema_id_to_node_schema[new_node_schema.id] = new_node_schema
+                    node_schema_to_nodes[new_node_schema.id].append(current_node)
 
             if fn_call_context.has_exception():
                 logger.debug(
