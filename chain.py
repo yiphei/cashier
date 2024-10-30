@@ -64,6 +64,8 @@ class NodeSchema:
 
         if self.state is None:
             self.state = self.state_pydantic_model()
+        else:
+            self.state.reset()
         self.prompt = self.generate_system_prompt(
             (
                 self.input.model_dump_json()
@@ -201,6 +203,14 @@ class EdgeSchema:
 class BaseStateModel(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
+    def reset(self) -> None:
+        model_fields = self.model_fields
+        for field_name, field_info in model_fields.items():
+            if field_info.json_schema_extra and field_info.json_schema_extra.get(
+                "resettable"
+            ):
+                setattr(self, field_name, field_info.default)
+
 
 class TakeOrderState(BaseStateModel):
     order: Optional[Order] = None
@@ -211,6 +221,7 @@ class TakeOrderState(BaseStateModel):
             " by asking questions like 'Anything else?'."
         ),
         default=False,
+        resettable=True,
     )
 
 
@@ -247,7 +258,9 @@ take_order_node_schema = NodeSchema(
 
 class ConfirmOrderState(BaseStateModel):
     has_confirmed_order: bool = Field(
-        description="whether the customer has confirmed their order", default=False
+        description="whether the customer has confirmed their order",
+        default=False,
+        resettable=True,
     )
 
 
@@ -272,7 +285,9 @@ take_to_confirm_edge_schema = EdgeSchema(
 
 class TerminalOrderState(BaseStateModel):
     has_said_goodbye: bool = Field(
-        description="whether the customer has said goodbye", default=False
+        description="whether the customer has said goodbye",
+        default=False,
+        resettable=True,
     )
 
 
