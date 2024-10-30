@@ -30,14 +30,10 @@ class NodeSchema:
         self.id = NodeSchema._counter
         self.node_prompt = node_prompt
         self.tool_fn_names = tool_fn_names
-        self.is_initialized = False
         self.input_pydantic_model = input_pydantic_model
         self.state_pydantic_model = state_pydantic_model
         self.first_turn = first_turn
         self.tool_registry = ToolRegistry()
-        self.first_user_message = False
-        self.input = None
-        self.state = None
 
         for field_name, field_info in self.state_pydantic_model.model_fields.items():
             new_tool_fn_name = f"update_state_{field_name}"
@@ -54,26 +50,25 @@ class NodeSchema:
         )
         self.tool_fn_names.append("get_state")
 
-    def update_first_user_message(self):
-        self.first_user_message = True
+    def create_node(self, input, last_user_msg=None):
+        if input is not None:
+            assert isinstance(input, self.input_pydantic_model)
 
-    def run(self, last_user_msg=None):
-        self.is_initialized = True
-        if self.input is not None:
-            assert isinstance(self.input, self.input_pydantic_model)
-
-        if self.state is None:
-            self.state = self.state_pydantic_model()
-        else:
-            self.state.reset()
-        self.prompt = self.generate_system_prompt(
+        # if self.state is None:
+        #     self.state = self.state_pydantic_model()
+        # else:
+        #     self.state.reset()
+        state = self.state_pydantic_model()
+        prompt = self.generate_system_prompt(
             (
-                self.input.model_dump_json()
+                input.model_dump_json()
                 if self.input_pydantic_model is not None
                 else None
             ),
             last_user_msg,
         )
+
+        return Node(self, input, state, prompt)
 
     def generate_system_prompt(self, input, last_user_msg):
         NODE_PROMPT = (
@@ -163,6 +158,18 @@ class NodeSchema:
             )
 
         return NODE_PROMPT.format(**kwargs)
+    
+class Node:
+    _counter = 0
+
+    def __init__(self, node_schema, input, state, prompt):
+        Node._counter += 1
+        self.id = Node._counter
+        self.state= state
+        self.prompt = prompt
+        self.input = input
+        self.node_schema = node_schema
+        self.first_user_message = False
 
     def update_state(self, **kwargs):
         if self.first_user_message:
@@ -174,7 +181,9 @@ class NodeSchema:
 
     def get_state(self):
         return self.state
-
+    
+    def update_first_user_message(self):
+        self.first_user_message = True
 
 class EdgeSchema:
     _counter = 0
