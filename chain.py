@@ -158,14 +158,15 @@ class NodeSchema:
             )
 
         return NODE_PROMPT.format(**kwargs)
-    
+
+
 class Node:
     _counter = 0
 
     def __init__(self, node_schema, input, state, prompt):
         Node._counter += 1
         self.id = Node._counter
-        self.state= state
+        self.state = state
         self.prompt = prompt
         self.input = input
         self.node_schema = node_schema
@@ -181,9 +182,10 @@ class Node:
 
     def get_state(self):
         return self.state
-    
+
     def update_first_user_message(self):
         self.first_user_message = True
+
 
 class EdgeSchema:
     _counter = 0
