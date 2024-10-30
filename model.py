@@ -159,6 +159,20 @@ class Model:
                 model_name, messages, system, tools, stream, response_format, **kwargs
             )
 
+    def get_tool_choice_arg(self, args, model_provider):
+        if "force_tool_choice" in args:
+            if args["force_tool_choice"] is not None:
+                fn_name = args["force_tool_choice"]
+                if model_provider == ModelProvider.ANTHROPIC:
+                    args["tool_choice"] = {"type": "tool", "name": fn_name}
+                elif model_provider == ModelProvider.OPENAI:
+                    args["tool_choice"] = {
+                        "type": "function",
+                        "function": {"name": fn_name},
+                    }
+
+            args.pop("force_tool_choice")
+
     def oai_chat(
         self,
         model_name,
@@ -190,6 +204,8 @@ class Model:
             args.pop("tools")
         if not stream:
             args.pop("stream")
+
+        self.get_tool_choice_arg(args, ModelProvider.OPENAI)
 
         return OAIModelOutput(chat_fn(**args), stream, response_format)
 
@@ -235,6 +251,8 @@ class Model:
             args.pop("tools")
         if not system:
             args.pop("system")
+
+        self.get_tool_choice_arg(args, ModelProvider.ANTHROPIC)
 
         return AnthropicModelOutput(
             self.anthropic_client.messages.create(**args), stream, response_format
