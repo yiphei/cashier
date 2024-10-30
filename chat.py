@@ -313,9 +313,7 @@ def run_chat(args, model, elevenlabs_client):
 
     need_user_input = True
     current_node_schema = take_order_node_schema
-    current_node = init_node(
-        current_node_schema, TC, None, args.remove_prev_tool_calls
-    )
+    current_node = init_node(current_node_schema, TC, None, args.remove_prev_tool_calls)
     current_edge_schemas = FROM_NODE_ID_TO_EDGE_SCHEMA[current_node_schema.id]
     node_schema_id_to_node_schema = {current_node_schema.id: current_node_schema}
     node_schema_to_nodes = defaultdict(list)
