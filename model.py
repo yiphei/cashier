@@ -649,9 +649,14 @@ class TurnContainer:
         remove_prev_tool_calls=False,
         is_backward=False,
     ):
-        last_msg = self.model_provider_to_message_manager[
+        mm = self.model_provider_to_message_manager[
             ModelProvider.OPENAI
-        ].get_user_message(-2 if is_backward else -1)
+        ]
+        if is_backward:
+            last_msg = mm.get_user_message()
+        else:
+            last_msg = mm.get_asst_message()
+        
         if last_msg:
             last_msg = last_msg["content"]
         node_schema.run(last_msg)
