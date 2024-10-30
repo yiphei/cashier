@@ -286,7 +286,7 @@ def run_chat(args, model, elevenlabs_client):
     node_schema_id_to_node_schema = {current_node_schema.id: current_node_schema}
 
     while True:
-        kwargs = {}
+        force_tool_choice = None
         if not current_node_schema.is_initialized:
             logger.debug(
                 f"[NODE_SCHEMA] Initializing {Style.BRIGHT}node_schema_id: {current_node_schema.id}{Style.NORMAL}"
@@ -333,7 +333,7 @@ def run_chat(args, model, elevenlabs_client):
                     is_backward=True,
                 )
                 MessageDisplay.print_msg("system", current_node_schema.prompt)
-                kwargs["tool_choice"] = "get_state"
+                force_tool_choice = 'get_state'
             current_node_schema.update_first_user_message()
 
         chat_completion = model.chat(
@@ -342,7 +342,7 @@ def run_chat(args, model, elevenlabs_client):
             tool_names_or_tool_defs=current_node_schema.tool_fn_names,
             stream=args.stream,
             extra_tool_registry=current_node_schema.tool_registry,
-            **kwargs,
+            force_tool_choice=force_tool_choice,
         )
         message = chat_completion.get_or_stream_message()
         if message is not None:
