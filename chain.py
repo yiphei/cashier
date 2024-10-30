@@ -177,7 +177,7 @@ class Node:
         if self.first_user_message:
             old_state = self.state.model_dump()
             new_state = old_state | kwargs
-            self.state = self.state_pydantic_model(**new_state)
+            self.state = self.state.__class__(**new_state)
         else:
             raise StateUpdateError("cannot update until first user message")
 
@@ -214,14 +214,6 @@ class EdgeSchema:
 
 class BaseStateModel(BaseModel):
     model_config = ConfigDict(extra="forbid")
-
-    def reset(self) -> None:
-        model_fields = self.model_fields
-        for field_name, field_info in model_fields.items():
-            if field_info.json_schema_extra and field_info.json_schema_extra.get(
-                "resettable"
-            ):
-                setattr(self, field_name, field_info.default)
 
     def copy_reset(self):
         # Create a shallow copy of the current instance's dict
