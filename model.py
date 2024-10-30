@@ -325,7 +325,9 @@ class AssistantTurn(ModelTurn):
 
     def build_oai_messages(self):
         messages = []
-        if self.msg_content and self.model_provider != ModelProvider.ANTHROPIC:
+        if self.msg_content and not (
+            self.model_provider == ModelProvider.ANTHROPIC and self.fn_calls
+        ):
             messages.append({"role": "assistant", "content": self.msg_content})
         if self.fn_calls:
             for fn_call in self.fn_calls:
