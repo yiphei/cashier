@@ -278,7 +278,12 @@ def should_backtrack_node(model, TM, current_node_schema, all_node_schemas):
 
 
 def init_node(
-    node_schema, TC, input, node_schema_id_to_nodes, remove_prev_tool_calls=False, prev_node=None
+    node_schema,
+    TC,
+    input,
+    node_schema_id_to_nodes,
+    remove_prev_tool_calls=False,
+    prev_node=None,
 ):
     logger.debug(
         f"[NODE_SCHEMA] Initializing {Style.BRIGHT}node_schema_id: {node_schema.id}{Style.NORMAL}"
@@ -315,7 +320,11 @@ def run_chat(args, model, elevenlabs_client):
     need_user_input = True
     node_schema_id_to_nodes = defaultdict(list)
     current_node = init_node(
-        take_order_node_schema, TC, None, node_schema_id_to_nodes, args.remove_prev_tool_calls
+        take_order_node_schema,
+        TC,
+        None,
+        node_schema_id_to_nodes,
+        args.remove_prev_tool_calls,
     )
     current_edge_schemas = FROM_NODE_ID_TO_EDGE_SCHEMA[current_node.schema.id]
     node_schema_id_to_node_schema = {current_node.schema.id: current_node.schema}
