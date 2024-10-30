@@ -333,7 +333,7 @@ def run_chat(args, model, elevenlabs_client):
                     is_backward=True,
                 )
                 MessageDisplay.print_msg("system", current_node_schema.prompt)
-                force_tool_choice = 'get_state'
+                force_tool_choice = "get_state"
             current_node_schema.update_first_user_message()
 
         chat_completion = model.chat(
