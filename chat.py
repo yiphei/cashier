@@ -312,12 +312,11 @@ def run_chat(args, model, elevenlabs_client):
     TC = TurnContainer()
 
     need_user_input = True
-    current_node_schema = take_order_node_schema
-    current_node = init_node(current_node_schema, TC, None, args.remove_prev_tool_calls)
-    current_edge_schemas = FROM_NODE_ID_TO_EDGE_SCHEMA[current_node_schema.id]
-    node_schema_id_to_node_schema = {current_node_schema.id: current_node_schema}
+    current_node = init_node(take_order_node_schema, TC, None, args.remove_prev_tool_calls)
+    current_edge_schemas = FROM_NODE_ID_TO_EDGE_SCHEMA[current_node.node_schema.id]
+    node_schema_id_to_node_schema = {current_node.node_schema.id: current_node.node_schema}
     node_schema_to_nodes = defaultdict(list)
-    node_schema_to_nodes[current_node_schema.id].append(current_node)
+    node_schema_to_nodes[current_node.node_schema.id].append(current_node)
 
     while True:
         force_tool_choice = None
@@ -334,7 +333,7 @@ def run_chat(args, model, elevenlabs_client):
             node_id = should_backtrack_node(
                 model,
                 TC,
-                current_node_schema,
+                current_node.node_schema,
                 [
                     take_order_node_schema,
                     confirm_order_node_schema,
@@ -342,13 +341,13 @@ def run_chat(args, model, elevenlabs_client):
                 ],
             )
             if node_id is not None and node_id in node_schema_id_to_node_schema:
-                current_node_schema = node_schema_id_to_node_schema[node_id]
+                new_node_schema = node_schema_id_to_node_schema[node_id]
                 current_edge_schemas = FROM_NODE_ID_TO_EDGE_SCHEMA.get(
-                    current_node_schema.id, []
+                    new_node_schema.id, []
                 )
-                prev_node = node_schema_to_nodes[current_node_schema.id][-1]
+                prev_node = node_schema_to_nodes[new_node_schema.id][-1]
                 current_node = init_node(
-                    current_node_schema,
+                    new_node_schema,
                     TC,
                     None,
                     args.remove_prev_tool_calls,
@@ -360,9 +359,9 @@ def run_chat(args, model, elevenlabs_client):
         chat_completion = model.chat(
             model_name=args.model,
             turn_container=TC,
-            tool_names_or_tool_defs=current_node_schema.tool_fn_names,
+            tool_names_or_tool_defs=current_node.node_schema.tool_fn_names,
             stream=args.stream,
-            extra_tool_registry=current_node_schema.tool_registry,
+            extra_tool_registry=current_node.node_schema.tool_registry,
             force_tool_choice=force_tool_choice,
         )
         message = chat_completion.get_or_stream_message()
@@ -381,7 +380,7 @@ def run_chat(args, model, elevenlabs_client):
                 f"[FUNCTION_CALL] {Style.BRIGHT}name: {function_call.function_name}, id: {function_call.tool_call_id}{Style.NORMAL} with args:\n{json.dumps(function_args, indent=4)}"
             )
             with FunctionCallContext() as fn_call_context:
-                if function_call.function_name not in current_node_schema.tool_fn_names:
+                if function_call.function_name not in current_node.node_schema.tool_fn_names:
                     raise InexistentFunctionError(function_call.function_name)
 
                 if function_call.function_name.startswith("get_state"):
@@ -409,21 +408,21 @@ def run_chat(args, model, elevenlabs_client):
                     new_node_input = first_true_edge_schema.new_input_from_state_fn(
                         current_node.state
                     )
-                    current_node_schema = first_true_edge_schema.to_node_schema
+                    new_node_schema = first_true_edge_schema.to_node_schema
                     current_node = init_node(
-                        current_node_schema,
+                        new_node_schema,
                         TC,
                         new_node_input,
                         args.remove_prev_tool_calls,
                     )
 
                     current_edge_schemas = FROM_NODE_ID_TO_EDGE_SCHEMA.get(
-                        current_node_schema.id, []
+                        new_node_schema.id, []
                     )
                     has_node_transition = True
 
-                    node_schema_id_to_node_schema[current_node_schema.id] = (
-                        current_node_schema
+                    node_schema_id_to_node_schema[new_node_schema.id] = (
+                        new_node_schema
                     )
 
             if fn_call_context.has_exception():
