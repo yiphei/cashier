@@ -37,6 +37,7 @@ class NodeSchema:
         self.tool_registry = ToolRegistry()
         self.first_user_message = False
         self.input = None
+        self.state = None
 
         for field_name, field_info in self.state_pydantic_model.model_fields.items():
             new_tool_fn_name = f"update_state_{field_name}"
@@ -61,7 +62,8 @@ class NodeSchema:
         if self.input is not None:
             assert isinstance(self.input, self.input_pydantic_model)
 
-        self.state = self.state_pydantic_model()
+        if self.state is None:
+            self.state = self.state_pydantic_model()
         self.prompt = self.generate_system_prompt(
             (
                 self.input.model_dump_json()
