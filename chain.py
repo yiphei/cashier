@@ -36,6 +36,7 @@ class NodeSchema:
         self.first_turn = first_turn
         self.tool_registry = ToolRegistry()
         self.first_user_message = False
+        self.input = None
 
         for field_name, field_info in self.state_pydantic_model.model_fields.items():
             new_tool_fn_name = f"update_state_{field_name}"
@@ -55,14 +56,18 @@ class NodeSchema:
     def update_first_user_message(self):
         self.first_user_message = True
 
-    def run(self, input, last_user_msg=None):
+    def run(self, last_user_msg=None):
         self.is_initialized = True
-        if input is not None:
-            assert isinstance(input, self.input_pydantic_model)
+        if self.input is not None:
+            assert isinstance(self.input, self.input_pydantic_model)
 
         self.state = self.state_pydantic_model()
         self.prompt = self.generate_system_prompt(
-            input.model_dump_json() if self.input_pydantic_model is not None else None,
+            (
+                self.input.model_dump_json()
+                if self.input_pydantic_model is not None
+                else None
+            ),
             last_user_msg,
         )
 
@@ -97,11 +102,11 @@ class NodeSchema:
 
         if last_user_msg:
             NODE_PROMPT += (
-                "This is the cutoff customer message. Everything stated here only applies to messages after the cutoff message. All messages until the cutoff message represent a historical conversation "
+                "This is the cutoff message. Everything stated here only applies to messages after the cutoff message. All messages until the cutoff message represent a historical conversation "
                 "that you may use as a reference.\n"
-                "<cutoff_customer_msg>\n"
+                "<cutoff_msg>\n"  # can explore if it's better to have two tags: cutoff_customer_msg and cutoff_assistant_msg
                 f"{last_user_msg}\n"
-                "</cutoff_customer_msg>\n\n"
+                "</cutoff_msg>\n\n"
             )
 
         GUIDELINES = (
@@ -122,7 +127,7 @@ class NodeSchema:
             "- You must update the state whenever applicable and as soon as possible. You cannot proceed to the next stage of the conversation without updating the state\n"
             "- Only you can update the state, so there is no need to udpate the state to the same value that had already been updated to in the past.\n"
             + (
-                "- state updates can only happen in response to new customer messages (i.e. messages after <cutoff_customer_msg>).\n"
+                "- state updates can only happen in response to new messages (i.e. messages after <cutoff_msg>).\n"
                 if last_user_msg
                 else ""
             )
@@ -137,7 +142,7 @@ class NodeSchema:
             "- think step-by-step before you respond.\n"
             "- you must decline to do anything that is not explicitly covered by <instructions> and <guidelines>.\n"
             + (
-                "- everthing stated in <instructions> and here in <guidelines> only applies to the conversation starting after <cutoff_customer_msg>\n"
+                "- everthing stated in <instructions> and here in <guidelines> only applies to the conversation starting after <cutoff_msg>\n"
                 if last_user_msg
                 else ""
             )

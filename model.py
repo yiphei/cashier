@@ -325,7 +325,9 @@ class AssistantTurn(ModelTurn):
 
     def build_oai_messages(self):
         messages = []
-        if self.msg_content and self.model_provider != ModelProvider.ANTHROPIC:
+        if self.msg_content and not (
+            self.model_provider == ModelProvider.ANTHROPIC and self.fn_calls
+        ):
             messages.append({"role": "assistant", "content": self.msg_content})
         if self.fn_calls:
             for fn_call in self.fn_calls:
@@ -441,6 +443,7 @@ class MessageManager(ABC):
         turn,
         remove_prev_fn_return_schema=None,
         remove_prev_tool_calls=False,
+        is_backward=False,
     ):
         if remove_prev_tool_calls:
             assert remove_prev_fn_return_schema is not False
@@ -452,8 +455,12 @@ class MessageManager(ABC):
             self.message_dicts.clear(
                 [MessageList.ItemType.TOOL_CALL, MessageList.ItemType.TOOL_OUTPUT]
             )
-
-        self.conversation_dicts.track_idx(MessageList.ItemType.NODE)
+        if is_backward:
+            self.conversation_dicts.track_idx(
+                MessageList.ItemType.NODE, len(self.conversation_dicts) - 2
+            )
+        else:
+            self.conversation_dicts.track_idx(MessageList.ItemType.NODE)
 
     @abstractmethod
     def parse_system_messages(self, msgs):
@@ -473,12 +480,24 @@ class MessageManager(ABC):
             or (turn.model_provider == ModelProvider.ANTHROPIC and not turn.fn_calls)
         ):
             self.conversation_dicts.append(
-                {"role": "assistant", "content": turn.msg_content}
+                {"role": "assistant", "content": turn.msg_content},
+                MessageList.ItemType.ASSISTANT,
             )
         self.parse_assistant_messages(turn.build_messages(self.model_provider))
 
-    def get_last_user_message(self):
-        idx = self.message_dicts.get_track_idx_for_item_type(MessageList.ItemType.USER)
+    def get_user_message(self, order=-1):
+        idx = self.message_dicts.get_track_idx_for_item_type(
+            MessageList.ItemType.USER, order
+        )
+        if idx:
+            return self.message_dicts[idx]
+        else:
+            return None
+
+    def get_asst_message(self, order=-1):
+        idx = self.message_dicts.get_track_idx_for_item_type(
+            MessageList.ItemType.ASSISTANT, order
+        )
         if idx:
             return self.message_dicts[idx]
         else:
@@ -502,13 +521,19 @@ class OAIMessageManager(MessageManager):
         turn,
         remove_prev_fn_return_schema=None,
         remove_prev_tool_calls=False,
+        is_backward=False,
     ):
         super().add_node_turn(
-            turn, remove_prev_fn_return_schema, remove_prev_tool_calls
+            turn, remove_prev_fn_return_schema, remove_prev_tool_calls, is_backward
         )
         self.message_dicts.clear(MessageList.ItemType.NODE)
         [msg] = turn.build_oai_messages()
-        self.message_dicts.append(msg, MessageList.ItemType.NODE)
+        if is_backward:
+            self.message_dicts.insert(
+                len(self.message_dicts) - 1, msg, MessageList.ItemType.NODE
+            )
+        else:
+            self.message_dicts.append(msg, MessageList.ItemType.NODE)
 
     def parse_assistant_messages(self, msgs):
         curr_fn_name = None
@@ -533,7 +558,7 @@ class OAIMessageManager(MessageManager):
                 )
                 curr_fn_name = None
             else:
-                self.message_dicts.append(message)
+                self.message_dicts.append(message, MessageList.ItemType.ASSISTANT)
 
 
 class AnthropicMessageManager(MessageManager):
@@ -551,12 +576,19 @@ class AnthropicMessageManager(MessageManager):
         turn,
         remove_prev_fn_return_schema=None,
         remove_prev_tool_calls=False,
+        is_backward=False,
     ):
         super().add_node_turn(
-            turn, remove_prev_fn_return_schema, remove_prev_tool_calls
+            turn, remove_prev_fn_return_schema, remove_prev_tool_calls, is_backward
         )
         self.system = turn.msg_content
-        self.message_dicts.track_idx(MessageList.ItemType.NODE)
+
+        if is_backward:
+            self.message_dicts.track_idx(
+                MessageList.ItemType.NODE, len(self.message_dicts) - 2
+            )
+        else:
+            self.message_dicts.track_idx(MessageList.ItemType.NODE)
 
     def parse_assistant_messages(self, messages):
         if len(messages) == 2:
@@ -567,6 +599,7 @@ class AnthropicMessageManager(MessageManager):
 
         contents = message_1["content"]
         self.message_dicts.append(message_1)
+        has_fn_calls = False
         if type(contents) == list:
             for content in contents:
                 if content["type"] == "tool_use":
@@ -574,6 +607,10 @@ class AnthropicMessageManager(MessageManager):
                     self.message_dicts.track_idx(
                         MessageList.ItemType.TOOL_CALL, uri=tool_call_id
                     )
+                    has_fn_calls = True
+
+        if not has_fn_calls:
+            self.message_dicts.track_idx(MessageList.ItemType.ASSISTANT)
 
         if message_2 is not None:
             self.message_dicts.append(message_2)
@@ -608,15 +645,27 @@ class TurnContainer:
 
     def add_node_turn(
         self,
-        node_id,
-        node_prompt,
+        node_schema,
         remove_prev_tool_fn_return=None,
         remove_prev_tool_calls=False,
+        is_backward=False,
     ):
-        turn = NodeSystemTurn(node_id=node_id, msg_content=node_prompt)
+        mm = self.model_provider_to_message_manager[ModelProvider.OPENAI]
+        if is_backward:
+            last_msg = mm.get_asst_message()
+        else:
+            last_msg = mm.get_user_message()
+
+        if last_msg:
+            last_msg = last_msg["content"]
+        node_schema.run(last_msg)
+
+        turn = NodeSystemTurn(node_id=node_schema.id, msg_content=node_schema.prompt)
         self.turns.append(turn)
         for mm in self.model_provider_to_message_manager.values():
-            mm.add_node_turn(turn, remove_prev_tool_fn_return, remove_prev_tool_calls)
+            mm.add_node_turn(
+                turn, remove_prev_tool_fn_return, remove_prev_tool_calls, is_backward
+            )
 
     def add_user_turn(self, msg_content):
         turn = UserTurn(msg_content=msg_content)
@@ -944,6 +993,7 @@ class CustomJSONEncoder(json.JSONEncoder):
 class MessageList(list):
     class ItemType(StrEnum):
         USER = "USER"
+        ASSISTANT = "ASSISTANT"
         TOOL_CALL = "TOOL_CALL"
         TOOL_OUTPUT = "TOOL_OUTPUT"
         TOOL_OUTPUT_SCHEMA = "TOOL_OUTPUT_SCHEMA"
@@ -953,6 +1003,7 @@ class MessageList(list):
         ItemType.USER: "usr_",
         ItemType.TOOL_OUTPUT: "tout_",
         ItemType.NODE: "node_",
+        ItemType.ASSISTANT: "asst_",
     }
 
     def __init__(self, *args, model_provider):
@@ -1053,9 +1104,11 @@ class MessageList(list):
         return self.uri_to_list_idx[uri]
 
     def get_track_idx_for_item_type(self, item_type, order=-1):
+        order_validation = abs(order) if order < 0 else order + 1
         target_uri = (
             self.item_type_to_uris[item_type][order]
             if self.item_type_to_uris[item_type]
+            and order_validation <= len(self.item_type_to_uris[item_type])
             else None
         )
         return self.uri_to_list_idx[target_uri] if target_uri else None
