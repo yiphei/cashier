@@ -240,7 +240,7 @@ class Model:
         if not system:
             args.pop("system")
 
-        if "tool_choice" in args:
+        if "tool_choice" in args and type(args["tool_choice"]) != dict:
             fn_name = args["tool_choice"]
             args["tool_choice"] = {"type": "tool", "name": fn_name}
 
