@@ -258,7 +258,7 @@ take_order_node_schema = NodeSchema(
 
 class ConfirmOrderState(BaseStateModel):
     has_confirmed_order: bool = Field(
-        description="whether the customer has confirmed their order", default=False
+        description="whether the customer has confirmed their order", default=False, resettable=True,
     )
 
 
@@ -283,7 +283,7 @@ take_to_confirm_edge_schema = EdgeSchema(
 
 class TerminalOrderState(BaseStateModel):
     has_said_goodbye: bool = Field(
-        description="whether the customer has said goodbye", default=False
+        description="whether the customer has said goodbye", default=False, resettable=True,
     )
 
 
