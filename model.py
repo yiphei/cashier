@@ -478,13 +478,22 @@ class MessageManager(ABC):
             or (turn.model_provider == ModelProvider.ANTHROPIC and not turn.fn_calls)
         ):
             self.conversation_dicts.append(
-                {"role": "assistant", "content": turn.msg_content}
+                {"role": "assistant", "content": turn.msg_content}, MessageList.ItemType.ASSISTANT
             )
         self.parse_assistant_messages(turn.build_messages(self.model_provider))
 
     def get_user_message(self, order=-1):
         idx = self.message_dicts.get_track_idx_for_item_type(
             MessageList.ItemType.USER, order
+        )
+        if idx:
+            return self.message_dicts[idx]
+        else:
+            return None
+        
+    def get_asst_message(self, order=-1):
+        idx = self.message_dicts.get_track_idx_for_item_type(
+            MessageList.ItemType.ASSISTANT, order
         )
         if idx:
             return self.message_dicts[idx]
@@ -546,7 +555,7 @@ class OAIMessageManager(MessageManager):
                 )
                 curr_fn_name = None
             else:
-                self.message_dicts.append(message)
+                self.message_dicts.append(message, MessageList.ItemType.ASSISTANT)
 
 
 class AnthropicMessageManager(MessageManager):
@@ -587,12 +596,19 @@ class AnthropicMessageManager(MessageManager):
 
         contents = message_1["content"]
         self.message_dicts.append(message_1)
+        has_fn_calls = False
         if type(contents) == list:
             for content in contents:
                 if content["type"] == "tool_use":
                     tool_call_id = content["id"]
                     self.message_dicts.track_idx(
                         MessageList.ItemType.TOOL_CALL, uri=tool_call_id
+                    )
+                    has_fn_calls = True
+        
+        if not has_fn_calls:
+            self.message_dicts.track_idx(
+                        MessageList.ItemType.ASSISTANT
                     )
 
         if message_2 is not None:
@@ -973,6 +989,7 @@ class CustomJSONEncoder(json.JSONEncoder):
 class MessageList(list):
     class ItemType(StrEnum):
         USER = "USER"
+        ASSISTANT = "ASSISTANT"
         TOOL_CALL = "TOOL_CALL"
         TOOL_OUTPUT = "TOOL_OUTPUT"
         TOOL_OUTPUT_SCHEMA = "TOOL_OUTPUT_SCHEMA"
@@ -982,6 +999,7 @@ class MessageList(list):
         ItemType.USER: "usr_",
         ItemType.TOOL_OUTPUT: "tout_",
         ItemType.NODE: "node_",
+        ItemType.ASSISTANT: "asst_",
     }
 
     def __init__(self, *args, model_provider):
