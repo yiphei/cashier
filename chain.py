@@ -64,6 +64,8 @@ class NodeSchema:
 
         if self.state is None:
             self.state = self.state_pydantic_model()
+        else:
+            self.state.reset()
         self.prompt = self.generate_system_prompt(
             (
                 self.input.model_dump_json()
@@ -201,6 +203,12 @@ class EdgeSchema:
 class BaseStateModel(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
+    def reset(self) -> None:
+        model_fields = self.model_fields
+        for field_name, field_info in model_fields.items():
+            if field_info.json_schema_extra and field_info.json_schema_extra.get('resettable'):
+                setattr(self, field_name, field_info.default)
+
 
 class TakeOrderState(BaseStateModel):
     order: Optional[Order] = None
@@ -211,6 +219,7 @@ class TakeOrderState(BaseStateModel):
             " by asking questions like 'Anything else?'."
         ),
         default=False,
+        resettable=True,
     )
 
 
