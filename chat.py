@@ -286,7 +286,7 @@ def init_node(
     prev_node=None,
 ):
     logger.debug(
-        f"[NODE_SCHEMA] Initializing {Style.BRIGHT}node_schema_id: {node_schema.id}{Style.NORMAL}"
+        f"[NODE_SCHEMA] Initializing node with {Style.BRIGHT}node_schema_id: {node_schema.id}{Style.NORMAL}"
     )
 
     mm = TC.model_provider_to_message_manager[ModelProvider.OPENAI]
