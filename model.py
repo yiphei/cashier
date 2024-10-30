@@ -478,7 +478,8 @@ class MessageManager(ABC):
             or (turn.model_provider == ModelProvider.ANTHROPIC and not turn.fn_calls)
         ):
             self.conversation_dicts.append(
-                {"role": "assistant", "content": turn.msg_content}, MessageList.ItemType.ASSISTANT
+                {"role": "assistant", "content": turn.msg_content},
+                MessageList.ItemType.ASSISTANT,
             )
         self.parse_assistant_messages(turn.build_messages(self.model_provider))
 
@@ -490,7 +491,7 @@ class MessageManager(ABC):
             return self.message_dicts[idx]
         else:
             return None
-        
+
     def get_asst_message(self, order=-1):
         idx = self.message_dicts.get_track_idx_for_item_type(
             MessageList.ItemType.ASSISTANT, order
@@ -605,11 +606,9 @@ class AnthropicMessageManager(MessageManager):
                         MessageList.ItemType.TOOL_CALL, uri=tool_call_id
                     )
                     has_fn_calls = True
-        
+
         if not has_fn_calls:
-            self.message_dicts.track_idx(
-                        MessageList.ItemType.ASSISTANT
-                    )
+            self.message_dicts.track_idx(MessageList.ItemType.ASSISTANT)
 
         if message_2 is not None:
             self.message_dicts.append(message_2)
@@ -649,14 +648,12 @@ class TurnContainer:
         remove_prev_tool_calls=False,
         is_backward=False,
     ):
-        mm = self.model_provider_to_message_manager[
-            ModelProvider.OPENAI
-        ]
+        mm = self.model_provider_to_message_manager[ModelProvider.OPENAI]
         if is_backward:
             last_msg = mm.get_user_message()
         else:
             last_msg = mm.get_asst_message()
-        
+
         if last_msg:
             last_msg = last_msg["content"]
         node_schema.run(last_msg)
