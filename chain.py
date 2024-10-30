@@ -51,14 +51,14 @@ class NodeSchema:
         )
         self.tool_fn_names.append("get_state")
 
-    def create_node(self, input, last_user_msg=None, last_node=None):
+    def create_node(self, input, last_msg=None, prev_node=None):
         if input is not None:
             assert isinstance(input, self.input_pydantic_model)
 
-        if last_node is None:
+        if prev_node is None:
             state = self.state_pydantic_model()
         else:
-            state = last_node.state.copy_reset()
+            state = prev_node.state.copy_reset()
 
         prompt = self.generate_system_prompt(
             (
@@ -66,12 +66,12 @@ class NodeSchema:
                 if self.input_pydantic_model is not None
                 else None
             ),
-            last_user_msg,
+            last_msg,
         )
 
         return Node(self, input, state, prompt)
 
-    def generate_system_prompt(self, input, last_user_msg):
+    def generate_system_prompt(self, input, last_msg):
         NODE_PROMPT = (
             BACKGROUND + "\n\n"
             "This instructions section describes what the conversation is supposed to be about and what you are expected to do\n"
@@ -100,12 +100,12 @@ class NodeSchema:
             "</state>\n\n"
         )
 
-        if last_user_msg:
+        if last_msg:
             NODE_PROMPT += (
                 "This is the cutoff message. Everything stated here only applies to messages after the cutoff message. All messages until the cutoff message represent a historical conversation "
                 "that you may use as a reference.\n"
                 "<cutoff_msg>\n"  # can explore if it's better to have two tags: cutoff_customer_msg and cutoff_assistant_msg
-                f"{last_user_msg}\n"
+                f"{last_msg}\n"
                 "</cutoff_msg>\n\n"
             )
 
@@ -128,7 +128,7 @@ class NodeSchema:
             "- Only you can update the state, so there is no need to udpate the state to the same value that had already been updated to in the past.\n"
             + (
                 "- state updates can only happen in response to new messages (i.e. messages after <cutoff_msg>).\n"
-                if last_user_msg
+                if last_msg
                 else ""
             )
             + "</state_guidelines>\n"
@@ -143,7 +143,7 @@ class NodeSchema:
             "- you must decline to do anything that is not explicitly covered by <instructions> and <guidelines>.\n"
             + (
                 "- everthing stated in <instructions> and here in <guidelines> only applies to the conversation starting after <cutoff_msg>\n"
-                if last_user_msg
+                if last_msg
                 else ""
             )
             + "</general_guidelines>\n"
