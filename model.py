@@ -663,22 +663,12 @@ class TurnContainer:
 
     def add_node_turn(
         self,
-        node_schema,
+        node,
         remove_prev_tool_fn_return=None,
         remove_prev_tool_calls=False,
         is_backward=False,
     ):
-        mm = self.model_provider_to_message_manager[ModelProvider.OPENAI]
-        if is_backward:
-            last_msg = mm.get_asst_message()
-        else:
-            last_msg = mm.get_user_message()
-
-        if last_msg:
-            last_msg = last_msg["content"]
-        node_schema.run(last_msg)
-
-        turn = NodeSystemTurn(node_id=node_schema.id, msg_content=node_schema.prompt)
+        turn = NodeSystemTurn(node_id=node.id, msg_content=node.prompt)
         self.turns.append(turn)
         for mm in self.model_provider_to_message_manager.values():
             mm.add_node_turn(

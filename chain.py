@@ -1,4 +1,5 @@
 from typing import Optional
+import copy
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -50,15 +51,15 @@ class NodeSchema:
         )
         self.tool_fn_names.append("get_state")
 
-    def create_node(self, input, last_user_msg=None):
+    def create_node(self, input, last_user_msg=None, last_node=None):
         if input is not None:
             assert isinstance(input, self.input_pydantic_model)
 
-        # if self.state is None:
-        #     self.state = self.state_pydantic_model()
-        # else:
-        #     self.state.reset()
-        state = self.state_pydantic_model()
+        if last_node is None:
+            state = self.state_pydantic_model()
+        else:
+            state = last_node.state.copy_reset()
+
         prompt = self.generate_system_prompt(
             (
                 input.model_dump_json()
@@ -221,6 +222,21 @@ class BaseStateModel(BaseModel):
                 "resettable"
             ):
                 setattr(self, field_name, field_info.default)
+
+
+    def copy_reset(self):        
+        # Create a shallow copy of the current instance's dict
+        new_data = copy.deepcopy(dict(self))
+        
+        # Iterate through fields and reset those marked as resettable
+        for field_name, field_info in self.model_fields.items():
+            # Check if field has the resettable marker in its metadata
+            if field_info.json_schema_extra and field_info.json_schema_extra.get(
+                "resettable"
+            ):
+                new_data[field_name] = field_info.default
+        
+        return self.__class__(**new_data)
 
 
 class TakeOrderState(BaseStateModel):
