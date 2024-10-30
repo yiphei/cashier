@@ -170,7 +170,7 @@ class Model:
                         "type": "function",
                         "function": {"name": fn_name},
                     }
-            
+
             args.pop("force_tool_choice")
 
     def oai_chat(
