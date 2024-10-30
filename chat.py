@@ -355,7 +355,7 @@ def run_chat(args, model, elevenlabs_client):
                     prev_node,
                 )
                 force_tool_choice = "get_state"
-            current_node_schema.update_first_user_message()
+            current_node.update_first_user_message()
 
         chat_completion = model.chat(
             model_name=args.model,
