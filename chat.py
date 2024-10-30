@@ -283,19 +283,18 @@ def init_node(
     input,
     node_schema_id_to_nodes,
     remove_prev_tool_calls=False,
+    is_backward=False
 ):
     logger.debug(
         f"[NODE_SCHEMA] Initializing node with {Style.BRIGHT}node_schema_id: {node_schema.id}{Style.NORMAL}"
     )
 
-    prev_node = (
-        node_schema_id_to_nodes[node_schema.id][-1]
-        if node_schema_id_to_nodes[node_schema.id]
-        else None
-    )
+    prev_node = None
+    if is_backward:
+        prev_node = node_schema_id_to_nodes[node_schema.id][-1]
 
     mm = TC.model_provider_to_message_manager[ModelProvider.OPENAI]
-    if prev_node is not None:
+    if is_backward:
         last_msg = mm.get_asst_message()
     else:
         last_msg = mm.get_user_message()
@@ -307,7 +306,7 @@ def init_node(
     TC.add_node_turn(
         new_node,
         remove_prev_tool_calls=remove_prev_tool_calls,
-        is_backward=prev_node is not None,
+        is_backward=is_backward,
     )
     MessageDisplay.print_msg("system", new_node.prompt)
 
@@ -367,6 +366,7 @@ def run_chat(args, model, elevenlabs_client):
                     None,
                     node_schema_id_to_nodes,
                     args.remove_prev_tool_calls,
+                    True
                 )
                 force_tool_choice = "get_state"
             current_node.update_first_user_message()
