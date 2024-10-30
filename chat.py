@@ -288,7 +288,11 @@ def init_node(
         f"[NODE_SCHEMA] Initializing node with {Style.BRIGHT}node_schema_id: {node_schema.id}{Style.NORMAL}"
     )
 
-    prev_node = node_schema_id_to_nodes[node_schema.id][-1] if node_schema_id_to_nodes[node_schema.id] else None
+    prev_node = (
+        node_schema_id_to_nodes[node_schema.id][-1]
+        if node_schema_id_to_nodes[node_schema.id]
+        else None
+    )
 
     mm = TC.model_provider_to_message_manager[ModelProvider.OPENAI]
     if prev_node is not None:
