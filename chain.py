@@ -104,7 +104,7 @@ class NodeSchema:
             NODE_PROMPT += (
                 "This is the cutoff message. Everything stated here only applies to messages after the cutoff message. All messages until the cutoff message represent a historical conversation "
                 "that you may use as a reference.\n"
-                "<cutoff_msg>\n" # can explore if it's better to have two tags: cutoff_customer_msg and cutoff_assistant_msg
+                "<cutoff_msg>\n"  # can explore if it's better to have two tags: cutoff_customer_msg and cutoff_assistant_msg
                 f"{last_user_msg}\n"
                 "</cutoff_msg>\n\n"
             )
