@@ -321,7 +321,7 @@ def run_chat(args, model, elevenlabs_client):
                     terminal_order_node_schema,
                 ],
             )
-            if node_id is not None:
+            if node_id is not None and node_id in node_schema_id_to_node_schema:
                 current_node_schema = node_schema_id_to_node_schema[node_id]
                 current_edge_schemas = FROM_NODE_ID_TO_EDGE_SCHEMA.get(
                     current_node_schema.id, []
