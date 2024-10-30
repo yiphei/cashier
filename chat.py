@@ -283,11 +283,12 @@ def init_node(
     input,
     node_schema_id_to_nodes,
     remove_prev_tool_calls=False,
-    prev_node=None,
 ):
     logger.debug(
         f"[NODE_SCHEMA] Initializing node with {Style.BRIGHT}node_schema_id: {node_schema.id}{Style.NORMAL}"
     )
+
+    prev_node = node_schema_id_to_nodes[node_schema.id][-1] if node_schema_id_to_nodes[node_schema.id] else None
 
     mm = TC.model_provider_to_message_manager[ModelProvider.OPENAI]
     if prev_node is not None:
@@ -356,14 +357,12 @@ def run_chat(args, model, elevenlabs_client):
                 current_edge_schemas = FROM_NODE_ID_TO_EDGE_SCHEMA.get(
                     new_node_schema.id, []
                 )
-                prev_node = node_schema_id_to_nodes[new_node_schema.id][-1]
                 current_node = init_node(
                     new_node_schema,
                     TC,
                     None,
                     node_schema_id_to_nodes,
                     args.remove_prev_tool_calls,
-                    prev_node,
                 )
                 force_tool_choice = "get_state"
             current_node.update_first_user_message()
