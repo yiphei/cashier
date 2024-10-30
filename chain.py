@@ -206,7 +206,9 @@ class BaseStateModel(BaseModel):
     def reset(self) -> None:
         model_fields = self.model_fields
         for field_name, field_info in model_fields.items():
-            if field_info.json_schema_extra and field_info.json_schema_extra.get('resettable'):
+            if field_info.json_schema_extra and field_info.json_schema_extra.get(
+                "resettable"
+            ):
                 setattr(self, field_name, field_info.default)
 
 
