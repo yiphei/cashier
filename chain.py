@@ -216,7 +216,6 @@ class BaseStateModel(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     def copy_reset(self):
-        # Create a shallow copy of the current instance's dict
         new_data = copy.deepcopy(dict(self))
 
         # Iterate through fields and reset those marked as resettable
