@@ -333,7 +333,7 @@ def run_chat(args, model, elevenlabs_client):
                     is_backward=True,
                 )
                 MessageDisplay.print_msg("system", current_node_schema.prompt)
-                kwargs['tool_choice'] = 'get_state'
+                kwargs["tool_choice"] = "get_state"
             current_node_schema.update_first_user_message()
 
         chat_completion = model.chat(
@@ -342,7 +342,7 @@ def run_chat(args, model, elevenlabs_client):
             tool_names_or_tool_defs=current_node_schema.tool_fn_names,
             stream=args.stream,
             extra_tool_registry=current_node_schema.tool_registry,
-            **kwargs
+            **kwargs,
         )
         message = chat_completion.get_or_stream_message()
         if message is not None:

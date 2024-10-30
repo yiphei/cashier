@@ -191,9 +191,9 @@ class Model:
         if not stream:
             args.pop("stream")
 
-        if 'tool_choice' in args:
-            fn_name = args['tool_choice']
-            args['tool_choice'] = {"type": "function", "function": {"name": fn_name}}
+        if "tool_choice" in args:
+            fn_name = args["tool_choice"]
+            args["tool_choice"] = {"type": "function", "function": {"name": fn_name}}
 
         return OAIModelOutput(chat_fn(**args), stream, response_format)
 
@@ -240,9 +240,9 @@ class Model:
         if not system:
             args.pop("system")
 
-        if 'tool_choice' in args:
-            fn_name = args['tool_choice']
-            args['tool_choice'] = {"type": "tool", "name": fn_name}
+        if "tool_choice" in args:
+            fn_name = args["tool_choice"]
+            args["tool_choice"] = {"type": "tool", "name": fn_name}
 
         return AnthropicModelOutput(
             self.anthropic_client.messages.create(**args), stream, response_format
