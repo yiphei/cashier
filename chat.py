@@ -278,7 +278,7 @@ def should_backtrack_node(model, TM, current_node_schema, all_node_schemas):
 
 
 def init_node(
-    node_schema, TC, input=None, remove_prev_tool_calls=False, prev_node=None
+    node_schema, TC, input, node_schema_id_to_nodes, remove_prev_tool_calls=False, prev_node=None
 ):
     logger.debug(
         f"[NODE_SCHEMA] Initializing {Style.BRIGHT}node_schema_id: {node_schema.id}{Style.NORMAL}"
@@ -305,6 +305,7 @@ def init_node(
         TC.add_assistant_direct_turn(node_schema.first_turn)
         MessageDisplay.print_msg("assistant", node_schema.first_turn.msg_content)
 
+    node_schema_id_to_nodes[node_schema.id].append(new_node)
     return new_node
 
 
@@ -312,13 +313,12 @@ def run_chat(args, model, elevenlabs_client):
     TC = TurnContainer()
 
     need_user_input = True
+    node_schema_id_to_nodes = defaultdict(list)
     current_node = init_node(
-        take_order_node_schema, TC, None, args.remove_prev_tool_calls
+        take_order_node_schema, TC, None, node_schema_id_to_nodes, args.remove_prev_tool_calls
     )
     current_edge_schemas = FROM_NODE_ID_TO_EDGE_SCHEMA[current_node.schema.id]
     node_schema_id_to_node_schema = {current_node.schema.id: current_node.schema}
-    node_schema_id_to_nodes = defaultdict(list)
-    node_schema_id_to_nodes[current_node.schema.id].append(current_node)
 
     while True:
         force_tool_choice = None
@@ -352,6 +352,7 @@ def run_chat(args, model, elevenlabs_client):
                     new_node_schema,
                     TC,
                     None,
+                    node_schema_id_to_nodes,
                     args.remove_prev_tool_calls,
                     prev_node,
                 )
@@ -415,6 +416,7 @@ def run_chat(args, model, elevenlabs_client):
                         new_node_schema,
                         TC,
                         new_node_input,
+                        node_schema_id_to_nodes,
                         args.remove_prev_tool_calls,
                     )
 
@@ -424,7 +426,6 @@ def run_chat(args, model, elevenlabs_client):
                     has_node_transition = True
 
                     node_schema_id_to_node_schema[new_node_schema.id] = new_node_schema
-                    node_schema_id_to_nodes[new_node_schema.id].append(current_node)
 
             if fn_call_context.has_exception():
                 logger.debug(
