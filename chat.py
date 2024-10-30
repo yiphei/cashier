@@ -312,9 +312,13 @@ def run_chat(args, model, elevenlabs_client):
     TC = TurnContainer()
 
     need_user_input = True
-    current_node = init_node(take_order_node_schema, TC, None, args.remove_prev_tool_calls)
+    current_node = init_node(
+        take_order_node_schema, TC, None, args.remove_prev_tool_calls
+    )
     current_edge_schemas = FROM_NODE_ID_TO_EDGE_SCHEMA[current_node.node_schema.id]
-    node_schema_id_to_node_schema = {current_node.node_schema.id: current_node.node_schema}
+    node_schema_id_to_node_schema = {
+        current_node.node_schema.id: current_node.node_schema
+    }
     node_schema_to_nodes = defaultdict(list)
     node_schema_to_nodes[current_node.node_schema.id].append(current_node)
 
@@ -380,7 +384,10 @@ def run_chat(args, model, elevenlabs_client):
                 f"[FUNCTION_CALL] {Style.BRIGHT}name: {function_call.function_name}, id: {function_call.tool_call_id}{Style.NORMAL} with args:\n{json.dumps(function_args, indent=4)}"
             )
             with FunctionCallContext() as fn_call_context:
-                if function_call.function_name not in current_node.node_schema.tool_fn_names:
+                if (
+                    function_call.function_name
+                    not in current_node.node_schema.tool_fn_names
+                ):
                     raise InexistentFunctionError(function_call.function_name)
 
                 if function_call.function_name.startswith("get_state"):
@@ -421,9 +428,7 @@ def run_chat(args, model, elevenlabs_client):
                     )
                     has_node_transition = True
 
-                    node_schema_id_to_node_schema[new_node_schema.id] = (
-                        new_node_schema
-                    )
+                    node_schema_id_to_node_schema[new_node_schema.id] = new_node_schema
 
             if fn_call_context.has_exception():
                 logger.debug(
