@@ -3,9 +3,9 @@ import copy
 import json
 import os
 import tempfile
+from collections import defaultdict
 from distutils.util import strtobool
 from types import GeneratorType
-from collections import defaultdict
 
 from colorama import Fore, Style
 from dotenv import load_dotenv  # Add this import
@@ -277,7 +277,9 @@ def should_backtrack_node(model, TM, current_node_schema, all_node_schemas):
     return agent_id if agent_id != current_node_schema.id else None
 
 
-def init_node(node_schema, TC, input=None,remove_prev_tool_calls=False, prev_node=None):
+def init_node(
+    node_schema, TC, input=None, remove_prev_tool_calls=False, prev_node=None
+):
     logger.debug(
         f"[NODE_SCHEMA] Initializing {Style.BRIGHT}node_schema_id: {node_schema.id}{Style.NORMAL}"
     )
@@ -295,24 +297,25 @@ def init_node(node_schema, TC, input=None,remove_prev_tool_calls=False, prev_nod
     TC.add_node_turn(
         new_node,
         remove_prev_tool_calls=remove_prev_tool_calls,
-        is_backward=prev_node is not None
+        is_backward=prev_node is not None,
     )
     MessageDisplay.print_msg("system", new_node.prompt)
 
     if node_schema.first_turn:
         TC.add_assistant_direct_turn(node_schema.first_turn)
-        MessageDisplay.print_msg(
-            "assistant", node_schema.first_turn.msg_content
-        )
+        MessageDisplay.print_msg("assistant", node_schema.first_turn.msg_content)
 
     return new_node
+
 
 def run_chat(args, model, elevenlabs_client):
     TC = TurnContainer()
 
     need_user_input = True
     current_node_schema = take_order_node_schema
-    current_node = init_node(current_edge_schemas, TC, None, args.remove_prev_tool_calls)
+    current_node = init_node(
+        current_node_schema, TC, None, args.remove_prev_tool_calls
+    )
     current_edge_schemas = FROM_NODE_ID_TO_EDGE_SCHEMA[current_node_schema.id]
     node_schema_id_to_node_schema = {current_node_schema.id: current_node_schema}
     node_schema_to_nodes = defaultdict(list)
@@ -346,7 +349,13 @@ def run_chat(args, model, elevenlabs_client):
                     current_node_schema.id, []
                 )
                 prev_node = node_schema_to_nodes[current_node_schema.id][-1]
-                current_node = init_node(current_node_schema, TC, None, args.remove_prev_tool_calls,prev_node)
+                current_node = init_node(
+                    current_node_schema,
+                    TC,
+                    None,
+                    args.remove_prev_tool_calls,
+                    prev_node,
+                )
                 force_tool_choice = "get_state"
             current_node_schema.update_first_user_message()
 
@@ -378,9 +387,9 @@ def run_chat(args, model, elevenlabs_client):
                     raise InexistentFunctionError(function_call.function_name)
 
                 if function_call.function_name.startswith("get_state"):
-                    fn_output = getattr(
-                        current_node, function_call.function_name
-                    )(**function_args)
+                    fn_output = getattr(current_node, function_call.function_name)(
+                        **function_args
+                    )
                 elif function_call.function_name.startswith("update_state"):
                     fn_output = current_node.update_state(**function_args)
                 else:
@@ -403,7 +412,12 @@ def run_chat(args, model, elevenlabs_client):
                         current_node.state
                     )
                     current_node_schema = first_true_edge_schema.to_node_schema
-                    current_node = init_node(current_node_schema, TC, new_node_input, args.remove_prev_tool_calls)
+                    current_node = init_node(
+                        current_node_schema,
+                        TC,
+                        new_node_input,
+                        args.remove_prev_tool_calls,
+                    )
 
                     current_edge_schemas = FROM_NODE_ID_TO_EDGE_SCHEMA.get(
                         current_node_schema.id, []

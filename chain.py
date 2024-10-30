@@ -1,5 +1,5 @@
-from typing import Optional
 import copy
+from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -223,11 +223,10 @@ class BaseStateModel(BaseModel):
             ):
                 setattr(self, field_name, field_info.default)
 
-
-    def copy_reset(self):        
+    def copy_reset(self):
         # Create a shallow copy of the current instance's dict
         new_data = copy.deepcopy(dict(self))
-        
+
         # Iterate through fields and reset those marked as resettable
         for field_name, field_info in self.model_fields.items():
             # Check if field has the resettable marker in its metadata
@@ -235,7 +234,7 @@ class BaseStateModel(BaseModel):
                 "resettable"
             ):
                 new_data[field_name] = field_info.default
-        
+
         return self.__class__(**new_data)
 
 
