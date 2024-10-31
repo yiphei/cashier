@@ -227,7 +227,7 @@ class EdgeSchema:
         new_input_from_state_fn,
         node_resumption_type=NodeResumptionType.RESET,
         node_repeat_type=NodeRepeatType.REDO,
-        can_skip_if_completed_once=False,
+        can_skip_if_prev_completed=False,
     ):
         EdgeSchema._counter += 1
         self.id = EdgeSchema._counter
@@ -235,9 +235,9 @@ class EdgeSchema:
         self.to_node_schema = to_node_schema
         self.state_condition_fn = state_condition_fn
         self.new_input_from_state_fn = new_input_from_state_fn
-        self.node_resumption_type = node_resumption_type
-        self.node_repeat_type = node_repeat_type
-        self.can_skip_if_completed_once = can_skip_if_completed_once
+        self.node_resumption_type = node_resumption_type # this applies to how new nodes are created
+        self.node_repeat_type = node_repeat_type # this applies to node transition when the node is completed
+        self.can_skip_if_prev_completed = can_skip_if_prev_completed # this applies to node transition when the node is incomplete
 
     def check_state_condition(self, state):
         return self.state_condition_fn(state)

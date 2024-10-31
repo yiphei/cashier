@@ -322,7 +322,7 @@ def init_node(
 
 
 def compute_transition(start_node, node_schema_id_to_nodes, edge_schema_id_to_nodes):
-    candidate_map = []
+    candidate_map = {start_node.id: start_node}
 
     def is_prev_completed(node):
         return (
@@ -332,23 +332,23 @@ def compute_transition(start_node, node_schema_id_to_nodes, edge_schema_id_to_no
         )
 
     if start_node.status == Node.Status.COMPLETED or (
-        is_prev_completed(start_node) and start_node.can_skip_if_completed_once
+        is_prev_completed(start_node) and start_node.can_skip_if_prev_completed
     ):
-        edges = deque(
+        edge_schemas = deque(
             [
                 (edge_schema, start_node)
-                for edge_schema in FROM_NODE_ID_TO_EDGE_SCHEMA[start_node.schema.id]
+                for edge_schema in FROM_NODE_ID_TO_EDGE_SCHEMA.get(start_node.schema.id, [])
             ]
         )
-        while edges:
-            edge_schema, prev_node = edges.popleft()
+        while edge_schemas:
+            edge_schema, prev_node = edge_schemas.popleft()
             if edge_schema.id in edge_schema_id_to_nodes:
                 curr_node = edge_schema_id_to_nodes[edge_schema.id][-1]
                 candidate_map[curr_node.id] = curr_node
                 if curr_node.status == Node.Status.COMPLETED:
                     if edge_schema.node_repeat_type == NodeRepeatType.SKIP:
-                        more_edges = FROM_NODE_ID_TO_EDGE_SCHEMA[curr_node.schema.id]
-                        edges.extend([(edge, curr_node) for edge in more_edges])
+                        more_edges = FROM_NODE_ID_TO_EDGE_SCHEMA.get(curr_node.schema.id, [])
+                        edge_schemas.extend([(edge, curr_node) for edge in more_edges])
                     elif (
                         edge_schema.node_repeat_type
                         == NodeRepeatType.SKIP_IF_INPUT_UNCHANGED
@@ -356,30 +356,29 @@ def compute_transition(start_node, node_schema_id_to_nodes, edge_schema_id_to_no
                         # calculate if input would be unchanged
                         new_input = edge_schema.new_input_from_state_fn(prev_node.state)
                         if new_input == curr_node.input:
-                            more_edges = FROM_NODE_ID_TO_EDGE_SCHEMA[
-                                curr_node.schema.id
-                            ]
-                            edges.extend([(edge, curr_node) for edge in more_edges])
+                            more_edges = FROM_NODE_ID_TO_EDGE_SCHEMA.get(curr_node.schema.id, [])
+                            edge_schemas.extend([(edge, curr_node) for edge in more_edges])
                 elif (
                     is_prev_completed(curr_node)
-                    and curr_node.can_skip_if_completed_once
+                    and curr_node.can_skip_if_prev_completed
                 ):
-                    more_edges = FROM_NODE_ID_TO_EDGE_SCHEMA[curr_node.schema.id]
-                    edges.extend([(edge, curr_node) for edge in more_edges])
+                    more_edges = FROM_NODE_ID_TO_EDGE_SCHEMA.get(curr_node.schema.id, [])
+                    edge_schemas.extend([(edge, curr_node) for edge in more_edges])
 
     # also add all the previous nodes
 
-    edges = deque(
+    edge_schemas = deque(
         [
             (edge_schema, start_node)
-            for edge_schema in TO_NODE_ID_TO_EDGE_SCHEMA[start_node.schema.id]
+            for edge_schema in TO_NODE_ID_TO_EDGE_SCHEMA.get(start_node.schema.id, [])
         ]
     )
-    while edges:
-        edge_schema, prev_node = edges.popleft()
+    while edge_schemas:
+        edge_schema, prev_node = edge_schemas.popleft()
         curr_node = edge_schema_id_to_nodes[edge_schema.id][-1]
         candidate_map[curr_node.id] = curr_node
-        edges.extend([(edge, curr_node) for edge in more_edges])
+        more_edges = TO_NODE_ID_TO_EDGE_SCHEMA.get(curr_node.schema.id, [])
+        edge_schemas.extend([(edge, curr_node) for edge in more_edges])
 
     return candidate_map
 
