@@ -5,7 +5,7 @@ import os
 import tempfile
 from collections import defaultdict, deque
 from distutils.util import strtobool
-from types import GeneratorType
+from types import GeneratorType, List
 
 from colorama import Fore, Style
 from dotenv import load_dotenv  # Add this import
@@ -23,6 +23,7 @@ from chain import (
     confirm_order_node_schema,
     take_order_node_schema,
     terminal_order_node_schema,
+    EdgeSchema
 )
 from db_functions import create_db_client
 from function_call_context import FunctionCallContext, InexistentFunctionError
@@ -322,8 +323,12 @@ def init_node(
     return new_node
 
 
+class TransitionEdges(BaseModel):
+    fwd_edge_schemas: List[EdgeSchema] = []
+    bwd_edge_schemas: List[EdgeSchema] = []
+
 def compute_transition(start_node, node_schema_id_to_nodes, edge_schema_id_to_nodes):
-    candidate_map = {start_node.id: start_node}
+    t_edges = TransitionEdges()
 
     def is_prev_completed(node):
         return (
@@ -348,9 +353,9 @@ def compute_transition(start_node, node_schema_id_to_nodes, edge_schema_id_to_no
             edge_schema, prev_node = edge_schemas.popleft()
             if edge_schema.id in edge_schema_id_to_nodes:
                 curr_node = edge_schema_id_to_nodes[edge_schema.id][-1]
-                candidate_map[curr_node.id] = curr_node
                 if curr_node.status == Node.Status.COMPLETED:
                     if edge_schema.fwd_trans_complete_type == FwdTransCompleteType.SKIP:
+                        t_edges.fwd_edge_schemas.append(edge_schema)
                         more_edges = FROM_NODE_ID_TO_EDGE_SCHEMA.get(
                             curr_node.schema.id, []
                         )
@@ -362,6 +367,7 @@ def compute_transition(start_node, node_schema_id_to_nodes, edge_schema_id_to_no
                         # calculate if input would be unchanged
                         new_input = edge_schema.new_input_from_state_fn(prev_node.state)
                         if new_input == curr_node.input:
+                            t_edges.fwd_edge_schemas.append(edge_schema)
                             more_edges = FROM_NODE_ID_TO_EDGE_SCHEMA.get(
                                 curr_node.schema.id, []
                             )
@@ -373,6 +379,7 @@ def compute_transition(start_node, node_schema_id_to_nodes, edge_schema_id_to_no
                     and curr_node.fwd_trans_prev_complete_type
                     == FwdTransPrevCompleteType.SKIP
                 ):
+                    t_edges.fwd_edge_schemas.append(edge_schema)
                     more_edges = FROM_NODE_ID_TO_EDGE_SCHEMA.get(
                         curr_node.schema.id, []
                     )
@@ -381,19 +388,15 @@ def compute_transition(start_node, node_schema_id_to_nodes, edge_schema_id_to_no
     # also add all the previous nodes
 
     edge_schemas = deque(
-        [
-            (edge_schema, start_node)
-            for edge_schema in TO_NODE_ID_TO_EDGE_SCHEMA.get(start_node.schema.id, [])
-        ]
+        TO_NODE_ID_TO_EDGE_SCHEMA.get(start_node.schema.id, [])
     )
     while edge_schemas:
-        edge_schema, prev_node = edge_schemas.popleft()
-        curr_node = edge_schema_id_to_nodes[edge_schema.id][-1]
-        candidate_map[curr_node.id] = curr_node
-        more_edges = TO_NODE_ID_TO_EDGE_SCHEMA.get(curr_node.schema.id, [])
+        edge_schema = edge_schemas.popleft()
+        t_edges.bwd_edge_schemas.append(edge_schema)
+        more_edges = TO_NODE_ID_TO_EDGE_SCHEMA.get(edge_schema.to_node_schema.id, [])
         edge_schemas.extend([(edge, curr_node) for edge in more_edges])
 
-    return candidate_map
+    return t_edges
 
 
 def run_chat(args, model, elevenlabs_client):
