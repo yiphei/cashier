@@ -183,7 +183,9 @@ class Node:
             new_state = old_state | kwargs
             self.state = self.state.__class__(**new_state)
         else:
-            raise StateUpdateError("cannot update any state field until first customer message")
+            raise StateUpdateError(
+                "cannot update any state field until first customer message"
+            )
 
     def get_state(self):
         return self.state
