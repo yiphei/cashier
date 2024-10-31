@@ -337,7 +337,9 @@ def compute_transition(start_node, node_schema_id_to_nodes, edge_schema_id_to_no
         edge_schemas = deque(
             [
                 (edge_schema, start_node)
-                for edge_schema in FROM_NODE_ID_TO_EDGE_SCHEMA.get(start_node.schema.id, [])
+                for edge_schema in FROM_NODE_ID_TO_EDGE_SCHEMA.get(
+                    start_node.schema.id, []
+                )
             ]
         )
         while edge_schemas:
@@ -347,7 +349,9 @@ def compute_transition(start_node, node_schema_id_to_nodes, edge_schema_id_to_no
                 candidate_map[curr_node.id] = curr_node
                 if curr_node.status == Node.Status.COMPLETED:
                     if edge_schema.node_repeat_type == NodeRepeatType.SKIP:
-                        more_edges = FROM_NODE_ID_TO_EDGE_SCHEMA.get(curr_node.schema.id, [])
+                        more_edges = FROM_NODE_ID_TO_EDGE_SCHEMA.get(
+                            curr_node.schema.id, []
+                        )
                         edge_schemas.extend([(edge, curr_node) for edge in more_edges])
                     elif (
                         edge_schema.node_repeat_type
@@ -356,13 +360,19 @@ def compute_transition(start_node, node_schema_id_to_nodes, edge_schema_id_to_no
                         # calculate if input would be unchanged
                         new_input = edge_schema.new_input_from_state_fn(prev_node.state)
                         if new_input == curr_node.input:
-                            more_edges = FROM_NODE_ID_TO_EDGE_SCHEMA.get(curr_node.schema.id, [])
-                            edge_schemas.extend([(edge, curr_node) for edge in more_edges])
+                            more_edges = FROM_NODE_ID_TO_EDGE_SCHEMA.get(
+                                curr_node.schema.id, []
+                            )
+                            edge_schemas.extend(
+                                [(edge, curr_node) for edge in more_edges]
+                            )
                 elif (
                     is_prev_completed(curr_node)
                     and curr_node.can_skip_if_prev_completed
                 ):
-                    more_edges = FROM_NODE_ID_TO_EDGE_SCHEMA.get(curr_node.schema.id, [])
+                    more_edges = FROM_NODE_ID_TO_EDGE_SCHEMA.get(
+                        curr_node.schema.id, []
+                    )
                     edge_schemas.extend([(edge, curr_node) for edge in more_edges])
 
     # also add all the previous nodes
