@@ -1093,15 +1093,13 @@ class MessageList(list):
                 self.list_idx_to_track_idx[list_idx] = len(self.list_idxs) - 1
             else:
                 insert_idx = bisect_left(self.list_idxs, list_idx)
-                
+
                 self.list_idxs.insert(insert_idx, list_idx)
                 self.list_idx_to_track_idx[list_idx] = insert_idx
-                
+
                 self.shift_track_idxs(insert_idx + 1, 1)
 
         self.list_idx_to_uris[list_idx].add(uri)
-
-                   
 
     def track_idxs(self, item_type, start_list_idx, end_list_idx=None, uris=None):
         if end_list_idx is None:
