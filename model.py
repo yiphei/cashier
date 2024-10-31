@@ -1095,9 +1095,9 @@ class MessageList(list):
                 insert_idx = bisect_left(self.list_idxs, list_idx)
 
                 self.list_idxs.insert(insert_idx, list_idx)
+                self.shift_track_idxs(insert_idx + 1, 1)
                 self.list_idx_to_track_idx[list_idx] = insert_idx
 
-                self.shift_track_idxs(insert_idx + 1, 1)
 
         self.list_idx_to_uris[list_idx].add(uri)
 
