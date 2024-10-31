@@ -215,9 +215,11 @@ class FwdTransCompleteType(StrEnum):
     SKIP = "SKIP"
     SKIP_IF_INPUT_UNCHANGED = "SKIP_IF_INPUT_UNCHANGED"
 
+
 class FwdTransPrevCompleteType(StrEnum):
     REDO = "REDO"
     SKIP = "SKIP"
+
 
 class EdgeSchema:
     _counter = 0
@@ -238,9 +240,7 @@ class EdgeSchema:
         self.to_node_schema = to_node_schema
         self.state_condition_fn = state_condition_fn
         self.new_input_from_state_fn = new_input_from_state_fn
-        self.bwd_trans_type = (
-            bwd_trans_type
-        )
+        self.bwd_trans_type = bwd_trans_type
         self.fwd_trans_complete_type = fwd_trans_complete_type
         self.fwd_trans_prev_complete_type = fwd_trans_prev_complete_type
 

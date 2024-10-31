@@ -17,9 +17,9 @@ from chain import (
     BACKGROUND,
     FROM_NODE_ID_TO_EDGE_SCHEMA,
     TO_NODE_ID_TO_EDGE_SCHEMA,
-    Node,
     FwdTransCompleteType,
     FwdTransPrevCompleteType,
+    Node,
     confirm_order_node_schema,
     take_order_node_schema,
     terminal_order_node_schema,
@@ -333,7 +333,8 @@ def compute_transition(start_node, node_schema_id_to_nodes, edge_schema_id_to_no
         )
 
     if start_node.status == Node.Status.COMPLETED or (
-        is_prev_completed(start_node) and start_node.fwd_trans_prev_complete_type == FwdTransPrevCompleteType.SKIP
+        is_prev_completed(start_node)
+        and start_node.fwd_trans_prev_complete_type == FwdTransPrevCompleteType.SKIP
     ):
         edge_schemas = deque(
             [
@@ -369,7 +370,8 @@ def compute_transition(start_node, node_schema_id_to_nodes, edge_schema_id_to_no
                             )
                 elif (
                     is_prev_completed(curr_node)
-                    and curr_node.fwd_trans_prev_complete_type == FwdTransPrevCompleteType.SKIP
+                    and curr_node.fwd_trans_prev_complete_type
+                    == FwdTransPrevCompleteType.SKIP
                 ):
                     more_edges = FROM_NODE_ID_TO_EDGE_SCHEMA.get(
                         curr_node.schema.id, []
