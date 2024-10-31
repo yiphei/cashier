@@ -27,9 +27,9 @@ class Model:
     model_name_to_provider = {
         "gpt-4o-mini": ModelProvider.OPENAI,
         "gpt-4o": ModelProvider.OPENAI,
-        "claude-3-5-sonnet-20240620": ModelProvider.ANTHROPIC,
+        "claude-3-5-sonnet-latest": ModelProvider.ANTHROPIC,
     }
-    alias_to_model_name = {"claude-3.5": "claude-3-5-sonnet-20240620"}
+    alias_to_model_name = {"claude-3.5": "claude-3-5-sonnet-latest"}
 
     def __init__(self):
         self.oai_client = OpenAI()
