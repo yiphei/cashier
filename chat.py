@@ -17,13 +17,13 @@ from chain import (
     BACKGROUND,
     FROM_NODE_ID_TO_EDGE_SCHEMA,
     TO_NODE_ID_TO_EDGE_SCHEMA,
+    EdgeSchema,
     FwdTransCompleteType,
     FwdTransPrevCompleteType,
     Node,
     confirm_order_node_schema,
     take_order_node_schema,
     terminal_order_node_schema,
-    EdgeSchema
 )
 from db_functions import create_db_client
 from function_call_context import FunctionCallContext, InexistentFunctionError
@@ -327,6 +327,7 @@ class TransitionEdges(BaseModel):
     fwd_edge_schemas: List[EdgeSchema] = []
     bwd_edge_schemas: List[EdgeSchema] = []
 
+
 def compute_transition(start_node, node_schema_id_to_nodes, edge_schema_id_to_nodes):
     t_edges = TransitionEdges()
 
@@ -387,9 +388,7 @@ def compute_transition(start_node, node_schema_id_to_nodes, edge_schema_id_to_no
 
     # also add all the previous nodes
 
-    edge_schemas = deque(
-        TO_NODE_ID_TO_EDGE_SCHEMA.get(start_node.schema.id, [])
-    )
+    edge_schemas = deque(TO_NODE_ID_TO_EDGE_SCHEMA.get(start_node.schema.id, []))
     while edge_schemas:
         edge_schema = edge_schemas.popleft()
         t_edges.bwd_edge_schemas.append(edge_schema)
