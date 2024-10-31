@@ -3,7 +3,7 @@ import copy
 import json
 import os
 import tempfile
-from collections import defaultdict
+from collections import defaultdict, deque
 from distutils.util import strtobool
 from types import GeneratorType
 
@@ -16,9 +16,12 @@ from audio import get_audio_input, save_audio_to_wav
 from chain import (
     BACKGROUND,
     FROM_NODE_ID_TO_EDGE_SCHEMA,
+    TO_NODE_ID_TO_EDGE_SCHEMA,
     confirm_order_node_schema,
     take_order_node_schema,
     terminal_order_node_schema,
+    Node,
+    NodeRepeatType,
 )
 from db_functions import create_db_client
 from function_call_context import FunctionCallContext, InexistentFunctionError
@@ -317,6 +320,45 @@ def init_node(
     node_schema_id_to_nodes[node_schema.id].append(new_node)
     return new_node
 
+
+def compute_transition(start_node, node_schema_id_to_nodes, edge_schema_id_to_nodes):
+    candidate_map = []
+
+    def is_prev_completed(node):
+        return node_schema_id_to_nodes[node.schema.id][-2].status == Node.Status.COMPLETED if len(node_schema_id_to_nodes[node.schema.id]) > 1 else False
+
+    if start_node.status == Node.Status.COMPLETED or (is_prev_completed(start_node) and start_node.can_skip_if_completed_once):
+        edges = deque([(edge_schema, start_node) for edge_schema in FROM_NODE_ID_TO_EDGE_SCHEMA[start_node.schema.id]])
+        while edges:
+            edge_schema, prev_node = edges.popleft()
+            if edge_schema.id in edge_schema_id_to_nodes:
+                curr_node = edge_schema_id_to_nodes[edge_schema.id][-1]
+                candidate_map[curr_node.id] = curr_node
+                if curr_node.status == Node.Status.COMPLETED:
+                    if edge_schema.node_repeat_type == NodeRepeatType.SKIP:
+                        more_edges = FROM_NODE_ID_TO_EDGE_SCHEMA[curr_node.schema.id]
+                        edges.extend([(edge, curr_node) for edge in more_edges])
+                    elif edge_schema.node_repeat_type == NodeRepeatType.SKIP_IF_INPUT_UNCHANGED:
+                        # calculate if input would be unchanged
+                        new_input = edge_schema.new_input_from_state_fn(prev_node.state)
+                        if new_input == curr_node.input:
+                            more_edges = FROM_NODE_ID_TO_EDGE_SCHEMA[curr_node.schema.id]
+                            edges.extend([(edge, curr_node) for edge in more_edges])
+                elif is_prev_completed(curr_node) and curr_node.can_skip_if_completed_once:
+                    more_edges = FROM_NODE_ID_TO_EDGE_SCHEMA[curr_node.schema.id]
+                    edges.extend([(edge, curr_node) for edge in more_edges])
+
+    # also add all the previous nodes
+
+
+    edges = deque([(edge_schema, start_node) for edge_schema in TO_NODE_ID_TO_EDGE_SCHEMA[start_node.schema.id]])
+    while edges:
+        edge_schema, prev_node = edges.popleft()
+        curr_node = edge_schema_id_to_nodes[edge_schema.id][-1]
+        candidate_map[curr_node.id] = curr_node
+        edges.extend([(edge, curr_node) for edge in more_edges])
+
+    return candidate_map
 
 def run_chat(args, model, elevenlabs_client):
     TC = TurnContainer()

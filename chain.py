@@ -227,6 +227,7 @@ class EdgeSchema:
         new_input_from_state_fn,
         node_resumption_type=NodeResumptionType.RESET,
         node_repeat_type=NodeRepeatType.REDO,
+        can_skip_if_completed_once=False,
     ):
         EdgeSchema._counter += 1
         self.id = EdgeSchema._counter
@@ -236,6 +237,7 @@ class EdgeSchema:
         self.new_input_from_state_fn = new_input_from_state_fn
         self.node_resumption_type = node_resumption_type
         self.node_repeat_type = node_repeat_type
+        self.can_skip_if_completed_once = can_skip_if_completed_once
 
     def check_state_condition(self, state):
         return self.state_condition_fn(state)
@@ -357,4 +359,9 @@ confirm_to_terminal_edge_schema = EdgeSchema(
 FROM_NODE_ID_TO_EDGE_SCHEMA = {
     take_order_node_schema.id: [take_to_confirm_edge_schema],
     confirm_order_node_schema.id: [confirm_to_terminal_edge_schema],
+}
+
+TO_NODE_ID_TO_EDGE_SCHEMA = {
+    terminal_order_node_schema.id: [confirm_to_terminal_edge_schema],
+    confirm_order_node_schema.id: [take_to_confirm_edge_schema],
 }
