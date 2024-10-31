@@ -4,7 +4,7 @@ import copy
 import itertools
 import json
 from abc import ABC, abstractmethod
-from bisect import bisect_right
+from bisect import bisect_left
 from collections import defaultdict
 from enum import StrEnum
 from typing import Any, Dict, List, Literal, Optional, Union, overload
@@ -663,22 +663,12 @@ class TurnContainer:
 
     def add_node_turn(
         self,
-        node_schema,
+        node,
         remove_prev_tool_fn_return=None,
         remove_prev_tool_calls=False,
         is_backward=False,
     ):
-        mm = self.model_provider_to_message_manager[ModelProvider.OPENAI]
-        if is_backward:
-            last_msg = mm.get_asst_message()
-        else:
-            last_msg = mm.get_user_message()
-
-        if last_msg:
-            last_msg = last_msg["content"]
-        node_schema.run(last_msg)
-
-        turn = NodeSystemTurn(node_id=node_schema.id, msg_content=node_schema.prompt)
+        turn = NodeSystemTurn(node_id=node.id, msg_content=node.prompt)
         self.turns.append(turn)
         for mm in self.model_provider_to_message_manager.values():
             mm.add_node_turn(
@@ -1082,7 +1072,7 @@ class MessageList(list):
         else:
             self._remove_by_uri(uri, True)
 
-    def track_idx(self, item_type, list_idx=None, uri=None):
+    def track_idx(self, item_type, list_idx=None, uri=None, is_insert=False):
         if uri is None:
             self.item_type_to_count[item_type] += 1
             uri = self.item_type_to_uri_prefix[item_type] + str(
@@ -1095,18 +1085,20 @@ class MessageList(list):
             raise ValueError()
 
         self.uri_to_list_idx[uri] = list_idx
-        self.list_idx_to_uris[list_idx].add(uri)
         self.item_type_to_uris[item_type].append(uri)
         self.uri_to_item_type[uri] = item_type
-        if list_idx not in self.list_idxs:
+        if list_idx not in self.list_idxs or is_insert:
             if (self.list_idxs and self.list_idxs[-1] < list_idx) or not self.list_idxs:
                 self.list_idxs.append(list_idx)
                 self.list_idx_to_track_idx[list_idx] = len(self.list_idxs) - 1
             else:
-                insert_idx = bisect_right(self.list_idxs, list_idx)
+                insert_idx = bisect_left(self.list_idxs, list_idx)
+
                 self.list_idxs.insert(insert_idx, list_idx)
-                self.list_idx_to_track_idx[list_idx] = insert_idx
                 self.shift_track_idxs(insert_idx + 1, 1)
+                self.list_idx_to_track_idx[list_idx] = insert_idx
+
+        self.list_idx_to_uris[list_idx].add(uri)
 
     def track_idxs(self, item_type, start_list_idx, end_list_idx=None, uris=None):
         if end_list_idx is None:
@@ -1178,7 +1170,7 @@ class MessageList(list):
     def insert(self, idx, item, item_type=None, uri=None):
         super().insert(idx, item)
         if item_type is not None:
-            self.track_idx(item_type, idx, uri)
+            self.track_idx(item_type, idx, uri, is_insert=True)
 
     def extend(self, items, item_type=None):
         curr_len = len(self) - 1

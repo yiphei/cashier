@@ -3,6 +3,7 @@ import copy
 import json
 import os
 import tempfile
+from collections import defaultdict
 from distutils.util import strtobool
 from types import GeneratorType
 
@@ -276,32 +277,64 @@ def should_backtrack_node(model, TM, current_node_schema, all_node_schemas):
     return agent_id if agent_id != current_node_schema.id else None
 
 
+def init_node(
+    node_schema,
+    TC,
+    input,
+    node_schema_id_to_nodes,
+    remove_prev_tool_calls=False,
+    is_backward=False,
+):
+    logger.debug(
+        f"[NODE_SCHEMA] Initializing node with {Style.BRIGHT}node_schema_id: {node_schema.id}{Style.NORMAL}"
+    )
+
+    prev_node = None
+    if is_backward:
+        prev_node = node_schema_id_to_nodes[node_schema.id][-1]
+
+    mm = TC.model_provider_to_message_manager[ModelProvider.OPENAI]
+    if is_backward:
+        last_msg = mm.get_asst_message()
+    else:
+        last_msg = mm.get_user_message()
+
+    if last_msg:
+        last_msg = last_msg["content"]
+    new_node = node_schema.create_node(input, last_msg, prev_node)
+
+    TC.add_node_turn(
+        new_node,
+        remove_prev_tool_calls=remove_prev_tool_calls,
+        is_backward=is_backward,
+    )
+    MessageDisplay.print_msg("system", new_node.prompt)
+
+    if node_schema.first_turn and prev_node is None:
+        TC.add_assistant_direct_turn(node_schema.first_turn)
+        MessageDisplay.print_msg("assistant", node_schema.first_turn.msg_content)
+
+    node_schema_id_to_nodes[node_schema.id].append(new_node)
+    return new_node
+
+
 def run_chat(args, model, elevenlabs_client):
     TC = TurnContainer()
 
     need_user_input = True
-    current_node_schema = take_order_node_schema
-    current_node_schema.input = None
-    current_edge_schemas = FROM_NODE_ID_TO_EDGE_SCHEMA[current_node_schema.id]
-    node_schema_id_to_node_schema = {current_node_schema.id: current_node_schema}
+    node_schema_id_to_nodes = defaultdict(list)
+    current_node = init_node(
+        take_order_node_schema,
+        TC,
+        None,
+        node_schema_id_to_nodes,
+        args.remove_prev_tool_calls,
+    )
+    current_edge_schemas = FROM_NODE_ID_TO_EDGE_SCHEMA[current_node.schema.id]
+    node_schema_id_to_node_schema = {current_node.schema.id: current_node.schema}
 
     while True:
         force_tool_choice = None
-        if not current_node_schema.is_initialized:
-            logger.debug(
-                f"[NODE_SCHEMA] Initializing {Style.BRIGHT}node_schema_id: {current_node_schema.id}{Style.NORMAL}"
-            )
-            TC.add_node_turn(
-                current_node_schema,
-                remove_prev_tool_calls=args.remove_prev_tool_calls,
-            )
-            MessageDisplay.print_msg("system", current_node_schema.prompt)
-
-            if current_node_schema.first_turn:
-                TC.add_assistant_direct_turn(current_node_schema.first_turn)
-                MessageDisplay.print_msg(
-                    "assistant", current_node_schema.first_turn.msg_content
-                )
 
         if need_user_input:
             # Read user input from stdin
@@ -315,7 +348,7 @@ def run_chat(args, model, elevenlabs_client):
             node_id = should_backtrack_node(
                 model,
                 TC,
-                current_node_schema,
+                current_node.schema,
                 [
                     take_order_node_schema,
                     confirm_order_node_schema,
@@ -323,25 +356,27 @@ def run_chat(args, model, elevenlabs_client):
                 ],
             )
             if node_id is not None and node_id in node_schema_id_to_node_schema:
-                current_node_schema = node_schema_id_to_node_schema[node_id]
+                new_node_schema = node_schema_id_to_node_schema[node_id]
                 current_edge_schemas = FROM_NODE_ID_TO_EDGE_SCHEMA.get(
-                    current_node_schema.id, []
+                    new_node_schema.id, []
                 )
-                TC.add_node_turn(
-                    current_node_schema,
-                    remove_prev_tool_calls=args.remove_prev_tool_calls,
-                    is_backward=True,
+                current_node = init_node(
+                    new_node_schema,
+                    TC,
+                    None,
+                    node_schema_id_to_nodes,
+                    args.remove_prev_tool_calls,
+                    True,
                 )
-                MessageDisplay.print_msg("system", current_node_schema.prompt)
                 force_tool_choice = "get_state"
-            current_node_schema.update_first_user_message()
+            current_node.update_first_user_message()
 
         chat_completion = model.chat(
             model_name=args.model,
             turn_container=TC,
-            tool_names_or_tool_defs=current_node_schema.tool_fn_names,
+            tool_names_or_tool_defs=current_node.schema.tool_fn_names,
             stream=args.stream,
-            extra_tool_registry=current_node_schema.tool_registry,
+            extra_tool_registry=current_node.schema.tool_registry,
             force_tool_choice=force_tool_choice,
         )
         message = chat_completion.get_or_stream_message()
@@ -353,51 +388,26 @@ def run_chat(args, model, elevenlabs_client):
             need_user_input = True
 
         fn_id_to_output = {}
-        has_node_transition = False
+        new_node_schema = None
+        new_node_input = None
         for function_call in chat_completion.get_or_stream_fn_calls():
             function_args = function_call.function_args
             logger.debug(
                 f"[FUNCTION_CALL] {Style.BRIGHT}name: {function_call.function_name}, id: {function_call.tool_call_id}{Style.NORMAL} with args:\n{json.dumps(function_args, indent=4)}"
             )
             with FunctionCallContext() as fn_call_context:
-                if function_call.function_name not in current_node_schema.tool_fn_names:
+                if function_call.function_name not in current_node.schema.tool_fn_names:
                     raise InexistentFunctionError(function_call.function_name)
 
                 if function_call.function_name.startswith("get_state"):
-                    fn_output = getattr(
-                        current_node_schema, function_call.function_name
-                    )(**function_args)
+                    fn_output = getattr(current_node, function_call.function_name)(
+                        **function_args
+                    )
                 elif function_call.function_name.startswith("update_state"):
-                    fn_output = current_node_schema.update_state(**function_args)
+                    fn_output = current_node.update_state(**function_args)
                 else:
                     fn = ToolRegistry.GLOBAL_FN_NAME_TO_FN[function_call.function_name]
                     fn_output = fn(**function_args)
-
-            if (
-                not fn_call_context.has_exception()
-                and function_call.function_name.startswith("update_state")
-            ):
-                state_condition_results = [
-                    edge_schema.check_state_condition(current_node_schema.state)
-                    for edge_schema in current_edge_schemas
-                ]
-                if any(state_condition_results):
-                    first_true_index = state_condition_results.index(True)
-                    first_true_edge_schema = current_edge_schemas[first_true_index]
-
-                    new_node_input = first_true_edge_schema.new_input_from_state_fn(
-                        current_node_schema.state
-                    )
-                    current_node_schema = first_true_edge_schema.to_node_schema
-                    current_node_schema.input = new_node_input
-                    current_edge_schemas = FROM_NODE_ID_TO_EDGE_SCHEMA.get(
-                        current_node_schema.id, []
-                    )
-                    has_node_transition = True
-
-                    node_schema_id_to_node_schema[current_node_schema.id] = (
-                        current_node_schema
-                    )
 
             if fn_call_context.has_exception():
                 logger.debug(
@@ -411,8 +421,24 @@ def run_chat(args, model, elevenlabs_client):
                 fn_id_to_output[function_call.tool_call_id] = fn_output
 
             need_user_input = False
-            if has_node_transition:
-                break
+
+            if (
+                not fn_call_context.has_exception()
+                and function_call.function_name.startswith("update_state")
+            ):
+                state_condition_results = [
+                    edge_schema.check_state_condition(current_node.state)
+                    for edge_schema in current_edge_schemas
+                ]
+                if any(state_condition_results):
+                    first_true_index = state_condition_results.index(True)
+                    first_true_edge_schema = current_edge_schemas[first_true_index]
+
+                    new_node_input = first_true_edge_schema.new_input_from_state_fn(
+                        current_node.state
+                    )
+                    new_node_schema = first_true_edge_schema.to_node_schema
+                    break
 
         model_provider = Model.get_model_provider(args.model)
         TC.add_assistant_turn(
@@ -421,6 +447,20 @@ def run_chat(args, model, elevenlabs_client):
             chat_completion.fn_calls,
             fn_id_to_output,
         )
+
+        if new_node_schema:
+            current_node = init_node(
+                new_node_schema,
+                TC,
+                new_node_input,
+                node_schema_id_to_nodes,
+                args.remove_prev_tool_calls,
+            )
+
+            current_edge_schemas = FROM_NODE_ID_TO_EDGE_SCHEMA.get(
+                new_node_schema.id, []
+            )
+            node_schema_id_to_node_schema[new_node_schema.id] = new_node_schema
 
 
 if __name__ == "__main__":
