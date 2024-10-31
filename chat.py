@@ -333,6 +333,7 @@ def run_chat(args, model, elevenlabs_client):
     current_edge_schemas = FROM_NODE_ID_TO_EDGE_SCHEMA[current_node.schema.id]
     node_schema_id_to_node_schema = {current_node.schema.id: current_node.schema}
 
+    edge_schema_id_to_nodes = defaultdict(list)
     while True:
         force_tool_choice = None
 
@@ -390,6 +391,7 @@ def run_chat(args, model, elevenlabs_client):
         fn_id_to_output = {}
         new_node_schema = None
         new_node_input = None
+        first_true_edge_schema=None
         for function_call in chat_completion.get_or_stream_fn_calls():
             function_args = function_call.function_args
             logger.debug(
@@ -449,6 +451,7 @@ def run_chat(args, model, elevenlabs_client):
         )
 
         if new_node_schema:
+            current_node.mark_as_completed()
             current_node = init_node(
                 new_node_schema,
                 TC,
@@ -461,6 +464,7 @@ def run_chat(args, model, elevenlabs_client):
                 new_node_schema.id, []
             )
             node_schema_id_to_node_schema[new_node_schema.id] = new_node_schema
+            edge_schema_id_to_nodes[first_true_edge_schema.id].append(current_node)
 
 
 if __name__ == "__main__":

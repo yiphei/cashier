@@ -167,6 +167,11 @@ class NodeSchema:
 
 
 class Node:
+
+    class Status(StrEnum):
+        IN_PROGRESS = "IN_PROGRESS"
+        COMPLETED = "COMPLETED"
+
     _counter = 0
 
     def __init__(self, schema, input, state, prompt):
@@ -177,6 +182,10 @@ class Node:
         self.input = input
         self.schema = schema
         self.first_user_message = False
+        self.status = self.Status.IN_PROGRESS
+
+    def mark_as_completed(self):
+        self.status = self.Status.COMPLETED
 
     def update_state(self, **kwargs):
         if self.first_user_message:
