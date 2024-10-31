@@ -1098,7 +1098,6 @@ class MessageList(list):
                 self.shift_track_idxs(insert_idx + 1, 1)
                 self.list_idx_to_track_idx[list_idx] = insert_idx
 
-
         self.list_idx_to_uris[list_idx].add(uri)
 
     def track_idxs(self, item_type, start_list_idx, end_list_idx=None, uris=None):
