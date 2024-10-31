@@ -1,5 +1,6 @@
 import copy
 from typing import Optional
+from enum import StrEnum
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -194,6 +195,16 @@ class Node:
         self.first_user_message = True
 
 
+class NodeResumptionType(StrEnum):
+    RESET = "RESET"
+    KEEP = "KEEP"
+    KEEP_IF_INPUT_UNCHANGED = "KEEP_IF_INPUT_UNCHANGED"
+
+class NodeRepeatType(StrEnum):
+    REDO = "REDO"
+    SKIP = "SKIP"
+    SKIP_IF_INPUT_UNCHANGED = "SKIP_IF_INPUT_UNCHANGED"
+
 class EdgeSchema:
     _counter = 0
 
@@ -203,6 +214,8 @@ class EdgeSchema:
         to_node_schema,
         state_condition_fn,
         new_input_from_state_fn,
+        node_resumption_type = NodeResumptionType.RESET,
+        node_repeat_type = NodeRepeatType.REDO,
     ):
         EdgeSchema._counter += 1
         self.id = EdgeSchema._counter
@@ -210,6 +223,8 @@ class EdgeSchema:
         self.to_node_schema = to_node_schema
         self.state_condition_fn = state_condition_fn
         self.new_input_from_state_fn = new_input_from_state_fn
+        self.node_resumption_type = node_resumption_type
+        self.node_repeat_type = node_repeat_type
 
     def check_state_condition(self, state):
         return self.state_condition_fn(state)
