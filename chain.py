@@ -1,6 +1,6 @@
 import copy
-from typing import Optional
 from enum import StrEnum
+from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -200,10 +200,12 @@ class NodeResumptionType(StrEnum):
     KEEP = "KEEP"
     KEEP_IF_INPUT_UNCHANGED = "KEEP_IF_INPUT_UNCHANGED"
 
+
 class NodeRepeatType(StrEnum):
     REDO = "REDO"
     SKIP = "SKIP"
     SKIP_IF_INPUT_UNCHANGED = "SKIP_IF_INPUT_UNCHANGED"
+
 
 class EdgeSchema:
     _counter = 0
@@ -214,8 +216,8 @@ class EdgeSchema:
         to_node_schema,
         state_condition_fn,
         new_input_from_state_fn,
-        node_resumption_type = NodeResumptionType.RESET,
-        node_repeat_type = NodeRepeatType.REDO,
+        node_resumption_type=NodeResumptionType.RESET,
+        node_repeat_type=NodeRepeatType.REDO,
     ):
         EdgeSchema._counter += 1
         self.id = EdgeSchema._counter
