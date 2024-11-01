@@ -367,23 +367,17 @@ class ChatContext(BaseModel):
                 if len(self.from_nodes_by_edge_schema_id[edge_schema.id]) > 1
                 else False
             )
-            
 
         def check_can_add_edge_schema(edge_schema, fwd_attr, prev_node, curr_node):
             fwd_type = getattr(edge_schema, fwd_attr)
             if fwd_type == FwdTransType.SKIP:
                 return True
-            elif (
-                fwd_type
-                == FwdTransType.SKIP_IF_INPUT_UNCHANGED
-            ):
+            elif fwd_type == FwdTransType.SKIP_IF_INPUT_UNCHANGED:
                 # calculate if input would be unchanged
-                new_input = edge_schema.new_input_from_state_fn(
-                    prev_node.state
-                )
+                new_input = edge_schema.new_input_from_state_fn(prev_node.state)
                 if new_input == curr_node.input:
                     return True
-            return False               
+            return False
 
         edge_schemas = deque(
             [
@@ -400,19 +394,49 @@ class ChatContext(BaseModel):
                 can_add_edge_schema = False
                 if prev_node.status == Node.Status.COMPLETED:
                     if curr_node.status == Node.Status.COMPLETED:
-                        can_add_edge_schema = check_can_add_edge_schema(edge_schema, "fwd_from_complete_to_prev_complete", prev_node, curr_node)
+                        can_add_edge_schema = check_can_add_edge_schema(
+                            edge_schema,
+                            "fwd_from_complete_to_prev_complete",
+                            prev_node,
+                            curr_node,
+                        )
                     else:
-                        can_add_edge_schema = check_can_add_edge_schema(edge_schema, "fwd_from_complete_to_prev_incomplete", prev_node, curr_node)
+                        can_add_edge_schema = check_can_add_edge_schema(
+                            edge_schema,
+                            "fwd_from_complete_to_prev_incomplete",
+                            prev_node,
+                            curr_node,
+                        )
                 elif is_prev_completed(edge_schema):
                     if curr_node.status == Node.Status.COMPLETED:
-                        can_add_edge_schema = check_can_add_edge_schema(edge_schema, "fwd_from_prev_complete_to_prev_complete", prev_node, curr_node)
+                        can_add_edge_schema = check_can_add_edge_schema(
+                            edge_schema,
+                            "fwd_from_prev_complete_to_prev_complete",
+                            prev_node,
+                            curr_node,
+                        )
                     else:
-                        can_add_edge_schema = check_can_add_edge_schema(edge_schema, "fwd_from_prev_complete_to_prev_incomplete", prev_node, curr_node)    
+                        can_add_edge_schema = check_can_add_edge_schema(
+                            edge_schema,
+                            "fwd_from_prev_complete_to_prev_incomplete",
+                            prev_node,
+                            curr_node,
+                        )
                 else:
                     if curr_node.status == Node.Status.COMPLETED:
-                        can_add_edge_schema = check_can_add_edge_schema(edge_schema, "fwd_from_incomplete_to_prev_complete", prev_node, curr_node)
+                        can_add_edge_schema = check_can_add_edge_schema(
+                            edge_schema,
+                            "fwd_from_incomplete_to_prev_complete",
+                            prev_node,
+                            curr_node,
+                        )
                     else:
-                        can_add_edge_schema = check_can_add_edge_schema(edge_schema, "fwd_from_incomplete_to_prev_incomplete", prev_node, curr_node) 
+                        can_add_edge_schema = check_can_add_edge_schema(
+                            edge_schema,
+                            "fwd_from_incomplete_to_prev_incomplete",
+                            prev_node,
+                            curr_node,
+                        )
 
                 if can_add_edge_schema:
                     self.fwd_jump_edge_schemas.append(edge_schema)
