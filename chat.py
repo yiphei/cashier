@@ -380,9 +380,9 @@ class ChatContext(BaseModel):
                 )
 
         self.curr_node = new_node
-        self.fwd_trans_edge_schemas = set(FROM_NODE_ID_TO_EDGE_SCHEMA.get(
-            new_node.schema.id, []
-        ))
+        self.fwd_trans_edge_schemas = set(
+            FROM_NODE_ID_TO_EDGE_SCHEMA.get(new_node.schema.id, [])
+        )
 
         # also add all the previous nodes
         loop_node = new_node
