@@ -303,9 +303,9 @@ class ChatContext(BaseModel):
     fwd_nodes_by_edge_schema_id: Dict[str, List[Tuple[Node]]] = Field(
         default_factory=lambda: defaultdict(list)
     )
-    fwd_jump_edge_schemas: Set[EdgeSchema] = []
-    fwd_trans_edge_schemas: Set[EdgeSchema] = []
-    bwd_edge_schemas: Set[EdgeSchema] = []
+    fwd_jump_edge_schemas: Set[EdgeSchema] = Field(default_factory=set)
+    fwd_trans_edge_schemas: Set[EdgeSchema] = Field(default_factory=set)
+    bwd_edge_schemas: Set[EdgeSchema] = Field(default_factory=set)
 
     def get_edge_schema_from_node_schema_id(self, node_schema_id):
         for edge_schema in self.fwd_jump_edge_schemas:
