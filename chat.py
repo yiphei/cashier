@@ -292,10 +292,13 @@ class ChatContext(BaseModel):
     )
     current_edge_schemas: List[EdgeSchema] = Field(default_factory=list)
     node_schema_id_to_node_schema: Dict[str, NodeSchema] = Field(default_factory=dict)
+    from_nodes_by_edge_schema_id: Dict[str, List[Node]] = Field(default_factory=lambda: defaultdict(list))
+    to_nodes_by_edge_schema_id: Dict[str, List[Node]] = Field(default_factory=lambda: defaultdict(list))
 
     def init_node(
         self,
         node_schema,
+        edge_schema,
         TC,
         input,
         is_jump=False,
@@ -332,13 +335,21 @@ class ChatContext(BaseModel):
         self.node_schema_id_to_nodes[node_schema.id].append(new_node)
         self.current_edge_schemas = FROM_NODE_ID_TO_EDGE_SCHEMA.get(node_schema.id, [])
         self.node_schema_id_to_node_schema[node_schema.id] = node_schema
+        if edge_schema:
+            if edge_schema.to_node_schema == node_schema:
+                self.from_nodes_by_edge_schema_id[edge_schema.id].append(self.curr_node)
+                self.to_nodes_by_edge_schema_id[edge_schema.id].append(new_node)
+            else:
+                self.from_nodes_by_edge_schema_id[edge_schema.id].append(new_node)
+                self.to_nodes_by_edge_schema_id[edge_schema.id].append(self.curr_node) 
+
         self.curr_node = new_node
 
 
 def run_chat(args, model, elevenlabs_client):
     TC = TurnContainer()
     CT = ChatContext(remove_prev_tool_calls=args.remove_prev_tool_calls)
-    CT.init_node(take_order_node_schema, TC, None)
+    CT.init_node(take_order_node_schema, None, TC, None)
 
     while True:
         force_tool_choice = None
@@ -366,6 +377,7 @@ def run_chat(args, model, elevenlabs_client):
                 new_node_schema = CT.node_schema_id_to_node_schema[node_id]
                 CT.init_node(
                     new_node_schema,
+                    None,
                     TC,
                     None,
                     True,
@@ -392,6 +404,7 @@ def run_chat(args, model, elevenlabs_client):
         fn_id_to_output = {}
         new_node_schema = None
         new_node_input = None
+        first_true_edge_schema = None
         for function_call in chat_completion.get_or_stream_fn_calls():
             function_args = function_call.function_args
             logger.debug(
@@ -453,6 +466,7 @@ def run_chat(args, model, elevenlabs_client):
         if new_node_schema:
             CT.init_node(
                 new_node_schema,
+                first_true_edge_schema,
                 TC,
                 new_node_input,
             )
