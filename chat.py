@@ -298,18 +298,18 @@ class ChatContext(BaseModel):
         node_schema,
         TC,
         input,
-        is_backward=False,
+        is_jump=False,
     ):
         logger.debug(
             f"[NODE_SCHEMA] Initializing node with {Style.BRIGHT}node_schema_id: {node_schema.id}{Style.NORMAL}"
         )
 
         prev_node = None
-        if is_backward:
+        if is_jump:
             prev_node = self.node_schema_id_to_nodes[node_schema.id][-1]
 
         mm = TC.model_provider_to_message_manager[ModelProvider.OPENAI]
-        if is_backward:
+        if is_jump:
             last_msg = mm.get_asst_message()
         else:
             last_msg = mm.get_user_message()
@@ -321,7 +321,7 @@ class ChatContext(BaseModel):
         TC.add_node_turn(
             new_node,
             remove_prev_tool_calls=self.remove_prev_tool_calls,
-            is_backward=is_backward,
+            is_jump=is_jump,
         )
         MessageDisplay.print_msg("system", new_node.prompt)
 
