@@ -344,7 +344,7 @@ class ChatContext(BaseModel):
             if edge_schema.to_node_schema == node_schema:
                 immediate_prev_node = self.curr_node
                 if edge_schema.from_node_schema != self.curr_node.schema:
-                    prev_node, next_node = self.fwd_nodes_by_edge_schema_id[
+                    prev_node, _ = self.fwd_nodes_by_edge_schema_id[
                         edge_schema.id
                     ][-1]
                     immediate_prev_node = prev_node
