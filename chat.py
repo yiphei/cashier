@@ -18,11 +18,11 @@ from chain import (
     BACKGROUND,
     FROM_NODE_ID_TO_EDGE_SCHEMA,
     EdgeSchema,
+    Node,
     NodeSchema,
     confirm_order_node_schema,
     take_order_node_schema,
     terminal_order_node_schema,
-    Node,
 )
 from db_functions import create_db_client
 from function_call_context import FunctionCallContext, InexistentFunctionError
@@ -285,10 +285,11 @@ class ChatContext(BaseModel):
     remove_prev_tool_calls: bool
     curr_node: Node = None
     need_user_input: bool = True
-    node_schema_id_to_nodes: Dict[str, List[Node]] = Field( default_factory= defaultdict(list))
-    current_edge_schemas: List[EdgeSchema] = Field( default_factory= list)
-    node_schema_id_to_node_schema: Dict[str, NodeSchema] = Field( default_factory= dict)
-
+    node_schema_id_to_nodes: Dict[str, List[Node]] = Field(
+        default_factory=defaultdict(list)
+    )
+    current_edge_schemas: List[EdgeSchema] = Field(default_factory=list)
+    node_schema_id_to_node_schema: Dict[str, NodeSchema] = Field(default_factory=dict)
 
     def init_node(
         self,
@@ -340,7 +341,7 @@ def run_chat(args, model, elevenlabs_client):
     while True:
         force_tool_choice = None
 
-        if need_user_input:
+        if CT.need_user_input:
             # Read user input from stdin
             text_input = get_user_input(args.audio_input, model.oai_client)
             # If user types 'exit', break the loop and end the program
@@ -419,7 +420,7 @@ def run_chat(args, model, elevenlabs_client):
                 )
                 fn_id_to_output[function_call.tool_call_id] = fn_output
 
-            need_user_input = False
+            CT.need_user_input = False
 
             if (
                 not fn_call_context.has_exception()
