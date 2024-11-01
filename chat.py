@@ -360,11 +360,12 @@ class ChatContext(BaseModel):
             start_node.schema.id, []
         )
 
-        def is_prev_completed(edge_schema):
+        def is_prev_completed(edge_schema, is_start_node):
+            idx = -1 if is_start_node else -2
             return (
-                self.from_nodes_by_edge_schema_id[edge_schema.id][-2].status
+                self.from_nodes_by_edge_schema_id[edge_schema.id][idx].status
                 == Node.Status.COMPLETED
-                if len(self.from_nodes_by_edge_schema_id[edge_schema.id]) > 1
+                if len(self.from_nodes_by_edge_schema_id[edge_schema.id]) >= abs(idx)
                 else False
             )
 
@@ -402,7 +403,7 @@ class ChatContext(BaseModel):
                             prev_node,
                             curr_node,
                         )
-                elif is_prev_completed(edge_schema):
+                elif is_prev_completed(edge_schema, prev_node == start_node):
                     if curr_node.status == Node.Status.COMPLETED:
                         can_add_edge_schema = check_can_add_edge_schema(
                             edge_schema,
