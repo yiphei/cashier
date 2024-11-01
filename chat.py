@@ -382,9 +382,7 @@ class ChatContext(BaseModel):
         edge_schemas = deque(
             [
                 (edge_schema, start_node)
-                for edge_schema in FROM_NODE_ID_TO_EDGE_SCHEMA.get(
-                    start_node.schema.id, []
-                )
+                for edge_schema in self.fwd_trans_edge_schemas
             ]
         )
         while edge_schemas:
