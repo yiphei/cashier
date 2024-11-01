@@ -10,7 +10,7 @@ from types import GeneratorType, List
 from colorama import Fore, Style
 from dotenv import load_dotenv  # Add this import
 from elevenlabs import ElevenLabs, Voice, VoiceSettings, stream
-from pydantic import BaseModel
+from pydantic import BaseModel, model_validator
 
 from audio import get_audio_input, save_audio_to_wav
 from chain import (
@@ -125,7 +125,7 @@ class MessageDisplay:
         )
 
 
-def should_backtrack_node(model, TM, current_node_schema, all_node_schemas):
+def should_backtrack_node(model, TM, current_node_schema, t_edges):
     model_name = "claude-3.5"
     model_provider = Model.get_model_provider(model_name)
     conversational_msgs = copy.deepcopy(
@@ -210,9 +210,10 @@ def should_backtrack_node(model, TM, current_node_schema, all_node_schemas):
         "The state <state> keeps track of important data during the conversation. "
         "The tools <tools> represent explicit actions that the agent can perform.\n\n"
     )
-    for node_schema in all_node_schemas:
+    for edge_schema in [t_edges.fwd_edge_schemas, t_edges.bwd_edge_schemas]:
+        node_schema = edge_schema.to_node_schema
         prompt += (
-            f"<agent id={node_schema.id}>\n"
+            f"<agent id={edge_schema.id}>\n"
             "<instructions>\n"
             f"{node_schema.node_prompt}\n"
             "</instructions>\n\n"
@@ -224,6 +225,20 @@ def should_backtrack_node(model, TM, current_node_schema, all_node_schemas):
             "</tools>\n"
             "</agent>\n\n"
         )
+
+    prompt += (
+        f"<agent id={current_node_schema.id}>\n"
+        "<instructions>\n"
+        f"{current_node_schema.node_prompt}\n"
+        "</instructions>\n\n"
+        "<state>\n"
+        f"{current_node_schema.state_pydantic_model.model_json_schema()}\n"
+        "</state>\n\n"
+        "<tools>\n"
+        f"{json.dumps(ToolRegistry.get_tool_defs_from_names(current_node_schema.tool_fn_names, model_provider, current_node_schema.tool_registry))}\n"
+        "</tools>\n"
+        "</agent>\n\n"
+    )
 
     prompt += (
         "All agents share the following background:\n"
@@ -279,24 +294,28 @@ def should_backtrack_node(model, TM, current_node_schema, all_node_schemas):
     else:
         logger.debug(f"AGENT_ID: {agent_id}")
 
-    return agent_id if agent_id != current_node_schema.id else None
+    return agent_id if agent_id in t_edges.fwd_edge_schemas_map or agent_id in t_edges.bwd_edge_schemas_map else None
 
 
 def init_node(
+    current_node,
     node_schema,
+    edge_schema,
     TC,
     input,
     node_schema_id_to_nodes,
+    from_edge_schema_id_to_nodes,
+    to_edge_schema_id_to_nodes,
     remove_prev_tool_calls=False,
+    is_bwd_edge=False,
     is_backward=False,
 ):
     logger.debug(
         f"[NODE_SCHEMA] Initializing node with {Style.BRIGHT}node_schema_id: {node_schema.id}{Style.NORMAL}"
     )
 
-    prev_node = None
-    if is_backward:
-        prev_node = node_schema_id_to_nodes[node_schema.id][-1]
+    if current_node:
+        from_edge_schema_id_to_nodes[edge_schema.id] = current_node
 
     mm = TC.model_provider_to_message_manager[ModelProvider.OPENAI]
     if is_backward:
@@ -306,7 +325,14 @@ def init_node(
 
     if last_msg:
         last_msg = last_msg["content"]
-    new_node = node_schema.create_node(input, last_msg, prev_node)
+
+
+    if is_bwd_edge and edge_schema.id in from_edge_schema_id_to_nodes:
+        prev_node = from_edge_schema_id_to_nodes[edge_schema.id][-1]
+    elif not is_bwd_edge and edge_schema.id in to_edge_schema_id_to_nodes:
+        prev_node = to_edge_schema_id_to_nodes[edge_schema.id][-1]
+
+    new_node = node_schema.create_node(input, last_msg, prev_node, edge_schema)
 
     TC.add_node_turn(
         new_node,
@@ -320,16 +346,34 @@ def init_node(
         MessageDisplay.print_msg("assistant", node_schema.first_turn.msg_content)
 
     node_schema_id_to_nodes[node_schema.id].append(new_node)
-    return new_node
+    
+    if edge_schema:
+        to_edge_schema_id_to_nodes[edge_schema.id].append(new_node)
+    t_edges = compute_transition(new_node, node_schema_id_to_nodes, to_edge_schema_id_to_nodes)
+    return new_node, t_edges
 
 
 class TransitionEdges(BaseModel):
     fwd_edge_schemas: List[EdgeSchema] = []
+    next_fwd_edge_schemas: List[EdgeSchema] = []
     bwd_edge_schemas: List[EdgeSchema] = []
 
+    @property
+    def fwd_edge_schemas_map(self):
+        if not hasattr(self, "fwd_edge_schemas_map"):
+            self.fwd_edge_schemas_map = {edge.id: edge for edge in self.fwd_edge_schemas}
+        return self.fwd_edge_schemas_map
+    
+    @property
+    def bwd_edge_schemas_map(self):
+        if not hasattr(self, "bwd_edge_schemas_map"):
+            self.bwd_edge_schemas_map = {edge.id: edge for edge in self.bwd_edge_schemas}
+        return self.bwd_edge_schemas_map
 
 def compute_transition(start_node, node_schema_id_to_nodes, edge_schema_id_to_nodes):
-    t_edges = TransitionEdges()
+    t_edges = TransitionEdges(next_fwd_edge_schemas=FROM_NODE_ID_TO_EDGE_SCHEMA.get(
+                    start_node.schema.id, []
+                ))
 
     def is_prev_completed(node):
         return (
@@ -403,17 +447,20 @@ def run_chat(args, model, elevenlabs_client):
 
     need_user_input = True
     node_schema_id_to_nodes = defaultdict(list)
-    current_node = init_node(
+    node_schema_id_to_node_schema = {current_node.schema.id: current_node.schema}
+    from_edge_schema_id_to_nodes = defaultdict(list)
+    to_edge_schema_id_to_nodes = defaultdict(list)
+    current_node, t_edges = init_node(
+        None,
         take_order_node_schema,
+        None,
         TC,
         None,
         node_schema_id_to_nodes,
+        from_edge_schema_id_to_nodes,
+        to_edge_schema_id_to_nodes,
         args.remove_prev_tool_calls,
     )
-    current_edge_schemas = FROM_NODE_ID_TO_EDGE_SCHEMA[current_node.schema.id]
-    node_schema_id_to_node_schema = {current_node.schema.id: current_node.schema}
-
-    edge_schema_id_to_nodes = defaultdict(list)
     while True:
         force_tool_choice = None
 
@@ -426,27 +473,26 @@ def run_chat(args, model, elevenlabs_client):
                 break
             MessageDisplay.print_msg("user", text_input)
             TC.add_user_turn(text_input)
-            node_id = should_backtrack_node(
+            edge_schema_id = should_backtrack_node(
                 model,
                 TC,
                 current_node.schema,
-                [
-                    take_order_node_schema,
-                    confirm_order_node_schema,
-                    terminal_order_node_schema,
-                ],
+                t_edges,
             )
-            if node_id is not None and node_id in node_schema_id_to_node_schema:
-                new_node_schema = node_schema_id_to_node_schema[node_id]
-                current_edge_schemas = FROM_NODE_ID_TO_EDGE_SCHEMA.get(
-                    new_node_schema.id, []
-                )
-                current_node = init_node(
+            if edge_schema_id is not None:
+                edge_schema = t_edges.bwd_edge_schemas_map[edge_schema_id] if edge_schema_id in t_edges.bwd_edge_schemas_map else t_edges.fwd_edge_schemas_map[edge_schema_id]
+                is_bwd = True if edge_schema_id in t_edges.bwd_edge_schemas_map else False
+                new_node_schema = edge_schema.from_node_schema if is_bwd else edge_schema.to_node_schema
+                current_node, t_edges = init_node(
+                    current_node,
                     new_node_schema,
+                    edge_schema,
                     TC,
                     None,
                     node_schema_id_to_nodes,
+                    to_edge_schema_id_to_nodes,
                     args.remove_prev_tool_calls,
+                    is_bwd,
                     True,
                 )
                 force_tool_choice = "get_state"
@@ -510,11 +556,11 @@ def run_chat(args, model, elevenlabs_client):
             ):
                 state_condition_results = [
                     edge_schema.check_state_condition(current_node.state)
-                    for edge_schema in current_edge_schemas
+                    for edge_schema in t_edges.next_fwd_edge_schemas
                 ]
                 if any(state_condition_results):
                     first_true_index = state_condition_results.index(True)
-                    first_true_edge_schema = current_edge_schemas[first_true_index]
+                    first_true_edge_schema = t_edges.next_fwd_edge_schemas[first_true_index]
 
                     new_node_input = first_true_edge_schema.new_input_from_state_fn(
                         current_node.state
@@ -532,19 +578,20 @@ def run_chat(args, model, elevenlabs_client):
 
         if new_node_schema:
             current_node.mark_as_completed()
-            current_node = init_node(
+            current_node, t_edges = init_node(
+                current_node,
                 new_node_schema,
+                first_true_edge_schema,
                 TC,
                 new_node_input,
                 node_schema_id_to_nodes,
+                from_edge_schema_id_to_nodes,
+                to_edge_schema_id_to_nodes,
                 args.remove_prev_tool_calls,
             )
 
-            current_edge_schemas = FROM_NODE_ID_TO_EDGE_SCHEMA.get(
-                new_node_schema.id, []
-            )
             node_schema_id_to_node_schema[new_node_schema.id] = new_node_schema
-            edge_schema_id_to_nodes[first_true_edge_schema.id].append(current_node)
+            from_edge_schema_id_to_nodes[first_true_edge_schema.id].append(current_node)
 
 
 if __name__ == "__main__":

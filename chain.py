@@ -52,7 +52,7 @@ class NodeSchema:
         )
         self.tool_fn_names.append("get_state")
 
-    def create_node(self, input, last_msg=None, prev_node=None):
+    def create_node(self, input, last_msg=None, prev_node=None, bwd_edge_schema=None):
         if input is not None:
             assert isinstance(input, self.input_pydantic_model)
             assert prev_node is None
@@ -63,7 +63,12 @@ class NodeSchema:
         if prev_node is None:
             state = self.state_pydantic_model()
         else:
-            state = prev_node.state.copy_reset()
+            if bwd_edge_schema.bwd_trans_type == BwdTransType.KEEP:
+                state = prev_node.state.copy_reset()
+            elif bwd_edge_schema.bwd_trans_type == BwdTransType.RESET:
+                state = self.state_pydantic_model()
+            else:
+                pass
 
         prompt = self.generate_system_prompt(
             (
