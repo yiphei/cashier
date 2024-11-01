@@ -461,14 +461,15 @@ class ChatContext(BaseModel):
             loop_node = self.node_schema_id_to_node_schema[loop_node.schema.id][i]
             i -= 1
 
-        if loop_node.direction == Node.Direction.FWD:
+        if loop_node.direction == Node.Direction.FWD and loop_node.edge_schema:
             edge_schemas = deque([loop_node.edge_schema])
             while edge_schemas:
                 edge_schema = edge_schemas.popleft()
                 self.bwd_edge_schemas.append(edge_schema)
 
                 prev_node, _ = self.fwd_nodes_by_edge_schema_id[edge_schema.id]
-                edge_schemas.append(prev_node.edge_schema)
+                if prev_node.edge_schema:
+                    edge_schemas.append(prev_node.edge_schema)
 
 
 def run_chat(args, model, elevenlabs_client):
