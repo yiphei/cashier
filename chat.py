@@ -329,7 +329,7 @@ class ChatContext(BaseModel):
 
         if last_msg:
             last_msg = last_msg["content"]
-        new_node = node_schema.create_node(input, last_msg, prev_node)
+        new_node = node_schema.create_node(input, last_msg, prev_node, edge_schema)
 
         TC.add_node_turn(
             new_node,

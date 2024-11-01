@@ -52,7 +52,7 @@ class NodeSchema:
         )
         self.tool_fn_names.append("get_state")
 
-    def create_node(self, input, last_msg=None, prev_node=None):
+    def create_node(self, input, last_msg=None, prev_node=None, edge_schema=None):
         if input is not None:
             assert isinstance(input, self.input_pydantic_model)
             assert prev_node is None
@@ -74,7 +74,8 @@ class NodeSchema:
             last_msg,
         )
 
-        return Node(self, input, state, prompt)
+        direction = Node.Direction.BWD if edge_schema and edge_schema.from_node_schema == self else Node.Direction.FWD
+        return Node(self, input, state, prompt, edge_schema, direction)
 
     def generate_system_prompt(self, input, last_msg):
         NODE_PROMPT = (
@@ -172,8 +173,12 @@ class Node:
     class Status(StrEnum):
         IN_PROGRESS = "IN_PROGRESS"
         COMPLETED = "COMPLETED"
+    
+    class Direction(StrEnum):
+        FWD = "FWD"
+        BWD = "BWD"
 
-    def __init__(self, schema, input, state, prompt):
+    def __init__(self, schema, input, state, prompt, edge_schema, direction):
         Node._counter += 1
         self.id = Node._counter
         self.state = state
@@ -182,6 +187,8 @@ class Node:
         self.schema = schema
         self.first_user_message = False
         self.status = self.Status.IN_PROGRESS
+        self.edge_schema = edge_schema
+        self.direction = direction
 
     def mark_as_completed(self):
         self.status = self.Status.COMPLETED
