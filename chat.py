@@ -401,7 +401,8 @@ class ChatContext(BaseModel):
                                 can_add_edge_schema = True
                     elif (
                         is_prev_completed(curr_node)
-                        and edge_schema.fwd_jump_prev_completed_type == FwdTransType.SKIP
+                        and edge_schema.fwd_jump_prev_completed_type
+                        == FwdTransType.SKIP
                     ):
                         can_add_edge_schema = True
 
