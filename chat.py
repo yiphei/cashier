@@ -316,6 +316,8 @@ class ChatContext(BaseModel):
             f"[NODE_SCHEMA] Initializing node with {Style.BRIGHT}node_schema_id: {node_schema.id}{Style.NORMAL}"
         )
 
+        self.curr_node.mark_as_completed()
+
         prev_node = None
         if is_jump:
             prev_node = self.node_schema_id_to_nodes[node_schema.id][-1]
