@@ -581,19 +581,14 @@ def run_chat(args, model, elevenlabs_client):
                 not fn_call_context.has_exception()
                 and function_call.function_name.startswith("update_state")
             ):
-                state_condition_results = [
-                    edge_schema.check_state_condition(CT.curr_node.state)
-                    for edge_schema in CT.fwd_trans_edge_schemas
-                ]
-                if any(state_condition_results):
-                    first_true_index = state_condition_results.index(True)
-                    first_true_edge_schema = CT.fwd_trans_edge_schemas[first_true_index]
-
-                    new_node_input = first_true_edge_schema.new_input_from_state_fn(
-                        CT.curr_node.state
-                    )
-                    new_node_schema = first_true_edge_schema.to_node_schema
-                    break
+                for edge_schema in CT.fwd_trans_edge_schemas:
+                    if edge_schema.check_state_condition(CT.curr_node.state):
+                        first_true_edge_schema = edge_schema
+                        new_node_input = first_true_edge_schema.new_input_from_state_fn(
+                            CT.curr_node.state
+                        )
+                        new_node_schema = first_true_edge_schema.to_node_schema
+                        break
 
         model_provider = Model.get_model_provider(args.model)
         TC.add_assistant_turn(
