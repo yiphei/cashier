@@ -374,7 +374,7 @@ class ChatContext(BaseModel):
         def is_prev_completed(edge_schema, is_start_node):
             idx = -1 if is_start_node else -2
             return (
-                self.fwd_nodes_by_edge_schema_id[edge_schema.id][idx].status
+                self.fwd_nodes_by_edge_schema_id[edge_schema.id][idx][0].status
                 == Node.Status.COMPLETED
                 if len(self.fwd_nodes_by_edge_schema_id[edge_schema.id]) >= abs(idx)
                 else False
