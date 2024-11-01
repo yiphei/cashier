@@ -213,6 +213,7 @@ class FwdTransType(StrEnum):
     NEW = "NEW"
     SKIP = "SKIP"
     SKIP_IF_INPUT_UNCHANGED = "SKIP_IF_INPUT_UNCHANGED"
+    UNALLOWED = "UNALLOWED"
 
 
 class EdgeSchema:
@@ -225,9 +226,13 @@ class EdgeSchema:
         state_condition_fn,
         new_input_from_state_fn,
         bwd_trans_type=BwdTransType.RESET,
-        fwd_jump_completed_type=FwdTransType.NEW,
-        fwd_jump_prev_completed_type=FwdTransType.NEW,
-        fwd_trans_completed_type=FwdTransType.NEW,
+        fwd_from_complete_to_prev_complete=FwdTransType.NEW,
+        fwd_from_complete_to_prev_incomplete=FwdTransType.NEW,
+        fwd_from_prev_complete_to_prev_complete=FwdTransType.NEW,
+        fwd_from_prev_complete_to_prev_incomplete=FwdTransType.NEW,
+        fwd_from_incomplete_to_prev_complete=FwdTransType.NEW,
+        fwd_from_incomplete_to_prev_incomplete=FwdTransType.NEW,
+        fwd_trans_type=FwdTransType.NEW,
     ):
         EdgeSchema._counter += 1
         self.id = EdgeSchema._counter
@@ -236,9 +241,13 @@ class EdgeSchema:
         self.state_condition_fn = state_condition_fn
         self.new_input_from_state_fn = new_input_from_state_fn
         self.bwd_trans_type = bwd_trans_type
-        self.fwd_jump_completed_type = fwd_jump_completed_type
-        self.fwd_jump_prev_completed_type = fwd_jump_prev_completed_type
-        self.fwd_trans_completed_type = fwd_trans_completed_type
+        self.fwd_from_complete_to_prev_complete=fwd_from_complete_to_prev_complete
+        self.fwd_from_complete_to_prev_incomplete=fwd_from_complete_to_prev_incomplete
+        self.fwd_from_prev_complete_to_prev_complete=fwd_from_prev_complete_to_prev_complete
+        self.fwd_from_prev_complete_to_prev_incomplete=fwd_from_prev_complete_to_prev_incomplete
+        self.fwd_from_incomplete_to_prev_complete=fwd_from_incomplete_to_prev_complete
+        self.fwd_from_incomplete_to_prev_incomplete=fwd_from_incomplete_to_prev_incomplete
+        self.fwd_trans_type = fwd_trans_type
 
     def check_state_condition(self, state):
         return self.state_condition_fn(state)
