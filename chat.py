@@ -425,9 +425,9 @@ class ChatContext(BaseModel):
             edge_schema = edge_schemas.popleft()
             self.bwd_edge_schemas.append(edge_schema)
             more_edges = TO_NODE_ID_TO_EDGE_SCHEMA.get(
-                edge_schema.to_node_schema.id, []
+                edge_schema.from_node_schema.id, []
             )
-            edge_schemas.extend([(edge, curr_node) for edge in more_edges])
+            edge_schemas.extend(more_edges)
 
 
 def run_chat(args, model, elevenlabs_client):
