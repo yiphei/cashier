@@ -6,7 +6,7 @@ import tempfile
 from collections import defaultdict, deque
 from distutils.util import strtobool
 from types import GeneratorType
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 from colorama import Fore, Style
 from dotenv import load_dotenv  # Add this import
@@ -293,10 +293,7 @@ class ChatContext(BaseModel):
         default_factory=lambda: defaultdict(list)
     )
     node_schema_id_to_node_schema: Dict[str, NodeSchema] = Field(default_factory=dict)
-    from_nodes_by_edge_schema_id: Dict[str, List[Node]] = Field(
-        default_factory=lambda: defaultdict(list)
-    )
-    to_nodes_by_edge_schema_id: Dict[str, List[Node]] = Field(
+    fwd_nodes_by_edge_schema_id: Dict[str, List[Tuple[Node]]] = Field(
         default_factory=lambda: defaultdict(list)
     )
     fwd_jump_edge_schemas: List[EdgeSchema] = []
@@ -346,11 +343,17 @@ class ChatContext(BaseModel):
         self.node_schema_id_to_node_schema[node_schema.id] = node_schema
         if edge_schema:
             if edge_schema.to_node_schema == node_schema:
-                self.from_nodes_by_edge_schema_id[edge_schema.id].append(self.curr_node)
-                self.to_nodes_by_edge_schema_id[edge_schema.id].append(new_node)
-            else:
-                self.from_nodes_by_edge_schema_id[edge_schema.id].append(new_node)
-                self.to_nodes_by_edge_schema_id[edge_schema.id].append(self.curr_node)
+                immediate_prev_node = self.curr_node
+                if edge_schema.from_node_schema != self.curr_node.schema:
+                    prev_node, next_node = self.fwd_nodes_by_edge_schema_id[edge_schema.id][-1]
+                    immediate_prev_node = prev_node
+                    while prev_node.schema != self.curr_node.schema:
+                        prev_edge_schema = prev_node.edge_schema
+                        prev_node, next_node = self.fwd_nodes_by_edge_schema_id[prev_edge_schema.id][-1]
+
+                    self.fwd_nodes_by_edge_schema_id[prev_edge_schema.id].append((self.curr_node, next_node))
+
+                self.fwd_nodes_by_edge_schema_id[edge_schema.id].append((immediate_prev_node, next_node))
 
         self.curr_node = new_node
         self.compute_transition(new_node)
@@ -363,9 +366,9 @@ class ChatContext(BaseModel):
         def is_prev_completed(edge_schema, is_start_node):
             idx = -1 if is_start_node else -2
             return (
-                self.from_nodes_by_edge_schema_id[edge_schema.id][idx].status
+                self.fwd_nodes_by_edge_schema_id[edge_schema.id][idx].status
                 == Node.Status.COMPLETED
-                if len(self.from_nodes_by_edge_schema_id[edge_schema.id]) >= abs(idx)
+                if len(self.fwd_nodes_by_edge_schema_id[edge_schema.id]) >= abs(idx)
                 else False
             )
 
@@ -385,8 +388,8 @@ class ChatContext(BaseModel):
         )
         while edge_schemas:
             edge_schema, prev_node = edge_schemas.popleft()
-            if edge_schema.id in self.to_nodes_by_edge_schema_id:
-                curr_node = self.to_nodes_by_edge_schema_id[edge_schema.id][-1]
+            if edge_schema.id in self.fwd_nodes_by_edge_schema_id:
+                _, curr_node = self.fwd_nodes_by_edge_schema_id[edge_schema.id][-1]
                 can_add_edge_schema = False
                 if prev_node.status == Node.Status.COMPLETED:
                     if curr_node.status == Node.Status.COMPLETED:
@@ -442,14 +445,20 @@ class ChatContext(BaseModel):
                     edge_schemas.extend([(edge, curr_node) for edge in more_edges])
 
         # also add all the previous nodes
-        edge_schemas = deque(TO_NODE_ID_TO_EDGE_SCHEMA.get(start_node.schema.id, []))
-        while edge_schemas:
-            edge_schema = edge_schemas.popleft()
-            self.bwd_edge_schemas.append(edge_schema)
-            more_edges = TO_NODE_ID_TO_EDGE_SCHEMA.get(
-                edge_schema.from_node_schema.id, []
-            )
-            edge_schemas.extend(more_edges)
+        loop_node = start_node
+        i = -2
+        while loop_node.direction == Node.Direction.BWD and len(self.node_schema_id_to_node_schema[loop_node.schema.id]) >= abs(i):
+            loop_node = self.node_schema_id_to_node_schema[loop_node.schema.id][i]
+            i-=1
+
+        if loop_node.direction == Node.Direction.FWD: 
+            edge_schemas = deque([loop_node.edge_schema])
+            while edge_schemas:
+                edge_schema = edge_schemas.popleft()
+                self.bwd_edge_schemas.append(edge_schema)
+
+                prev_node, _ = self.fwd_nodes_by_edge_schema_id[edge_schema.id]
+                edge_schemas.append(prev_node.edge_schema)
 
 
 def run_chat(args, model, elevenlabs_client):
