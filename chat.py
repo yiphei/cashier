@@ -410,9 +410,7 @@ class ChatContext(BaseModel):
                         more_edges = FROM_NODE_ID_TO_EDGE_SCHEMA.get(
                             curr_node.schema.id, []
                         )
-                        edge_schemas.extend(
-                            [(edge, curr_node) for edge in more_edges]
-                        )
+                        edge_schemas.extend([(edge, curr_node) for edge in more_edges])
 
         # also add all the previous nodes
         edge_schemas = deque(TO_NODE_ID_TO_EDGE_SCHEMA.get(start_node.schema.id, []))
