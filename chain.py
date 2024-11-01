@@ -1,6 +1,6 @@
 import copy
 from typing import Optional
-
+from enum import StrEnum
 from pydantic import BaseModel, ConfigDict, Field
 
 from db_functions import Order
@@ -168,6 +168,10 @@ class NodeSchema:
 class Node:
     _counter = 0
 
+    class Status(StrEnum):
+        IN_PROGRESS = "IN_PROGRESS"
+        COMPLETED = "COMPLETED"
+
     def __init__(self, schema, input, state, prompt):
         Node._counter += 1
         self.id = Node._counter
@@ -176,6 +180,10 @@ class Node:
         self.input = input
         self.schema = schema
         self.first_user_message = False
+        self.status = self.Status.IN_PROGRESS
+
+    def mark_as_completed(self):
+        self.status = self.Status.COMPLETED
 
     def update_state(self, **kwargs):
         if self.first_user_message:
@@ -194,6 +202,17 @@ class Node:
         self.first_user_message = True
 
 
+class BwdTransType(StrEnum):
+    RESET = "RESET"
+    KEEP = "KEEP"
+    KEEP_IF_INPUT_UNCHANGED = "KEEP_IF_INPUT_UNCHANGED"
+
+
+class FwdTransType(StrEnum):
+    NEW = "NEW"
+    SKIP = "SKIP"
+    SKIP_IF_INPUT_UNCHANGED = "SKIP_IF_INPUT_UNCHANGED"
+
 class EdgeSchema:
     _counter = 0
 
@@ -203,6 +222,10 @@ class EdgeSchema:
         to_node_schema,
         state_condition_fn,
         new_input_from_state_fn,
+        bwd_trans_type=BwdTransType.RESET,
+        fwd_jump_completed_type=FwdTransType.NEW,
+        fwd_jump_prev_completed_type=FwdTransType.NEW,
+        fwd_trans_completed_type=FwdTransType.NEW,
     ):
         EdgeSchema._counter += 1
         self.id = EdgeSchema._counter
@@ -210,6 +233,10 @@ class EdgeSchema:
         self.to_node_schema = to_node_schema
         self.state_condition_fn = state_condition_fn
         self.new_input_from_state_fn = new_input_from_state_fn
+        self.bwd_trans_type = bwd_trans_type
+        self.fwd_jump_completed_type = fwd_jump_completed_type
+        self.fwd_jump_prev_completed_type = fwd_jump_prev_completed_type
+        self.fwd_trans_completed_type = fwd_trans_completed_type
 
     def check_state_condition(self, state):
         return self.state_condition_fn(state)
@@ -331,4 +358,9 @@ confirm_to_terminal_edge_schema = EdgeSchema(
 FROM_NODE_ID_TO_EDGE_SCHEMA = {
     take_order_node_schema.id: [take_to_confirm_edge_schema],
     confirm_order_node_schema.id: [confirm_to_terminal_edge_schema],
+}
+
+TO_NODE_ID_TO_EDGE_SCHEMA = {
+    terminal_order_node_schema.id: [confirm_to_terminal_edge_schema],
+    confirm_order_node_schema.id: [take_to_confirm_edge_schema],
 }
