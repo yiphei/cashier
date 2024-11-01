@@ -360,7 +360,7 @@ class ChatContext(BaseModel):
                     )
 
                 self.fwd_nodes_by_edge_schema_id[edge_schema.id].append(
-                    (immediate_prev_node, next_node)
+                    (immediate_prev_node, new_node)
                 )
 
         self.curr_node = new_node
