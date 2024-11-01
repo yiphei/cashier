@@ -21,9 +21,7 @@ from chain import (
     FwdTransType,
     Node,
     NodeSchema,
-    confirm_order_node_schema,
     take_order_node_schema,
-    terminal_order_node_schema,
 )
 from db_functions import create_db_client
 from function_call_context import FunctionCallContext, InexistentFunctionError
@@ -125,7 +123,11 @@ class MessageDisplay:
         )
 
 
-def should_backtrack_node(model, TM, current_node_schema, all_node_schemas):
+def should_backtrack_node(model, TM, current_node_schema, fwd_edge_schemas, bwd_edge_schemas):
+    all_node_schemas = [edge.to_node_schema for edge in fwd_edge_schemas] + [edge.from_node_schema for edge in bwd_edge_schemas] + [current_node_schema]
+    if len(all_node_schemas) == 1:
+        return None
+
     model_name = "claude-3.5"
     model_provider = Model.get_model_provider(model_name)
     conversational_msgs = copy.deepcopy(
@@ -298,6 +300,17 @@ class ChatContext(BaseModel):
     fwd_jump_edge_schemas: List[EdgeSchema] = []
     fwd_trans_edge_schemas: List[EdgeSchema] = []
     bwd_edge_schemas: List[EdgeSchema] = []
+
+    def get_edge_schema_from_node_schema_id(self, node_schema_id):
+        for edge_schema in self.fwd_jump_edge_schemas:
+            if edge_schema.to_node_schema.id == node_schema_id:
+                return edge_schema
+            
+        for edge_schema in self.bwd_edge_schemas:
+            if edge_schema.from_node_schema.id == node_schema_id:
+                return edge_schema
+            
+        return None
 
     def init_node(
         self,
@@ -490,17 +503,15 @@ def run_chat(args, model, elevenlabs_client):
                 model,
                 TC,
                 CT.curr_node.schema,
-                [
-                    take_order_node_schema,
-                    confirm_order_node_schema,
-                    terminal_order_node_schema,
-                ],
+                CT.fwd_jump_edge_schemas,
+                CT.bwd_edge_schemas
             )
-            if node_id is not None and node_id in CT.node_schema_id_to_node_schema:
+            if node_id is not None:
                 new_node_schema = CT.node_schema_id_to_node_schema[node_id]
+                edge_schema = CT.get_edge_schema_from_node_schema_id(node_id)
                 CT.init_node(
                     new_node_schema,
-                    None,
+                    edge_schema,
                     TC,
                     None,
                     True,
