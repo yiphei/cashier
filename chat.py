@@ -292,7 +292,6 @@ class ChatContext(BaseModel):
     node_schema_id_to_nodes: Dict[str, List[Node]] = Field(
         default_factory=lambda: defaultdict(list)
     )
-    current_edge_schemas: List[EdgeSchema] = Field(default_factory=list)
     node_schema_id_to_node_schema: Dict[str, NodeSchema] = Field(default_factory=dict)
     from_nodes_by_edge_schema_id: Dict[str, List[Node]] = Field(
         default_factory=lambda: defaultdict(list)
@@ -344,7 +343,6 @@ class ChatContext(BaseModel):
             MessageDisplay.print_msg("assistant", node_schema.first_turn.msg_content)
 
         self.node_schema_id_to_nodes[node_schema.id].append(new_node)
-        self.current_edge_schemas = FROM_NODE_ID_TO_EDGE_SCHEMA.get(node_schema.id, [])
         self.node_schema_id_to_node_schema[node_schema.id] = node_schema
         if edge_schema:
             if edge_schema.to_node_schema == node_schema:
@@ -355,6 +353,7 @@ class ChatContext(BaseModel):
                 self.to_nodes_by_edge_schema_id[edge_schema.id].append(self.curr_node)
 
         self.curr_node = new_node
+        self.compute_transition(new_node)
 
     def compute_transition(self, start_node):
         self.fwd_trans_edge_schemas = FROM_NODE_ID_TO_EDGE_SCHEMA.get(
@@ -521,11 +520,11 @@ def run_chat(args, model, elevenlabs_client):
             ):
                 state_condition_results = [
                     edge_schema.check_state_condition(CT.curr_node.state)
-                    for edge_schema in CT.current_edge_schemas
+                    for edge_schema in CT.fwd_trans_edge_schemas
                 ]
                 if any(state_condition_results):
                     first_true_index = state_condition_results.index(True)
-                    first_true_edge_schema = CT.current_edge_schemas[first_true_index]
+                    first_true_edge_schema = CT.fwd_trans_edge_schemas[first_true_index]
 
                     new_node_input = first_true_edge_schema.new_input_from_state_fn(
                         CT.curr_node.state
