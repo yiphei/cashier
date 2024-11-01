@@ -17,7 +17,6 @@ from audio import get_audio_input, save_audio_to_wav
 from chain import (
     BACKGROUND,
     FROM_NODE_ID_TO_EDGE_SCHEMA,
-    TO_NODE_ID_TO_EDGE_SCHEMA,
     EdgeSchema,
     FwdTransType,
     Node,
