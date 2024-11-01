@@ -472,9 +472,9 @@ class ChatContext(BaseModel):
         loop_node = start_node
         i = -2
         while loop_node.direction == Node.Direction.BWD and len(
-            self.node_schema_id_to_node_schema[loop_node.schema.id]
+            self.node_schema_id_to_nodes[loop_node.schema.id]
         ) >= abs(i):
-            loop_node = self.node_schema_id_to_node_schema[loop_node.schema.id][i]
+            loop_node = self.node_schema_id_to_nodes[loop_node.schema.id][i]
             i -= 1
 
         if loop_node.direction == Node.Direction.FWD and loop_node.edge_schema:
