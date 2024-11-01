@@ -380,10 +380,7 @@ class ChatContext(BaseModel):
             return False
 
         edge_schemas = deque(
-            [
-                (edge_schema, start_node)
-                for edge_schema in self.fwd_trans_edge_schemas
-            ]
+            [(edge_schema, start_node) for edge_schema in self.fwd_trans_edge_schemas]
         )
         while edge_schemas:
             edge_schema, prev_node = edge_schemas.popleft()
