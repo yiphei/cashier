@@ -292,8 +292,12 @@ class ChatContext(BaseModel):
     )
     current_edge_schemas: List[EdgeSchema] = Field(default_factory=list)
     node_schema_id_to_node_schema: Dict[str, NodeSchema] = Field(default_factory=dict)
-    from_nodes_by_edge_schema_id: Dict[str, List[Node]] = Field(default_factory=lambda: defaultdict(list))
-    to_nodes_by_edge_schema_id: Dict[str, List[Node]] = Field(default_factory=lambda: defaultdict(list))
+    from_nodes_by_edge_schema_id: Dict[str, List[Node]] = Field(
+        default_factory=lambda: defaultdict(list)
+    )
+    to_nodes_by_edge_schema_id: Dict[str, List[Node]] = Field(
+        default_factory=lambda: defaultdict(list)
+    )
 
     def init_node(
         self,
@@ -341,7 +345,7 @@ class ChatContext(BaseModel):
                 self.to_nodes_by_edge_schema_id[edge_schema.id].append(new_node)
             else:
                 self.from_nodes_by_edge_schema_id[edge_schema.id].append(new_node)
-                self.to_nodes_by_edge_schema_id[edge_schema.id].append(self.curr_node) 
+                self.to_nodes_by_edge_schema_id[edge_schema.id].append(self.curr_node)
 
         self.curr_node = new_node
 
