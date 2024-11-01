@@ -467,7 +467,7 @@ class ChatContext(BaseModel):
                 edge_schema = edge_schemas.popleft()
                 self.bwd_edge_schemas.append(edge_schema)
 
-                prev_node, _ = self.fwd_nodes_by_edge_schema_id[edge_schema.id]
+                prev_node, _ = self.fwd_nodes_by_edge_schema_id[edge_schema.id][-1]
                 if prev_node.edge_schema:
                     edge_schemas.append(prev_node.edge_schema)
 
