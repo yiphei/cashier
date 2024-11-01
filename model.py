@@ -461,7 +461,7 @@ class MessageManager(ABC):
         turn,
         remove_prev_fn_return_schema=None,
         remove_prev_tool_calls=False,
-        is_backward=False,
+        is_jump=False,
     ):
         if remove_prev_tool_calls:
             assert remove_prev_fn_return_schema is not False
@@ -473,7 +473,7 @@ class MessageManager(ABC):
             self.message_dicts.clear(
                 [MessageList.ItemType.TOOL_CALL, MessageList.ItemType.TOOL_OUTPUT]
             )
-        if is_backward:
+        if is_jump:
             self.conversation_dicts.track_idx(
                 MessageList.ItemType.NODE, len(self.conversation_dicts) - 2
             )
@@ -539,14 +539,14 @@ class OAIMessageManager(MessageManager):
         turn,
         remove_prev_fn_return_schema=None,
         remove_prev_tool_calls=False,
-        is_backward=False,
+        is_jump=False,
     ):
         super().add_node_turn(
-            turn, remove_prev_fn_return_schema, remove_prev_tool_calls, is_backward
+            turn, remove_prev_fn_return_schema, remove_prev_tool_calls, is_jump
         )
         self.message_dicts.clear(MessageList.ItemType.NODE)
         [msg] = turn.build_oai_messages()
-        if is_backward:
+        if is_jump:
             self.message_dicts.insert(
                 len(self.message_dicts) - 1, msg, MessageList.ItemType.NODE
             )
@@ -594,14 +594,14 @@ class AnthropicMessageManager(MessageManager):
         turn,
         remove_prev_fn_return_schema=None,
         remove_prev_tool_calls=False,
-        is_backward=False,
+        is_jump=False,
     ):
         super().add_node_turn(
-            turn, remove_prev_fn_return_schema, remove_prev_tool_calls, is_backward
+            turn, remove_prev_fn_return_schema, remove_prev_tool_calls, is_jump
         )
         self.system = turn.msg_content
 
-        if is_backward:
+        if is_jump:
             self.message_dicts.track_idx(
                 MessageList.ItemType.NODE, len(self.message_dicts) - 2
             )
@@ -666,13 +666,13 @@ class TurnContainer:
         node,
         remove_prev_tool_fn_return=None,
         remove_prev_tool_calls=False,
-        is_backward=False,
+        is_jump=False,
     ):
         turn = NodeSystemTurn(node_id=node.id, msg_content=node.prompt)
         self.turns.append(turn)
         for mm in self.model_provider_to_message_manager.values():
             mm.add_node_turn(
-                turn, remove_prev_tool_fn_return, remove_prev_tool_calls, is_backward
+                turn, remove_prev_tool_fn_return, remove_prev_tool_calls, is_jump
             )
 
     def add_user_turn(self, msg_content):
