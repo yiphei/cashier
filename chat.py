@@ -331,7 +331,7 @@ class ChatContext(BaseModel):
 
         self.node_schema_id_to_nodes[node_schema.id].append(new_node)
         self.current_edge_schemas = FROM_NODE_ID_TO_EDGE_SCHEMA.get(node_schema.id, [])
-        self.node_schema_id_to_node_schema = {node_schema.id: node_schema}
+        self.node_schema_id_to_node_schema[node_schema.id] = node_schema
         self.curr_node = new_node
 
 
