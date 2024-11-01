@@ -3,7 +3,7 @@ import copy
 import json
 import os
 import tempfile
-from collections import defaultdict
+from collections import defaultdict, deque
 from distutils.util import strtobool
 from types import GeneratorType
 from typing import Dict, List
@@ -17,7 +17,9 @@ from audio import get_audio_input, save_audio_to_wav
 from chain import (
     BACKGROUND,
     FROM_NODE_ID_TO_EDGE_SCHEMA,
+    TO_NODE_ID_TO_EDGE_SCHEMA,
     EdgeSchema,
+    FwdTransType,
     Node,
     NodeSchema,
     confirm_order_node_schema,
@@ -298,6 +300,9 @@ class ChatContext(BaseModel):
     to_nodes_by_edge_schema_id: Dict[str, List[Node]] = Field(
         default_factory=lambda: defaultdict(list)
     )
+    fwd_jump_edge_schemas: List[EdgeSchema] = []
+    fwd_trans_edge_schemas: List[EdgeSchema] = []
+    bwd_edge_schemas: List[EdgeSchema] = []
 
     def init_node(
         self,
@@ -349,6 +354,72 @@ class ChatContext(BaseModel):
 
         self.curr_node = new_node
 
+    def compute_transition(self, start_node):
+        self.fwd_trans_edge_schemas = FROM_NODE_ID_TO_EDGE_SCHEMA.get(start_node.schema.id, [])
+
+        def is_prev_completed(node):
+            return (
+                self.node_schema_id_to_nodes[node.schema.id][-2].status == Node.Status.COMPLETED
+                if len(self.node_schema_id_to_nodes[node.schema.id]) > 1
+                else False
+            )
+
+        if start_node.status == Node.Status.COMPLETED or (
+            is_prev_completed(start_node)
+            and start_node.fwd_jump_prev_completed_type == FwdTransType.SKIP
+        ):
+            edge_schemas = deque(
+                [
+                    (edge_schema, start_node)
+                    for edge_schema in FROM_NODE_ID_TO_EDGE_SCHEMA.get(
+                        start_node.schema.id, []
+                    )
+                ]
+            )
+            while edge_schemas:
+                edge_schema, prev_node = edge_schemas.popleft()
+                if edge_schema.id in self.edge_schema_id_to_nodes:
+                    curr_node = self.to_nodes_by_edge_schema_id[edge_schema.id][-1]
+                    if curr_node.status == Node.Status.COMPLETED:
+                        if edge_schema.fwd_trans_complete_type == FwdTransType.SKIP:
+                            self.fwd_jump_edge_schemas.append(edge_schema)
+                            more_edges = FROM_NODE_ID_TO_EDGE_SCHEMA.get(
+                                curr_node.schema.id, []
+                            )
+                            edge_schemas.extend([(edge, curr_node) for edge in more_edges])
+                        elif (
+                            edge_schema.fwd_trans_complete_type
+                            == FwdTransType.SKIP_IF_INPUT_UNCHANGED
+                        ):
+                            # calculate if input would be unchanged
+                            new_input = edge_schema.new_input_from_state_fn(prev_node.state)
+                            if new_input == curr_node.input:
+                                self.fwd_jump_edge_schemas.append(edge_schema)
+                                more_edges = FROM_NODE_ID_TO_EDGE_SCHEMA.get(
+                                    curr_node.schema.id, []
+                                )
+                                edge_schemas.extend(
+                                    [(edge, curr_node) for edge in more_edges]
+                                )
+                    elif (
+                        is_prev_completed(curr_node)
+                        and curr_node.fwd_trans_prev_complete_type
+                        == FwdTransType.SKIP
+                    ):
+                        self.fwd_jump_edge_schemas.append(edge_schema)
+                        more_edges = FROM_NODE_ID_TO_EDGE_SCHEMA.get(
+                            curr_node.schema.id, []
+                        )
+                        edge_schemas.extend([(edge, curr_node) for edge in more_edges])
+
+        # also add all the previous nodes
+
+        edge_schemas = deque(TO_NODE_ID_TO_EDGE_SCHEMA.get(start_node.schema.id, []))
+        while edge_schemas:
+            edge_schema = edge_schemas.popleft()
+            self.bwd_edge_schemas.append(edge_schema)
+            more_edges = TO_NODE_ID_TO_EDGE_SCHEMA.get(edge_schema.to_node_schema.id, [])
+            edge_schemas.extend([(edge, curr_node) for edge in more_edges])
 
 def run_chat(args, model, elevenlabs_client):
     TC = TurnContainer()
