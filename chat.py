@@ -294,7 +294,12 @@ def should_backtrack_node(model, TM, current_node_schema, t_edges):
     else:
         logger.debug(f"AGENT_ID: {agent_id}")
 
-    return agent_id if agent_id in t_edges.fwd_edge_schemas_map or agent_id in t_edges.bwd_edge_schemas_map else None
+    return (
+        agent_id
+        if agent_id in t_edges.fwd_edge_schemas_map
+        or agent_id in t_edges.bwd_edge_schemas_map
+        else None
+    )
 
 
 def init_node(
@@ -326,7 +331,6 @@ def init_node(
     if last_msg:
         last_msg = last_msg["content"]
 
-
     if is_bwd_edge and edge_schema.id in from_edge_schema_id_to_nodes:
         prev_node = from_edge_schema_id_to_nodes[edge_schema.id][-1]
     elif not is_bwd_edge and edge_schema.id in to_edge_schema_id_to_nodes:
@@ -346,10 +350,12 @@ def init_node(
         MessageDisplay.print_msg("assistant", node_schema.first_turn.msg_content)
 
     node_schema_id_to_nodes[node_schema.id].append(new_node)
-    
+
     if edge_schema:
         to_edge_schema_id_to_nodes[edge_schema.id].append(new_node)
-    t_edges = compute_transition(new_node, node_schema_id_to_nodes, to_edge_schema_id_to_nodes)
+    t_edges = compute_transition(
+        new_node, node_schema_id_to_nodes, to_edge_schema_id_to_nodes
+    )
     return new_node, t_edges
 
 
@@ -361,19 +367,24 @@ class TransitionEdges(BaseModel):
     @property
     def fwd_edge_schemas_map(self):
         if not hasattr(self, "fwd_edge_schemas_map"):
-            self.fwd_edge_schemas_map = {edge.id: edge for edge in self.fwd_edge_schemas}
+            self.fwd_edge_schemas_map = {
+                edge.id: edge for edge in self.fwd_edge_schemas
+            }
         return self.fwd_edge_schemas_map
-    
+
     @property
     def bwd_edge_schemas_map(self):
         if not hasattr(self, "bwd_edge_schemas_map"):
-            self.bwd_edge_schemas_map = {edge.id: edge for edge in self.bwd_edge_schemas}
+            self.bwd_edge_schemas_map = {
+                edge.id: edge for edge in self.bwd_edge_schemas
+            }
         return self.bwd_edge_schemas_map
 
+
 def compute_transition(start_node, node_schema_id_to_nodes, edge_schema_id_to_nodes):
-    t_edges = TransitionEdges(next_fwd_edge_schemas=FROM_NODE_ID_TO_EDGE_SCHEMA.get(
-                    start_node.schema.id, []
-                ))
+    t_edges = TransitionEdges(
+        next_fwd_edge_schemas=FROM_NODE_ID_TO_EDGE_SCHEMA.get(start_node.schema.id, [])
+    )
 
     def is_prev_completed(node):
         return (
@@ -480,9 +491,19 @@ def run_chat(args, model, elevenlabs_client):
                 t_edges,
             )
             if edge_schema_id is not None:
-                edge_schema = t_edges.bwd_edge_schemas_map[edge_schema_id] if edge_schema_id in t_edges.bwd_edge_schemas_map else t_edges.fwd_edge_schemas_map[edge_schema_id]
-                is_bwd = True if edge_schema_id in t_edges.bwd_edge_schemas_map else False
-                new_node_schema = edge_schema.from_node_schema if is_bwd else edge_schema.to_node_schema
+                edge_schema = (
+                    t_edges.bwd_edge_schemas_map[edge_schema_id]
+                    if edge_schema_id in t_edges.bwd_edge_schemas_map
+                    else t_edges.fwd_edge_schemas_map[edge_schema_id]
+                )
+                is_bwd = (
+                    True if edge_schema_id in t_edges.bwd_edge_schemas_map else False
+                )
+                new_node_schema = (
+                    edge_schema.from_node_schema
+                    if is_bwd
+                    else edge_schema.to_node_schema
+                )
                 current_node, t_edges = init_node(
                     current_node,
                     new_node_schema,
@@ -560,7 +581,9 @@ def run_chat(args, model, elevenlabs_client):
                 ]
                 if any(state_condition_results):
                     first_true_index = state_condition_results.index(True)
-                    first_true_edge_schema = t_edges.next_fwd_edge_schemas[first_true_index]
+                    first_true_edge_schema = t_edges.next_fwd_edge_schemas[
+                        first_true_index
+                    ]
 
                     new_node_input = first_true_edge_schema.new_input_from_state_fn(
                         current_node.state
