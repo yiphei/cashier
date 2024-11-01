@@ -6,12 +6,12 @@ import tempfile
 from collections import defaultdict
 from distutils.util import strtobool
 from types import GeneratorType
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from colorama import Fore, Style
 from dotenv import load_dotenv  # Add this import
 from elevenlabs import ElevenLabs, Voice, VoiceSettings, stream
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 from audio import get_audio_input, save_audio_to_wav
 from chain import (
@@ -282,11 +282,13 @@ def should_backtrack_node(model, TM, current_node_schema, all_node_schemas):
 
 
 class ChatContext(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
     remove_prev_tool_calls: bool
     curr_node: Node = None
     need_user_input: bool = True
     node_schema_id_to_nodes: Dict[str, List[Node]] = Field(
-        default_factory=defaultdict(list)
+        default_factory=lambda: defaultdict(list)
     )
     current_edge_schemas: List[EdgeSchema] = Field(default_factory=list)
     node_schema_id_to_node_schema: Dict[str, NodeSchema] = Field(default_factory=dict)
@@ -330,7 +332,7 @@ class ChatContext(BaseModel):
         self.node_schema_id_to_nodes[node_schema.id].append(new_node)
         self.current_edge_schemas = FROM_NODE_ID_TO_EDGE_SCHEMA.get(node_schema.id, [])
         self.node_schema_id_to_node_schema = {node_schema.id: node_schema}
-        return new_node
+        self.curr_node = new_node
 
 
 def run_chat(args, model, elevenlabs_client):
