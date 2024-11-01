@@ -123,8 +123,14 @@ class MessageDisplay:
         )
 
 
-def should_backtrack_node(model, TM, current_node_schema, fwd_edge_schemas, bwd_edge_schemas):
-    all_node_schemas = [edge.to_node_schema for edge in fwd_edge_schemas] + [edge.from_node_schema for edge in bwd_edge_schemas] + [current_node_schema]
+def should_backtrack_node(
+    model, TM, current_node_schema, fwd_edge_schemas, bwd_edge_schemas
+):
+    all_node_schemas = (
+        [edge.to_node_schema for edge in fwd_edge_schemas]
+        + [edge.from_node_schema for edge in bwd_edge_schemas]
+        + [current_node_schema]
+    )
     if len(all_node_schemas) == 1:
         return None
 
@@ -305,11 +311,11 @@ class ChatContext(BaseModel):
         for edge_schema in self.fwd_jump_edge_schemas:
             if edge_schema.to_node_schema.id == node_schema_id:
                 return edge_schema
-            
+
         for edge_schema in self.bwd_edge_schemas:
             if edge_schema.from_node_schema.id == node_schema_id:
                 return edge_schema
-            
+
         return None
 
     def init_node(
@@ -504,7 +510,7 @@ def run_chat(args, model, elevenlabs_client):
                 TC,
                 CT.curr_node.schema,
                 CT.fwd_jump_edge_schemas,
-                CT.bwd_edge_schemas
+                CT.bwd_edge_schemas,
             )
             if node_id is not None:
                 new_node_schema = CT.node_schema_id_to_node_schema[node_id]
