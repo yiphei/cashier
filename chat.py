@@ -345,15 +345,23 @@ class ChatContext(BaseModel):
             if edge_schema.to_node_schema == node_schema:
                 immediate_prev_node = self.curr_node
                 if edge_schema.from_node_schema != self.curr_node.schema:
-                    prev_node, next_node = self.fwd_nodes_by_edge_schema_id[edge_schema.id][-1]
+                    prev_node, next_node = self.fwd_nodes_by_edge_schema_id[
+                        edge_schema.id
+                    ][-1]
                     immediate_prev_node = prev_node
                     while prev_node.schema != self.curr_node.schema:
                         prev_edge_schema = prev_node.edge_schema
-                        prev_node, next_node = self.fwd_nodes_by_edge_schema_id[prev_edge_schema.id][-1]
+                        prev_node, next_node = self.fwd_nodes_by_edge_schema_id[
+                            prev_edge_schema.id
+                        ][-1]
 
-                    self.fwd_nodes_by_edge_schema_id[prev_edge_schema.id].append((self.curr_node, next_node))
+                    self.fwd_nodes_by_edge_schema_id[prev_edge_schema.id].append(
+                        (self.curr_node, next_node)
+                    )
 
-                self.fwd_nodes_by_edge_schema_id[edge_schema.id].append((immediate_prev_node, next_node))
+                self.fwd_nodes_by_edge_schema_id[edge_schema.id].append(
+                    (immediate_prev_node, next_node)
+                )
 
         self.curr_node = new_node
         self.compute_transition(new_node)
@@ -447,11 +455,13 @@ class ChatContext(BaseModel):
         # also add all the previous nodes
         loop_node = start_node
         i = -2
-        while loop_node.direction == Node.Direction.BWD and len(self.node_schema_id_to_node_schema[loop_node.schema.id]) >= abs(i):
+        while loop_node.direction == Node.Direction.BWD and len(
+            self.node_schema_id_to_node_schema[loop_node.schema.id]
+        ) >= abs(i):
             loop_node = self.node_schema_id_to_node_schema[loop_node.schema.id][i]
-            i-=1
+            i -= 1
 
-        if loop_node.direction == Node.Direction.FWD: 
+        if loop_node.direction == Node.Direction.FWD:
             edge_schemas = deque([loop_node.edge_schema])
             while edge_schemas:
                 edge_schema = edge_schemas.popleft()

@@ -74,7 +74,11 @@ class NodeSchema:
             last_msg,
         )
 
-        direction = Node.Direction.BWD if edge_schema and edge_schema.from_node_schema == self else Node.Direction.FWD
+        direction = (
+            Node.Direction.BWD
+            if edge_schema and edge_schema.from_node_schema == self
+            else Node.Direction.FWD
+        )
         return Node(self, input, state, prompt, edge_schema, direction)
 
     def generate_system_prompt(self, input, last_msg):
@@ -173,7 +177,7 @@ class Node:
     class Status(StrEnum):
         IN_PROGRESS = "IN_PROGRESS"
         COMPLETED = "COMPLETED"
-    
+
     class Direction(StrEnum):
         FWD = "FWD"
         BWD = "BWD"
