@@ -6,7 +6,7 @@ import tempfile
 from collections import defaultdict, deque
 from distutils.util import strtobool
 from types import GeneratorType
-from typing import Dict, List, Tuple
+from typing import Dict, List, Set, Tuple
 
 from colorama import Fore, Style
 from dotenv import load_dotenv  # Add this import
@@ -303,9 +303,9 @@ class ChatContext(BaseModel):
     fwd_nodes_by_edge_schema_id: Dict[str, List[Tuple[Node]]] = Field(
         default_factory=lambda: defaultdict(list)
     )
-    fwd_jump_edge_schemas: List[EdgeSchema] = []
-    fwd_trans_edge_schemas: List[EdgeSchema] = []
-    bwd_edge_schemas: List[EdgeSchema] = []
+    fwd_jump_edge_schemas: Set[EdgeSchema] = []
+    fwd_trans_edge_schemas: Set[EdgeSchema] = []
+    bwd_edge_schemas: Set[EdgeSchema] = []
 
     def get_edge_schema_from_node_schema_id(self, node_schema_id):
         for edge_schema in self.fwd_jump_edge_schemas:
@@ -380,9 +380,9 @@ class ChatContext(BaseModel):
                 )
 
         self.curr_node = new_node
-        self.fwd_trans_edge_schemas = FROM_NODE_ID_TO_EDGE_SCHEMA.get(
+        self.fwd_trans_edge_schemas = set(FROM_NODE_ID_TO_EDGE_SCHEMA.get(
             new_node.schema.id, []
-        )
+        ))
 
         # also add all the previous nodes
         loop_node = new_node
@@ -397,7 +397,7 @@ class ChatContext(BaseModel):
             edge_schemas = deque([loop_node.edge_schema])
             while edge_schemas:
                 edge_schema = edge_schemas.popleft()
-                self.bwd_edge_schemas.append(edge_schema)
+                self.bwd_edge_schemas.add(edge_schema)
 
                 prev_node, _ = self.fwd_nodes_by_edge_schema_id[edge_schema.id][-1]
                 if prev_node.edge_schema:
@@ -481,7 +481,7 @@ class ChatContext(BaseModel):
                         )
 
                 if can_add_edge_schema:
-                    self.fwd_jump_edge_schemas.append(edge_schema)
+                    self.fwd_jump_edge_schemas.add(edge_schema)
                     more_edges = FROM_NODE_ID_TO_EDGE_SCHEMA.get(
                         curr_node.schema.id, []
                     )
