@@ -314,8 +314,8 @@ class ChatContext(BaseModel):
         logger.debug(
             f"[NODE_SCHEMA] Initializing node with {Style.BRIGHT}node_schema_id: {node_schema.id}{Style.NORMAL}"
         )
-
-        self.curr_node.mark_as_completed()
+        if self.curr_node:
+            self.curr_node.mark_as_completed()
 
         prev_node = None
         if is_jump:
