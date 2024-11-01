@@ -1,6 +1,7 @@
 import copy
-from typing import Optional
 from enum import StrEnum
+from typing import Optional
+
 from pydantic import BaseModel, ConfigDict, Field
 
 from db_functions import Order
@@ -212,6 +213,7 @@ class FwdTransType(StrEnum):
     NEW = "NEW"
     SKIP = "SKIP"
     SKIP_IF_INPUT_UNCHANGED = "SKIP_IF_INPUT_UNCHANGED"
+
 
 class EdgeSchema:
     _counter = 0
