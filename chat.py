@@ -385,15 +385,10 @@ class ChatContext(BaseModel):
                 edge_schema, prev_node = edge_schemas.popleft()
                 if edge_schema.id in self.edge_schema_id_to_nodes:
                     curr_node = self.to_nodes_by_edge_schema_id[edge_schema.id][-1]
+                    can_add_edge_schema = False
                     if curr_node.status == Node.Status.COMPLETED:
                         if edge_schema.fwd_trans_complete_type == FwdTransType.SKIP:
-                            self.fwd_jump_edge_schemas.append(edge_schema)
-                            more_edges = FROM_NODE_ID_TO_EDGE_SCHEMA.get(
-                                curr_node.schema.id, []
-                            )
-                            edge_schemas.extend(
-                                [(edge, curr_node) for edge in more_edges]
-                            )
+                            can_add_edge_schema = True
                         elif (
                             edge_schema.fwd_trans_complete_type
                             == FwdTransType.SKIP_IF_INPUT_UNCHANGED
@@ -403,25 +398,23 @@ class ChatContext(BaseModel):
                                 prev_node.state
                             )
                             if new_input == curr_node.input:
-                                self.fwd_jump_edge_schemas.append(edge_schema)
-                                more_edges = FROM_NODE_ID_TO_EDGE_SCHEMA.get(
-                                    curr_node.schema.id, []
-                                )
-                                edge_schemas.extend(
-                                    [(edge, curr_node) for edge in more_edges]
-                                )
+                                can_add_edge_schema = True
                     elif (
                         is_prev_completed(curr_node)
                         and curr_node.fwd_trans_prev_complete_type == FwdTransType.SKIP
                     ):
+                        can_add_edge_schema = True
+
+                    if can_add_edge_schema:
                         self.fwd_jump_edge_schemas.append(edge_schema)
                         more_edges = FROM_NODE_ID_TO_EDGE_SCHEMA.get(
                             curr_node.schema.id, []
                         )
-                        edge_schemas.extend([(edge, curr_node) for edge in more_edges])
+                        edge_schemas.extend(
+                            [(edge, curr_node) for edge in more_edges]
+                        )
 
         # also add all the previous nodes
-
         edge_schemas = deque(TO_NODE_ID_TO_EDGE_SCHEMA.get(start_node.schema.id, []))
         while edge_schemas:
             edge_schema = edge_schemas.popleft()
