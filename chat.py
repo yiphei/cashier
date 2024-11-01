@@ -6,12 +6,12 @@ import tempfile
 from collections import defaultdict
 from distutils.util import strtobool
 from types import GeneratorType
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 from colorama import Fore, Style
 from dotenv import load_dotenv  # Add this import
 from elevenlabs import ElevenLabs, Voice, VoiceSettings, stream
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from audio import get_audio_input, save_audio_to_wav
 from chain import (
