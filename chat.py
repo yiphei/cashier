@@ -403,9 +403,9 @@ class ChatContext(BaseModel):
                 if prev_node.edge_schema:
                     edge_schemas.append(prev_node.edge_schema)
 
-        self.compute_transition(new_node)
+        self.compute_transition()
 
-    def compute_transition(self, start_node):
+    def compute_transition(self):
         def is_prev_completed(edge_schema, is_start_node):
             idx = -1 if is_start_node else -2
             return (
@@ -427,7 +427,7 @@ class ChatContext(BaseModel):
             return False
 
         edge_schemas = deque(
-            [(edge_schema, start_node) for edge_schema in self.fwd_trans_edge_schemas]
+            [(edge_schema, self.curr_node) for edge_schema in self.fwd_trans_edge_schemas]
         )
         while edge_schemas:
             edge_schema, prev_node = edge_schemas.popleft()
@@ -449,7 +449,7 @@ class ChatContext(BaseModel):
                             prev_node,
                             curr_node,
                         )
-                elif is_prev_completed(edge_schema, prev_node == start_node):
+                elif is_prev_completed(edge_schema, prev_node == self.curr_node):
                     if curr_node.status == Node.Status.COMPLETED:
                         can_add_edge_schema = check_can_add_edge_schema(
                             edge_schema,
