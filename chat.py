@@ -430,15 +430,12 @@ class ChatContext(BaseModel):
         return False
 
     def compute_bwd_edges(self):
-        if self.curr_node.fwd_edge_schema:
-            edge_schemas = deque([self.curr_node.fwd_edge_schema])
-            while edge_schemas:
-                edge_schema = edge_schemas.popleft()
-                self.bwd_edge_schemas.add(edge_schema)
-
-                from_node, _ = self.edge_schema_id_to_fwd_edges[edge_schema.id][-1]
-                if from_node.fwd_edge_schema:
-                    edge_schemas.append(from_node.fwd_edge_schema)
+        from_node = self.curr_node
+        while from_node.fwd_edge_schema is not None:
+            if from_node.fwd_edge_schema in self.bwd_edge_schemas:
+                return
+            self.bwd_edge_schemas.add(from_node.fwd_edge_schema)
+            from_node, _ = self.edge_schema_id_to_fwd_edges[from_node.fwd_edge_schema.id][-1]
 
     def compute_incomplete_transition(self):
         edge_schemas = deque(
