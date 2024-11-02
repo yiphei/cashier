@@ -332,6 +332,10 @@ class ChatContext(BaseModel):
         if self.curr_node:
             self.curr_node.mark_as_completed()
 
+        if not is_jump and edge_schema:
+            edge_schema = self.compute_next_edge_schema(edge_schema)
+            node_schema = edge_schema.to_node_schema
+
         prev_node = None
         if is_jump:
             prev_node = self.node_schema_id_to_nodes[node_schema.id][-1]
