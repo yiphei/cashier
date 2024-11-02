@@ -6,7 +6,7 @@ import tempfile
 from collections import defaultdict, deque
 from distutils.util import strtobool
 from types import GeneratorType
-from typing import Dict, List, Set, Tuple
+from typing import Dict, List, NamedTuple, Set, Tuple
 
 from colorama import Fore, Style
 from dotenv import load_dotenv  # Add this import
@@ -291,6 +291,10 @@ def should_backtrack_node(
     return agent_id if agent_id != current_node_schema.id else None
 
 
+class Edge(NamedTuple):
+    from_node: Node
+    to_node: Node
+
 class ChatContext(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
@@ -301,7 +305,7 @@ class ChatContext(BaseModel):
         default_factory=lambda: defaultdict(list)
     )
     node_schema_id_to_node_schema: Dict[str, NodeSchema] = Field(default_factory=dict)
-    fwd_nodes_by_edge_schema_id: Dict[str, List[Tuple[Node]]] = Field(
+    edge_schema_id_to_fwd_edges: Dict[str, List[Edge]] = Field(
         default_factory=lambda: defaultdict(list)
     )
     fwd_jump_edge_schemas: Set[EdgeSchema] = Field(default_factory=set)
@@ -345,10 +349,10 @@ class ChatContext(BaseModel):
             edge_schema = self.compute_next_edge_schema(edge_schema)
             node_schema = edge_schema.to_node_schema
 
-        prev_node = None
-        if edge_schema and len(self.fwd_nodes_by_edge_schema_id[edge_schema.id]) > 0:
-            a_node, b_node = self.fwd_nodes_by_edge_schema_id[node_schema.id][-1]
-            prev_node = b_node if direction == Direction.FWD else a_node
+        from_node = None
+        if edge_schema and len(self.edge_schema_id_to_fwd_edges[edge_schema.id]) > 0:
+            from_node, to_node = self.edge_schema_id_to_fwd_edges[node_schema.id][-1]
+            from_node = to_node if direction == Direction.FWD else from_node
 
         mm = TC.model_provider_to_message_manager[ModelProvider.OPENAI]
         if is_jump:
@@ -358,7 +362,7 @@ class ChatContext(BaseModel):
 
         if last_msg:
             last_msg = last_msg["content"]
-        new_node = node_schema.create_node(input, last_msg, prev_node, edge_schema)
+        new_node = node_schema.create_node(input, last_msg, from_node, edge_schema)
 
         TC.add_node_turn(
             new_node,
@@ -367,7 +371,7 @@ class ChatContext(BaseModel):
         )
         MessageDisplay.print_msg("system", new_node.prompt)
 
-        if node_schema.first_turn and prev_node is None:
+        if node_schema.first_turn and from_node is None:
             TC.add_assistant_direct_turn(node_schema.first_turn)
             MessageDisplay.print_msg("assistant", node_schema.first_turn.msg_content)
 
@@ -377,31 +381,31 @@ class ChatContext(BaseModel):
             if edge_schema.to_node_schema == node_schema:
                 immediate_prev_node = self.curr_node
                 if edge_schema.from_node_schema != self.curr_node.schema:
-                    prev_node, _ = self.fwd_nodes_by_edge_schema_id[edge_schema.id][-1]
-                    immediate_prev_node = prev_node
-                    while prev_node.schema != self.curr_node.schema:
-                        prev_edge_schema = prev_node.fwd_edge_schema
-                        prev_node, next_node = self.fwd_nodes_by_edge_schema_id[
+                    from_node, _ = self.edge_schema_id_to_fwd_edges[edge_schema.id][-1]
+                    immediate_prev_node = from_node
+                    while from_node.schema != self.curr_node.schema:
+                        prev_edge_schema = from_node.fwd_edge_schema
+                        from_node, to_node = self.edge_schema_id_to_fwd_edges[
                             prev_edge_schema.id
                         ][-1]
 
-                    self.fwd_nodes_by_edge_schema_id[prev_edge_schema.id].append(
-                        (self.curr_node, next_node)
+                    self.edge_schema_id_to_fwd_edges[prev_edge_schema.id].append(
+                        Edge(self.curr_node, to_node)
                     )
 
-                self.fwd_nodes_by_edge_schema_id[edge_schema.id].append(
-                    (immediate_prev_node, new_node)
+                self.edge_schema_id_to_fwd_edges[edge_schema.id].append(
+                    Edge(immediate_prev_node, new_node)
                 )
             else:
-                prev_n, _ = self.fwd_nodes_by_edge_schema_id[
+                from_node, _ = self.edge_schema_id_to_fwd_edges[
                     new_node.fwd_edge_schema.id
                 ]
-                self.fwd_nodes_by_edge_schema_id[new_node.fwd_edge_schema.id].append(
-                    prev_n, new_node
+                self.edge_schema_id_to_fwd_edges[new_node.fwd_edge_schema.id].append(
+                    Edge(from_node, new_node)
                 )
-                _, next_n = self.fwd_nodes_by_edge_schema_id[edge_schema.id]
-                self.fwd_nodes_by_edge_schema_id[new_node.fwd_edge_schema.id].append(
-                    new_node, next_n
+                _, to_node = self.edge_schema_id_to_fwd_edges[edge_schema.id]
+                self.edge_schema_id_to_fwd_edges[new_node.fwd_edge_schema.id].append(
+                    Edge(new_node, to_node)
                 )
 
         self.curr_node = new_node
@@ -410,7 +414,7 @@ class ChatContext(BaseModel):
         )
         self.compute_bwd_edges()
 
-    def check_can_add_edge_schema(self, edge_schema, fwd_attr, prev_node, curr_node):
+    def check_can_add_edge_schema(self, edge_schema, fwd_attr, from_node, to_node):
         fwd_type = getattr(edge_schema, fwd_attr)
         if fwd_type is None:
             return False
@@ -419,8 +423,8 @@ class ChatContext(BaseModel):
             return True
         elif fwd_type == FwdSkipType.SKIP_IF_INPUT_UNCHANGED:
             # calculate if input would be unchanged
-            new_input = edge_schema.new_input_from_state_fn(prev_node.state)
-            if new_input == curr_node.input:
+            new_input = edge_schema.new_input_from_state_fn(from_node.state)
+            if new_input == to_node.input:
                 return True
         return False
 
@@ -431,9 +435,9 @@ class ChatContext(BaseModel):
                 edge_schema = edge_schemas.popleft()
                 self.bwd_edge_schemas.add(edge_schema)
 
-                prev_node, _ = self.fwd_nodes_by_edge_schema_id[edge_schema.id][-1]
-                if prev_node.fwd_edge_schema:
-                    edge_schemas.append(prev_node.fwd_edge_schema)
+                from_node, _ = self.edge_schema_id_to_fwd_edges[edge_schema.id][-1]
+                if from_node.fwd_edge_schema:
+                    edge_schemas.append(from_node.fwd_edge_schema)
 
     def compute_incomplete_transition(self):
         edge_schemas = deque(
@@ -443,106 +447,106 @@ class ChatContext(BaseModel):
             ]
         )
         while edge_schemas:
-            edge_schema, prev_node = edge_schemas.popleft()
-            if len(self.fwd_nodes_by_edge_schema_id[edge_schema.id]) > 0:
-                _, curr_node = self.fwd_nodes_by_edge_schema_id[edge_schema.id][-1]
+            edge_schema, from_node = edge_schemas.popleft()
+            if len(self.edge_schema_id_to_fwd_edges[edge_schema.id]) > 0:
+                _, to_node = self.edge_schema_id_to_fwd_edges[edge_schema.id][-1]
                 can_add_edge_schema = False
-                if prev_node.status == Node.Status.COMPLETED:
-                    if curr_node.status == Node.Status.COMPLETED:
+                if from_node.status == Node.Status.COMPLETED:
+                    if to_node.status == Node.Status.COMPLETED:
                         can_add_edge_schema = self.check_can_add_edge_schema(
                             edge_schema,
                             "fwd_from_complete_to_prev_complete",
-                            prev_node,
-                            curr_node,
+                            from_node,
+                            to_node,
                         )
                     else:
                         can_add_edge_schema = self.check_can_add_edge_schema(
                             edge_schema,
                             "fwd_from_complete_to_prev_incomplete",
-                            prev_node,
-                            curr_node,
+                            from_node,
+                            to_node,
                         )
-                elif self.is_prev_completed(edge_schema, prev_node == self.curr_node):
-                    if curr_node.status == Node.Status.COMPLETED:
+                elif self.is_prev_completed(edge_schema, from_node == self.curr_node):
+                    if to_node.status == Node.Status.COMPLETED:
                         can_add_edge_schema = self.check_can_add_edge_schema(
                             edge_schema,
                             "fwd_from_incomplete_to_prev_complete",
-                            prev_node,
-                            curr_node,
+                            from_node,
+                            to_node,
                         )
                     else:
                         can_add_edge_schema = self.check_can_add_edge_schema(
                             edge_schema,
                             "fwd_from_incomplete_to_prev_incomplete",
-                            prev_node,
-                            curr_node,
+                            from_node,
+                            to_node,
                         )
 
                 if can_add_edge_schema:
                     self.fwd_jump_edge_schemas.add(edge_schema)
                     more_edges = FROM_NODE_ID_TO_EDGE_SCHEMA.get(
-                        curr_node.schema.id, []
+                        to_node.schema.id, []
                     )
-                    edge_schemas.extend([(edge, curr_node) for edge in more_edges])
+                    edge_schemas.extend([(edge, to_node) for edge in more_edges])
 
     def is_prev_completed(self, edge_schema, is_start_node):
         idx = -1 if is_start_node else -2
         return (
-            self.fwd_nodes_by_edge_schema_id[edge_schema.id][idx][0].status
+            self.edge_schema_id_to_fwd_edges[edge_schema.id][idx][0].status
             == Node.Status.COMPLETED
-            if len(self.fwd_nodes_by_edge_schema_id[edge_schema.id]) >= abs(idx)
+            if len(self.edge_schema_id_to_fwd_edges[edge_schema.id]) >= abs(idx)
             else False
         )
 
     def compute_next_edge_schema(self, start_edge_schema):
         prev_edge_schema = start_edge_schema
-        prev_node = self.curr_node
+        from_node = self.curr_node
         can_add_edge_schema = True
         while can_add_edge_schema:
             can_add_edge_schema = False
-            if len(self.fwd_nodes_by_edge_schema_id[prev_edge_schema.id]) > 0:
-                _, curr_node = self.fwd_nodes_by_edge_schema_id[prev_edge_schema.id][-1]
-                if prev_node.status == Node.Status.COMPLETED:
-                    if curr_node.status == Node.Status.COMPLETED:
+            if len(self.edge_schema_id_to_fwd_edges[prev_edge_schema.id]) > 0:
+                _, to_node = self.edge_schema_id_to_fwd_edges[prev_edge_schema.id][-1]
+                if from_node.status == Node.Status.COMPLETED:
+                    if to_node.status == Node.Status.COMPLETED:
                         can_add_edge_schema = self.check_can_add_edge_schema(
                             prev_edge_schema,
                             "fwd_from_complete_to_prev_complete",
-                            prev_node,
-                            curr_node,
+                            from_node,
+                            to_node,
                         )
                     else:
                         can_add_edge_schema = self.check_can_add_edge_schema(
                             prev_edge_schema,
                             "fwd_from_complete_to_prev_incomplete",
-                            prev_node,
-                            curr_node,
+                            from_node,
+                            to_node,
                         )
                 elif self.is_prev_completed(
-                    prev_edge_schema, prev_node == self.curr_node
+                    prev_edge_schema, from_node == self.curr_node
                 ):
-                    if curr_node.status == Node.Status.COMPLETED:
+                    if to_node.status == Node.Status.COMPLETED:
                         can_add_edge_schema = self.check_can_add_edge_schema(
                             prev_edge_schema,
                             "fwd_from_incomplete_to_prev_complete",
-                            prev_node,
-                            curr_node,
+                            from_node,
+                            to_node,
                         )
                     else:
                         can_add_edge_schema = self.check_can_add_edge_schema(
                             prev_edge_schema,
                             "fwd_from_incomplete_to_prev_incomplete",
-                            prev_node,
-                            curr_node,
+                            from_node,
+                            to_node,
                         )
 
                 if can_add_edge_schema:
                     self.fwd_jump_edge_schemas.add(prev_edge_schema)
                     more_edges = FROM_NODE_ID_TO_EDGE_SCHEMA.get(
-                        curr_node.schema.id, []
+                        to_node.schema.id, []
                     )
                     if more_edges:
                         prev_edge_schema = more_edges[0]
-                        prev_node = curr_node
+                        from_node = to_node
 
         return prev_edge_schema
 
