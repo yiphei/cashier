@@ -416,13 +416,13 @@ class ChatContext(BaseModel):
     def compute_bwd_edges(self):
         loop_node = self.curr_node
         i = -2
-        while loop_node.direction == Node.Direction.BWD and len(
+        while loop_node.direction == Direction.BWD and len(
             self.node_schema_id_to_nodes[loop_node.schema.id]
         ) >= abs(i):
             loop_node = self.node_schema_id_to_nodes[loop_node.schema.id][i]
             i -= 1
 
-        if loop_node.direction == Node.Direction.FWD and loop_node.edge_schema:
+        if loop_node.direction == Direction.FWD and loop_node.edge_schema:
             edge_schemas = deque([loop_node.edge_schema])
             while edge_schemas:
                 edge_schema = edge_schemas.popleft()
