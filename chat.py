@@ -482,7 +482,6 @@ class ChatContext(BaseModel):
                     )
                     edge_schemas.extend([(edge, curr_node) for edge in more_edges])
 
-
     def compute_next_edge_schema(self, start_edge_schema):
         def is_prev_completed(edge_schema, is_start_node):
             idx = -1 if is_start_node else -2
