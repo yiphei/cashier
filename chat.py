@@ -393,10 +393,16 @@ class ChatContext(BaseModel):
                     (immediate_prev_node, new_node)
                 )
             else:
-                prev_n, _ = self.fwd_nodes_by_edge_schema_id[new_node.fwd_edge_schema.id]
-                self.fwd_nodes_by_edge_schema_id[new_node.fwd_edge_schema.id].append(prev_n, new_node)
+                prev_n, _ = self.fwd_nodes_by_edge_schema_id[
+                    new_node.fwd_edge_schema.id
+                ]
+                self.fwd_nodes_by_edge_schema_id[new_node.fwd_edge_schema.id].append(
+                    prev_n, new_node
+                )
                 _, next_n = self.fwd_nodes_by_edge_schema_id[edge_schema.id]
-                self.fwd_nodes_by_edge_schema_id[new_node.fwd_edge_schema.id].append(new_node, next_n)
+                self.fwd_nodes_by_edge_schema_id[new_node.fwd_edge_schema.id].append(
+                    new_node, next_n
+                )
 
         self.curr_node = new_node
         self.fwd_trans_edge_schemas = set(

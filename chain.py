@@ -52,7 +52,9 @@ class NodeSchema:
         )
         self.tool_fn_names.append("get_state")
 
-    def create_node(self, input, last_msg=None, prev_node=None, edge_schema=None, direction=None):
+    def create_node(
+        self, input, last_msg=None, prev_node=None, edge_schema=None, direction=None
+    ):
         if input is not None:
             assert isinstance(input, self.input_pydantic_model)
             assert prev_node is None
