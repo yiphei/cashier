@@ -6,7 +6,7 @@ import tempfile
 from collections import defaultdict, deque
 from distutils.util import strtobool
 from types import GeneratorType
-from typing import Dict, List, NamedTuple, Set, Tuple
+from typing import Dict, List, NamedTuple, Set
 
 from colorama import Fore, Style
 from dotenv import load_dotenv  # Add this import
@@ -295,6 +295,7 @@ class Edge(NamedTuple):
     from_node: Node
     to_node: Node
 
+
 class ChatContext(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
@@ -484,9 +485,7 @@ class ChatContext(BaseModel):
 
                 if can_add_edge_schema:
                     self.fwd_jump_edge_schemas.add(edge_schema)
-                    more_edges = FROM_NODE_ID_TO_EDGE_SCHEMA.get(
-                        to_node.schema.id, []
-                    )
+                    more_edges = FROM_NODE_ID_TO_EDGE_SCHEMA.get(to_node.schema.id, [])
                     edge_schemas.extend([(edge, to_node) for edge in more_edges])
 
     def is_prev_completed(self, edge_schema, is_start_node):
@@ -541,9 +540,7 @@ class ChatContext(BaseModel):
 
                 if can_add_edge_schema:
                     self.fwd_jump_edge_schemas.add(prev_edge_schema)
-                    more_edges = FROM_NODE_ID_TO_EDGE_SCHEMA.get(
-                        to_node.schema.id, []
-                    )
+                    more_edges = FROM_NODE_ID_TO_EDGE_SCHEMA.get(to_node.schema.id, [])
                     if more_edges:
                         prev_edge_schema = more_edges[0]
                         from_node = to_node
