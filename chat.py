@@ -357,6 +357,8 @@ class ChatContext(BaseModel):
 
         mm = TC.model_provider_to_message_manager[ModelProvider.OPENAI]
         if is_jump:
+            if direction == Direction.BWD:
+                self.bwd_edge_schemas.clear()
             last_msg = mm.get_asst_message()
         else:
             last_msg = mm.get_user_message()
