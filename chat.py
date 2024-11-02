@@ -17,12 +17,12 @@ from audio import get_audio_input, save_audio_to_wav
 from chain import (
     BACKGROUND,
     FROM_NODE_ID_TO_EDGE_SCHEMA,
+    Direction,
     EdgeSchema,
     FwdSkipType,
     Node,
     NodeSchema,
     take_order_node_schema,
-    Direction
 )
 from db_functions import create_db_client
 from function_call_context import FunctionCallContext, InexistentFunctionError
@@ -332,10 +332,14 @@ class ChatContext(BaseModel):
         )
         if self.curr_node:
             self.curr_node.mark_as_completed()
-        
+
         direction = None
         if edge_schema:
-            direction = Direction.FWD if edge_schema.to_node_schema == node_schema else Direction.BWD
+            direction = (
+                Direction.FWD
+                if edge_schema.to_node_schema == node_schema
+                else Direction.BWD
+            )
 
         if not is_jump and edge_schema:
             edge_schema = self.compute_next_edge_schema(edge_schema)

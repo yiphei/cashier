@@ -209,9 +209,11 @@ class Node:
     def update_first_user_message(self):
         self.first_user_message = True
 
+
 class Direction(StrEnum):
     FWD = "FWD"
     BWD = "BWD"
+
 
 class BwdTransType(StrEnum):
     RESET = "RESET"
