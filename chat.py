@@ -417,6 +417,9 @@ class ChatContext(BaseModel):
 
         def check_can_add_edge_schema(edge_schema, fwd_attr, prev_node, curr_node):
             fwd_type = getattr(edge_schema, fwd_attr)
+            if fwd_type is None:
+                return False
+
             if fwd_type == FwdSkipType.SKIP:
                 return True
             elif fwd_type == FwdSkipType.SKIP_IF_INPUT_UNCHANGED:

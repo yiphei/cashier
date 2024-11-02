@@ -235,10 +235,10 @@ class EdgeSchema:
         state_condition_fn,
         new_input_from_state_fn,
         bwd_trans_type=BwdTransType.RESET,
-        fwd_from_complete_to_prev_complete=FwdSkipType.NEW,
-        fwd_from_complete_to_prev_incomplete=FwdSkipType.NEW,
-        fwd_from_incomplete_to_prev_complete=FwdSkipType.NEW,
-        fwd_from_incomplete_to_prev_incomplete=FwdSkipType.NEW,
+        fwd_from_complete_to_prev_complete=None,
+        fwd_from_complete_to_prev_incomplete=None,
+        fwd_from_incomplete_to_prev_complete=None,
+        fwd_from_incomplete_to_prev_incomplete=None,
     ):
         EdgeSchema._counter += 1
         self.id = EdgeSchema._counter
