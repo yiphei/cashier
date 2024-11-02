@@ -442,11 +442,13 @@ class ChatContext(BaseModel):
             ][-1]
 
     def compute_incomplete_transition(self):
-        edge_schemas = deque( self.fwd_trans_edge_schemas)
+        edge_schemas = deque(self.fwd_trans_edge_schemas)
         while edge_schemas:
             edge_schema = edge_schemas.popleft()
             if len(self.edge_schema_id_to_fwd_edges[edge_schema.id]) > 0:
-                from_node, to_node = self.edge_schema_id_to_fwd_edges[edge_schema.id][-1]
+                from_node, to_node = self.edge_schema_id_to_fwd_edges[edge_schema.id][
+                    -1
+                ]
                 if from_node.schema == self.curr_node.schema:
                     from_node = self.curr_node
 
@@ -466,7 +468,9 @@ class ChatContext(BaseModel):
                             from_node,
                             to_node,
                         )
-                elif self.is_prev_from_node_completed(edge_schema, from_node == self.curr_node):
+                elif self.is_prev_from_node_completed(
+                    edge_schema, from_node == self.curr_node
+                ):
                     if to_node.status == Node.Status.COMPLETED:
                         can_add_edge_schema = self.check_can_add_edge_schema(
                             edge_schema,
