@@ -348,9 +348,9 @@ class ChatContext(BaseModel):
         prev_node = None
         if (
             edge_schema
-            and edge_schema in self.fwd_nodes_by_edge_schema_id[node_schema.id]
+            and len(self.fwd_nodes_by_edge_schema_id[edge_schema.id]) > 0
         ):
-            a_node, b_node = self.fwd_nodes_by_edge_schema_id[node_schema.id]
+            a_node, b_node = self.fwd_nodes_by_edge_schema_id[node_schema.id][-1]
             prev_node = b_node if direction == Direction.FWD else a_node
 
         mm = TC.model_provider_to_message_manager[ModelProvider.OPENAI]
@@ -444,7 +444,7 @@ class ChatContext(BaseModel):
         )
         while edge_schemas:
             edge_schema, prev_node = edge_schemas.popleft()
-            if edge_schema.id in self.fwd_nodes_by_edge_schema_id:
+            if len(self.fwd_nodes_by_edge_schema_id[edge_schema.id]) > 0:
                 _, curr_node = self.fwd_nodes_by_edge_schema_id[edge_schema.id][-1]
                 can_add_edge_schema = False
                 if prev_node.status == Node.Status.COMPLETED:
@@ -500,7 +500,7 @@ class ChatContext(BaseModel):
         can_add_edge_schema = True
         while can_add_edge_schema:
             can_add_edge_schema = False
-            if prev_edge_schema.id in self.fwd_nodes_by_edge_schema_id:
+            if len(self.fwd_nodes_by_edge_schema_id[prev_edge_schema.id]) > 0:
                 _, curr_node = self.fwd_nodes_by_edge_schema_id[prev_edge_schema.id][-1]
                 if prev_node.status == Node.Status.COMPLETED:
                     if curr_node.status == Node.Status.COMPLETED:
