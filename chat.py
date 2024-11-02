@@ -491,8 +491,7 @@ class ChatContext(BaseModel):
 
         edge_schemas = deque(
             [
-                (edge_schema, self.curr_node)
-                for edge_schema in self.fwd_trans_edge_schemas
+                (start_edge_schema, self.curr_node)
             ]
         )
         while edge_schemas:
@@ -536,7 +535,8 @@ class ChatContext(BaseModel):
                     more_edges = FROM_NODE_ID_TO_EDGE_SCHEMA.get(
                         curr_node.schema.id, []
                     )
-                    edge_schemas.extend([(edge, curr_node) for edge in more_edges])
+                    if more_edges:
+                        edge_schemas.append(more_edges[0])
 
 
 def run_chat(args, model, elevenlabs_client):
