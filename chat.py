@@ -346,10 +346,7 @@ class ChatContext(BaseModel):
             node_schema = edge_schema.to_node_schema
 
         prev_node = None
-        if (
-            edge_schema
-            and len(self.fwd_nodes_by_edge_schema_id[edge_schema.id]) > 0
-        ):
+        if edge_schema and len(self.fwd_nodes_by_edge_schema_id[edge_schema.id]) > 0:
             a_node, b_node = self.fwd_nodes_by_edge_schema_id[node_schema.id][-1]
             prev_node = b_node if direction == Direction.FWD else a_node
 
