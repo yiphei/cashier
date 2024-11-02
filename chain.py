@@ -252,6 +252,7 @@ class EdgeSchema:
         self.bwd_trans_type = bwd_trans_type
         self.fwd_from_complete_to_prev_complete = fwd_from_complete_to_prev_complete
         self.fwd_from_complete_to_prev_incomplete = fwd_from_complete_to_prev_incomplete
+        # these two below assume that it was previously completed
         self.fwd_from_incomplete_to_prev_complete = fwd_from_incomplete_to_prev_complete
         self.fwd_from_incomplete_to_prev_incomplete = (
             fwd_from_incomplete_to_prev_incomplete
