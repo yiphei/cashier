@@ -75,9 +75,9 @@ class NodeSchema:
         )
 
         direction = (
-            Node.Direction.BWD
+            Direction.BWD
             if edge_schema and edge_schema.from_node_schema == self
-            else Node.Direction.FWD
+            else Direction.FWD
         )
         return Node(self, input, state, prompt, edge_schema, direction)
 
@@ -178,10 +178,6 @@ class Node:
         IN_PROGRESS = "IN_PROGRESS"
         COMPLETED = "COMPLETED"
 
-    class Direction(StrEnum):
-        FWD = "FWD"
-        BWD = "BWD"
-
     def __init__(self, schema, input, state, prompt, edge_schema, direction):
         Node._counter += 1
         self.id = Node._counter
@@ -213,6 +209,9 @@ class Node:
     def update_first_user_message(self):
         self.first_user_message = True
 
+class Direction(StrEnum):
+    FWD = "FWD"
+    BWD = "BWD"
 
 class BwdTransType(StrEnum):
     RESET = "RESET"

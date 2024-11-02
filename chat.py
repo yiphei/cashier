@@ -22,6 +22,7 @@ from chain import (
     Node,
     NodeSchema,
     take_order_node_schema,
+    Direction
 )
 from db_functions import create_db_client
 from function_call_context import FunctionCallContext, InexistentFunctionError
@@ -331,14 +332,19 @@ class ChatContext(BaseModel):
         )
         if self.curr_node:
             self.curr_node.mark_as_completed()
+        
+        direction = None
+        if edge_schema:
+            direction = Direction.FWD if edge_schema.to_node_schema == node_schema else Direction.BWD
 
         if not is_jump and edge_schema:
             edge_schema = self.compute_next_edge_schema(edge_schema)
             node_schema = edge_schema.to_node_schema
 
         prev_node = None
-        if is_jump:
-            prev_node = self.node_schema_id_to_nodes[node_schema.id][-1]
+        if edge_schema and edge_schema in self.node_schema_id_to_nodes[node_schema.id]:
+            a_node, b_node = self.node_schema_id_to_node_schema[node_schema.id]
+            prev_node = b_node if direction == Direction.FWD else a_node
 
         mm = TC.model_provider_to_message_manager[ModelProvider.OPENAI]
         if is_jump:
