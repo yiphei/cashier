@@ -506,7 +506,9 @@ class ChatContext(BaseModel):
         while can_add_edge_schema:
             can_add_edge_schema = False
             if len(self.edge_schema_id_to_fwd_edges[edge_schema.id]) > 0:
-                from_node, to_node = self.edge_schema_id_to_fwd_edges[edge_schema.id][-1]
+                from_node, to_node = self.edge_schema_id_to_fwd_edges[edge_schema.id][
+                    -1
+                ]
                 if from_node.schema == self.curr_node.schema:
                     from_node = self.curr_node
 
