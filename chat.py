@@ -456,21 +456,6 @@ class ChatContext(BaseModel):
                     if curr_node.status == Node.Status.COMPLETED:
                         can_add_edge_schema = check_can_add_edge_schema(
                             edge_schema,
-                            "fwd_from_prev_complete_to_prev_complete",
-                            prev_node,
-                            curr_node,
-                        )
-                    else:
-                        can_add_edge_schema = check_can_add_edge_schema(
-                            edge_schema,
-                            "fwd_from_prev_complete_to_prev_incomplete",
-                            prev_node,
-                            curr_node,
-                        )
-                else:
-                    if curr_node.status == Node.Status.COMPLETED:
-                        can_add_edge_schema = check_can_add_edge_schema(
-                            edge_schema,
                             "fwd_from_incomplete_to_prev_complete",
                             prev_node,
                             curr_node,

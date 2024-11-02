@@ -239,8 +239,6 @@ class EdgeSchema:
         bwd_trans_type=BwdTransType.RESET,
         fwd_from_complete_to_prev_complete=FwdTransType.NEW,
         fwd_from_complete_to_prev_incomplete=FwdTransType.NEW,
-        fwd_from_prev_complete_to_prev_complete=FwdTransType.NEW,
-        fwd_from_prev_complete_to_prev_incomplete=FwdTransType.NEW,
         fwd_from_incomplete_to_prev_complete=FwdTransType.NEW,
         fwd_from_incomplete_to_prev_incomplete=FwdTransType.NEW,
         fwd_trans_type=FwdTransType.NEW,
@@ -254,12 +252,6 @@ class EdgeSchema:
         self.bwd_trans_type = bwd_trans_type
         self.fwd_from_complete_to_prev_complete = fwd_from_complete_to_prev_complete
         self.fwd_from_complete_to_prev_incomplete = fwd_from_complete_to_prev_incomplete
-        self.fwd_from_prev_complete_to_prev_complete = (
-            fwd_from_prev_complete_to_prev_complete
-        )
-        self.fwd_from_prev_complete_to_prev_incomplete = (
-            fwd_from_prev_complete_to_prev_incomplete
-        )
         self.fwd_from_incomplete_to_prev_complete = fwd_from_incomplete_to_prev_complete
         self.fwd_from_incomplete_to_prev_incomplete = (
             fwd_from_incomplete_to_prev_incomplete
