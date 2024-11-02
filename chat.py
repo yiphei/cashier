@@ -435,7 +435,9 @@ class ChatContext(BaseModel):
             if from_node.fwd_edge_schema in self.bwd_edge_schemas:
                 return
             self.bwd_edge_schemas.add(from_node.fwd_edge_schema)
-            from_node, _ = self.edge_schema_id_to_fwd_edges[from_node.fwd_edge_schema.id][-1]
+            from_node, _ = self.edge_schema_id_to_fwd_edges[
+                from_node.fwd_edge_schema.id
+            ][-1]
 
     def compute_incomplete_transition(self):
         edge_schemas = deque(
