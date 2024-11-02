@@ -468,7 +468,7 @@ class ChatContext(BaseModel):
                             from_node,
                             to_node,
                         )
-                elif self.is_prev_completed(edge_schema, from_node == self.curr_node):
+                elif self.is_prev_from_node_completed(edge_schema, from_node == self.curr_node):
                     if to_node.status == Node.Status.COMPLETED:
                         can_add_edge_schema = self.check_can_add_edge_schema(
                             edge_schema,
@@ -489,7 +489,7 @@ class ChatContext(BaseModel):
                     more_edges = FROM_NODE_ID_TO_EDGE_SCHEMA.get(to_node.schema.id, [])
                     edge_schemas.extend([(edge, to_node) for edge in more_edges])
 
-    def is_prev_completed(self, edge_schema, is_start_node):
+    def is_prev_from_node_completed(self, edge_schema, is_start_node):
         idx = -1 if is_start_node else -2
         return (
             self.edge_schema_id_to_fwd_edges[edge_schema.id][idx][0].status
@@ -521,7 +521,7 @@ class ChatContext(BaseModel):
                             from_node,
                             to_node,
                         )
-                elif self.is_prev_completed(
+                elif self.is_prev_from_node_completed(
                     prev_edge_schema, from_node == self.curr_node
                 ):
                     if to_node.status == Node.Status.COMPLETED:
