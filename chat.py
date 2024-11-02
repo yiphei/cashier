@@ -548,6 +548,8 @@ class ChatContext(BaseModel):
                     more_edges = FROM_NODE_ID_TO_EDGE_SCHEMA.get(to_node.schema.id, [])
                     if more_edges:
                         edge_schema = more_edges[0]
+                    else:
+                        can_add_edge_schema = False
 
         return edge_schema
 
