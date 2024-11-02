@@ -389,7 +389,6 @@ class ChatContext(BaseModel):
         )
         self.compute_bwd_edges()
 
-
     def check_can_add_edge_schema(self, edge_schema, fwd_attr, prev_node, curr_node):
         fwd_type = getattr(edge_schema, fwd_attr)
         if fwd_type is None:
@@ -403,7 +402,7 @@ class ChatContext(BaseModel):
             if new_input == curr_node.input:
                 return True
         return False
-    
+
     def compute_bwd_edges(self):
         loop_node = self.curr_node
         i = -2
@@ -422,7 +421,6 @@ class ChatContext(BaseModel):
                 prev_node, _ = self.fwd_nodes_by_edge_schema_id[edge_schema.id][-1]
                 if prev_node.edge_schema:
                     edge_schemas.append(prev_node.edge_schema)
-
 
     def compute_incomplete_transition(self):
         edge_schemas = deque(
@@ -474,7 +472,6 @@ class ChatContext(BaseModel):
                     )
                     edge_schemas.extend([(edge, curr_node) for edge in more_edges])
 
-
     def is_prev_completed(self, edge_schema, is_start_node):
         idx = -1 if is_start_node else -2
         return (
@@ -507,7 +504,9 @@ class ChatContext(BaseModel):
                             prev_node,
                             curr_node,
                         )
-                elif self.is_prev_completed(prev_edge_schema, prev_node == self.curr_node):
+                elif self.is_prev_completed(
+                    prev_edge_schema, prev_node == self.curr_node
+                ):
                     if curr_node.status == Node.Status.COMPLETED:
                         can_add_edge_schema = self.check_can_add_edge_schema(
                             prev_edge_schema,
