@@ -508,6 +508,7 @@ def run_chat(args, model, elevenlabs_client):
                 break
             MessageDisplay.print_msg("user", text_input)
             TC.add_user_turn(text_input)
+            CT.compute_transition()
             node_id = should_backtrack_node(
                 model,
                 TC,
