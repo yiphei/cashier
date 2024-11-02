@@ -501,54 +501,55 @@ class ChatContext(BaseModel):
         )
 
     def compute_next_edge_schema(self, start_edge_schema):
-        prev_edge_schema = start_edge_schema
-        from_node = self.curr_node
+        edge_schema = start_edge_schema
         can_add_edge_schema = True
         while can_add_edge_schema:
             can_add_edge_schema = False
-            if len(self.edge_schema_id_to_fwd_edges[prev_edge_schema.id]) > 0:
-                _, to_node = self.edge_schema_id_to_fwd_edges[prev_edge_schema.id][-1]
+            if len(self.edge_schema_id_to_fwd_edges[edge_schema.id]) > 0:
+                from_node, to_node = self.edge_schema_id_to_fwd_edges[edge_schema.id][-1]
+                if from_node.schema == self.curr_node.schema:
+                    from_node = self.curr_node
+
                 if from_node.status == Node.Status.COMPLETED:
                     if to_node.status == Node.Status.COMPLETED:
                         can_add_edge_schema = self.check_can_add_edge_schema(
-                            prev_edge_schema,
+                            edge_schema,
                             "fwd_from_complete_to_prev_complete",
                             from_node,
                             to_node,
                         )
                     else:
                         can_add_edge_schema = self.check_can_add_edge_schema(
-                            prev_edge_schema,
+                            edge_schema,
                             "fwd_from_complete_to_prev_incomplete",
                             from_node,
                             to_node,
                         )
                 elif self.is_prev_from_node_completed(
-                    prev_edge_schema, from_node == self.curr_node
+                    edge_schema, from_node == self.curr_node
                 ):
                     if to_node.status == Node.Status.COMPLETED:
                         can_add_edge_schema = self.check_can_add_edge_schema(
-                            prev_edge_schema,
+                            edge_schema,
                             "fwd_from_incomplete_to_prev_complete",
                             from_node,
                             to_node,
                         )
                     else:
                         can_add_edge_schema = self.check_can_add_edge_schema(
-                            prev_edge_schema,
+                            edge_schema,
                             "fwd_from_incomplete_to_prev_incomplete",
                             from_node,
                             to_node,
                         )
 
                 if can_add_edge_schema:
-                    self.fwd_jump_edge_schemas.add(prev_edge_schema)
+                    self.fwd_jump_edge_schemas.add(edge_schema)
                     more_edges = FROM_NODE_ID_TO_EDGE_SCHEMA.get(to_node.schema.id, [])
                     if more_edges:
-                        prev_edge_schema = more_edges[0]
-                        from_node = to_node
+                        edge_schema = more_edges[0]
 
-        return prev_edge_schema
+        return edge_schema
 
 
 def run_chat(args, model, elevenlabs_client):
