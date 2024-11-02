@@ -239,7 +239,6 @@ class EdgeSchema:
         fwd_from_complete_to_prev_incomplete=FwdSkipType.NEW,
         fwd_from_incomplete_to_prev_complete=FwdSkipType.NEW,
         fwd_from_incomplete_to_prev_incomplete=FwdSkipType.NEW,
-        fwd_trans_type=FwdSkipType.NEW,
     ):
         EdgeSchema._counter += 1
         self.id = EdgeSchema._counter
@@ -255,7 +254,6 @@ class EdgeSchema:
         self.fwd_from_incomplete_to_prev_incomplete = (
             fwd_from_incomplete_to_prev_incomplete
         )
-        self.fwd_trans_type = fwd_trans_type
 
     def check_state_condition(self, state):
         return self.state_condition_fn(state)
