@@ -18,7 +18,7 @@ from chain import (
     BACKGROUND,
     FROM_NODE_ID_TO_EDGE_SCHEMA,
     EdgeSchema,
-    FwdTransType,
+    FwdSkipType,
     Node,
     NodeSchema,
     take_order_node_schema,
@@ -417,9 +417,9 @@ class ChatContext(BaseModel):
 
         def check_can_add_edge_schema(edge_schema, fwd_attr, prev_node, curr_node):
             fwd_type = getattr(edge_schema, fwd_attr)
-            if fwd_type == FwdTransType.SKIP:
+            if fwd_type == FwdSkipType.SKIP:
                 return True
-            elif fwd_type == FwdTransType.SKIP_IF_INPUT_UNCHANGED:
+            elif fwd_type == FwdSkipType.SKIP_IF_INPUT_UNCHANGED:
                 # calculate if input would be unchanged
                 new_input = edge_schema.new_input_from_state_fn(prev_node.state)
                 if new_input == curr_node.input:

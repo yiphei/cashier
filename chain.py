@@ -220,11 +220,9 @@ class BwdTransType(StrEnum):
     KEEP_IF_INPUT_UNCHANGED = "KEEP_IF_INPUT_UNCHANGED"
 
 
-class FwdTransType(StrEnum):
-    NEW = "NEW"
+class FwdSkipType(StrEnum):
     SKIP = "SKIP"
     SKIP_IF_INPUT_UNCHANGED = "SKIP_IF_INPUT_UNCHANGED"
-    UNALLOWED = "UNALLOWED"
 
 
 class EdgeSchema:
@@ -237,11 +235,11 @@ class EdgeSchema:
         state_condition_fn,
         new_input_from_state_fn,
         bwd_trans_type=BwdTransType.RESET,
-        fwd_from_complete_to_prev_complete=FwdTransType.NEW,
-        fwd_from_complete_to_prev_incomplete=FwdTransType.NEW,
-        fwd_from_incomplete_to_prev_complete=FwdTransType.NEW,
-        fwd_from_incomplete_to_prev_incomplete=FwdTransType.NEW,
-        fwd_trans_type=FwdTransType.NEW,
+        fwd_from_complete_to_prev_complete=FwdSkipType.NEW,
+        fwd_from_complete_to_prev_incomplete=FwdSkipType.NEW,
+        fwd_from_incomplete_to_prev_complete=FwdSkipType.NEW,
+        fwd_from_incomplete_to_prev_incomplete=FwdSkipType.NEW,
+        fwd_trans_type=FwdSkipType.NEW,
     ):
         EdgeSchema._counter += 1
         self.id = EdgeSchema._counter
