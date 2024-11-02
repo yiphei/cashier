@@ -350,10 +350,10 @@ class ChatContext(BaseModel):
             edge_schema = self.compute_next_edge_schema(edge_schema)
             node_schema = edge_schema.to_node_schema
 
-        from_node = None
+        prev_node = None
         if edge_schema and len(self.edge_schema_id_to_fwd_edges[edge_schema.id]) > 0:
             from_node, to_node = self.edge_schema_id_to_fwd_edges[node_schema.id][-1]
-            from_node = to_node if direction == Direction.FWD else from_node
+            prev_node = to_node if direction == Direction.FWD else from_node
 
         mm = TC.model_provider_to_message_manager[ModelProvider.OPENAI]
         if is_jump:
@@ -363,7 +363,7 @@ class ChatContext(BaseModel):
 
         if last_msg:
             last_msg = last_msg["content"]
-        new_node = node_schema.create_node(input, last_msg, from_node, edge_schema)
+        new_node = node_schema.create_node(input, last_msg, prev_node, edge_schema)
 
         TC.add_node_turn(
             new_node,
@@ -372,7 +372,7 @@ class ChatContext(BaseModel):
         )
         MessageDisplay.print_msg("system", new_node.prompt)
 
-        if node_schema.first_turn and from_node is None:
+        if node_schema.first_turn and prev_node is None:
             TC.add_assistant_direct_turn(node_schema.first_turn)
             MessageDisplay.print_msg("assistant", node_schema.first_turn.msg_content)
 
