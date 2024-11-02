@@ -346,8 +346,8 @@ class ChatContext(BaseModel):
             node_schema = edge_schema.to_node_schema
 
         prev_node = None
-        if edge_schema and edge_schema in self.node_schema_id_to_nodes[node_schema.id]:
-            a_node, b_node = self.node_schema_id_to_node_schema[node_schema.id]
+        if edge_schema and edge_schema in self.fwd_nodes_by_edge_schema_id[node_schema.id]:
+            a_node, b_node = self.fwd_nodes_by_edge_schema_id[node_schema.id]
             prev_node = b_node if direction == Direction.FWD else a_node
 
         mm = TC.model_provider_to_message_manager[ModelProvider.OPENAI]
