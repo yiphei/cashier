@@ -387,9 +387,25 @@ class ChatContext(BaseModel):
         self.fwd_trans_edge_schemas = set(
             FROM_NODE_ID_TO_EDGE_SCHEMA.get(new_node.schema.id, [])
         )
+        self.compute_bwd_edges()
 
-        # also add all the previous nodes
-        loop_node = new_node
+
+    def check_can_add_edge_schema(self, edge_schema, fwd_attr, prev_node, curr_node):
+        fwd_type = getattr(edge_schema, fwd_attr)
+        if fwd_type is None:
+            return False
+
+        if fwd_type == FwdSkipType.SKIP:
+            return True
+        elif fwd_type == FwdSkipType.SKIP_IF_INPUT_UNCHANGED:
+            # calculate if input would be unchanged
+            new_input = edge_schema.new_input_from_state_fn(prev_node.state)
+            if new_input == curr_node.input:
+                return True
+        return False
+    
+    def compute_bwd_edges(self):
+        loop_node = self.curr_node
         i = -2
         while loop_node.direction == Node.Direction.BWD and len(
             self.node_schema_id_to_nodes[loop_node.schema.id]
@@ -407,21 +423,6 @@ class ChatContext(BaseModel):
                 if prev_node.edge_schema:
                     edge_schemas.append(prev_node.edge_schema)
 
-        self.compute_incomplete_transition()
-
-    def check_can_add_edge_schema(self, edge_schema, fwd_attr, prev_node, curr_node):
-        fwd_type = getattr(edge_schema, fwd_attr)
-        if fwd_type is None:
-            return False
-
-        if fwd_type == FwdSkipType.SKIP:
-            return True
-        elif fwd_type == FwdSkipType.SKIP_IF_INPUT_UNCHANGED:
-            # calculate if input would be unchanged
-            new_input = edge_schema.new_input_from_state_fn(prev_node.state)
-            if new_input == curr_node.input:
-                return True
-        return False
 
     def compute_incomplete_transition(self):
         def is_prev_completed(edge_schema, is_start_node):
