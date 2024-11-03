@@ -123,9 +123,7 @@ class MessageDisplay:
         )
 
 
-def should_backtrack_node(
-    model, TM, current_node_schema, all_node_schemas
-):
+def should_backtrack_node(model, TM, current_node_schema, all_node_schemas):
     if len(all_node_schemas) == 1:
         return None
 
@@ -285,7 +283,7 @@ def should_backtrack_node(
     return agent_id if agent_id != current_node_schema.id else None
 
 
-def handle_jump(model,TC,CT):
+def handle_jump(model, TC, CT):
     fwd_jump_edges = CT.compute_fwd_jumps()
     bwd_edges = CT.bwd_edge_schemas
 
@@ -294,17 +292,14 @@ def handle_jump(model,TC,CT):
     all_node_schemas += [edge.from_node_schema for edge in bwd_edges]
 
     node_schema_id = should_backtrack_node(
-                model,
-                TC,
-                CT.curr_node.schema,
-                all_node_schemas
-            )
-    
+        model, TC, CT.curr_node.schema, all_node_schemas
+    )
+
     if node_schema_id is not None:
         for edge in fwd_jump_edges:
             if edge.to_node_schema.id == node_schema_id:
                 return edge, NODE_SCHEMA_ID_TO_NODE_SCHEMA[node_schema_id]
-            
+
         for edge in bwd_edges:
             if edge.from_node_schema.id == node_schema_id:
                 return edge, NODE_SCHEMA_ID_TO_NODE_SCHEMA[node_schema_id]
