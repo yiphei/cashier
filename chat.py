@@ -315,7 +315,7 @@ class ChatContext(BaseModel):
     remove_prev_tool_calls: bool
     curr_node: Node = None
     need_user_input: bool = True
-    edge_schema_id_to_fwd_edges: Dict[str, List[Edge]] = Field(
+    edge_schema_id_to_edges: Dict[str, List[Edge]] = Field(
         default_factory=lambda: defaultdict(list)
     )
     from_node_id_to_edge_schema_id: Dict[str, str] = Field(
@@ -325,15 +325,15 @@ class ChatContext(BaseModel):
     bwd_edge_schemas: Set[EdgeSchema] = Field(default_factory=set)
 
     def add_edge(self, from_node, to_node, edge_schema_id):
-        self.edge_schema_id_to_fwd_edges[edge_schema_id].append(
+        self.edge_schema_id_to_edges[edge_schema_id].append(
             Edge(from_node, to_node)
         )
         self.from_node_id_to_edge_schema_id[from_node.id] = edge_schema_id
 
     def get_edge_by_edge_schema_id(self, edge_schema_id, idx=-1):
         return (
-            self.edge_schema_id_to_fwd_edges[edge_schema_id][idx]
-            if len(self.edge_schema_id_to_fwd_edges[edge_schema_id]) >= abs(idx)
+            self.edge_schema_id_to_edges[edge_schema_id][idx]
+            if len(self.edge_schema_id_to_edges[edge_schema_id]) >= abs(idx)
             else None
         )
 
