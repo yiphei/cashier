@@ -397,7 +397,7 @@ class ChatContext(BaseModel):
                     from_node, _ = self.get_edge_by_edge_schema_id(edge_schema.id)
                     immediate_from_node = from_node
                     while from_node.schema != self.curr_node.schema:
-                        prev_edge_schema = from_node.fwd_edge_schema
+                        prev_edge_schema = from_node.in_edge_schema
                         from_node, to_node = self.get_edge_by_edge_schema_id(
                             prev_edge_schema.id
                         )
@@ -405,11 +405,11 @@ class ChatContext(BaseModel):
                     self.add_edge(self.curr_node, to_node, prev_edge_schema.id)
 
                 self.add_edge(immediate_from_node, new_node, edge_schema.id)
-            elif direction == Direction.BWD and new_node.fwd_edge_schema:
+            elif direction == Direction.BWD and new_node.in_edge_schema:
                 from_node, _ = self.get_edge_by_edge_schema_id(
-                    new_node.fwd_edge_schema.id
+                    new_node.in_edge_schema.id
                 )
-                self.add_edge(from_node, new_node, new_node.fwd_edge_schema.id)
+                self.add_edge(from_node, new_node, new_node.in_edge_schema.id)
 
                 _, to_node = self.get_edge_by_edge_schema_id(edge_schema.id)
                 self.add_edge(new_node, to_node, edge_schema.id)
@@ -422,12 +422,12 @@ class ChatContext(BaseModel):
 
     def compute_bwd_edges(self):
         from_node = self.curr_node
-        while from_node.fwd_edge_schema is not None:
-            if from_node.fwd_edge_schema in self.bwd_edge_schemas:
+        while from_node.in_edge_schema is not None:
+            if from_node.in_edge_schema in self.bwd_edge_schemas:
                 return
-            self.bwd_edge_schemas.add(from_node.fwd_edge_schema)
+            self.bwd_edge_schemas.add(from_node.in_edge_schema)
             new_from_node, to_node = self.get_edge_by_edge_schema_id(
-                from_node.fwd_edge_schema.id
+                from_node.in_edge_schema.id
             )
             assert from_node == to_node
             from_node = new_from_node

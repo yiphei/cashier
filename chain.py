@@ -123,10 +123,10 @@ class NodeSchema:
         )
 
         if direction == Direction.BWD:
-            fwd_edge_schema = prev_node.fwd_edge_schema
+            in_edge_schema = prev_node.in_edge_schema
         else:
-            fwd_edge_schema = edge_schema
-        return Node(self, input, state, prompt, fwd_edge_schema, direction)
+            in_edge_schema = edge_schema
+        return Node(self, input, state, prompt, in_edge_schema, direction)
 
     def generate_system_prompt(self, input, last_msg):
         NODE_PROMPT = (
@@ -226,7 +226,7 @@ class Node:
         COMPLETED = "COMPLETED"
 
     def __init__(
-        self, schema, input, state, prompt, fwd_edge_schema, direction=Direction.FWD
+        self, schema, input, state, prompt, in_edge_schema, direction=Direction.FWD
     ):
         Node._counter += 1
         self.id = Node._counter
@@ -236,7 +236,7 @@ class Node:
         self.schema = schema
         self.first_user_message = False
         self.status = self.Status.IN_PROGRESS
-        self.fwd_edge_schema = fwd_edge_schema
+        self.in_edge_schema = in_edge_schema
         self.direction = direction
 
     def mark_as_completed(self):
