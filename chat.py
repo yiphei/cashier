@@ -301,9 +301,6 @@ class ChatContext(BaseModel):
     remove_prev_tool_calls: bool
     curr_node: Node = None
     need_user_input: bool = True
-    node_schema_id_to_nodes: Dict[str, List[Node]] = Field(
-        default_factory=lambda: defaultdict(list)
-    )
     edge_schema_id_to_fwd_edges: Dict[str, List[Edge]] = Field(
         default_factory=lambda: defaultdict(list)
     )
@@ -376,7 +373,6 @@ class ChatContext(BaseModel):
             TC.add_assistant_direct_turn(node_schema.first_turn)
             MessageDisplay.print_msg("assistant", node_schema.first_turn.msg_content)
 
-        self.node_schema_id_to_nodes[node_schema.id].append(new_node)
         if edge_schema:
             if direction == Direction.FWD:
                 immediate_from_node = self.curr_node
