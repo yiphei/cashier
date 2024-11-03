@@ -325,9 +325,7 @@ class ChatContext(BaseModel):
     bwd_skip_edge_schemas: Set[EdgeSchema] = Field(default_factory=set)
 
     def add_edge(self, from_node, to_node, edge_schema_id):
-        self.edge_schema_id_to_edges[edge_schema_id].append(
-            Edge(from_node, to_node)
-        )
+        self.edge_schema_id_to_edges[edge_schema_id].append(Edge(from_node, to_node))
         self.from_node_id_to_edge_schema_id[from_node.id] = edge_schema_id
 
     def get_edge_by_edge_schema_id(self, edge_schema_id, idx=-1):
