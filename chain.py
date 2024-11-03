@@ -264,7 +264,9 @@ class BwdStateInit(StrEnum):
     KEEP = "KEEP"
 
 
-class FwdStateInit(BwdStateInit):
+class FwdStateInit(StrEnum):
+    RESET = "RESET"
+    KEEP = "KEEP"
     KEEP_IF_INPUT_UNCHANGED = "KEEP_IF_INPUT_UNCHANGED"
 
 
