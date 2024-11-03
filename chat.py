@@ -344,9 +344,7 @@ class ChatContext(BaseModel):
 
         direction = Direction.FWD
         if edge_schema and edge_schema.from_node_schema == node_schema:
-            direction = (
-                Direction.BWD
-            )
+            direction = Direction.BWD
 
         prev_node = None
         if edge_schema and len(self.edge_schema_id_to_fwd_edges[edge_schema.id]) > 0:
