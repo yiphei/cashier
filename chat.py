@@ -417,20 +417,6 @@ class ChatContext(BaseModel):
         )
         self.compute_bwd_edges()
 
-    def check_can_add_edge_schema(self, edge_schema, fwd_attr, from_node, to_node):
-        fwd_type = getattr(edge_schema, fwd_attr)
-        if fwd_type is None:
-            return False
-
-        if fwd_type == FwdSkipType.SKIP:
-            return True
-        elif fwd_type == FwdSkipType.SKIP_IF_INPUT_UNCHANGED:
-            # calculate if input would be unchanged
-            new_input = edge_schema.new_input_from_state_fn(from_node.state)
-            if new_input == to_node.input:
-                return True
-        return False
-
     def compute_bwd_edges(self):
         from_node = self.curr_node
         while from_node.fwd_edge_schema is not None:
@@ -452,41 +438,9 @@ class ChatContext(BaseModel):
                 if from_node.schema == self.curr_node.schema:
                     from_node = self.curr_node
 
-                can_add_edge_schema = False
-                if from_node.status == Node.Status.COMPLETED:
-                    if to_node.status == Node.Status.COMPLETED:
-                        can_add_edge_schema = self.check_can_add_edge_schema(
-                            edge_schema,
-                            "fwd_from_complete_to_prev_complete",
-                            from_node,
-                            to_node,
-                        )
-                    else:
-                        can_add_edge_schema = self.check_can_add_edge_schema(
-                            edge_schema,
-                            "fwd_from_complete_to_prev_incomplete",
-                            from_node,
-                            to_node,
-                        )
-                elif self.is_prev_from_node_completed(
+                if edge_schema.can_transition(from_node, to_node, self.is_prev_from_node_completed(
                     edge_schema, from_node == self.curr_node
-                ):
-                    if to_node.status == Node.Status.COMPLETED:
-                        can_add_edge_schema = self.check_can_add_edge_schema(
-                            edge_schema,
-                            "fwd_from_incomplete_to_prev_complete",
-                            from_node,
-                            to_node,
-                        )
-                    else:
-                        can_add_edge_schema = self.check_can_add_edge_schema(
-                            edge_schema,
-                            "fwd_from_incomplete_to_prev_incomplete",
-                            from_node,
-                            to_node,
-                        )
-
-                if can_add_edge_schema:
+                )):
                     self.fwd_jump_edge_schemas.add(edge_schema)
                     more_edges = FROM_NODE_ID_TO_EDGE_SCHEMA.get(to_node.schema.id, [])
                     edge_schemas.extend(more_edges)
@@ -512,39 +466,9 @@ class ChatContext(BaseModel):
                 if from_node.schema == self.curr_node.schema:
                     from_node = self.curr_node
 
-                if from_node.status == Node.Status.COMPLETED:
-                    if to_node.status == Node.Status.COMPLETED:
-                        can_add_edge_schema = self.check_can_add_edge_schema(
-                            edge_schema,
-                            "fwd_from_complete_to_prev_complete",
-                            from_node,
-                            to_node,
-                        )
-                    else:
-                        can_add_edge_schema = self.check_can_add_edge_schema(
-                            edge_schema,
-                            "fwd_from_complete_to_prev_incomplete",
-                            from_node,
-                            to_node,
-                        )
-                elif self.is_prev_from_node_completed(
+                can_add_edge_schema = edge_schema.can_transition(from_node, to_node, self.is_prev_from_node_completed(
                     edge_schema, from_node == self.curr_node
-                ):
-                    if to_node.status == Node.Status.COMPLETED:
-                        can_add_edge_schema = self.check_can_add_edge_schema(
-                            edge_schema,
-                            "fwd_from_incomplete_to_prev_complete",
-                            from_node,
-                            to_node,
-                        )
-                    else:
-                        can_add_edge_schema = self.check_can_add_edge_schema(
-                            edge_schema,
-                            "fwd_from_incomplete_to_prev_incomplete",
-                            from_node,
-                            to_node,
-                        )
-
+                ))
                 if can_add_edge_schema:
                     self.fwd_jump_edge_schemas.add(edge_schema)
                     more_edges = FROM_NODE_ID_TO_EDGE_SCHEMA.get(to_node.schema.id, [])

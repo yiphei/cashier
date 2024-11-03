@@ -260,6 +260,53 @@ class EdgeSchema:
     def check_state_condition(self, state):
         return self.state_condition_fn(state)
 
+    def check_can_add_edge_schema(self, fwd_attr, from_node, to_node):
+        fwd_type = getattr(self, fwd_attr)
+        if fwd_type is None:
+            return False
+
+        if fwd_type == FwdSkipType.SKIP:
+            return True
+        elif fwd_type == FwdSkipType.SKIP_IF_INPUT_UNCHANGED:
+            # calculate if input would be unchanged
+            new_input = self.new_input_from_state_fn(from_node.state)
+            if new_input == to_node.input:
+                return True
+        return False
+
+    def can_transition(self, from_node, to_node, is_prev_from_node_completed):
+        if from_node.status == Node.Status.COMPLETED:
+            if to_node.status == Node.Status.COMPLETED:
+                return self.check_can_add_edge_schema(
+                    self,
+                    "fwd_from_complete_to_prev_complete",
+                    from_node,
+                    to_node,
+                )
+            else:
+                return self.check_can_add_edge_schema(
+                    self,
+                    "fwd_from_complete_to_prev_incomplete",
+                    from_node,
+                    to_node,
+                )
+        elif is_prev_from_node_completed:
+            if to_node.status == Node.Status.COMPLETED:
+                return self.check_can_add_edge_schema(
+                    self,
+                    "fwd_from_incomplete_to_prev_complete",
+                    from_node,
+                    to_node,
+                )
+            else:
+                return self.check_can_add_edge_schema(
+                    self,
+                    "fwd_from_incomplete_to_prev_incomplete",
+                    from_node,
+                    to_node,
+                )
+
+
 
 ## Chain ##
 
