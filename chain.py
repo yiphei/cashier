@@ -301,6 +301,9 @@ class EdgeSchema:
         return False
 
     def can_transition(self, from_node, to_node, is_prev_from_node_completed):
+        assert from_node.schema == self.from_node_schema
+        assert to_node.schema == self.to_node_schema
+
         if from_node.status == Node.Status.COMPLETED:
             if to_node.status == Node.Status.COMPLETED:
                 return self._can_transition(
