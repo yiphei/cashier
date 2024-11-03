@@ -19,7 +19,6 @@ from chain import (
     FROM_NODE_ID_TO_EDGE_SCHEMA,
     Direction,
     EdgeSchema,
-    FwdSkipType,
     Node,
     NodeSchema,
     take_order_node_schema,
@@ -438,9 +437,13 @@ class ChatContext(BaseModel):
                 if from_node.schema == self.curr_node.schema:
                     from_node = self.curr_node
 
-                if edge_schema.can_transition(from_node, to_node, self.is_prev_from_node_completed(
-                    edge_schema, from_node == self.curr_node
-                )):
+                if edge_schema.can_transition(
+                    from_node,
+                    to_node,
+                    self.is_prev_from_node_completed(
+                        edge_schema, from_node == self.curr_node
+                    ),
+                ):
                     self.fwd_jump_edge_schemas.add(edge_schema)
                     more_edges = FROM_NODE_ID_TO_EDGE_SCHEMA.get(to_node.schema.id, [])
                     edge_schemas.extend(more_edges)
@@ -466,9 +469,13 @@ class ChatContext(BaseModel):
                 if from_node.schema == self.curr_node.schema:
                     from_node = self.curr_node
 
-                can_add_edge_schema = edge_schema.can_transition(from_node, to_node, self.is_prev_from_node_completed(
-                    edge_schema, from_node == self.curr_node
-                ))
+                can_add_edge_schema = edge_schema.can_transition(
+                    from_node,
+                    to_node,
+                    self.is_prev_from_node_completed(
+                        edge_schema, from_node == self.curr_node
+                    ),
+                )
                 if can_add_edge_schema:
                     self.fwd_jump_edge_schemas.add(edge_schema)
                     more_edges = FROM_NODE_ID_TO_EDGE_SCHEMA.get(to_node.schema.id, [])
