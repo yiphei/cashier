@@ -359,6 +359,7 @@ class Edge(NamedTuple):
     from_node: Node
     to_node: Node
 
+
 ## Chain ##
 
 

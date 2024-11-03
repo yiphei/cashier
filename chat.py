@@ -426,7 +426,9 @@ class ChatContext(BaseModel):
             if from_node.fwd_edge_schema in self.bwd_edge_schemas:
                 return
             self.bwd_edge_schemas.add(from_node.fwd_edge_schema)
-            new_from_node, to_node = self.get_edge_by_edge_schema_id(from_node.fwd_edge_schema.id)
+            new_from_node, to_node = self.get_edge_by_edge_schema_id(
+                from_node.fwd_edge_schema.id
+            )
             assert from_node == to_node
             from_node = new_from_node
 
