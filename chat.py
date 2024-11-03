@@ -287,7 +287,7 @@ def should_skip_node_schema(model, TM, current_node_schema, all_node_schemas):
 
 def handle_jump(model, TC, CT):
     fwd_skip_edge_schemas = CT.compute_fwd_skip_edge_schemas()
-    bwd_skip_edge_schemas = CT.bwd_edge_schemas
+    bwd_skip_edge_schemas = CT.bwd_skip_edge_schemas
 
     all_node_schemas = [CT.curr_node.schema]
     all_node_schemas += [edge.to_node_schema for edge in fwd_skip_edge_schemas]
