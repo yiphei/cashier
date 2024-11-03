@@ -334,6 +334,13 @@ class ChatContext(BaseModel):
             if len(self.edge_schema_id_to_edges[edge_schema_id]) >= abs(idx)
             else None
         )
+    
+    def get_prev_node(self, edge_schema, direction):
+        if edge_schema and self.get_edge_by_edge_schema_id(edge_schema.id) is not None:
+            from_node, to_node = self.get_edge_by_edge_schema_id(edge_schema.id)
+            return to_node if direction == Direction.FWD else from_node
+        else:
+            return None
 
     def init_node(
         self,
@@ -357,10 +364,7 @@ class ChatContext(BaseModel):
         if edge_schema and edge_schema.from_node_schema == node_schema:
             direction = Direction.BWD
 
-        prev_node = None
-        if edge_schema and self.get_edge_by_edge_schema_id(edge_schema.id) is not None:
-            from_node, to_node = self.get_edge_by_edge_schema_id(edge_schema.id)
-            prev_node = to_node if direction == Direction.FWD else from_node
+        prev_node = self.get_prev_node(edge_schema, direction)
 
         mm = TC.model_provider_to_message_manager[ModelProvider.OPENAI]
         if is_skip:
