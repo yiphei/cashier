@@ -304,14 +304,12 @@ class EdgeSchema:
         if from_node.status == Node.Status.COMPLETED:
             if to_node.status == Node.Status.COMPLETED:
                 return self._can_transition(
-                    self,
                     self.fwd_from_complete_to_prev_complete,
                     from_node,
                     to_node,
                 )
             else:
                 return self._can_transition(
-                    self,
                     self.fwd_from_complete_to_prev_incomplete,
                     from_node,
                     to_node,
@@ -319,14 +317,12 @@ class EdgeSchema:
         elif is_prev_from_node_completed:
             if to_node.status == Node.Status.COMPLETED:
                 return self._can_transition(
-                    self,
                     self.fwd_from_incomplete_to_prev_complete,
                     from_node,
                     to_node,
                 )
             else:
                 return self._can_transition(
-                    self,
                     self.fwd_from_incomplete_to_prev_incomplete,
                     from_node,
                     to_node,
