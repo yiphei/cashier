@@ -597,10 +597,8 @@ def run_chat(args, model, elevenlabs_client):
             fn_id_to_output,
         )
 
-        if new_node_schema:
-            new_node_input = new_edge_schema.new_input_from_state_fn(
-                CT.curr_node.state
-            )
+        if new_edge_schema:
+            new_node_input = new_edge_schema.new_input_from_state_fn(CT.curr_node.state)
             new_node_schema = new_edge_schema.to_node_schema
             CT.init_node(
                 new_node_schema,
