@@ -459,7 +459,7 @@ class ChatContext(BaseModel):
 
     def compute_next_edge_schema(self, start_edge_schema, input):
         next_edge_schema = start_edge_schema
-        edge_schema = None
+        edge_schema = start_edge_schema
         input = input
         while len(self.edge_schema_id_to_fwd_edges[next_edge_schema.id]) > 0:
             from_node, to_node = self.edge_schema_id_to_fwd_edges[next_edge_schema.id][
