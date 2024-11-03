@@ -97,7 +97,21 @@ class NodeSchema:
         if prev_node is None:
             state = self.state_pydantic_model()
         else:
-            state = prev_node.state.copy_reset()
+            if direction == Direction.FWD:
+                if edge_schema.fwd_state_init == FwdStateInit.RESET:
+                    state = self.state_pydantic_model()
+                elif edge_schema.fwd_state_init == FwdStateInit.KEEP:
+                    state = prev_node.state.copy_reset()
+                elif edge_schema.fwd_state_init == FwdStateInit.KEEP_IF_INPUT_UNCHANGED:
+                    if input == prev_node.input:
+                        state = prev_node.state.copy_reset()
+                    else:
+                        state = self.state_pydantic_model()
+            else:
+                if edge_schema.bwd_state_init == BwdStateInit.RESET:
+                    state = self.state_pydantic_model()
+                elif edge_schema.fwd_state_init == BwdStateInit.KEEP:
+                    state = prev_node.state.copy_reset()    
 
         prompt = self.generate_system_prompt(
             (
@@ -245,9 +259,11 @@ class Node:
         self.first_user_message = True
 
 
-class BwdTransType(StrEnum):
+class BwdStateInit(StrEnum):
     RESET = "RESET"
     KEEP = "KEEP"
+
+class FwdStateInit(BwdStateInit):
     KEEP_IF_INPUT_UNCHANGED = "KEEP_IF_INPUT_UNCHANGED"
 
 
@@ -265,7 +281,8 @@ class EdgeSchema:
         to_node_schema,
         state_condition_fn,
         new_input_from_state_fn,
-        bwd_trans_type=BwdTransType.RESET,
+        bwd_state_init = BwdStateInit.KEEP,
+        fwd_state_init = FwdStateInit.RESET,
         fwd_from_complete_to_prev_complete=None,
         fwd_from_complete_to_prev_incomplete=None,
         fwd_from_incomplete_to_prev_complete=None,
@@ -277,7 +294,8 @@ class EdgeSchema:
         self.to_node_schema = to_node_schema
         self.state_condition_fn = state_condition_fn
         self.new_input_from_state_fn = new_input_from_state_fn
-        self.bwd_trans_type = bwd_trans_type
+        self.bwd_state_init = bwd_state_init
+        self.fwd_state_init = fwd_state_init
         self.fwd_from_complete_to_prev_complete = fwd_from_complete_to_prev_complete
         self.fwd_from_complete_to_prev_incomplete = fwd_from_complete_to_prev_incomplete
         # these two below assume that it was previously completed
