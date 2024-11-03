@@ -111,7 +111,7 @@ class NodeSchema:
                 if edge_schema.bwd_state_init == BwdStateInit.RESET:
                     state = self.state_pydantic_model()
                 elif edge_schema.fwd_state_init == BwdStateInit.KEEP:
-                    state = prev_node.state.copy_reset()    
+                    state = prev_node.state.copy_reset()
 
         prompt = self.generate_system_prompt(
             (
@@ -263,6 +263,7 @@ class BwdStateInit(StrEnum):
     RESET = "RESET"
     KEEP = "KEEP"
 
+
 class FwdStateInit(BwdStateInit):
     KEEP_IF_INPUT_UNCHANGED = "KEEP_IF_INPUT_UNCHANGED"
 
@@ -281,8 +282,8 @@ class EdgeSchema:
         to_node_schema,
         state_condition_fn,
         new_input_from_state_fn,
-        bwd_state_init = BwdStateInit.KEEP,
-        fwd_state_init = FwdStateInit.RESET,
+        bwd_state_init=BwdStateInit.KEEP,
+        fwd_state_init=FwdStateInit.RESET,
         fwd_from_complete_to_prev_complete=None,
         fwd_from_complete_to_prev_incomplete=None,
         fwd_from_incomplete_to_prev_complete=None,
