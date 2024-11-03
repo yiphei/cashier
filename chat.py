@@ -454,27 +454,24 @@ class ChatContext(BaseModel):
 
     def compute_next_edge_schema(self, start_edge_schema):
         edge_schema = start_edge_schema
-        can_add_edge_schema = True
-        while can_add_edge_schema:
-            can_add_edge_schema = False
-            if len(self.edge_schema_id_to_fwd_edges[edge_schema.id]) > 0:
-                from_node, to_node = self.edge_schema_id_to_fwd_edges[edge_schema.id][
-                    -1
-                ]
-                if from_node.schema == self.curr_node.schema:
-                    from_node = self.curr_node
+        while len(self.edge_schema_id_to_fwd_edges[edge_schema.id]) > 0:
+            from_node, to_node = self.edge_schema_id_to_fwd_edges[edge_schema.id][
+                -1
+            ]
+            if from_node.schema == self.curr_node.schema:
+                from_node = self.curr_node
 
-                if edge_schema.can_transition(
-                    from_node,
-                    to_node,
-                    self.is_prev_from_node_completed(
-                        edge_schema, from_node == self.curr_node
-                    ),
-                ):
-                    more_edges = FROM_NODE_ID_TO_EDGE_SCHEMA.get(to_node.schema.id, [])
-                    if more_edges:
-                        edge_schema = more_edges[0]
-                        can_add_edge_schema = True
+            next_edge_schemas = FROM_NODE_ID_TO_EDGE_SCHEMA.get(to_node.schema.id, []) 
+            if edge_schema.can_transition(
+                from_node,
+                to_node,
+                self.is_prev_from_node_completed(
+                    edge_schema, from_node == self.curr_node
+                ),
+            ) and len(next_edge_schemas) > 0:
+                edge_schema = next_edge_schemas[0]
+            else:
+                break
 
         return edge_schema
 
