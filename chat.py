@@ -17,6 +17,7 @@ from audio import get_audio_input, save_audio_to_wav
 from chain import (
     BACKGROUND,
     FROM_NODE_ID_TO_EDGE_SCHEMA,
+    NODE_SCHEMA_ID_TO_NODE_SCHEMA,
     Direction,
     EdgeSchema,
     Node,
@@ -304,7 +305,6 @@ class ChatContext(BaseModel):
     node_schema_id_to_nodes: Dict[str, List[Node]] = Field(
         default_factory=lambda: defaultdict(list)
     )
-    node_schema_id_to_node_schema: Dict[str, NodeSchema] = Field(default_factory=dict)
     edge_schema_id_to_fwd_edges: Dict[str, List[Edge]] = Field(
         default_factory=lambda: defaultdict(list)
     )
@@ -378,7 +378,6 @@ class ChatContext(BaseModel):
             MessageDisplay.print_msg("assistant", node_schema.first_turn.msg_content)
 
         self.node_schema_id_to_nodes[node_schema.id].append(new_node)
-        self.node_schema_id_to_node_schema[node_schema.id] = node_schema
         if edge_schema:
             if direction == Direction.FWD:
                 immediate_from_node = self.curr_node
@@ -513,7 +512,7 @@ def run_chat(args, model, elevenlabs_client):
                 CT.bwd_edge_schemas,
             )
             if node_id is not None:
-                new_node_schema = CT.node_schema_id_to_node_schema[node_id]
+                new_node_schema = NODE_SCHEMA_ID_TO_NODE_SCHEMA[node_id]
                 edge_schema = CT.get_edge_schema_from_node_schema_id(node_id)
                 CT.init_node(
                     new_node_schema,
