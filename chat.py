@@ -413,9 +413,6 @@ class ChatContext(BaseModel):
             node_schema = edge_schema.to_node_schema
 
         direction = Direction.FWD
-        if edge_schema and edge_schema.from_node_schema == node_schema:
-            direction = Direction.BWD
-
         prev_node = self.get_prev_node(edge_schema, direction)
 
         mm = TC.model_provider_to_message_manager[ModelProvider.OPENAI]
