@@ -320,7 +320,10 @@ class EdgeSchema:
 
         if skip_type == FwdSkipType.SKIP:
             return True
-        elif skip_type == FwdSkipType.SKIP_IF_INPUT_UNCHANGED and self.new_input_from_state_fn(from_node.state) == to_node.input:
+        elif (
+            skip_type == FwdSkipType.SKIP_IF_INPUT_UNCHANGED
+            and self.new_input_from_state_fn(from_node.state) == to_node.input
+        ):
             return True
         return False
 
