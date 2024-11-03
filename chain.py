@@ -312,45 +312,45 @@ class EdgeSchema:
     def check_state_condition(self, state):
         return self.state_condition_fn(state)
 
-    def _can_transition(self, trans_type, from_node, to_node):
-        if trans_type is None:
+    def _can_skip(self, skip_type, from_node, to_node):
+        if skip_type is None:
             return False
 
-        if trans_type == FwdSkipType.SKIP:
+        if skip_type == FwdSkipType.SKIP:
             return True
-        elif trans_type == FwdSkipType.SKIP_IF_INPUT_UNCHANGED:
+        elif skip_type == FwdSkipType.SKIP_IF_INPUT_UNCHANGED:
             # calculate if input would be unchanged
             new_input = self.new_input_from_state_fn(from_node.state)
             if new_input == to_node.input:
                 return True
         return False
 
-    def can_transition(self, from_node, to_node, is_prev_from_node_completed):
+    def can_skip(self, from_node, to_node, is_prev_from_node_completed):
         assert from_node.schema == self.from_node_schema
         assert to_node.schema == self.to_node_schema
 
         if from_node.status == Node.Status.COMPLETED:
             if to_node.status == Node.Status.COMPLETED:
-                return self._can_transition(
+                return self._can_skip(
                     self.skip_from_complete_to_prev_complete,
                     from_node,
                     to_node,
                 )
             else:
-                return self._can_transition(
+                return self._can_skip(
                     self.skip_from_complete_to_prev_incomplete,
                     from_node,
                     to_node,
                 )
         elif is_prev_from_node_completed:
             if to_node.status == Node.Status.COMPLETED:
-                return self._can_transition(
+                return self._can_skip(
                     self.skip_from_incomplete_to_prev_complete,
                     from_node,
                     to_node,
                 )
             else:
-                return self._can_transition(
+                return self._can_skip(
                     self.skip_from_incomplete_to_prev_incomplete,
                     from_node,
                     to_node,

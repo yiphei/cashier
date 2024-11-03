@@ -440,7 +440,7 @@ class ChatContext(BaseModel):
                 if from_node.schema == self.curr_node.schema:
                     from_node = self.curr_node
 
-                if edge_schema.can_transition(
+                if edge_schema.can_skip(
                     from_node,
                     to_node,
                     self.is_prev_from_node_completed(
@@ -473,7 +473,7 @@ class ChatContext(BaseModel):
                 if next_next_edge_schema_id
                 else None
             )
-            if next_edge_schema.can_transition(
+            if next_edge_schema.can_skip(
                 from_node,
                 to_node,
                 self.is_prev_from_node_completed(
