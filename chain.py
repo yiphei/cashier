@@ -55,7 +55,7 @@ class NodeSchema:
         self.tool_fn_names.append("get_state")
 
     @overload
-    def create_node(   # noqa: E704
+    def create_node(  # noqa: E704
         self,
         input: Any,
         last_msg: Optional[str] = None,
@@ -65,7 +65,7 @@ class NodeSchema:
     ): ...
 
     @overload
-    def create_node(   # noqa: E704
+    def create_node(  # noqa: E704
         self,
         input: Any,
         last_msg: str,
