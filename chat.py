@@ -285,7 +285,7 @@ def should_skip_node_schema(model, TM, current_node_schema, all_node_schemas):
     return agent_id if agent_id != current_node_schema.id else None
 
 
-def handle_jump(model, TC, CT):
+def handle_skip(model, TC, CT):
     fwd_skip_edge_schemas = CT.compute_fwd_skip_edge_schemas()
     bwd_skip_edge_schemas = CT.bwd_skip_edge_schemas
 
@@ -298,13 +298,13 @@ def handle_jump(model, TC, CT):
     )
 
     if node_schema_id is not None:
-        for edge in fwd_skip_edge_schemas:
-            if edge.to_node_schema.id == node_schema_id:
-                return edge, NODE_SCHEMA_ID_TO_NODE_SCHEMA[node_schema_id]
+        for edge_schema in fwd_skip_edge_schemas:
+            if edge_schema.to_node_schema.id == node_schema_id:
+                return edge_schema, NODE_SCHEMA_ID_TO_NODE_SCHEMA[node_schema_id]
 
-        for edge in bwd_skip_edge_schemas:
-            if edge.from_node_schema.id == node_schema_id:
-                return edge, NODE_SCHEMA_ID_TO_NODE_SCHEMA[node_schema_id]
+        for edge_schema in bwd_skip_edge_schemas:
+            if edge_schema.from_node_schema.id == node_schema_id:
+                return edge_schema, NODE_SCHEMA_ID_TO_NODE_SCHEMA[node_schema_id]
 
     return None, None
 
@@ -516,7 +516,7 @@ def run_chat(args, model, elevenlabs_client):
                 break
             MessageDisplay.print_msg("user", text_input)
             TC.add_user_turn(text_input)
-            jump_edge, jump_node_schema = handle_jump(model, TC, CT)
+            jump_edge, jump_node_schema = handle_skip(model, TC, CT)
             if jump_edge is not None:
                 CT.init_node(
                     jump_node_schema,
