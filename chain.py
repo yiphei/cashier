@@ -230,9 +230,7 @@ class Node:
 
             if state_init_val == state_init_enum_cls.RESET:
                 return state_pydantic_model()
-            elif state_init_val == state_init_enum_cls.RESUME:
-                return prev_node.state.copy_resume()
-            elif (
+            elif state_init_val == state_init_enum_cls.RESUME or (
                 direction == Direction.FWD
                 and state_init_val == state_init_enum_cls.RESUME_IF_INPUT_UNCHANGED
                 and input == prev_node.input
@@ -322,11 +320,8 @@ class EdgeSchema:
 
         if skip_type == FwdSkipType.SKIP:
             return True
-        elif skip_type == FwdSkipType.SKIP_IF_INPUT_UNCHANGED:
-            # calculate if input would be unchanged
-            new_input = self.new_input_from_state_fn(from_node.state)
-            if new_input == to_node.input:
-                return True
+        elif skip_type == FwdSkipType.SKIP_IF_INPUT_UNCHANGED and self.new_input_from_state_fn(from_node.state) == to_node.input:
+            return True
         return False
 
     def can_skip(self, from_node, to_node, is_prev_from_node_completed):
