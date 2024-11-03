@@ -341,7 +341,7 @@ class ChatContext(BaseModel):
             return to_node if direction == Direction.FWD else from_node
         else:
             return None
-        
+
     def init_node_core(
         self,
         node_schema,
@@ -401,13 +401,7 @@ class ChatContext(BaseModel):
         )
         self.compute_bwd_skip_edge_schemas()
 
-    def init_next_node(
-        self,
-        node_schema,
-        edge_schema,
-        TC,
-        input=None
-    ):
+    def init_next_node(self, node_schema, edge_schema, TC, input=None):
         if self.curr_node:
             self.curr_node.mark_as_completed()
 
@@ -430,8 +424,9 @@ class ChatContext(BaseModel):
         if last_msg:
             last_msg = last_msg["content"]
 
-        self.init_node_core(node_schema, edge_schema, TC, input, last_msg, prev_node, direction, False)
-
+        self.init_node_core(
+            node_schema, edge_schema, TC, input, last_msg, prev_node, direction, False
+        )
 
     def init_skip_node(
         self,
@@ -454,8 +449,9 @@ class ChatContext(BaseModel):
         if last_msg:
             last_msg = last_msg["content"]
 
-        self.init_node_core(node_schema, edge_schema, TC, input, last_msg, prev_node, direction, True)
-
+        self.init_node_core(
+            node_schema, edge_schema, TC, input, last_msg, prev_node, direction, True
+        )
 
     def compute_bwd_skip_edge_schemas(self):
         from_node = self.curr_node
