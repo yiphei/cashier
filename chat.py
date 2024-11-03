@@ -334,6 +334,13 @@ class ChatContext(BaseModel):
         )
         self.from_node_id_to_edge_schema_id[from_node.id] = edge_schema_id
 
+    def get_edge_by_edge_schema_id(self, edge_schema_id, idx=-1):
+        return self.edge_schema_id_to_fwd_edges[
+                    edge_schema_id
+                ][idx] if len(self.edge_schema_id_to_fwd_edges[
+                    edge_schema_id
+                ]) >= abs(idx) else None
+
     def init_node(
         self,
         node_schema,
@@ -357,8 +364,8 @@ class ChatContext(BaseModel):
             direction = Direction.BWD
 
         prev_node = None
-        if edge_schema and len(self.edge_schema_id_to_fwd_edges[edge_schema.id]) > 0:
-            from_node, to_node = self.edge_schema_id_to_fwd_edges[node_schema.id][-1]
+        if edge_schema and self.get_edge_by_edge_schema_id(edge_schema.id) is not None:
+            from_node, to_node = self.get_edge_by_edge_schema_id(edge_schema.id)
             prev_node = to_node if direction == Direction.FWD else from_node
 
         mm = TC.model_provider_to_message_manager[ModelProvider.OPENAI]
@@ -391,24 +398,20 @@ class ChatContext(BaseModel):
             if direction == Direction.FWD:
                 immediate_from_node = self.curr_node
                 if edge_schema.from_node_schema != self.curr_node.schema:
-                    from_node, _ = self.edge_schema_id_to_fwd_edges[edge_schema.id][-1]
+                    from_node, _ = self.get_edge_by_edge_schema_id(edge_schema.id)
                     immediate_from_node = from_node
                     while from_node.schema != self.curr_node.schema:
                         prev_edge_schema = from_node.fwd_edge_schema
-                        from_node, to_node = self.edge_schema_id_to_fwd_edges[
-                            prev_edge_schema.id
-                        ][-1]
+                        from_node, to_node = self.get_edge_by_edge_schema_id(prev_edge_schema.id)
 
                     self.add_edge(self.curr_node, to_node, prev_edge_schema.id)
 
                 self.add_edge(immediate_from_node, new_node, edge_schema.id)
             elif direction == Direction.BWD and new_node.fwd_edge_schema:
-                from_node, _ = self.edge_schema_id_to_fwd_edges[
-                    new_node.fwd_edge_schema.id
-                ][-1]
+                from_node, _ = self.get_edge_by_edge_schema_id(new_node.fwd_edge_schema.id)
                 self.add_edge(from_node, new_node, new_node.fwd_edge_schema.id)
 
-                _, to_node = self.edge_schema_id_to_fwd_edges[edge_schema.id][-1]
+                _, to_node = self.get_edge_by_edge_schema_id(edge_schema.id)
                 self.add_edge(new_node, to_node, edge_schema.id)
 
         self.curr_node = new_node
@@ -423,19 +426,15 @@ class ChatContext(BaseModel):
             if from_node.fwd_edge_schema in self.bwd_edge_schemas:
                 return
             self.bwd_edge_schemas.add(from_node.fwd_edge_schema)
-            from_node, _ = self.edge_schema_id_to_fwd_edges[
-                from_node.fwd_edge_schema.id
-            ][-1]
+            from_node, _ = self.get_edge_by_edge_schema_id(from_node.fwd_edge_schema.id)
 
     def compute_fwd_jumps(self):
         fwd_jump_edge_schemas = set()
         edge_schemas = deque(self.fwd_trans_edge_schemas)
         while edge_schemas:
             edge_schema = edge_schemas.popleft()
-            if len(self.edge_schema_id_to_fwd_edges[edge_schema.id]) > 0:
-                from_node, to_node = self.edge_schema_id_to_fwd_edges[edge_schema.id][
-                    -1
-                ]
+            if self.get_edge_by_edge_schema_id(edge_schema.id) is not None:
+                from_node, to_node = self.get_edge_by_edge_schema_id(edge_schema.id)
                 if from_node.schema == self.curr_node.schema:
                     from_node = self.curr_node
 
@@ -454,21 +453,15 @@ class ChatContext(BaseModel):
 
     def is_prev_from_node_completed(self, edge_schema, is_start_node):
         idx = -1 if is_start_node else -2
-        return (
-            self.edge_schema_id_to_fwd_edges[edge_schema.id][idx][0].status
-            == Node.Status.COMPLETED
-            if len(self.edge_schema_id_to_fwd_edges[edge_schema.id]) >= abs(idx)
-            else False
-        )
+        edge = self.get_edge_by_edge_schema_id(edge_schema.id, idx)        
+        return edge[0].status == Node.Status.COMPLETED if edge else False
 
     def compute_next_edge_schema(self, start_edge_schema, start_input):
         next_edge_schema = start_edge_schema
         edge_schema = start_edge_schema
         input = start_input
-        while len(self.edge_schema_id_to_fwd_edges[next_edge_schema.id]) > 0:
-            from_node, to_node = self.edge_schema_id_to_fwd_edges[next_edge_schema.id][
-                -1
-            ]
+        while self.get_edge_by_edge_schema_id(next_edge_schema.id) is not None:
+            from_node, to_node = self.get_edge_by_edge_schema_id(next_edge_schema.id)
             if from_node.schema == self.curr_node.schema:
                 from_node = self.curr_node
 
