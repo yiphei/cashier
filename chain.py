@@ -230,14 +230,14 @@ class Node:
 
             if state_init_val == state_init_enum_cls.RESET:
                 return state_pydantic_model()
-            elif state_init_val == state_init_enum_cls.KEEP:
-                return prev_node.state.copy_reset()
+            elif state_init_val == state_init_enum_cls.RESUME:
+                return prev_node.state.copy_resume()
             elif (
                 direction == Direction.FWD
-                and state_init_val == state_init_enum_cls.KEEP_IF_INPUT_UNCHANGED
+                and state_init_val == state_init_enum_cls.RESUME_IF_INPUT_UNCHANGED
                 and input == prev_node.input
             ):
-                return prev_node.state.copy_reset()
+                return prev_node.state.copy_resume()
 
         return state_pydantic_model()
 
@@ -263,13 +263,13 @@ class Node:
 
 class BwdStateInit(StrEnum):
     RESET = "RESET"
-    KEEP = "KEEP"
+    RESUME = "RESUME"
 
 
 class FwdStateInit(StrEnum):
     RESET = "RESET"
-    KEEP = "KEEP"
-    KEEP_IF_INPUT_UNCHANGED = "KEEP_IF_INPUT_UNCHANGED"
+    RESUME = "RESUME"
+    RESUME_IF_INPUT_UNCHANGED = "RESUME_IF_INPUT_UNCHANGED"
 
 
 class FwdSkipType(StrEnum):
@@ -286,7 +286,7 @@ class EdgeSchema:
         to_node_schema,
         state_condition_fn,
         new_input_from_state_fn,
-        bwd_state_init=BwdStateInit.KEEP,
+        bwd_state_init=BwdStateInit.RESUME,
         fwd_state_init=FwdStateInit.RESET,
         skip_from_complete_to_prev_complete=None,
         skip_from_complete_to_prev_incomplete=None,
@@ -372,7 +372,7 @@ class Edge(NamedTuple):
 class BaseStateModel(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    def copy_reset(self):
+    def copy_resume(self):
         new_data = copy.deepcopy(dict(self))
 
         # Iterate through fields and reset those marked as resettable
