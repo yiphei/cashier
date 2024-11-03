@@ -18,6 +18,10 @@ BACKGROUND = (
     "and a speaker that outputs your text to speech."
 )
 
+class Direction(StrEnum):
+    FWD = "FWD"
+    BWD = "BWD"
+
 
 class NodeSchema:
     _counter = 0
@@ -61,7 +65,7 @@ class NodeSchema:
         last_msg: Optional[str] = None,
         prev_node: Literal[None] = None,
         edge_schema: Literal[None] = None,
-        direction: Literal[None] = None,
+        direction: Literal[Direction.FWD] = Direction.FWD,
     ): ...
 
     @overload
@@ -71,7 +75,7 @@ class NodeSchema:
         last_msg: str,
         prev_node: Node,
         edge_schema: EdgeSchema = None,
-        direction: Direction = None,
+        direction: Direction = Direction.FWD,
     ): ...
 
     def create_node(
@@ -80,7 +84,7 @@ class NodeSchema:
         last_msg: Optional[str] = None,
         prev_node: Optional[Node] = None,
         edge_schema: Optional[EdgeSchema] = None,
-        direction: Optional[Direction] = None,
+        direction: Direction = Direction.FWD,
     ):
         if input is not None:
             assert isinstance(input, self.input_pydantic_model)
@@ -199,6 +203,7 @@ class NodeSchema:
         return NODE_PROMPT.format(**kwargs)
 
 
+
 class Node:
     _counter = 0
 
@@ -206,7 +211,7 @@ class Node:
         IN_PROGRESS = "IN_PROGRESS"
         COMPLETED = "COMPLETED"
 
-    def __init__(self, schema, input, state, prompt, fwd_edge_schema, direction):
+    def __init__(self, schema, input, state, prompt, fwd_edge_schema, direction=Direction.FWD):
         Node._counter += 1
         self.id = Node._counter
         self.state = state
@@ -237,10 +242,6 @@ class Node:
     def update_first_user_message(self):
         self.first_user_message = True
 
-
-class Direction(StrEnum):
-    FWD = "FWD"
-    BWD = "BWD"
 
 
 class BwdTransType(StrEnum):

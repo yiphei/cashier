@@ -338,17 +338,15 @@ class ChatContext(BaseModel):
         if self.curr_node:
             self.curr_node.mark_as_completed()
 
-        direction = None
-        if edge_schema:
-            direction = (
-                Direction.FWD
-                if edge_schema.to_node_schema == node_schema
-                else Direction.BWD
-            )
-
         if not is_jump and edge_schema:
             edge_schema = self.compute_next_edge_schema(edge_schema)
             node_schema = edge_schema.to_node_schema
+
+        direction = Direction.FWD
+        if edge_schema and edge_schema.from_node_schema == node_schema:
+            direction = (
+                Direction.BWD
+            )
 
         prev_node = None
         if edge_schema and len(self.edge_schema_id_to_fwd_edges[edge_schema.id]) > 0:
