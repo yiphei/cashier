@@ -16,13 +16,13 @@ from pydantic import BaseModel, ConfigDict, Field
 from audio import get_audio_input, save_audio_to_wav
 from chain import (
     BACKGROUND,
+    EDGE_SCHEMA_ID_TO_EDGE_SCHEMA,
     FROM_NODE_ID_TO_EDGE_SCHEMA,
     NODE_SCHEMA_ID_TO_NODE_SCHEMA,
     Direction,
     EdgeSchema,
     Node,
     take_order_node_schema,
-    EDGE_SCHEMA_ID_TO_EDGE_SCHEMA,
 )
 from db_functions import create_db_client
 from function_call_context import FunctionCallContext, InexistentFunctionError
@@ -473,7 +473,11 @@ class ChatContext(BaseModel):
                 from_node = self.curr_node
 
             next_next_edge_schema_id = self.from_node_id_to_edge_schema_id[to_node.id]
-            next_next_edge_schema = EDGE_SCHEMA_ID_TO_EDGE_SCHEMA[next_next_edge_schema_id] if next_next_edge_schema_id else None
+            next_next_edge_schema = (
+                EDGE_SCHEMA_ID_TO_EDGE_SCHEMA[next_next_edge_schema_id]
+                if next_next_edge_schema_id
+                else None
+            )
             if next_edge_schema.can_transition(
                 from_node,
                 to_node,
