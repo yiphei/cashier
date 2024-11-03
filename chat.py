@@ -462,19 +462,19 @@ class ChatContext(BaseModel):
         edge_schema = None
         input = input
         while len(self.edge_schema_id_to_fwd_edges[next_edge_schema.id]) > 0:
-            from_node, to_node = self.edge_schema_id_to_fwd_edges[next_edge_schema.id][-1]
+            from_node, to_node = self.edge_schema_id_to_fwd_edges[next_edge_schema.id][
+                -1
+            ]
             if from_node.schema == self.curr_node.schema:
                 from_node = self.curr_node
 
             next_edge_schemas = FROM_NODE_ID_TO_EDGE_SCHEMA.get(to_node.schema.id, [])
-            if (
-                next_edge_schema.can_transition(
-                    from_node,
-                    to_node,
-                    self.is_prev_from_node_completed(
-                        next_edge_schema, from_node == self.curr_node
-                    ),
-                )
+            if next_edge_schema.can_transition(
+                from_node,
+                to_node,
+                self.is_prev_from_node_completed(
+                    next_edge_schema, from_node == self.curr_node
+                ),
             ):
                 edge_schema = next_edge_schema
                 if len(next_edge_schemas) > 0:
