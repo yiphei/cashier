@@ -547,9 +547,7 @@ def run_chat(args, model, elevenlabs_client):
             CT.need_user_input = True
 
         fn_id_to_output = {}
-        new_node_schema = None
-        new_node_input = None
-        first_true_edge_schema = None
+        new_edge_schema = None
         for function_call in chat_completion.get_or_stream_fn_calls():
             function_args = function_call.function_args
             logger.debug(
@@ -588,11 +586,7 @@ def run_chat(args, model, elevenlabs_client):
             ):
                 for edge_schema in CT.next_edge_schemas:
                     if edge_schema.check_state_condition(CT.curr_node.state):
-                        first_true_edge_schema = edge_schema
-                        new_node_input = first_true_edge_schema.new_input_from_state_fn(
-                            CT.curr_node.state
-                        )
-                        new_node_schema = first_true_edge_schema.to_node_schema
+                        new_edge_schema = edge_schema
                         break
 
         model_provider = Model.get_model_provider(args.model)
@@ -604,9 +598,13 @@ def run_chat(args, model, elevenlabs_client):
         )
 
         if new_node_schema:
+            new_node_input = new_edge_schema.new_input_from_state_fn(
+                CT.curr_node.state
+            )
+            new_node_schema = new_edge_schema.to_node_schema
             CT.init_node(
                 new_node_schema,
-                first_true_edge_schema,
+                new_edge_schema,
                 TC,
                 new_node_input,
             )
