@@ -22,6 +22,7 @@ from chain import (
     EdgeSchema,
     Node,
     take_order_node_schema,
+    EDGE_SCHEMA_ID_TO_EDGE_SCHEMA,
 )
 from db_functions import create_db_client
 from function_call_context import FunctionCallContext, InexistentFunctionError
@@ -321,8 +322,17 @@ class ChatContext(BaseModel):
     edge_schema_id_to_fwd_edges: Dict[str, List[Edge]] = Field(
         default_factory=lambda: defaultdict(list)
     )
+    from_node_id_to_edge_schema_id: Dict[str, str] = Field(
+        default_factory=lambda: defaultdict(lambda: None)
+    )
     fwd_trans_edge_schemas: Set[EdgeSchema] = Field(default_factory=set)
     bwd_edge_schemas: Set[EdgeSchema] = Field(default_factory=set)
+
+    def add_edge(self, from_node, to_node, edge_schema_id):
+        self.edge_schema_id_to_fwd_edges[edge_schema_id].append(
+            Edge(from_node, to_node)
+        )
+        self.from_node_id_to_edge_schema_id[from_node.id] = edge_schema_id
 
     def init_node(
         self,
@@ -389,24 +399,17 @@ class ChatContext(BaseModel):
                             prev_edge_schema.id
                         ][-1]
 
-                    self.edge_schema_id_to_fwd_edges[prev_edge_schema.id].append(
-                        Edge(self.curr_node, to_node)
-                    )
+                    self.add_edge(self.curr_node, to_node, prev_edge_schema.id)
 
-                self.edge_schema_id_to_fwd_edges[edge_schema.id].append(
-                    Edge(immediate_from_node, new_node)
-                )
+                self.add_edge(immediate_from_node, new_node, edge_schema.id)
             elif direction == Direction.BWD and new_node.fwd_edge_schema:
                 from_node, _ = self.edge_schema_id_to_fwd_edges[
                     new_node.fwd_edge_schema.id
                 ][-1]
-                self.edge_schema_id_to_fwd_edges[new_node.fwd_edge_schema.id].append(
-                    Edge(from_node, new_node)
-                )
+                self.add_edge(from_node, new_node, new_node.fwd_edge_schema.id)
+
                 _, to_node = self.edge_schema_id_to_fwd_edges[edge_schema.id][-1]
-                self.edge_schema_id_to_fwd_edges[edge_schema.id].append(
-                    Edge(new_node, to_node)
-                )
+                self.add_edge(new_node, to_node, edge_schema.id)
 
         self.curr_node = new_node
         self.fwd_trans_edge_schemas = set(
@@ -469,7 +472,8 @@ class ChatContext(BaseModel):
             if from_node.schema == self.curr_node.schema:
                 from_node = self.curr_node
 
-            next_edge_schemas = FROM_NODE_ID_TO_EDGE_SCHEMA.get(to_node.schema.id, [])
+            next_next_edge_schema_id = self.from_node_id_to_edge_schema_id[to_node.id]
+            next_next_edge_schema = EDGE_SCHEMA_ID_TO_EDGE_SCHEMA[next_next_edge_schema_id] if next_next_edge_schema_id else None
             if next_edge_schema.can_transition(
                 from_node,
                 to_node,
@@ -478,8 +482,8 @@ class ChatContext(BaseModel):
                 ),
             ):
                 edge_schema = next_edge_schema
-                if len(next_edge_schemas) > 0:
-                    next_edge_schema = next_edge_schemas[0]
+                if next_next_edge_schema:
+                    next_edge_schema = next_next_edge_schema
                 else:
                     input = to_node.input
                     break

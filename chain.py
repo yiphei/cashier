@@ -476,3 +476,8 @@ NODE_SCHEMA_ID_TO_NODE_SCHEMA = {
     confirm_order_node_schema.id: confirm_order_node_schema,
     terminal_order_node_schema.id: terminal_order_node_schema,
 }
+
+EDGE_SCHEMA_ID_TO_EDGE_SCHEMA = {
+    take_to_confirm_edge_schema.id: take_to_confirm_edge_schema,
+    confirm_to_terminal_edge_schema.id: confirm_to_terminal_edge_schema,
+}
