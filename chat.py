@@ -518,11 +518,11 @@ def run_chat(args, model, elevenlabs_client):
                 break
             MessageDisplay.print_msg("user", text_input)
             TC.add_user_turn(text_input)
-            jump_edge, jump_node_schema = handle_skip(model, TC, CT)
-            if jump_edge is not None:
+            skip_edge_schema, skip_node_schema = handle_skip(model, TC, CT)
+            if skip_edge_schema is not None:
                 CT.init_node(
-                    jump_node_schema,
-                    jump_edge,
+                    skip_node_schema,
+                    skip_edge_schema,
                     TC,
                     None,
                     True,
