@@ -87,24 +87,7 @@ class NodeSchema:
         edge_schema: Optional[EdgeSchema] = None,
         direction: Direction = Direction.FWD,
     ):
-        if prev_node is None:
-            state = self.state_pydantic_model()
-        else:
-            if direction == Direction.FWD:
-                if edge_schema.fwd_state_init == FwdStateInit.RESET:
-                    state = self.state_pydantic_model()
-                elif edge_schema.fwd_state_init == FwdStateInit.KEEP:
-                    state = prev_node.state.copy_reset()
-                elif edge_schema.fwd_state_init == FwdStateInit.KEEP_IF_INPUT_UNCHANGED:
-                    if input == prev_node.input:
-                        state = prev_node.state.copy_reset()
-                    else:
-                        state = self.state_pydantic_model()
-            else:
-                if edge_schema.bwd_state_init == BwdStateInit.RESET:
-                    state = self.state_pydantic_model()
-                elif edge_schema.bwd_state_init == BwdStateInit.KEEP:
-                    state = prev_node.state.copy_reset()
+        state = Node.init_state(self.state_pydantic_model, prev_node, edge_schema, direction, input)
 
         prompt = self.generate_system_prompt(
             (
@@ -231,6 +214,21 @@ class Node:
         self.status = self.Status.IN_PROGRESS
         self.in_edge_schema = in_edge_schema
         self.direction = direction
+
+    @classmethod
+    def init_state(cls, state_pydantic_model, prev_node, edge_schema, direction, input):
+        if prev_node is not None:
+            state_init_val = getattr(edge_schema, "fwd_state_init" if direction == Direction.FWD else "bwd_state_init")
+            state_init_enum_cls = FwdStateInit if direction == Direction.FWD else BwdStateInit
+
+            if state_init_val == state_init_enum_cls.RESET:
+                return state_pydantic_model()
+            elif state_init_val == state_init_enum_cls.KEEP:
+                return prev_node.state.copy_reset()
+            elif direction == Direction.FWD and state_init_val == state_init_enum_cls.KEEP_IF_INPUT_UNCHANGED and input == prev_node.input:
+                return prev_node.state.copy_reset()
+
+        return state_pydantic_model()
 
     def mark_as_completed(self):
         self.status = self.Status.COMPLETED
