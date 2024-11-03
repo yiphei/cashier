@@ -110,7 +110,7 @@ class NodeSchema:
             else:
                 if edge_schema.bwd_state_init == BwdStateInit.RESET:
                     state = self.state_pydantic_model()
-                elif edge_schema.fwd_state_init == BwdStateInit.KEEP:
+                elif edge_schema.bwd_state_init == BwdStateInit.KEEP:
                     state = prev_node.state.copy_reset()
 
         prompt = self.generate_system_prompt(
