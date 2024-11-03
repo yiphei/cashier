@@ -6,7 +6,7 @@ import tempfile
 from collections import defaultdict, deque
 from distutils.util import strtobool
 from types import GeneratorType
-from typing import Dict, List, NamedTuple, Set
+from typing import Dict, List, Set
 
 from colorama import Fore, Style
 from dotenv import load_dotenv  # Add this import
@@ -20,6 +20,7 @@ from chain import (
     FROM_NODE_ID_TO_EDGE_SCHEMA,
     NODE_SCHEMA_ID_TO_NODE_SCHEMA,
     Direction,
+    Edge,
     EdgeSchema,
     Node,
     take_order_node_schema,
@@ -306,11 +307,6 @@ def handle_jump(model, TC, CT):
                 return edge, NODE_SCHEMA_ID_TO_NODE_SCHEMA[node_schema_id]
 
     return None, None
-
-
-class Edge(NamedTuple):
-    from_node: Node
-    to_node: Node
 
 
 class ChatContext(BaseModel):

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import copy
 from enum import StrEnum
-from typing import Any, Literal, Optional, overload
+from typing import Any, Literal, NamedTuple, Optional, overload
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -354,6 +354,10 @@ class EdgeSchema:
                     to_node,
                 )
 
+
+class Edge(NamedTuple):
+    from_node: Node
+    to_node: Node
 
 ## Chain ##
 
