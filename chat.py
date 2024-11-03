@@ -487,7 +487,8 @@ class ChatContext(BaseModel):
                     input = from_node.input
                 else:
                     edge_schema = next_edge_schema
-                    input = edge_schema.new_input_from_state_fn(from_node.state)
+                    if from_node != self.curr_node:
+                        input = edge_schema.new_input_from_state_fn(from_node.state)
 
                 break
 
