@@ -302,9 +302,13 @@ class EdgeSchema:
         self.bwd_state_init = bwd_state_init
         self.fwd_state_init = fwd_state_init
         self.skip_from_complete_to_prev_complete = skip_from_complete_to_prev_complete
-        self.skip_from_complete_to_prev_incomplete = skip_from_complete_to_prev_incomplete
+        self.skip_from_complete_to_prev_incomplete = (
+            skip_from_complete_to_prev_incomplete
+        )
         # these two below assume that it was previously completed
-        self.skip_from_incomplete_to_prev_complete = skip_from_incomplete_to_prev_complete
+        self.skip_from_incomplete_to_prev_complete = (
+            skip_from_incomplete_to_prev_complete
+        )
         self.skip_from_incomplete_to_prev_incomplete = (
             skip_from_incomplete_to_prev_incomplete
         )
