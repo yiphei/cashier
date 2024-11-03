@@ -124,13 +124,8 @@ class MessageDisplay:
 
 
 def should_backtrack_node(
-    model, TM, current_node_schema, fwd_edge_schemas, bwd_edge_schemas
+    model, TM, current_node_schema, all_node_schemas
 ):
-    all_node_schemas = (
-        [edge.to_node_schema for edge in fwd_edge_schemas]
-        + [edge.from_node_schema for edge in bwd_edge_schemas]
-        + [current_node_schema]
-    )
     if len(all_node_schemas) == 1:
         return None
 
@@ -290,6 +285,33 @@ def should_backtrack_node(
     return agent_id if agent_id != current_node_schema.id else None
 
 
+def handle_jump(model,TC,CT):
+    fwd_jump_edges = CT.compute_fwd_jumps()
+    bwd_edges = CT.bwd_edge_schemas
+
+    all_node_schemas = [CT.curr_node.schema]
+    all_node_schemas += [edge.to_node_schema for edge in fwd_jump_edges]
+    all_node_schemas += [edge.from_node_schema for edge in bwd_edges]
+
+    node_schema_id = should_backtrack_node(
+                model,
+                TC,
+                CT.curr_node.schema,
+                all_node_schemas
+            )
+    
+    if node_schema_id is not None:
+        for edge in fwd_jump_edges:
+            if edge.to_node_schema.id == node_schema_id:
+                return edge, NODE_SCHEMA_ID_TO_NODE_SCHEMA[node_schema_id]
+            
+        for edge in bwd_edges:
+            if edge.from_node_schema.id == node_schema_id:
+                return edge, NODE_SCHEMA_ID_TO_NODE_SCHEMA[node_schema_id]
+
+    return None, None
+
+
 class Edge(NamedTuple):
     from_node: Node
     to_node: Node
@@ -304,7 +326,6 @@ class ChatContext(BaseModel):
     edge_schema_id_to_fwd_edges: Dict[str, List[Edge]] = Field(
         default_factory=lambda: defaultdict(list)
     )
-    fwd_jump_edge_schemas: Set[EdgeSchema] = Field(default_factory=set)
     fwd_trans_edge_schemas: Set[EdgeSchema] = Field(default_factory=set)
     bwd_edge_schemas: Set[EdgeSchema] = Field(default_factory=set)
 
@@ -421,7 +442,8 @@ class ChatContext(BaseModel):
                 from_node.fwd_edge_schema.id
             ][-1]
 
-    def compute_incomplete_transition(self):
+    def compute_fwd_jumps(self):
+        fwd_jump_edge_schemas = set()
         edge_schemas = deque(self.fwd_trans_edge_schemas)
         while edge_schemas:
             edge_schema = edge_schemas.popleft()
@@ -439,9 +461,11 @@ class ChatContext(BaseModel):
                         edge_schema, from_node == self.curr_node
                     ),
                 ):
-                    self.fwd_jump_edge_schemas.add(edge_schema)
+                    fwd_jump_edge_schemas.add(edge_schema)
                     more_edges = FROM_NODE_ID_TO_EDGE_SCHEMA.get(to_node.schema.id, [])
                     edge_schemas.extend(more_edges)
+
+        return fwd_jump_edge_schemas
 
     def is_prev_from_node_completed(self, edge_schema, is_start_node):
         idx = -1 if is_start_node else -2
@@ -494,20 +518,11 @@ def run_chat(args, model, elevenlabs_client):
                 break
             MessageDisplay.print_msg("user", text_input)
             TC.add_user_turn(text_input)
-            CT.compute_incomplete_transition()
-            node_id = should_backtrack_node(
-                model,
-                TC,
-                CT.curr_node.schema,
-                CT.fwd_jump_edge_schemas,
-                CT.bwd_edge_schemas,
-            )
-            if node_id is not None:
-                new_node_schema = NODE_SCHEMA_ID_TO_NODE_SCHEMA[node_id]
-                edge_schema = CT.get_edge_schema_from_node_schema_id(node_id)
+            jump_edge, jump_node_schema = handle_jump(model, TC, CT)
+            if jump_edge is not None:
                 CT.init_node(
-                    new_node_schema,
-                    edge_schema,
+                    jump_node_schema,
+                    jump_edge,
                     TC,
                     None,
                     True,
