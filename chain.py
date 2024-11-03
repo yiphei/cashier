@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import copy
 from enum import StrEnum
-from typing import Optional, overload, Literal, Any
+from typing import Any, Literal, Optional, overload
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -55,19 +55,32 @@ class NodeSchema:
         self.tool_fn_names.append("get_state")
 
     @overload
-    def create_node(
-        self, input: Any, last_msg:Optional[str] =None, prev_node: Literal[None]= None, edge_schema: Literal[None]= None, direction: Literal[None]= None
-    ):
-        ...
+    def create_node(   # noqa: E704
+        self,
+        input: Any,
+        last_msg: Optional[str] = None,
+        prev_node: Literal[None] = None,
+        edge_schema: Literal[None] = None,
+        direction: Literal[None] = None,
+    ): ...
 
     @overload
-    def create_node(
-        self, input: Any, last_msg:str, prev_node: Node, edge_schema: EdgeSchema= None, direction: Direction= None
-    ):
-        ...
+    def create_node(   # noqa: E704
+        self,
+        input: Any,
+        last_msg: str,
+        prev_node: Node,
+        edge_schema: EdgeSchema = None,
+        direction: Direction = None,
+    ): ...
 
     def create_node(
-        self, input: Any, last_msg:Optional[str] =None, prev_node: Optional[Node]=None, edge_schema: Optional[EdgeSchema]= None, direction: Optional[Direction]= None
+        self,
+        input: Any,
+        last_msg: Optional[str] = None,
+        prev_node: Optional[Node] = None,
+        edge_schema: Optional[EdgeSchema] = None,
+        direction: Optional[Direction] = None,
     ):
         if input is not None:
             assert isinstance(input, self.input_pydantic_model)
