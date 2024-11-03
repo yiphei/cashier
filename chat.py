@@ -341,42 +341,21 @@ class ChatContext(BaseModel):
             return to_node if direction == Direction.FWD else from_node
         else:
             return None
-
-    def init_node(
+        
+    def init_node_core(
         self,
         node_schema,
         edge_schema,
         TC,
         input,
+        last_msg,
+        prev_node,
+        direction,
         is_skip=False,
     ):
         logger.debug(
             f"[NODE_SCHEMA] Initializing node with {Style.BRIGHT}node_schema_id: {node_schema.id}{Style.NORMAL}"
         )
-        if self.curr_node and not is_skip:
-            self.curr_node.mark_as_completed()
-
-        if not is_skip and edge_schema:
-            edge_schema, input = self.compute_next_edge_schema(edge_schema, input)
-            node_schema = edge_schema.to_node_schema
-
-        direction = Direction.FWD
-        if edge_schema and edge_schema.from_node_schema == node_schema:
-            direction = Direction.BWD
-
-        prev_node = self.get_prev_node(edge_schema, direction)
-
-        mm = TC.model_provider_to_message_manager[ModelProvider.OPENAI]
-        if is_skip:
-            if direction == Direction.BWD:
-                self.bwd_skip_edge_schemas.clear()
-            last_msg = mm.get_asst_message()
-            input = prev_node.input
-        else:
-            last_msg = mm.get_user_message()
-
-        if last_msg:
-            last_msg = last_msg["content"]
         new_node = node_schema.create_node(
             input, last_msg, prev_node, edge_schema, direction
         )
@@ -421,6 +400,62 @@ class ChatContext(BaseModel):
             FROM_NODE_SCHEMA_ID_TO_EDGE_SCHEMA.get(new_node.schema.id, [])
         )
         self.compute_bwd_skip_edge_schemas()
+
+    def init_next_node(
+        self,
+        node_schema,
+        edge_schema,
+        TC,
+        input=None
+    ):
+        if self.curr_node:
+            self.curr_node.mark_as_completed()
+
+        if input is None and edge_schema:
+            input = edge_schema.new_input_from_state_fn(self.curr_node.state)
+
+        if edge_schema:
+            edge_schema, input = self.compute_next_edge_schema(edge_schema, input)
+            node_schema = edge_schema.to_node_schema
+
+        direction = Direction.FWD
+        if edge_schema and edge_schema.from_node_schema == node_schema:
+            direction = Direction.BWD
+
+        prev_node = self.get_prev_node(edge_schema, direction)
+
+        mm = TC.model_provider_to_message_manager[ModelProvider.OPENAI]
+        last_msg = mm.get_user_message()
+
+        if last_msg:
+            last_msg = last_msg["content"]
+
+        self.init_node_core(node_schema, edge_schema, TC, input, last_msg, prev_node, direction, False)
+
+
+    def init_skip_node(
+        self,
+        node_schema,
+        edge_schema,
+        TC,
+    ):
+        direction = Direction.FWD
+        if edge_schema and edge_schema.from_node_schema == node_schema:
+            direction = Direction.BWD
+
+        prev_node = self.get_prev_node(edge_schema, direction)
+
+        mm = TC.model_provider_to_message_manager[ModelProvider.OPENAI]
+        if direction == Direction.BWD:
+            self.bwd_skip_edge_schemas.clear()
+        last_msg = mm.get_asst_message()
+        input = prev_node.input
+
+        if last_msg:
+            last_msg = last_msg["content"]
+
+        self.init_node_core(node_schema, edge_schema, TC, input, last_msg, prev_node, direction, True)
+
 
     def compute_bwd_skip_edge_schemas(self):
         from_node = self.curr_node
@@ -508,7 +543,7 @@ class ChatContext(BaseModel):
 def run_chat(args, model, elevenlabs_client):
     TC = TurnContainer()
     CT = ChatContext(remove_prev_tool_calls=args.remove_prev_tool_calls)
-    CT.init_node(take_order_node_schema, None, TC, None)
+    CT.init_next_node(take_order_node_schema, None, TC, None)
 
     while True:
         force_tool_choice = None
@@ -524,12 +559,10 @@ def run_chat(args, model, elevenlabs_client):
             TC.add_user_turn(text_input)
             skip_edge_schema, skip_node_schema = handle_skip(model, TC, CT)
             if skip_edge_schema is not None:
-                CT.init_node(
+                CT.init_skip_node(
                     skip_node_schema,
                     skip_edge_schema,
                     TC,
-                    None,
-                    True,
                 )
                 force_tool_choice = "get_state"
             CT.curr_node.update_first_user_message()
@@ -602,13 +635,11 @@ def run_chat(args, model, elevenlabs_client):
         )
 
         if new_edge_schema:
-            new_node_input = new_edge_schema.new_input_from_state_fn(CT.curr_node.state)
             new_node_schema = new_edge_schema.to_node_schema
-            CT.init_node(
+            CT.init_next_node(
                 new_node_schema,
                 new_edge_schema,
                 TC,
-                new_node_input,
             )
 
 
