@@ -334,7 +334,7 @@ class ChatContext(BaseModel):
             if len(self.edge_schema_id_to_edges[edge_schema_id]) >= abs(idx)
             else None
         )
-    
+
     def get_prev_node(self, edge_schema, direction):
         if edge_schema and self.get_edge_by_edge_schema_id(edge_schema.id) is not None:
             from_node, to_node = self.get_edge_by_edge_schema_id(edge_schema.id)
