@@ -286,23 +286,23 @@ def should_backtrack_node(model, TM, current_node_schema, all_node_schemas):
 
 
 def handle_jump(model, TC, CT):
-    fwd_jump_edges = CT.compute_fwd_jumps()
-    bwd_edges = CT.bwd_edge_schemas
+    fwd_skip_edge_schemas = CT.compute_fwd_skip_edge_schemas()
+    bwd_skip_edge_schemas = CT.bwd_edge_schemas
 
     all_node_schemas = [CT.curr_node.schema]
-    all_node_schemas += [edge.to_node_schema for edge in fwd_jump_edges]
-    all_node_schemas += [edge.from_node_schema for edge in bwd_edges]
+    all_node_schemas += [edge.to_node_schema for edge in fwd_skip_edge_schemas]
+    all_node_schemas += [edge.from_node_schema for edge in bwd_skip_edge_schemas]
 
     node_schema_id = should_backtrack_node(
         model, TC, CT.curr_node.schema, all_node_schemas
     )
 
     if node_schema_id is not None:
-        for edge in fwd_jump_edges:
+        for edge in fwd_skip_edge_schemas:
             if edge.to_node_schema.id == node_schema_id:
                 return edge, NODE_SCHEMA_ID_TO_NODE_SCHEMA[node_schema_id]
 
-        for edge in bwd_edges:
+        for edge in bwd_skip_edge_schemas:
             if edge.from_node_schema.id == node_schema_id:
                 return edge, NODE_SCHEMA_ID_TO_NODE_SCHEMA[node_schema_id]
 
@@ -322,7 +322,7 @@ class ChatContext(BaseModel):
         default_factory=lambda: defaultdict(lambda: None)
     )
     fwd_trans_edge_schemas: Set[EdgeSchema] = Field(default_factory=set)
-    bwd_edge_schemas: Set[EdgeSchema] = Field(default_factory=set)
+    bwd_skip_edge_schemas: Set[EdgeSchema] = Field(default_factory=set)
 
     def add_edge(self, from_node, to_node, edge_schema_id):
         self.edge_schema_id_to_edges[edge_schema_id].append(
@@ -367,7 +367,7 @@ class ChatContext(BaseModel):
         mm = TC.model_provider_to_message_manager[ModelProvider.OPENAI]
         if is_jump:
             if direction == Direction.BWD:
-                self.bwd_edge_schemas.clear()
+                self.bwd_skip_edge_schemas.clear()
             last_msg = mm.get_asst_message()
             input = prev_node.input
         else:
@@ -418,21 +418,21 @@ class ChatContext(BaseModel):
         self.fwd_trans_edge_schemas = set(
             FROM_NODE_ID_TO_EDGE_SCHEMA.get(new_node.schema.id, [])
         )
-        self.compute_bwd_edges()
+        self.compute_bwd_skip_edge_schemas()
 
-    def compute_bwd_edges(self):
+    def compute_bwd_skip_edge_schemas(self):
         from_node = self.curr_node
         while from_node.in_edge_schema is not None:
-            if from_node.in_edge_schema in self.bwd_edge_schemas:
+            if from_node.in_edge_schema in self.bwd_skip_edge_schemas:
                 return
-            self.bwd_edge_schemas.add(from_node.in_edge_schema)
+            self.bwd_skip_edge_schemas.add(from_node.in_edge_schema)
             new_from_node, to_node = self.get_edge_by_edge_schema_id(
                 from_node.in_edge_schema.id
             )
             assert from_node == to_node
             from_node = new_from_node
 
-    def compute_fwd_jumps(self):
+    def compute_fwd_skip_edge_schemas(self):
         fwd_jump_edge_schemas = set()
         edge_schemas = deque(self.fwd_trans_edge_schemas)
         while edge_schemas:
