@@ -341,15 +341,15 @@ class ChatContext(BaseModel):
         edge_schema,
         TC,
         input,
-        is_jump=False,
+        is_skip=False,
     ):
         logger.debug(
             f"[NODE_SCHEMA] Initializing node with {Style.BRIGHT}node_schema_id: {node_schema.id}{Style.NORMAL}"
         )
-        if self.curr_node and not is_jump:
+        if self.curr_node and not is_skip:
             self.curr_node.mark_as_completed()
 
-        if not is_jump and edge_schema:
+        if not is_skip and edge_schema:
             edge_schema, input = self.compute_next_edge_schema(edge_schema, input)
             node_schema = edge_schema.to_node_schema
 
@@ -363,7 +363,7 @@ class ChatContext(BaseModel):
             prev_node = to_node if direction == Direction.FWD else from_node
 
         mm = TC.model_provider_to_message_manager[ModelProvider.OPENAI]
-        if is_jump:
+        if is_skip:
             if direction == Direction.BWD:
                 self.bwd_skip_edge_schemas.clear()
             last_msg = mm.get_asst_message()
@@ -380,7 +380,7 @@ class ChatContext(BaseModel):
         TC.add_node_turn(
             new_node,
             remove_prev_tool_calls=self.remove_prev_tool_calls,
-            is_jump=is_jump,
+            is_skip=is_skip,
         )
         MessageDisplay.print_msg("system", new_node.prompt)
 
