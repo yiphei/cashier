@@ -324,17 +324,6 @@ class ChatContext(BaseModel):
     fwd_trans_edge_schemas: Set[EdgeSchema] = Field(default_factory=set)
     bwd_edge_schemas: Set[EdgeSchema] = Field(default_factory=set)
 
-    def get_edge_schema_from_node_schema_id(self, node_schema_id):
-        for edge_schema in self.fwd_jump_edge_schemas:
-            if edge_schema.to_node_schema.id == node_schema_id:
-                return edge_schema
-
-        for edge_schema in self.bwd_edge_schemas:
-            if edge_schema.from_node_schema.id == node_schema_id:
-                return edge_schema
-
-        return None
-
     def init_node(
         self,
         node_schema,
