@@ -335,11 +335,11 @@ class ChatContext(BaseModel):
         self.from_node_id_to_edge_schema_id[from_node.id] = edge_schema_id
 
     def get_edge_by_edge_schema_id(self, edge_schema_id, idx=-1):
-        return self.edge_schema_id_to_fwd_edges[
-                    edge_schema_id
-                ][idx] if len(self.edge_schema_id_to_fwd_edges[
-                    edge_schema_id
-                ]) >= abs(idx) else None
+        return (
+            self.edge_schema_id_to_fwd_edges[edge_schema_id][idx]
+            if len(self.edge_schema_id_to_fwd_edges[edge_schema_id]) >= abs(idx)
+            else None
+        )
 
     def init_node(
         self,
@@ -402,13 +402,17 @@ class ChatContext(BaseModel):
                     immediate_from_node = from_node
                     while from_node.schema != self.curr_node.schema:
                         prev_edge_schema = from_node.fwd_edge_schema
-                        from_node, to_node = self.get_edge_by_edge_schema_id(prev_edge_schema.id)
+                        from_node, to_node = self.get_edge_by_edge_schema_id(
+                            prev_edge_schema.id
+                        )
 
                     self.add_edge(self.curr_node, to_node, prev_edge_schema.id)
 
                 self.add_edge(immediate_from_node, new_node, edge_schema.id)
             elif direction == Direction.BWD and new_node.fwd_edge_schema:
-                from_node, _ = self.get_edge_by_edge_schema_id(new_node.fwd_edge_schema.id)
+                from_node, _ = self.get_edge_by_edge_schema_id(
+                    new_node.fwd_edge_schema.id
+                )
                 self.add_edge(from_node, new_node, new_node.fwd_edge_schema.id)
 
                 _, to_node = self.get_edge_by_edge_schema_id(edge_schema.id)
@@ -453,7 +457,7 @@ class ChatContext(BaseModel):
 
     def is_prev_from_node_completed(self, edge_schema, is_start_node):
         idx = -1 if is_start_node else -2
-        edge = self.get_edge_by_edge_schema_id(edge_schema.id, idx)        
+        edge = self.get_edge_by_edge_schema_id(edge_schema.id, idx)
         return edge[0].status == Node.Status.COMPLETED if edge else False
 
     def compute_next_edge_schema(self, start_edge_schema, start_input):
