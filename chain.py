@@ -288,10 +288,10 @@ class EdgeSchema:
         new_input_from_state_fn,
         bwd_state_init=BwdStateInit.KEEP,
         fwd_state_init=FwdStateInit.RESET,
-        fwd_from_complete_to_prev_complete=None,
-        fwd_from_complete_to_prev_incomplete=None,
-        fwd_from_incomplete_to_prev_complete=None,
-        fwd_from_incomplete_to_prev_incomplete=None,
+        skip_from_complete_to_prev_complete=None,
+        skip_from_complete_to_prev_incomplete=None,
+        skip_from_incomplete_to_prev_complete=None,
+        skip_from_incomplete_to_prev_incomplete=None,
     ):
         EdgeSchema._counter += 1
         self.id = EdgeSchema._counter
@@ -301,12 +301,12 @@ class EdgeSchema:
         self.new_input_from_state_fn = new_input_from_state_fn
         self.bwd_state_init = bwd_state_init
         self.fwd_state_init = fwd_state_init
-        self.fwd_from_complete_to_prev_complete = fwd_from_complete_to_prev_complete
-        self.fwd_from_complete_to_prev_incomplete = fwd_from_complete_to_prev_incomplete
+        self.skip_from_complete_to_prev_complete = skip_from_complete_to_prev_complete
+        self.skip_from_complete_to_prev_incomplete = skip_from_complete_to_prev_incomplete
         # these two below assume that it was previously completed
-        self.fwd_from_incomplete_to_prev_complete = fwd_from_incomplete_to_prev_complete
-        self.fwd_from_incomplete_to_prev_incomplete = (
-            fwd_from_incomplete_to_prev_incomplete
+        self.skip_from_incomplete_to_prev_complete = skip_from_incomplete_to_prev_complete
+        self.skip_from_incomplete_to_prev_incomplete = (
+            skip_from_incomplete_to_prev_incomplete
         )
 
     def check_state_condition(self, state):
@@ -332,26 +332,26 @@ class EdgeSchema:
         if from_node.status == Node.Status.COMPLETED:
             if to_node.status == Node.Status.COMPLETED:
                 return self._can_transition(
-                    self.fwd_from_complete_to_prev_complete,
+                    self.skip_from_complete_to_prev_complete,
                     from_node,
                     to_node,
                 )
             else:
                 return self._can_transition(
-                    self.fwd_from_complete_to_prev_incomplete,
+                    self.skip_from_complete_to_prev_incomplete,
                     from_node,
                     to_node,
                 )
         elif is_prev_from_node_completed:
             if to_node.status == Node.Status.COMPLETED:
                 return self._can_transition(
-                    self.fwd_from_incomplete_to_prev_complete,
+                    self.skip_from_incomplete_to_prev_complete,
                     from_node,
                     to_node,
                 )
             else:
                 return self._can_transition(
-                    self.fwd_from_incomplete_to_prev_incomplete,
+                    self.skip_from_incomplete_to_prev_incomplete,
                     from_node,
                     to_node,
                 )
