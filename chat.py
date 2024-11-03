@@ -360,7 +360,6 @@ class ChatContext(BaseModel):
             if direction == Direction.BWD:
                 self.bwd_edge_schemas.clear()
             last_msg = mm.get_asst_message()
-            self.fwd_jump_edge_schemas.clear()
         else:
             last_msg = mm.get_user_message()
 
