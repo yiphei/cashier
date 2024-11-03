@@ -21,7 +21,6 @@ from chain import (
     Direction,
     EdgeSchema,
     Node,
-    NodeSchema,
     take_order_node_schema,
 )
 from db_functions import create_db_client
