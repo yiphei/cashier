@@ -321,7 +321,7 @@ class ChatContext(BaseModel):
     from_node_id_to_edge_schema_id: Dict[str, str] = Field(
         default_factory=lambda: defaultdict(lambda: None)
     )
-    fwd_trans_edge_schemas: Set[EdgeSchema] = Field(default_factory=set)
+    next_edge_schemas: Set[EdgeSchema] = Field(default_factory=set)
     bwd_skip_edge_schemas: Set[EdgeSchema] = Field(default_factory=set)
 
     def add_edge(self, from_node, to_node, edge_schema_id):
@@ -415,7 +415,7 @@ class ChatContext(BaseModel):
                 self.add_edge(new_node, to_node, edge_schema.id)
 
         self.curr_node = new_node
-        self.fwd_trans_edge_schemas = set(
+        self.next_edge_schemas = set(
             FROM_NODE_ID_TO_EDGE_SCHEMA.get(new_node.schema.id, [])
         )
         self.compute_bwd_skip_edge_schemas()
@@ -434,7 +434,7 @@ class ChatContext(BaseModel):
 
     def compute_fwd_skip_edge_schemas(self):
         fwd_jump_edge_schemas = set()
-        edge_schemas = deque(self.fwd_trans_edge_schemas)
+        edge_schemas = deque(self.next_edge_schemas)
         while edge_schemas:
             edge_schema = edge_schemas.popleft()
             if self.get_edge_by_edge_schema_id(edge_schema.id) is not None:
@@ -586,7 +586,7 @@ def run_chat(args, model, elevenlabs_client):
                 not fn_call_context.has_exception()
                 and function_call.function_name.startswith("update_state")
             ):
-                for edge_schema in CT.fwd_trans_edge_schemas:
+                for edge_schema in CT.next_edge_schemas:
                     if edge_schema.check_state_condition(CT.curr_node.state):
                         first_true_edge_schema = edge_schema
                         new_node_input = first_true_edge_schema.new_input_from_state_fn(
