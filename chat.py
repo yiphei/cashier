@@ -125,7 +125,7 @@ class MessageDisplay:
         )
 
 
-def should_backtrack_node(model, TM, current_node_schema, all_node_schemas):
+def should_skip_node_schema(model, TM, current_node_schema, all_node_schemas):
     if len(all_node_schemas) == 1:
         return None
 
@@ -293,7 +293,7 @@ def handle_jump(model, TC, CT):
     all_node_schemas += [edge.to_node_schema for edge in fwd_skip_edge_schemas]
     all_node_schemas += [edge.from_node_schema for edge in bwd_skip_edge_schemas]
 
-    node_schema_id = should_backtrack_node(
+    node_schema_id = should_skip_node_schema(
         model, TC, CT.curr_node.schema, all_node_schemas
     )
 
