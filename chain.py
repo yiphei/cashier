@@ -479,7 +479,7 @@ confirm_to_terminal_edge_schema = EdgeSchema(
     new_input_from_state_fn=lambda state: None,
 )
 
-FROM_NODE_ID_TO_EDGE_SCHEMA = {
+FROM_NODE_SCHEMA_ID_TO_EDGE_SCHEMA = {
     take_order_node_schema.id: [take_to_confirm_edge_schema],
     confirm_order_node_schema.id: [confirm_to_terminal_edge_schema],
 }

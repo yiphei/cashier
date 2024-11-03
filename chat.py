@@ -17,7 +17,7 @@ from audio import get_audio_input, save_audio_to_wav
 from chain import (
     BACKGROUND,
     EDGE_SCHEMA_ID_TO_EDGE_SCHEMA,
-    FROM_NODE_ID_TO_EDGE_SCHEMA,
+    FROM_NODE_SCHEMA_ID_TO_EDGE_SCHEMA,
     NODE_SCHEMA_ID_TO_NODE_SCHEMA,
     Direction,
     Edge,
@@ -414,7 +414,7 @@ class ChatContext(BaseModel):
 
         self.curr_node = new_node
         self.next_edge_schemas = set(
-            FROM_NODE_ID_TO_EDGE_SCHEMA.get(new_node.schema.id, [])
+            FROM_NODE_SCHEMA_ID_TO_EDGE_SCHEMA.get(new_node.schema.id, [])
         )
         self.compute_bwd_skip_edge_schemas()
 
@@ -448,7 +448,7 @@ class ChatContext(BaseModel):
                     ),
                 ):
                     fwd_jump_edge_schemas.add(edge_schema)
-                    more_edges = FROM_NODE_ID_TO_EDGE_SCHEMA.get(to_node.schema.id, [])
+                    more_edges = FROM_NODE_SCHEMA_ID_TO_EDGE_SCHEMA.get(to_node.schema.id, [])
                     edge_schemas.extend(more_edges)
 
         return fwd_jump_edge_schemas
