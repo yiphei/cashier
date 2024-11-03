@@ -87,7 +87,9 @@ class NodeSchema:
         edge_schema: Optional[EdgeSchema] = None,
         direction: Direction = Direction.FWD,
     ):
-        state = Node.init_state(self.state_pydantic_model, prev_node, edge_schema, direction, input)
+        state = Node.init_state(
+            self.state_pydantic_model, prev_node, edge_schema, direction, input
+        )
 
         prompt = self.generate_system_prompt(
             (
@@ -218,14 +220,23 @@ class Node:
     @classmethod
     def init_state(cls, state_pydantic_model, prev_node, edge_schema, direction, input):
         if prev_node is not None:
-            state_init_val = getattr(edge_schema, "fwd_state_init" if direction == Direction.FWD else "bwd_state_init")
-            state_init_enum_cls = FwdStateInit if direction == Direction.FWD else BwdStateInit
+            state_init_val = getattr(
+                edge_schema,
+                "fwd_state_init" if direction == Direction.FWD else "bwd_state_init",
+            )
+            state_init_enum_cls = (
+                FwdStateInit if direction == Direction.FWD else BwdStateInit
+            )
 
             if state_init_val == state_init_enum_cls.RESET:
                 return state_pydantic_model()
             elif state_init_val == state_init_enum_cls.KEEP:
                 return prev_node.state.copy_reset()
-            elif direction == Direction.FWD and state_init_val == state_init_enum_cls.KEEP_IF_INPUT_UNCHANGED and input == prev_node.input:
+            elif (
+                direction == Direction.FWD
+                and state_init_val == state_init_enum_cls.KEEP_IF_INPUT_UNCHANGED
+                and input == prev_node.input
+            ):
                 return prev_node.state.copy_reset()
 
         return state_pydantic_model()
