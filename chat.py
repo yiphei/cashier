@@ -417,7 +417,6 @@ class ChatContext(BaseModel):
 
         mm = TC.model_provider_to_message_manager[ModelProvider.OPENAI]
         last_msg = mm.get_user_message()
-
         if last_msg:
             last_msg = last_msg["content"]
 
@@ -434,15 +433,15 @@ class ChatContext(BaseModel):
         direction = Direction.FWD
         if edge_schema and edge_schema.from_node_schema == node_schema:
             direction = Direction.BWD
-
-        prev_node = self.get_prev_node(edge_schema, direction)
-
-        mm = TC.model_provider_to_message_manager[ModelProvider.OPENAI]
+        
         if direction == Direction.BWD:
             self.bwd_skip_edge_schemas.clear()
-        last_msg = mm.get_asst_message()
+
+        prev_node = self.get_prev_node(edge_schema, direction)
         input = prev_node.input
 
+        mm = TC.model_provider_to_message_manager[ModelProvider.OPENAI]
+        last_msg = mm.get_asst_message()
         if last_msg:
             last_msg = last_msg["content"]
 
