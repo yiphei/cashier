@@ -513,7 +513,9 @@ class ChatContext(BaseModel):
             if can_skip:
                 edge_schema = next_edge_schema
 
-                next_next_edge_schema_id = self.from_node_id_to_edge_schema_id[to_node.id]
+                next_next_edge_schema_id = self.from_node_id_to_edge_schema_id[
+                    to_node.id
+                ]
                 next_next_edge_schema = (
                     EDGE_SCHEMA_ID_TO_EDGE_SCHEMA[next_next_edge_schema_id]
                     if next_next_edge_schema_id
