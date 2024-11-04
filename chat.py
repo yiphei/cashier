@@ -322,12 +322,16 @@ class ChatContext(BaseModel):
     from_node_schema_id_to_edge_schema_id: Dict[str, str] = Field(
         default_factory=lambda: defaultdict(lambda: None)
     )
+    edge_schema_id_to_from_node: Dict[str, None] = Field(
+        default_factory=lambda: defaultdict(lambda: None)
+    )
     next_edge_schemas: Set[EdgeSchema] = Field(default_factory=set)
     bwd_skip_edge_schemas: Set[EdgeSchema] = Field(default_factory=set)
 
     def add_edge(self, from_node, to_node, edge_schema_id):
         self.edge_schema_id_to_edges[edge_schema_id].append(Edge(from_node, to_node))
         self.from_node_schema_id_to_edge_schema_id[from_node.schema.id] = edge_schema_id
+        self.edge_schema_id_to_from_node[edge_schema_id] = from_node
 
     def get_edge_by_edge_schema_id(self, edge_schema_id, idx=-1):
         return (
@@ -376,7 +380,7 @@ class ChatContext(BaseModel):
             if direction == Direction.FWD:
                 immediate_from_node = self.curr_node
                 if edge_schema.from_node_schema != self.curr_node.schema:
-                    from_node, _ = self.get_edge_by_edge_schema_id(edge_schema.id)
+                    from_node = self.edge_schema_id_to_from_node[edge_schema.id]
                     immediate_from_node = from_node
                     while from_node.schema != self.curr_node.schema:
                         prev_edge_schema = from_node.in_edge_schema
@@ -388,10 +392,13 @@ class ChatContext(BaseModel):
 
                 self.add_edge(immediate_from_node, new_node, edge_schema.id)
             elif direction == Direction.BWD and new_node.in_edge_schema:
-                from_node, _ = self.get_edge_by_edge_schema_id(
-                    new_node.in_edge_schema.id
-                )
-                self.add_edge(from_node, new_node, new_node.in_edge_schema.id)
+                if new_node.in_edge_schema:
+                    from_node, _ = self.get_edge_by_edge_schema_id(
+                        new_node.in_edge_schema.id
+                    )
+                    self.add_edge(from_node, new_node, new_node.in_edge_schema.id)
+                
+                self.edge_schema_id_to_from_node[edge_schema.id] = new_node
 
                 # TODO: delete this code
                 # _, to_node = self.get_edge_by_edge_schema_id(edge_schema.id)
