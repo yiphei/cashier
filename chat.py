@@ -502,12 +502,6 @@ class ChatContext(BaseModel):
             if from_node.schema == self.curr_node.schema:
                 from_node = self.curr_node
 
-            next_next_edge_schema_id = self.from_node_id_to_edge_schema_id[to_node.id]
-            next_next_edge_schema = (
-                EDGE_SCHEMA_ID_TO_EDGE_SCHEMA[next_next_edge_schema_id]
-                if next_next_edge_schema_id
-                else None
-            )
             can_skip, skip_type = next_edge_schema.can_skip(
                 from_node,
                 to_node,
@@ -518,6 +512,14 @@ class ChatContext(BaseModel):
 
             if can_skip:
                 edge_schema = next_edge_schema
+
+                next_next_edge_schema_id = self.from_node_id_to_edge_schema_id[to_node.id]
+                next_next_edge_schema = (
+                    EDGE_SCHEMA_ID_TO_EDGE_SCHEMA[next_next_edge_schema_id]
+                    if next_next_edge_schema_id
+                    else None
+                )
+
                 if next_next_edge_schema:
                     next_edge_schema = next_next_edge_schema
                 else:
