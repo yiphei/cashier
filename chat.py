@@ -319,7 +319,7 @@ class ChatContext(BaseModel):
     edge_schema_id_to_edges: Dict[str, List[Edge]] = Field(
         default_factory=lambda: defaultdict(list)
     )
-    from_node_id_to_edge_schema_id: Dict[str, str] = Field(
+    from_node_schema_id_to_edge_schema_id: Dict[str, str] = Field(
         default_factory=lambda: defaultdict(lambda: None)
     )
     next_edge_schemas: Set[EdgeSchema] = Field(default_factory=set)
@@ -327,7 +327,7 @@ class ChatContext(BaseModel):
 
     def add_edge(self, from_node, to_node, edge_schema_id):
         self.edge_schema_id_to_edges[edge_schema_id].append(Edge(from_node, to_node))
-        self.from_node_id_to_edge_schema_id[from_node.id] = edge_schema_id
+        self.from_node_schema_id_to_edge_schema_id[from_node.schema.id] = edge_schema_id
 
     def get_edge_by_edge_schema_id(self, edge_schema_id, idx=-1):
         return (
@@ -513,8 +513,8 @@ class ChatContext(BaseModel):
             if can_skip:
                 edge_schema = next_edge_schema
 
-                next_next_edge_schema_id = self.from_node_id_to_edge_schema_id[
-                    to_node.id
+                next_next_edge_schema_id = self.from_node_schema_id_to_edge_schema_id[
+                    to_node.schema.id
                 ]
                 next_next_edge_schema = (
                     EDGE_SCHEMA_ID_TO_EDGE_SCHEMA[next_next_edge_schema_id]
