@@ -393,7 +393,7 @@ class ChatContext(BaseModel):
                 )
                 self.add_edge(from_node, new_node, new_node.in_edge_schema.id)
 
-                #TODO: delete this code
+                # TODO: delete this code
                 # _, to_node = self.get_edge_by_edge_schema_id(edge_schema.id)
                 # self.add_edge(new_node, to_node, edge_schema.id)
 
