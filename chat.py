@@ -433,7 +433,7 @@ class ChatContext(BaseModel):
         direction = Direction.FWD
         if edge_schema and edge_schema.from_node_schema == node_schema:
             direction = Direction.BWD
-        
+
         if direction == Direction.BWD:
             self.bwd_skip_edge_schemas.clear()
 
