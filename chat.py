@@ -22,6 +22,7 @@ from chain import (
     Direction,
     Edge,
     EdgeSchema,
+    FwdSkipType,
     Node,
     take_order_node_schema,
 )
@@ -477,7 +478,7 @@ class ChatContext(BaseModel):
                     self.is_prev_from_node_completed(
                         edge_schema, from_node == self.curr_node
                     ),
-                ):
+                )[0]:
                     fwd_jump_edge_schemas.add(edge_schema)
                     more_edges = FROM_NODE_SCHEMA_ID_TO_EDGE_SCHEMA.get(
                         to_node.schema.id, []
@@ -506,13 +507,15 @@ class ChatContext(BaseModel):
                 if next_next_edge_schema_id
                 else None
             )
-            if next_edge_schema.can_skip(
+            can_skip, skip_type = next_edge_schema.can_skip(
                 from_node,
                 to_node,
                 self.is_prev_from_node_completed(
                     next_edge_schema, from_node == self.curr_node
                 ),
-            ):
+            )
+
+            if can_skip:
                 edge_schema = next_edge_schema
                 if next_next_edge_schema:
                     next_edge_schema = next_next_edge_schema
@@ -520,13 +523,16 @@ class ChatContext(BaseModel):
                     input = to_node.input
                     break
             else:
-                if from_node.status != Node.Status.COMPLETED:
-                    input = from_node.input
+                if skip_type == FwdSkipType.SKIP_IF_INPUT_UNCHANGED:
+                    if from_node.status != Node.Status.COMPLETED:
+                        input = from_node.input
+                    else:
+                        edge_schema = next_edge_schema
+                        if from_node != self.curr_node:
+                            input = edge_schema.new_input_from_state_fn(from_node.state)
                 else:
-                    edge_schema = next_edge_schema
                     if from_node != self.curr_node:
-                        input = edge_schema.new_input_from_state_fn(from_node.state)
-
+                        input = from_node.input
                 break
 
         return edge_schema, input

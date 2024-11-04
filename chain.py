@@ -316,16 +316,16 @@ class EdgeSchema:
 
     def _can_skip(self, skip_type, from_node, to_node):
         if skip_type is None:
-            return False
+            return False, skip_type
 
         if skip_type == FwdSkipType.SKIP:
-            return True
+            return True, skip_type
         elif (
             skip_type == FwdSkipType.SKIP_IF_INPUT_UNCHANGED
             and self.new_input_from_state_fn(from_node.state) == to_node.input
         ):
-            return True
-        return False
+            return True, skip_type
+        return False, skip_type
 
     def can_skip(self, from_node, to_node, is_prev_from_node_completed):
         assert from_node.schema == self.from_node_schema
