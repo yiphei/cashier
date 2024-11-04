@@ -391,7 +391,7 @@ class ChatContext(BaseModel):
                     self.add_edge(self.curr_node, to_node, prev_edge_schema.id)
 
                 self.add_edge(immediate_from_node, new_node, edge_schema.id)
-            elif direction == Direction.BWD and new_node.in_edge_schema:
+            elif direction == Direction.BWD:
                 if new_node.in_edge_schema:
                     from_node, _ = self.get_edge_by_edge_schema_id(
                         new_node.in_edge_schema.id
@@ -399,10 +399,6 @@ class ChatContext(BaseModel):
                     self.add_edge(from_node, new_node, new_node.in_edge_schema.id)
 
                 self.edge_schema_id_to_from_node[edge_schema.id] = new_node
-
-                # TODO: delete this code
-                # _, to_node = self.get_edge_by_edge_schema_id(edge_schema.id)
-                # self.add_edge(new_node, to_node, edge_schema.id)
 
         self.curr_node = new_node
         self.next_edge_schemas = set(
