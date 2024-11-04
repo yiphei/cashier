@@ -481,10 +481,16 @@ class ChatContext(BaseModel):
                     ),
                 )[0]:
                     fwd_jump_edge_schemas.add(edge_schema)
-                    more_edges = FROM_NODE_SCHEMA_ID_TO_EDGE_SCHEMA.get(
-                        to_node.schema.id, []
+                    next_edge_schema_id = self.from_node_schema_id_to_edge_schema_id[
+                        to_node.schema.id
+                    ]
+                    next_edge_schema = (
+                        EDGE_SCHEMA_ID_TO_EDGE_SCHEMA[next_edge_schema_id]
+                        if next_edge_schema_id
+                        else None
                     )
-                    edge_schemas.extend(more_edges)
+                    if next_edge_schema:
+                        edge_schemas.append(next_edge_schema)
 
         return fwd_jump_edge_schemas
 
