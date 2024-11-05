@@ -231,6 +231,7 @@ class MessageManager(ABC):
             )
         self.parse_assistant_messages(turn.build_messages(self.model_provider))
 
+
 class OAIMessageManager(MessageManager):
     model_provider = ModelProvider.OPENAI
 
@@ -405,16 +406,18 @@ class TurnContainer:
             mm.add_assistant_turn(turn)
 
     def get_user_message(self, order=-1, model_provider=ModelProvider.OPENAI):
-        idx = self.model_provider_to_message_manager[model_provider].message_dicts.get_track_idx_for_item_type(
-            MessageList.ItemType.USER, order
-        )
+        idx = self.model_provider_to_message_manager[
+            model_provider
+        ].message_dicts.get_track_idx_for_item_type(MessageList.ItemType.USER, order)
         if idx:
             return self.message_dicts[idx]
         else:
             return None
 
     def get_asst_message(self, order=-1, model_provider=ModelProvider.OPENAI):
-        idx = self.model_provider_to_message_manager[model_provider].message_dicts.get_track_idx_for_item_type(
+        idx = self.model_provider_to_message_manager[
+            model_provider
+        ].message_dicts.get_track_idx_for_item_type(
             MessageList.ItemType.ASSISTANT, order
         )
         if idx:
@@ -422,10 +425,12 @@ class TurnContainer:
         else:
             return None
 
-    def get_conversation_msgs_since_last_node(self, model_provider=ModelProvider.OPENAI):
-        idx = self.model_provider_to_message_manager[model_provider].conversation_dicts.get_track_idx_for_item_type(
-            MessageList.ItemType.NODE
-        )
+    def get_conversation_msgs_since_last_node(
+        self, model_provider=ModelProvider.OPENAI
+    ):
+        idx = self.model_provider_to_message_manager[
+            model_provider
+        ].conversation_dicts.get_track_idx_for_item_type(MessageList.ItemType.NODE)
         return self.conversation_dicts[idx + 1 :]
 
 
