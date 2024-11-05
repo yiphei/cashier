@@ -333,17 +333,10 @@ class ChatContext(BaseModel):
             if len(self.edge_schema_id_to_edges[edge_schema_id]) >= abs(idx)
             else None
         )
-    
-    def edge_schema_by_from_node_schema_id(self, node_schema_id):
-        edge_schema_id = self.from_node_schema_id_to_edge_schema_id[
-            node_schema_id
-        ]
-        return (
-            EDGE_SCHEMA_ID_TO_EDGE_SCHEMA[edge_schema_id]
-            if edge_schema_id
-            else None
-        )
 
+    def edge_schema_by_from_node_schema_id(self, node_schema_id):
+        edge_schema_id = self.from_node_schema_id_to_edge_schema_id[node_schema_id]
+        return EDGE_SCHEMA_ID_TO_EDGE_SCHEMA[edge_schema_id] if edge_schema_id else None
 
     def get_prev_node(self, edge_schema, direction):
         if edge_schema and self.get_edge_by_edge_schema_id(edge_schema.id) is not None:
@@ -487,7 +480,9 @@ class ChatContext(BaseModel):
                     ),
                 )[0]:
                     fwd_jump_edge_schemas.add(edge_schema)
-                    next_edge_schema = self.edge_schema_by_from_node_schema_id(to_node.schema.id)
+                    next_edge_schema = self.edge_schema_by_from_node_schema_id(
+                        to_node.schema.id
+                    )
                     if next_edge_schema:
                         edge_schemas.append(next_edge_schema)
 
@@ -518,7 +513,9 @@ class ChatContext(BaseModel):
             if can_skip:
                 edge_schema = next_edge_schema
 
-                next_next_edge_schema = self.edge_schema_by_from_node_schema_id(to_node.schema.id)
+                next_next_edge_schema = self.edge_schema_by_from_node_schema_id(
+                    to_node.schema.id
+                )
 
                 if next_next_edge_schema:
                     next_edge_schema = next_next_edge_schema
