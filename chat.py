@@ -133,6 +133,7 @@ def should_skip_node_schema(model, TM, current_node_schema, all_node_schemas):
     conversational_msgs = copy.deepcopy(
         TM.get_conversation_msgs_since_last_node(model_provider)
     )
+    last_customer_msg = conversational_msgs[-1]["content"]
     prompt = OffTopicPrompt(
         node_prompt=current_node_schema.node_prompt,
         state_json_schema=current_node_schema.state_pydantic_model.model_json_schema(),
@@ -143,7 +144,7 @@ def should_skip_node_schema(model, TM, current_node_schema, all_node_schemas):
                 current_node_schema.tool_registry,
             )
         ),
-        last_customer_msg=conversational_msgs[-1]["content"],
+        last_customer_msg=last_customer_msg,
     )
 
     if model_provider == ModelProvider.ANTHROPIC:
@@ -176,7 +177,7 @@ def should_skip_node_schema(model, TM, current_node_schema, all_node_schemas):
     prompt = NodeSchemaSelectionPrompt(
         all_node_schemas=all_node_schemas,
         model_provider=model_provider,
-        last_customer_msg=conversational_msgs[-1]["content"],
+        last_customer_msg=last_customer_msg,
     )
 
     class Response2(BaseModel):
