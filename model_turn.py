@@ -655,3 +655,9 @@ class MessageList(list):
                 uris = copy.copy(self.item_type_to_uris[item_type])
                 for uri in uris:
                     self.remove_by_uri(uri)
+
+    def __getitem__(self, index):
+        if isinstance(index, slice):
+            return MessageList(super().__getitem__(index), model_provider=self.model_provider)
+        else:
+            return super().__getitem__(index)
