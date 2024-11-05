@@ -16,7 +16,7 @@ from pydantic import BaseModel, Field, constr, model_validator
 
 from function_call_context import ToolExceptionWrapper
 from model_tool_decorator import ToolRegistry
-from model_util import CustomJSONEncoder, ModelProvider
+from model_util import CustomJSONEncoder, FunctionCall, ModelProvider
 
 OpenAIModels = Literal["gpt-4o-mini", "gpt-4o"]
 
@@ -257,32 +257,6 @@ class Model:
         return AnthropicModelOutput(
             self.anthropic_client.messages.create(**args), stream, response_format
         )
-
-
-class FunctionCall(BaseModel):
-    function_name: str
-    tool_call_id: str
-    function_args_json: Optional[str] = None
-    function_args: Optional[Dict] = None
-
-    @model_validator(mode="after")
-    def check_function_args(self):
-        if self.function_args_json is None and self.function_args is None:
-            raise ValueError(
-                "One of [function_args_json, function_args] must be provided"
-            )
-
-        if self.function_args_json is not None and self.function_args is None:
-            if self.function_args_json:
-                self.function_args = json.loads(self.function_args_json)
-            else:
-                # This case always happens when claude models call inexistent functions.
-                # We still want to construct the function call and let it error downstream.
-                self.function_args = {}
-                self.function_args_json = "{}"
-        if self.function_args is not None and self.function_args_json is None:
-            self.function_args_json = json.dumps(self.function_args)
-        return self
 
 
 class ModelTurn(BaseModel, ABC):
