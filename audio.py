@@ -3,6 +3,7 @@ import threading
 import time
 import wave
 
+from elevenlabs import Voice, VoiceSettings, stream
 import numpy as np
 import pyaudio
 
@@ -99,3 +100,33 @@ def save_audio_to_wav(audio_data, file_path):
         wf.setsampwidth(2)
         wf.setframerate(RATE)
         wf.writeframes(audio_data)
+
+
+def get_text_from_speech(audio_data, oai_client):
+    with tempfile.NamedTemporaryFile(suffix=".wav", delete=True) as temp_wav_file:
+        # Save the audio data as a WAV file
+        save_audio_to_wav(audio_data, temp_wav_file.name)
+
+        # Use OpenAI's API to transcribe the saved WAV file
+        transcription = oai_client.audio.transcriptions.create(
+            model="whisper-1",
+            language="en",
+            file=open(temp_wav_file.name, "rb"),  # Open the saved WAV file for reading
+        )
+    return transcription.text
+
+
+def get_speech_from_text(text_iterator, elabs_client):
+    audio = elabs_client.generate(
+        voice=Voice(
+            voice_id="cgSgspJ2msm6clMCkdW9",
+            settings=VoiceSettings(
+                stability=0.71, similarity_boost=0.5, style=0.0, use_speaker_boost=True
+            ),
+        ),
+        text=text_iterator,
+        model="eleven_multilingual_v2",
+        stream=True,
+        optimize_streaming_latency=3,
+    )
+    stream(audio)

@@ -2,7 +2,6 @@ import argparse
 import copy
 import json
 import os
-import tempfile
 from collections import defaultdict, deque
 from distutils.util import strtobool
 from types import GeneratorType
@@ -10,10 +9,10 @@ from typing import Dict, List, Set
 
 from colorama import Fore, Style
 from dotenv import load_dotenv  # Add this import
-from elevenlabs import ElevenLabs, Voice, VoiceSettings, stream
+from elevenlabs import ElevenLabs
 from pydantic import BaseModel, ConfigDict, Field
 
-from audio import get_audio_input, save_audio_to_wav
+from audio import get_audio_input, get_speech_from_text, get_text_from_speech
 from db_functions import create_db_client
 from function_call_context import FunctionCallContext, InexistentFunctionError
 from graph import Direction, Edge, EdgeSchema, FwdSkipType, Node
@@ -34,36 +33,6 @@ from prompts.off_topic import OffTopicPrompt
 
 # Load environment variables from .env file
 load_dotenv()
-
-
-def get_text_from_speech(audio_data, oai_client):
-    with tempfile.NamedTemporaryFile(suffix=".wav", delete=True) as temp_wav_file:
-        # Save the audio data as a WAV file
-        save_audio_to_wav(audio_data, temp_wav_file.name)
-
-        # Use OpenAI's API to transcribe the saved WAV file
-        transcription = oai_client.audio.transcriptions.create(
-            model="whisper-1",
-            language="en",
-            file=open(temp_wav_file.name, "rb"),  # Open the saved WAV file for reading
-        )
-    return transcription.text
-
-
-def get_speech_from_text(text_iterator, elabs_client):
-    audio = elabs_client.generate(
-        voice=Voice(
-            voice_id="cgSgspJ2msm6clMCkdW9",
-            settings=VoiceSettings(
-                stability=0.71, similarity_boost=0.5, style=0.0, use_speaker_boost=True
-            ),
-        ),
-        text=text_iterator,
-        model="eleven_multilingual_v2",
-        stream=True,
-        optimize_streaming_latency=3,
-    )
-    stream(audio)
 
 
 def get_user_input(use_audio_input, openai_client):
