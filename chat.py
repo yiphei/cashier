@@ -130,10 +130,10 @@ def should_skip_node_schema(model, TM, current_node_schema, all_node_schemas):
 
     model_name = "claude-3.5"
     model_provider = Model.get_model_provider(model_name)
-    conversational_msgs = copy.deepcopy(
+    node_conv_msgs = copy.deepcopy(
         TM.model_provider_to_message_manager[model_provider].node_conversation_dicts
     )
-    last_customer_msg = conversational_msgs.get_item_type_by_idx(
+    last_customer_msg = node_conv_msgs.get_item_type_by_idx(
         MessageList.ItemType.USER, -1
     )
     prompt = OffTopicPrompt(
@@ -150,16 +150,16 @@ def should_skip_node_schema(model, TM, current_node_schema, all_node_schemas):
     )
 
     if model_provider == ModelProvider.ANTHROPIC:
-        conversational_msgs.append({"role": "user", "content": prompt})
+        node_conv_msgs.append({"role": "user", "content": prompt})
     elif model_provider == ModelProvider.OPENAI:
-        conversational_msgs.append({"role": "system", "content": prompt})
+        node_conv_msgs.append({"role": "system", "content": prompt})
 
     class Response1(BaseModel):
         output: bool
 
     chat_completion = model.chat(
         model_name=model_name,
-        message_dicts=conversational_msgs,
+        message_dicts=node_conv_msgs,
         response_format=Response1,
         logprobs=True,
         temperature=0,
@@ -174,7 +174,7 @@ def should_skip_node_schema(model, TM, current_node_schema, all_node_schemas):
     if is_on_topic:
         return None
 
-    conversational_msgs.pop()
+    node_conv_msgs.pop()
 
     prompt = NodeSchemaSelectionPrompt(
         all_node_schemas=all_node_schemas,
@@ -186,13 +186,13 @@ def should_skip_node_schema(model, TM, current_node_schema, all_node_schemas):
         agent_id: int
 
     if model_provider == ModelProvider.ANTHROPIC:
-        conversational_msgs.append({"role": "user", "content": prompt})
+        node_conv_msgs.append({"role": "user", "content": prompt})
     elif model_provider == ModelProvider.OPENAI:
-        conversational_msgs.append({"role": "system", "content": prompt})
+        node_conv_msgs.append({"role": "system", "content": prompt})
 
     chat_completion = model.chat(
         model_name=model_name,
-        message_dicts=conversational_msgs,
+        message_dicts=node_conv_msgs,
         response_format=Response2,
         logprobs=True,
         temperature=0,
