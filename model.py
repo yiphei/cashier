@@ -533,5 +533,3 @@ class AnthropicModelOutput(ModelOutput):
                 )
                 self.fn_calls.append(fn_call)
                 yield fn_call
-
-
