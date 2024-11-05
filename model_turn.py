@@ -4,9 +4,9 @@ from abc import ABC, abstractmethod
 from bisect import bisect_left
 from collections import defaultdict
 from enum import StrEnum
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, ClassVar
 
-from pydantic import BaseModel, Field, constr, model_validator
+from pydantic import BaseModel, Field, constr, model_validator, field_validator
 
 from function_call_context import ToolExceptionWrapper
 from model_tool_decorator import ToolRegistry
@@ -14,7 +14,14 @@ from model_util import CustomJSONEncoder, FunctionCall, ModelProvider
 
 
 class ModelTurn(BaseModel, ABC):
+    should_strip_msg_content: ClassVar[bool] = True
+
     msg_content: constr(min_length=1)  # type: ignore
+
+    @field_validator("msg_content")
+    @classmethod
+    def strip_whitespace(cls, value):
+        return value.strip() if cls.should_strip_msg_content else value
 
     @abstractmethod
     def build_oai_messages(self):
