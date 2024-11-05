@@ -180,6 +180,7 @@ class MessageManager(ABC):
     def __init__(self):
         self.message_dicts = MessageList(model_provider=self.model_provider)
         self.conversation_dicts = MessageList(model_provider=self.model_provider)
+        self.node_conversation_dicts = MessageList(model_provider=self.model_provider)
 
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
@@ -190,6 +191,7 @@ class MessageManager(ABC):
         user_msgs = turn.build_messages(self.model_provider)
         self.message_dicts.extend(user_msgs, MessageList.ItemType.USER)
         self.conversation_dicts.extend(user_msgs, MessageList.ItemType.USER)
+        self.node_conversation_dicts.extend(user_msgs, MessageList.ItemType.USER)
 
     def add_node_turn(
         self,
@@ -212,8 +214,10 @@ class MessageManager(ABC):
             self.conversation_dicts.track_idx(
                 MessageList.ItemType.NODE, len(self.conversation_dicts) - 2
             )
+            self.node_conversation_dicts = self.node_conversation_dicts[-1:]
         else:
             self.conversation_dicts.track_idx(MessageList.ItemType.NODE)
+            self.node_conversation_dicts.clear()
 
     @abstractmethod
     def parse_system_messages(self, msgs):
@@ -233,6 +237,10 @@ class MessageManager(ABC):
             or (turn.model_provider == ModelProvider.ANTHROPIC and not turn.fn_calls)
         ):
             self.conversation_dicts.append(
+                {"role": "assistant", "content": turn.msg_content},
+                MessageList.ItemType.ASSISTANT,
+            )
+            self.node_conversation_dicts.append(
                 {"role": "assistant", "content": turn.msg_content},
                 MessageList.ItemType.ASSISTANT,
             )
@@ -421,15 +429,6 @@ class TurnContainer:
         return mm.message_dicts.get_item_type_by_idx(
             MessageList.ItemType.ASSISTANT, idx
         )
-
-    def get_conversation_msgs_since_last_node(
-        self, model_provider=ModelProvider.OPENAI
-    ):
-        mm = self.model_provider_to_message_manager[model_provider]
-        idx = mm.conversation_dicts.get_track_idx_for_item_type(
-            MessageList.ItemType.NODE
-        )
-        return mm.conversation_dicts[idx + 1 :]
 
 
 class MessageList(list):
@@ -665,7 +664,11 @@ class MessageList(list):
                 super().__getitem__(index), model_provider=self.model_provider
             )
             start_idx = index.start or 0
+            if start_idx < 0:
+                start_idx = len(self) + start_idx
             end_idx = index.stop or len(self)
+            if end_idx < 0:
+                end_idx = len(self) + end_idx
             ml.item_type_to_count = copy.deepcopy(self.item_type_to_count)
             for list_idx in self.list_idxs:
                 if start_idx <= list_idx < end_idx:

@@ -131,7 +131,7 @@ def should_skip_node_schema(model, TM, current_node_schema, all_node_schemas):
     model_name = "claude-3.5"
     model_provider = Model.get_model_provider(model_name)
     conversational_msgs = copy.deepcopy(
-        TM.get_conversation_msgs_since_last_node(model_provider)
+        TM.model_provider_to_message_manager[model_provider].node_conversation_dicts
     )
     last_customer_msg = conversational_msgs.get_item_type_by_idx(
         MessageList.ItemType.USER, -1
