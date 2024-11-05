@@ -8,7 +8,7 @@ from pydantic import BaseModel, ConfigDict
 
 from function_call_context import StateUpdateError
 from model_tool_decorator import ToolRegistry
-from prompts.node_system_prompt import NodeSystemPrompt
+from prompts.node_system import NodeSystemPrompt
 
 
 class Direction(StrEnum):
