@@ -25,9 +25,9 @@ from graph_data import (
 )
 from gui import remove_previous_line
 from logger import logger
-from model import CustomJSONEncoder, Model, TurnContainer
+from model import Model, TurnContainer
 from model_tool_decorator import ToolRegistry
-from model_util import ModelProvider
+from model_util import CustomJSONEncoder, ModelProvider
 
 # Load environment variables from .env file
 load_dotenv()

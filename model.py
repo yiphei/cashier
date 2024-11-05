@@ -16,7 +16,7 @@ from pydantic import BaseModel, Field, constr, model_validator
 
 from function_call_context import ToolExceptionWrapper
 from model_tool_decorator import ToolRegistry
-from model_util import ModelProvider
+from model_util import CustomJSONEncoder, ModelProvider
 
 OpenAIModels = Literal["gpt-4o-mini", "gpt-4o"]
 
@@ -981,21 +981,6 @@ class AnthropicModelOutput(ModelOutput):
                 )
                 self.fn_calls.append(fn_call)
                 yield fn_call
-
-
-class CustomJSONEncoder(json.JSONEncoder):
-    def default(self, obj):
-        if isinstance(obj, BaseModel):
-            return obj.model_dump()
-        elif isinstance(obj, (defaultdict, dict)):
-            return {self.default(k): self.default(v) for k, v in obj.items()}
-        elif isinstance(obj, (list, tuple)):
-            return [self.default(item) for item in obj]
-        elif isinstance(obj, (str, int, float, bool, type(None))):
-            return obj
-        elif isinstance(obj, ToolExceptionWrapper):
-            return str(obj)
-        return super().default(obj)
 
 
 class MessageList(list):
