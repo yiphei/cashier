@@ -16,7 +16,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from audio import get_audio_input, save_audio_to_wav
 from db_functions import create_db_client
 from function_call_context import FunctionCallContext, InexistentFunctionError
-from graph import BACKGROUND, Direction, Edge, EdgeSchema, FwdSkipType, Node
+from graph import Direction, Edge, EdgeSchema, FwdSkipType, Node
 from graph_data import (
     EDGE_SCHEMA_ID_TO_EDGE_SCHEMA,
     FROM_NODE_SCHEMA_ID_TO_EDGE_SCHEMA,
@@ -133,7 +133,18 @@ def should_skip_node_schema(model, TM, current_node_schema, all_node_schemas):
     conversational_msgs = copy.deepcopy(
         TM.get_conversation_msgs_since_last_node(model_provider)
     )
-    prompt = OffTopicPrompt(node_prompt =current_node_schema.node_prompt, state_json_schema =current_node_schema.state_pydantic_model.model_json_schema(), tool_defs = json.dumps(ToolRegistry.get_tool_defs_from_names(current_node_schema.tool_fn_names, model_provider, current_node_schema.tool_registry)), last_customer_msg=conversational_msgs[-1]['content']   )
+    prompt = OffTopicPrompt(
+        node_prompt=current_node_schema.node_prompt,
+        state_json_schema=current_node_schema.state_pydantic_model.model_json_schema(),
+        tool_defs=json.dumps(
+            ToolRegistry.get_tool_defs_from_names(
+                current_node_schema.tool_fn_names,
+                model_provider,
+                current_node_schema.tool_registry,
+            )
+        ),
+        last_customer_msg=conversational_msgs[-1]["content"],
+    )
 
     if model_provider == ModelProvider.ANTHROPIC:
         conversational_msgs.append({"role": "user", "content": prompt})

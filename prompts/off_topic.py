@@ -1,5 +1,6 @@
-from prompts.base_prompt import Prompt
 from graph import BACKGROUND
+from prompts.base_prompt import Prompt
+
 
 class OffTopicPrompt(Prompt):
 
