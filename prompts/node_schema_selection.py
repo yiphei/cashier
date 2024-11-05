@@ -3,9 +3,15 @@ import json
 from model_tool_decorator import ToolRegistry
 from prompts.base_prompt import BasePrompt
 from prompts.cashier_background import CashierBackgroundPrompt
+from pydantic import BaseModel
 
+
+class Response(BaseModel):
+    agent_id: int
 
 class NodeSchemaSelectionPrompt(BasePrompt):
+
+    response_format = Response
 
     def dynamic_prompt(self, all_node_schemas, model_provider, last_customer_msg):
         prompt = (

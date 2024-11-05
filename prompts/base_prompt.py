@@ -10,6 +10,7 @@ class CallableMeta(type):
 
 class BasePrompt(metaclass=CallableMeta):
     f_string_prompt = None
+    response_format = None
 
     def __init__(self, **kwargs):
         pass

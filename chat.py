@@ -154,13 +154,10 @@ def should_skip_node_schema(model, TM, current_node_schema, all_node_schemas):
     elif model_provider == ModelProvider.OPENAI:
         node_conv_msgs.append({"role": "system", "content": prompt})
 
-    class Response1(BaseModel):
-        output: bool
-
     chat_completion = model.chat(
         model_name=model_name,
         message_dicts=node_conv_msgs,
-        response_format=Response1,
+        response_format=OffTopicPrompt.response_format,
         logprobs=True,
         temperature=0,
     )
@@ -182,9 +179,6 @@ def should_skip_node_schema(model, TM, current_node_schema, all_node_schemas):
         last_customer_msg=last_customer_msg,
     )
 
-    class Response2(BaseModel):
-        agent_id: int
-
     if model_provider == ModelProvider.ANTHROPIC:
         node_conv_msgs.append({"role": "user", "content": prompt})
     elif model_provider == ModelProvider.OPENAI:
@@ -193,7 +187,7 @@ def should_skip_node_schema(model, TM, current_node_schema, all_node_schemas):
     chat_completion = model.chat(
         model_name=model_name,
         message_dicts=node_conv_msgs,
-        response_format=Response2,
+        response_format=NodeSchemaSelectionPrompt.response_format,
         logprobs=True,
         temperature=0,
     )
