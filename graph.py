@@ -283,9 +283,9 @@ class EdgeSchema:
         new_input_from_state_fn,
         bwd_state_init=BwdStateInit.RESUME,
         fwd_state_init=FwdStateInit.RESET,
-        skip_from_complete_to_prev_complete=None,
+        skip_from_complete_to_prev_complete=FwdSkipType.SKIP_IF_INPUT_UNCHANGED,
         skip_from_complete_to_prev_incomplete=None,
-        skip_from_incomplete_to_prev_complete=None,
+        skip_from_incomplete_to_prev_complete=FwdSkipType.SKIP_IF_INPUT_UNCHANGED,
         skip_from_incomplete_to_prev_incomplete=None,
     ):
         EdgeSchema._counter += 1
