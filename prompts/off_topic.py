@@ -1,6 +1,7 @@
 from prompts.base_prompt import Prompt
 from prompts.cashier_background import CashierBackgroundPrompt
 
+
 class OffTopicPrompt(Prompt):
 
     f_string_prompt = (
