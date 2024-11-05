@@ -166,6 +166,7 @@ class AssistantTurn(ModelTurn):
 
         return messages
 
+
 class MessageManager(ABC):
     model_provider = None
 
@@ -427,8 +428,6 @@ class TurnContainer:
         self.turns.append(turn)
         for mm in self.model_provider_to_message_manager.values():
             mm.add_assistant_turn(turn)
-
-
 
 
 class MessageList(list):
