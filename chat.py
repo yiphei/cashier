@@ -522,17 +522,17 @@ class ChatContext(BaseModel):
                 else:
                     input = to_node.input
                     break
-            else:
-                if skip_type == FwdSkipType.SKIP_IF_INPUT_UNCHANGED:
-                    if from_node.status != Node.Status.COMPLETED:
-                        input = from_node.input
-                    else:
-                        edge_schema = next_edge_schema
-                        if from_node != self.curr_node:
-                            input = edge_schema.new_input_from_state_fn(from_node.state)
+            elif skip_type == FwdSkipType.SKIP_IF_INPUT_UNCHANGED:
+                if from_node.status != Node.Status.COMPLETED:
+                    input = from_node.input
                 else:
+                    edge_schema = next_edge_schema
                     if from_node != self.curr_node:
-                        input = from_node.input
+                        input = edge_schema.new_input_from_state_fn(from_node.state)
+                break
+            else:
+                if from_node != self.curr_node:
+                    input = from_node.input
                 break
 
         return edge_schema, input
