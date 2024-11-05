@@ -665,10 +665,10 @@ class MessageList(list):
             )
             start_idx = index.start or 0
             if start_idx < 0:
-                start_idx = len(self) - start_idx
+                start_idx = len(self) + start_idx
             end_idx = index.stop or len(self)
             if end_idx < 0:
-                end_idx = len(self) - end_idx
+                end_idx = len(self) + end_idx
             ml.item_type_to_count = copy.deepcopy(self.item_type_to_count)
             for list_idx in self.list_idxs:
                 if start_idx <= list_idx < end_idx:
