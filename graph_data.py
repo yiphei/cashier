@@ -1,9 +1,8 @@
+from pydantic import Field
+from typing import Optional
+
 from db_functions import Order
 from graph import BaseStateModel, EdgeSchema, NodeSchema
-
-
-from pydantic import Field
-
 from model import AssistantTurn
 from model_util import ModelProvider
 

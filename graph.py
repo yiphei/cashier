@@ -360,6 +360,7 @@ class Edge(NamedTuple):
     from_node: Node
     to_node: Node
 
+
 class BaseStateModel(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
