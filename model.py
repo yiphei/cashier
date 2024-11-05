@@ -15,7 +15,9 @@ from model_util import FunctionCall, ModelProvider
 
 OpenAIModels = Literal["gpt-4o-mini", "gpt-4o"]
 
-AnthropicModels = Literal["claude-3.5", "claude-3-5-sonnet-latest", "claude-3-5-haiku-latest"]
+AnthropicModels = Literal[
+    "claude-3.5", "claude-3-5-sonnet-latest", "claude-3-5-haiku-latest"
+]
 
 
 class Model:
