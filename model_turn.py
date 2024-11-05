@@ -658,6 +658,8 @@ class MessageList(list):
 
     def __getitem__(self, index):
         if isinstance(index, slice):
-            return MessageList(super().__getitem__(index), model_provider=self.model_provider)
+            return MessageList(
+                super().__getitem__(index), model_provider=self.model_provider
+            )
         else:
             return super().__getitem__(index)
