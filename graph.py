@@ -9,7 +9,6 @@ from pydantic import BaseModel, ConfigDict
 from function_call_context import StateUpdateError
 from model_tool_decorator import ToolRegistry
 from node_system_prompt import NodeSystemPrompt
-from prompts.cashier_background import CashierBackgroundPrompt
 
 
 class Direction(StrEnum):
@@ -100,7 +99,17 @@ class NodeSchema:
         return Node(self, input, state, prompt, in_edge_schema, direction)
 
     def generate_system_prompt(self, input, last_msg):
-        return NodeSystemPrompt(node_prompt =self.node_prompt, input=input, node_input_json_schema=self.input_pydantic_model.model_json_schema() if self.input_pydantic_model else None, state_json_schema=self.state_pydantic_model.model_json_schema(), last_msg= last_msg )
+        return NodeSystemPrompt(
+            node_prompt=self.node_prompt,
+            input=input,
+            node_input_json_schema=(
+                self.input_pydantic_model.model_json_schema()
+                if self.input_pydantic_model
+                else None
+            ),
+            state_json_schema=self.state_pydantic_model.model_json_schema(),
+            last_msg=last_msg,
+        )
 
 
 class Node:

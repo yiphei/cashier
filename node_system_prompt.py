@@ -4,7 +4,9 @@ from prompts.cashier_background import CashierBackgroundPrompt
 
 class NodeSystemPrompt(Prompt):
 
-    def dynamic_prompt(self, node_prompt, input, node_input_json_schema, state_json_schema, last_msg):
+    def dynamic_prompt(
+        self, node_prompt, input, node_input_json_schema, state_json_schema, last_msg
+    ):
         NODE_PROMPT = (
             CashierBackgroundPrompt.f_string_prompt + "\n\n"
             "This instructions section describes what the conversation is supposed to be about and what you are expected to do\n"
@@ -87,8 +89,6 @@ class NodeSystemPrompt(Prompt):
         kwargs = {"state_json_schema": state_json_schema}
         if input is not None:
             kwargs["node_input"] = input
-            kwargs["node_input_json_schema"] = (
-                node_input_json_schema
-            )
+            kwargs["node_input_json_schema"] = node_input_json_schema
 
         return NODE_PROMPT.format(**kwargs)
