@@ -406,32 +406,35 @@ class TurnContainer:
             mm.add_assistant_turn(turn)
 
     def get_user_message(self, order=-1, model_provider=ModelProvider.OPENAI):
-        idx = self.model_provider_to_message_manager[
+        mm = self.model_provider_to_message_manager[
             model_provider
-        ].message_dicts.get_track_idx_for_item_type(MessageList.ItemType.USER, order)
+        ]
+        idx = mm.message_dicts.get_track_idx_for_item_type(MessageList.ItemType.USER, order)
         if idx:
-            return self.message_dicts[idx]
+            return mm.message_dicts[idx]
         else:
             return None
 
     def get_asst_message(self, order=-1, model_provider=ModelProvider.OPENAI):
-        idx = self.model_provider_to_message_manager[
+        mm = self.model_provider_to_message_manager[
             model_provider
-        ].message_dicts.get_track_idx_for_item_type(
+        ]
+        idx = mm.message_dicts.get_track_idx_for_item_type(
             MessageList.ItemType.ASSISTANT, order
         )
         if idx:
-            return self.message_dicts[idx]
+            return mm.message_dicts[idx]
         else:
             return None
 
     def get_conversation_msgs_since_last_node(
         self, model_provider=ModelProvider.OPENAI
     ):
-        idx = self.model_provider_to_message_manager[
+        mm = self.model_provider_to_message_manager[
             model_provider
-        ].conversation_dicts.get_track_idx_for_item_type(MessageList.ItemType.NODE)
-        return self.conversation_dicts[idx + 1 :]
+        ]
+        idx = mm.conversation_dicts.get_track_idx_for_item_type(MessageList.ItemType.NODE)
+        return mm.conversation_dicts[idx + 1 :]
 
 
 class MessageList(list):
