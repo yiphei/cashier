@@ -658,6 +658,9 @@ class MessageList(list):
 
     def __getitem__(self, index):
         if isinstance(index, slice):
+            if index.step:
+                raise ValueError()
+            
             ml = MessageList(
                 super().__getitem__(index), model_provider=self.model_provider
             )
