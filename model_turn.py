@@ -660,7 +660,7 @@ class MessageList(list):
         if isinstance(index, slice):
             if index.step:
                 raise ValueError()
-            
+
             ml = MessageList(
                 super().__getitem__(index), model_provider=self.model_provider
             )
