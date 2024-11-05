@@ -1,7 +1,9 @@
-from prompts.base_prompt import Prompt
-from graph import BACKGROUND
 import json
+
+from graph import BACKGROUND
 from model_tool_decorator import ToolRegistry
+from prompts.base_prompt import Prompt
+
 
 class OffTopicPrompt(Prompt):
 

@@ -203,7 +203,11 @@ def should_skip_node_schema(model, TM, current_node_schema, all_node_schemas):
 
     conversational_msgs.pop()
 
-    prompt = OffTopicPrompt(all_node_schemas = all_node_schemas, model_provider =model_provider, last_customer_msg = conversational_msgs[-1]['content']   )
+    prompt = OffTopicPrompt(
+        all_node_schemas=all_node_schemas,
+        model_provider=model_provider,
+        last_customer_msg=conversational_msgs[-1]["content"],
+    )
 
     class Response2(BaseModel):
         agent_id: int

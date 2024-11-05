@@ -1,4 +1,3 @@
-
 class CallableMeta(type):
     def __call__(cls, *args, **kwargs):
         instance = super().__call__(*args, **kwargs)
@@ -7,6 +6,7 @@ class CallableMeta(type):
             if instance.f_string_prompt
             else instance.dynamic_prompt(**kwargs)
         )
+
 
 class Prompt(metaclass=CallableMeta):
     f_string_prompt = None
