@@ -83,25 +83,13 @@ class NodeSchema:
             self.state_pydantic_model, prev_node, edge_schema, direction, input
         )
 
-        prompt = self.generate_system_prompt(
-            (
+        prompt = NodeSystemPrompt(
+            node_prompt=self.node_prompt,
+            input=(
                 input.model_dump_json()
                 if self.input_pydantic_model is not None
                 else None
             ),
-            last_msg,
-        )
-
-        if direction == Direction.BWD:
-            in_edge_schema = prev_node.in_edge_schema
-        else:
-            in_edge_schema = edge_schema
-        return Node(self, input, state, prompt, in_edge_schema, direction)
-
-    def generate_system_prompt(self, input, last_msg):
-        return NodeSystemPrompt(
-            node_prompt=self.node_prompt,
-            input=input,
             node_input_json_schema=(
                 self.input_pydantic_model.model_json_schema()
                 if self.input_pydantic_model
@@ -110,6 +98,12 @@ class NodeSchema:
             state_json_schema=self.state_pydantic_model.model_json_schema(),
             last_msg=last_msg,
         )
+
+        if direction == Direction.BWD:
+            in_edge_schema = prev_node.in_edge_schema
+        else:
+            in_edge_schema = edge_schema
+        return Node(self, input, state, prompt, in_edge_schema, direction)
 
 
 class Node:
