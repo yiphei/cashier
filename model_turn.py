@@ -668,7 +668,7 @@ class MessageList(list):
                 if start_idx <= list_idx < end_idx:
                     for uri in self.list_idx_to_uris[list_idx]:
                         item_type = self.uri_to_item_type[uri]
-                        ml.track_idx(item_type, list_idx-start_idx, uri)
+                        ml.track_idx(item_type, list_idx - start_idx, uri)
 
             return ml
         else:
