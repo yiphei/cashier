@@ -4,7 +4,7 @@ from pydantic import Field
 
 from db_functions import Order
 from graph import BaseStateModel, EdgeSchema, NodeSchema
-from model import AssistantTurn
+from model_turn import AssistantTurn
 from model_util import ModelProvider
 
 
