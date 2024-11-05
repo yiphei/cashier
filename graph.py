@@ -11,7 +11,6 @@ from model_tool_decorator import ToolRegistry
 from prompts.cashier_background import CashierBackgroundPrompt
 
 
-
 class Direction(StrEnum):
     FWD = "FWD"
     BWD = "BWD"
