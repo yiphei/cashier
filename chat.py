@@ -14,7 +14,7 @@ from elevenlabs import ElevenLabs, Voice, VoiceSettings, stream
 from pydantic import BaseModel, ConfigDict, Field
 
 from audio import get_audio_input, save_audio_to_wav
-from chain import (
+from graph import (
     BACKGROUND,
     EDGE_SCHEMA_ID_TO_EDGE_SCHEMA,
     FROM_NODE_SCHEMA_ID_TO_EDGE_SCHEMA,
