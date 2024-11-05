@@ -1,14 +1,13 @@
-from function_call_context import ToolExceptionWrapper
-from model import MessageList
-from model_tool_decorator import ToolRegistry
-from typing import Any, Dict, List
-from model_util import CustomJSONEncoder, FunctionCall, ModelProvider
-
+from abc import ABC, abstractmethod
+from typing import Any, Dict, List, Optional
+import json
 
 from pydantic import BaseModel, Field, constr, model_validator
 
-
-from abc import ABC, abstractmethod
+from function_call_context import ToolExceptionWrapper
+from model import MessageList
+from model_tool_decorator import ToolRegistry
+from model_util import CustomJSONEncoder, FunctionCall, ModelProvider
 
 
 class ModelTurn(BaseModel, ABC):

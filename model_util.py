@@ -1,7 +1,7 @@
 import json
 from collections import defaultdict
 from enum import StrEnum
-from typing import Dict
+from typing import Dict, Optional
 
 from pydantic import BaseModel, model_validator
 

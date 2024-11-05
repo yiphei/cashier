@@ -8,8 +8,8 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from db_functions import Order
 from function_call_context import StateUpdateError
-from model_turn import AssistantTurn
 from model_tool_decorator import ToolRegistry
+from model_turn import AssistantTurn
 from model_util import ModelProvider
 
 BACKGROUND = (
