@@ -1,5 +1,8 @@
+from __future__ import annotations
+
 import copy
-from typing import Optional
+from enum import StrEnum
+from typing import Any, Literal, NamedTuple, Optional, overload
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -14,6 +17,11 @@ BACKGROUND = (
     "so you will interact with real in-person customers. There is a microphone that transcribes customer's speech to text, "
     "and a speaker that outputs your text to speech."
 )
+
+
+class Direction(StrEnum):
+    FWD = "FWD"
+    BWD = "BWD"
 
 
 class NodeSchema:
@@ -51,18 +59,37 @@ class NodeSchema:
         )
         self.tool_fn_names.append("get_state")
 
-    def create_node(self, input, last_msg=None, prev_node=None):
-        if input is not None:
-            assert isinstance(input, self.input_pydantic_model)
-            assert prev_node is None
-        elif prev_node is not None:
-            assert input is None
-            input = prev_node.input
+    @overload
+    def create_node(  # noqa: E704
+        self,
+        input: Any,
+        last_msg: Optional[str] = None,
+        prev_node: Literal[None] = None,
+        edge_schema: Literal[None] = None,
+        direction: Literal[Direction.FWD] = Direction.FWD,
+    ): ...
 
-        if prev_node is None:
-            state = self.state_pydantic_model()
-        else:
-            state = prev_node.state.copy_reset()
+    @overload
+    def create_node(  # noqa: E704
+        self,
+        input: Any,
+        last_msg: str,
+        prev_node: Node,
+        edge_schema: EdgeSchema = None,
+        direction: Direction = Direction.FWD,
+    ): ...
+
+    def create_node(
+        self,
+        input: Any,
+        last_msg: Optional[str] = None,
+        prev_node: Optional[Node] = None,
+        edge_schema: Optional[EdgeSchema] = None,
+        direction: Direction = Direction.FWD,
+    ):
+        state = Node.init_state(
+            self.state_pydantic_model, prev_node, edge_schema, direction, input
+        )
 
         prompt = self.generate_system_prompt(
             (
@@ -73,7 +100,11 @@ class NodeSchema:
             last_msg,
         )
 
-        return Node(self, input, state, prompt)
+        if direction == Direction.BWD:
+            in_edge_schema = prev_node.in_edge_schema
+        else:
+            in_edge_schema = edge_schema
+        return Node(self, input, state, prompt, in_edge_schema, direction)
 
     def generate_system_prompt(self, input, last_msg):
         NODE_PROMPT = (
@@ -168,7 +199,13 @@ class NodeSchema:
 class Node:
     _counter = 0
 
-    def __init__(self, schema, input, state, prompt):
+    class Status(StrEnum):
+        IN_PROGRESS = "IN_PROGRESS"
+        COMPLETED = "COMPLETED"
+
+    def __init__(
+        self, schema, input, state, prompt, in_edge_schema, direction=Direction.FWD
+    ):
         Node._counter += 1
         self.id = Node._counter
         self.state = state
@@ -176,6 +213,34 @@ class Node:
         self.input = input
         self.schema = schema
         self.first_user_message = False
+        self.status = self.Status.IN_PROGRESS
+        self.in_edge_schema = in_edge_schema
+        self.direction = direction
+
+    @classmethod
+    def init_state(cls, state_pydantic_model, prev_node, edge_schema, direction, input):
+        if prev_node is not None:
+            state_init_val = getattr(
+                edge_schema,
+                "fwd_state_init" if direction == Direction.FWD else "bwd_state_init",
+            )
+            state_init_enum_cls = (
+                FwdStateInit if direction == Direction.FWD else BwdStateInit
+            )
+
+            if state_init_val == state_init_enum_cls.RESET:
+                return state_pydantic_model()
+            elif state_init_val == state_init_enum_cls.RESUME or (
+                direction == Direction.FWD
+                and state_init_val == state_init_enum_cls.RESUME_IF_INPUT_UNCHANGED
+                and input == prev_node.input
+            ):
+                return prev_node.state.copy_resume()
+
+        return state_pydantic_model()
+
+    def mark_as_completed(self):
+        self.status = self.Status.COMPLETED
 
     def update_state(self, **kwargs):
         if self.first_user_message:
@@ -194,6 +259,22 @@ class Node:
         self.first_user_message = True
 
 
+class BwdStateInit(StrEnum):
+    RESET = "RESET"
+    RESUME = "RESUME"
+
+
+class FwdStateInit(StrEnum):
+    RESET = "RESET"
+    RESUME = "RESUME"
+    RESUME_IF_INPUT_UNCHANGED = "RESUME_IF_INPUT_UNCHANGED"
+
+
+class FwdSkipType(StrEnum):
+    SKIP = "SKIP"
+    SKIP_IF_INPUT_UNCHANGED = "SKIP_IF_INPUT_UNCHANGED"
+
+
 class EdgeSchema:
     _counter = 0
 
@@ -203,6 +284,12 @@ class EdgeSchema:
         to_node_schema,
         state_condition_fn,
         new_input_from_state_fn,
+        bwd_state_init=BwdStateInit.RESUME,
+        fwd_state_init=FwdStateInit.RESET,
+        skip_from_complete_to_prev_complete=None,
+        skip_from_complete_to_prev_incomplete=None,
+        skip_from_incomplete_to_prev_complete=None,
+        skip_from_incomplete_to_prev_incomplete=None,
     ):
         EdgeSchema._counter += 1
         self.id = EdgeSchema._counter
@@ -210,9 +297,71 @@ class EdgeSchema:
         self.to_node_schema = to_node_schema
         self.state_condition_fn = state_condition_fn
         self.new_input_from_state_fn = new_input_from_state_fn
+        self.bwd_state_init = bwd_state_init
+        self.fwd_state_init = fwd_state_init
+        self.skip_from_complete_to_prev_complete = skip_from_complete_to_prev_complete
+        self.skip_from_complete_to_prev_incomplete = (
+            skip_from_complete_to_prev_incomplete
+        )
+        # these two below assume that it was previously completed
+        self.skip_from_incomplete_to_prev_complete = (
+            skip_from_incomplete_to_prev_complete
+        )
+        self.skip_from_incomplete_to_prev_incomplete = (
+            skip_from_incomplete_to_prev_incomplete
+        )
 
     def check_state_condition(self, state):
         return self.state_condition_fn(state)
+
+    def _can_skip(self, skip_type, from_node, to_node):
+        if skip_type is None:
+            return False, skip_type
+
+        if skip_type == FwdSkipType.SKIP:
+            return True, skip_type
+        elif (
+            skip_type == FwdSkipType.SKIP_IF_INPUT_UNCHANGED
+            and self.new_input_from_state_fn(from_node.state) == to_node.input
+        ):
+            return True, skip_type
+        return False, skip_type
+
+    def can_skip(self, from_node, to_node, is_prev_from_node_completed):
+        assert from_node.schema == self.from_node_schema
+        assert to_node.schema == self.to_node_schema
+
+        if from_node.status == Node.Status.COMPLETED:
+            if to_node.status == Node.Status.COMPLETED:
+                return self._can_skip(
+                    self.skip_from_complete_to_prev_complete,
+                    from_node,
+                    to_node,
+                )
+            else:
+                return self._can_skip(
+                    self.skip_from_complete_to_prev_incomplete,
+                    from_node,
+                    to_node,
+                )
+        elif is_prev_from_node_completed:
+            if to_node.status == Node.Status.COMPLETED:
+                return self._can_skip(
+                    self.skip_from_incomplete_to_prev_complete,
+                    from_node,
+                    to_node,
+                )
+            else:
+                return self._can_skip(
+                    self.skip_from_incomplete_to_prev_incomplete,
+                    from_node,
+                    to_node,
+                )
+
+
+class Edge(NamedTuple):
+    from_node: Node
+    to_node: Node
 
 
 ## Chain ##
@@ -221,7 +370,7 @@ class EdgeSchema:
 class BaseStateModel(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    def copy_reset(self):
+    def copy_resume(self):
         new_data = copy.deepcopy(dict(self))
 
         # Iterate through fields and reset those marked as resettable
@@ -328,7 +477,18 @@ confirm_to_terminal_edge_schema = EdgeSchema(
     new_input_from_state_fn=lambda state: None,
 )
 
-FROM_NODE_ID_TO_EDGE_SCHEMA = {
+FROM_NODE_SCHEMA_ID_TO_EDGE_SCHEMA = {
     take_order_node_schema.id: [take_to_confirm_edge_schema],
     confirm_order_node_schema.id: [confirm_to_terminal_edge_schema],
+}
+
+NODE_SCHEMA_ID_TO_NODE_SCHEMA = {
+    take_order_node_schema.id: take_order_node_schema,
+    confirm_order_node_schema.id: confirm_order_node_schema,
+    terminal_order_node_schema.id: terminal_order_node_schema,
+}
+
+EDGE_SCHEMA_ID_TO_EDGE_SCHEMA = {
+    take_to_confirm_edge_schema.id: take_to_confirm_edge_schema,
+    confirm_to_terminal_edge_schema.id: confirm_to_terminal_edge_schema,
 }
