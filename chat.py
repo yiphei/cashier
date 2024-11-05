@@ -27,7 +27,7 @@ from gui import remove_previous_line
 from logger import logger
 from model import Model
 from model_tool_decorator import ToolRegistry
-from model_turn import TurnContainer
+from model_turn import MessageList, TurnContainer
 from model_util import CustomJSONEncoder, ModelProvider
 from prompts.node_schema_selection import NodeSchemaSelectionPrompt
 from prompts.off_topic import OffTopicPrompt
@@ -133,7 +133,7 @@ def should_skip_node_schema(model, TM, current_node_schema, all_node_schemas):
     conversational_msgs = copy.deepcopy(
         TM.get_conversation_msgs_since_last_node(model_provider)
     )
-    last_customer_msg = conversational_msgs[-1]["content"]
+    last_customer_msg = conversational_msgs.get_item_type_by_idx(MessageList.ItemType.USER, -1)
     prompt = OffTopicPrompt(
         node_prompt=current_node_schema.node_prompt,
         state_json_schema=current_node_schema.state_pydantic_model.model_json_schema(),
