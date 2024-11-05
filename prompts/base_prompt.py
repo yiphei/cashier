@@ -3,7 +3,7 @@ class CallableMeta(type):
         instance = super().__call__(*args, **kwargs)
         return (
             instance.f_string_prompt.format(**kwargs)
-            if instance.f_string_prompt
+            if instance.f_string_prompt is not None
             else instance.dynamic_prompt(**kwargs)
         )
 
