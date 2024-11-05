@@ -414,7 +414,7 @@ class ChatContext(BaseModel):
         direction = Direction.FWD
         prev_node = self.get_prev_node(edge_schema, direction)
 
-        last_msg = TC.get_user_message
+        last_msg = TC.get_user_message()
         if last_msg:
             last_msg = last_msg["content"]
 
