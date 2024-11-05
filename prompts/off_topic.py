@@ -1,8 +1,8 @@
-from prompts.base_prompt import Prompt
+from prompts.base_prompt import BasePrompt
 from prompts.cashier_background import CashierBackgroundPrompt
 
 
-class OffTopicPrompt(Prompt):
+class OffTopicPrompt(BasePrompt):
 
     f_string_prompt = (
         "You are an AI-agent orchestration engine and your job is to evaluate the current AI agent's performance. "

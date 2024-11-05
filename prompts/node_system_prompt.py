@@ -1,8 +1,8 @@
-from prompts.base_prompt import Prompt
+from prompts.base_prompt import BasePrompt
 from prompts.cashier_background import CashierBackgroundPrompt
 
 
-class NodeSystemPrompt(Prompt):
+class NodeSystemPrompt(BasePrompt):
 
     def dynamic_prompt(
         self, node_prompt, input, node_input_json_schema, state_json_schema, last_msg

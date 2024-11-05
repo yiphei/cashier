@@ -1,7 +1,7 @@
-from prompts.base_prompt import Prompt
+from prompts.base_prompt import BasePrompt
 
 
-class CashierBackgroundPrompt(Prompt):
+class CashierBackgroundPrompt(BasePrompt):
 
     f_string_prompt = (
         "You are a cashier working for the coffee shop Heaven Coffee. You are physically embedded inside the shop, "

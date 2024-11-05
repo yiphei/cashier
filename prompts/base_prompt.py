@@ -8,7 +8,7 @@ class CallableMeta(type):
         )
 
 
-class Prompt(metaclass=CallableMeta):
+class BasePrompt(metaclass=CallableMeta):
     f_string_prompt = None
 
     def __init__(self, **kwargs):
@@ -20,7 +20,7 @@ class Prompt(metaclass=CallableMeta):
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
         has_fstring = cls.f_string_prompt is not None
-        has_dynamic = cls.dynamic_prompt != Prompt.dynamic_prompt
+        has_dynamic = cls.dynamic_prompt != BasePrompt.dynamic_prompt
 
         if not has_fstring and not has_dynamic:
             raise NotImplementedError(
