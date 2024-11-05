@@ -418,7 +418,9 @@ class TurnContainer:
 
     def get_asst_message(self, idx=-1, model_provider=ModelProvider.OPENAI):
         mm = self.model_provider_to_message_manager[model_provider]
-        return mm.message_dicts.get_item_type_by_idx(MessageList.ItemType.ASSISTANT, idx)
+        return mm.message_dicts.get_item_type_by_idx(
+            MessageList.ItemType.ASSISTANT, idx
+        )
 
     def get_conversation_msgs_since_last_node(
         self, model_provider=ModelProvider.OPENAI
@@ -554,11 +556,9 @@ class MessageList(list):
             else None
         )
         return self.uri_to_list_idx[target_uri] if target_uri else None
-    
+
     def get_item_type_by_idx(self, item_type, idx):
-        track_idx = self.get_track_idx_for_item_type(
-            item_type, idx
-        )
+        track_idx = self.get_track_idx_for_item_type(item_type, idx)
         if track_idx:
             return self[track_idx]
         else:
