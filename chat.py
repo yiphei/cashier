@@ -129,9 +129,7 @@ def should_skip_node_schema(model, TM, current_node_schema, all_node_schemas):
     model_name = "claude-3.5"
     model_provider = Model.get_model_provider(model_name)
     conversational_msgs = copy.deepcopy(
-        TM.model_provider_to_message_manager[
-            model_provider
-        ].get_conversation_msgs_since_last_node()
+        TM.get_conversation_msgs_since_last_node(model_provider)
     )
     prompt = (
         "You are an AI-agent orchestration engine and your job is to evaluate the current AI agent's performance. "
@@ -416,8 +414,7 @@ class ChatContext(BaseModel):
         direction = Direction.FWD
         prev_node = self.get_prev_node(edge_schema, direction)
 
-        mm = TC.model_provider_to_message_manager[ModelProvider.OPENAI]
-        last_msg = mm.get_user_message()
+        last_msg = TC.get_user_message()
         if last_msg:
             last_msg = last_msg["content"]
 
@@ -441,8 +438,7 @@ class ChatContext(BaseModel):
         prev_node = self.get_prev_node(edge_schema, direction)
         input = prev_node.input
 
-        mm = TC.model_provider_to_message_manager[ModelProvider.OPENAI]
-        last_msg = mm.get_asst_message()
+        last_msg = TC.get_asst_message()
         if last_msg:
             last_msg = last_msg["content"]
 
