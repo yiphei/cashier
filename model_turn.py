@@ -406,19 +406,17 @@ class TurnContainer:
             mm.add_assistant_turn(turn)
 
     def get_user_message(self, order=-1, model_provider=ModelProvider.OPENAI):
-        mm = self.model_provider_to_message_manager[
-            model_provider
-        ]
-        idx = mm.message_dicts.get_track_idx_for_item_type(MessageList.ItemType.USER, order)
+        mm = self.model_provider_to_message_manager[model_provider]
+        idx = mm.message_dicts.get_track_idx_for_item_type(
+            MessageList.ItemType.USER, order
+        )
         if idx:
             return mm.message_dicts[idx]
         else:
             return None
 
     def get_asst_message(self, order=-1, model_provider=ModelProvider.OPENAI):
-        mm = self.model_provider_to_message_manager[
-            model_provider
-        ]
+        mm = self.model_provider_to_message_manager[model_provider]
         idx = mm.message_dicts.get_track_idx_for_item_type(
             MessageList.ItemType.ASSISTANT, order
         )
@@ -430,10 +428,10 @@ class TurnContainer:
     def get_conversation_msgs_since_last_node(
         self, model_provider=ModelProvider.OPENAI
     ):
-        mm = self.model_provider_to_message_manager[
-            model_provider
-        ]
-        idx = mm.conversation_dicts.get_track_idx_for_item_type(MessageList.ItemType.NODE)
+        mm = self.model_provider_to_message_manager[model_provider]
+        idx = mm.conversation_dicts.get_track_idx_for_item_type(
+            MessageList.ItemType.NODE
+        )
         return mm.conversation_dicts[idx + 1 :]
 
 
