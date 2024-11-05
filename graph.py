@@ -8,6 +8,7 @@ from pydantic import BaseModel, ConfigDict
 
 from function_call_context import StateUpdateError
 from model_tool_decorator import ToolRegistry
+from prompts.cashier_background import CashierBackgroundPrompt
 
 BACKGROUND = (
     "You are a cashier working for the coffee shop Heaven Coffee. You are physically embedded inside the shop, "
@@ -105,7 +106,7 @@ class NodeSchema:
 
     def generate_system_prompt(self, input, last_msg):
         NODE_PROMPT = (
-            BACKGROUND + "\n\n"
+            CashierBackgroundPrompt.f_string_prompt + "\n\n"
             "This instructions section describes what the conversation is supposed to be about and what you are expected to do\n"
             "<instructions>\n"
             f"{self.node_prompt}\n"

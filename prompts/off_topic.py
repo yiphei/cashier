@@ -1,6 +1,5 @@
-from graph import BACKGROUND
 from prompts.base_prompt import Prompt
-
+from prompts.cashier_background import CashierBackgroundPrompt
 
 class OffTopicPrompt(Prompt):
 
@@ -8,7 +7,7 @@ class OffTopicPrompt(Prompt):
         "You are an AI-agent orchestration engine and your job is to evaluate the current AI agent's performance. "
         "The AI agent's background is:\n"
         "<background>\n"
-        f"{BACKGROUND}\n"
+        f"{CashierBackgroundPrompt.f_string_prompt}\n"
         "</background>\n\n"
         "The AI agent is defined by 3 attributes: instructions, state, and tools (i.e. functions).\n\n"
         "The instructions describe what the agent's conversation is supposed to be about and what they are expected to do.\n"

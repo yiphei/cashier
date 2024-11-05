@@ -1,9 +1,8 @@
 import json
 
-from graph import BACKGROUND
 from model_tool_decorator import ToolRegistry
 from prompts.base_prompt import Prompt
-
+from prompts.cashier_background import CashierBackgroundPrompt
 
 class NodeSchemaSelectionPrompt(Prompt):
 
@@ -33,7 +32,7 @@ class NodeSchemaSelectionPrompt(Prompt):
         prompt += (
             "All agents share the following background:\n"
             "<background>\n"
-            f"{BACKGROUND}\n"
+            f"{CashierBackgroundPrompt.f_string_prompt}\n"
             "</background>\n\n"
             "Given a conversation with a customer and the list above of AI agents with their attributes, "
             "determine which AI agent can best continue the conversation, especially given last customer message, in accordance with the universal guidelines defined in <guidelines>. "
