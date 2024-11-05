@@ -166,225 +166,6 @@ class AssistantTurn(ModelTurn):
 
         return messages
 
-
-class MessageList(list):
-    class ItemType(StrEnum):
-        USER = "USER"
-        ASSISTANT = "ASSISTANT"
-        TOOL_CALL = "TOOL_CALL"
-        TOOL_OUTPUT = "TOOL_OUTPUT"
-        TOOL_OUTPUT_SCHEMA = "TOOL_OUTPUT_SCHEMA"
-        NODE = "NODE"
-
-    item_type_to_uri_prefix = {
-        ItemType.USER: "usr_",
-        ItemType.TOOL_OUTPUT: "tout_",
-        ItemType.NODE: "node_",
-        ItemType.ASSISTANT: "asst_",
-    }
-
-    def __init__(self, *args, model_provider):
-        super().__init__(*args)
-        self.uri_to_list_idx = {}
-        self.list_idx_to_uris = defaultdict(set)
-        self.list_idxs = []
-        self.list_idx_to_track_idx = {}
-
-        self.model_provider = model_provider
-        self.item_type_to_uris = defaultdict(list)
-        self.uri_to_item_type = {}
-        self.item_type_to_count = {k: 0 for k in self.item_type_to_uri_prefix.keys()}
-
-    def get_tool_id_from_tool_output_uri(self, uri):
-        return uri[
-            len(self.item_type_to_uri_prefix[MessageList.ItemType.TOOL_OUTPUT]) :
-        ]
-
-    @classmethod
-    def get_tool_output_uri_from_tool_id(cls, tool_id):
-        return cls.item_type_to_uri_prefix[MessageList.ItemType.TOOL_OUTPUT] + tool_id
-
-    def pop_track_idx_ant(self, uri):
-        track_idx = self.get_track_idx_from_uri(uri)
-        item_type = self.uri_to_item_type[uri]
-        message = self[track_idx]
-        new_contents = []
-        for content in message["content"]:
-            if (
-                item_type == MessageList.ItemType.TOOL_CALL
-                and content["type"] == "tool_use"
-                and content["id"] == uri
-            ):
-                continue
-            elif (
-                item_type == MessageList.ItemType.TOOL_OUTPUT
-                and content["type"] == "tool_result"
-                and content["tool_use_id"] == self.get_tool_id_from_tool_output_uri(uri)
-            ):
-                continue
-            new_contents.append(content)
-
-        if new_contents:
-            if item_type == MessageList.ItemType.TOOL_CALL:
-                if len(new_contents) == 1 and new_contents[0]["type"] == "text":
-                    new_message = {
-                        "role": "assistant",
-                        "content": new_contents[0]["text"],
-                    }
-                else:
-                    new_message = {"role": "assistant", "content": new_contents}
-            elif item_type == MessageList.ItemType.TOOL_OUTPUT:
-                new_message = {"role": "user", "content": new_contents}
-
-            self[track_idx] = new_message
-            self.pop_track_idx(uri, shift_idxs=False)
-        else:
-            self._remove_by_uri(uri, True)
-
-    def track_idx(self, item_type, list_idx=None, uri=None, is_insert=False):
-        if uri is None:
-            self.item_type_to_count[item_type] += 1
-            uri = self.item_type_to_uri_prefix[item_type] + str(
-                self.item_type_to_count[item_type]
-            )
-        if list_idx is None:
-            list_idx = len(self) - 1
-
-        if uri in self.uri_to_list_idx:
-            raise ValueError()
-
-        self.uri_to_list_idx[uri] = list_idx
-        self.item_type_to_uris[item_type].append(uri)
-        self.uri_to_item_type[uri] = item_type
-        if list_idx not in self.list_idxs or is_insert:
-            if (self.list_idxs and self.list_idxs[-1] < list_idx) or not self.list_idxs:
-                self.list_idxs.append(list_idx)
-                self.list_idx_to_track_idx[list_idx] = len(self.list_idxs) - 1
-            else:
-                insert_idx = bisect_left(self.list_idxs, list_idx)
-
-                self.list_idxs.insert(insert_idx, list_idx)
-                self.shift_track_idxs(insert_idx + 1, 1)
-                self.list_idx_to_track_idx[list_idx] = insert_idx
-
-        self.list_idx_to_uris[list_idx].add(uri)
-
-    def track_idxs(self, item_type, start_list_idx, end_list_idx=None, uris=None):
-        if end_list_idx is None:
-            end_list_idx = len(self) - 1
-        if uris is None:
-            range_idx = end_list_idx - start_list_idx + 1
-            uris = [None] * range_idx
-
-        for i, uri in zip(range(start_list_idx, end_list_idx + 1), uris):
-            self.track_idx(item_type, i, uri)
-
-    def get_track_idx_from_uri(self, uri):
-        return self.uri_to_list_idx[uri]
-
-    def get_track_idx_for_item_type(self, item_type, order=-1):
-        order_validation = abs(order) if order < 0 else order + 1
-        target_uri = (
-            self.item_type_to_uris[item_type][order]
-            if self.item_type_to_uris[item_type]
-            and order_validation <= len(self.item_type_to_uris[item_type])
-            else None
-        )
-        return self.uri_to_list_idx[target_uri] if target_uri else None
-
-    def shift_track_idxs(self, start_track_idx, shift_direction):
-        for i in range(start_track_idx, len(self.list_idxs)):
-            curr_list_idx = self.list_idxs[i]
-            self.list_idx_to_track_idx.pop(curr_list_idx)
-            curr_uris = self.list_idx_to_uris[curr_list_idx]
-
-            self.list_idxs[i] += shift_direction
-            self.list_idx_to_track_idx[self.list_idxs[i]] = i
-
-            for uri in curr_uris:
-                self.uri_to_list_idx[uri] = self.list_idxs[i]
-            self.list_idx_to_uris.pop(curr_list_idx)
-            self.list_idx_to_uris[self.list_idxs[i]] = curr_uris
-
-    def pop_track_idx(self, uri, shift_idxs=True):
-        popped_list_idx = self.uri_to_list_idx.pop(uri)
-        all_uris = self.list_idx_to_uris[popped_list_idx]
-
-        item_type = self.uri_to_item_type.pop(uri)
-        self.item_type_to_uris[item_type].remove(uri)
-
-        all_uris.remove(uri)
-        if not all_uris:
-            popped_track_idx = self.list_idx_to_track_idx.pop(popped_list_idx)
-            self.list_idx_to_uris.pop(popped_list_idx)
-            del self.list_idxs[popped_track_idx]
-
-            if shift_idxs:
-                self.shift_track_idxs(popped_track_idx, -1)
-            else:
-                for i in range(popped_track_idx, len(self.list_idxs)):
-                    curr_list_idx = self.list_idxs[i]
-                    self.list_idx_to_track_idx.pop(curr_list_idx)
-                    self.list_idx_to_track_idx[curr_list_idx] = i
-
-            return popped_list_idx
-        else:
-            return None
-
-    def append(self, item, item_type=None, uri=None):
-        super().append(item)
-        if item_type is not None:
-            self.track_idx(item_type, uri=uri)
-
-    def insert(self, idx, item, item_type=None, uri=None):
-        super().insert(idx, item)
-        if item_type is not None:
-            self.track_idx(item_type, idx, uri, is_insert=True)
-
-    def extend(self, items, item_type=None):
-        curr_len = len(self) - 1
-        super().extend(items)
-        if items and item_type is not None:
-            self.track_idxs(item_type, curr_len + 1)
-
-    def _remove_by_uri(self, uri, raise_on_unpopped_idx=False):
-        popped_idx = self.pop_track_idx(uri)
-        if popped_idx is not None:
-            del self[popped_idx]
-        else:
-            if raise_on_unpopped_idx:
-                raise ValueError
-
-    def remove_by_uri(self, uri, raise_if_not_found=True):
-        if uri not in self.uri_to_item_type:
-            if raise_if_not_found:
-                raise ValueError()
-            return
-
-        item_type = self.uri_to_item_type[uri]
-        if self.model_provider != ModelProvider.ANTHROPIC or (
-            self.model_provider == ModelProvider.ANTHROPIC
-            and not (
-                item_type == MessageList.ItemType.TOOL_CALL
-                or item_type == MessageList.ItemType.TOOL_OUTPUT
-            )
-        ):
-            self._remove_by_uri(uri)
-        else:
-            self.pop_track_idx_ant(uri)
-
-    def clear(self, item_type_or_types=None):
-        if item_type_or_types is None:
-            super().clear()
-        else:
-            if not isinstance(item_type_or_types, list):
-                item_type_or_types = [item_type_or_types]
-            for item_type in item_type_or_types:
-                uris = copy.copy(self.item_type_to_uris[item_type])
-                for uri in uris:
-                    self.remove_by_uri(uri)
-
-
 class MessageManager(ABC):
     model_provider = None
 
@@ -646,3 +427,223 @@ class TurnContainer:
         self.turns.append(turn)
         for mm in self.model_provider_to_message_manager.values():
             mm.add_assistant_turn(turn)
+
+
+
+
+class MessageList(list):
+    class ItemType(StrEnum):
+        USER = "USER"
+        ASSISTANT = "ASSISTANT"
+        TOOL_CALL = "TOOL_CALL"
+        TOOL_OUTPUT = "TOOL_OUTPUT"
+        TOOL_OUTPUT_SCHEMA = "TOOL_OUTPUT_SCHEMA"
+        NODE = "NODE"
+
+    item_type_to_uri_prefix = {
+        ItemType.USER: "usr_",
+        ItemType.TOOL_OUTPUT: "tout_",
+        ItemType.NODE: "node_",
+        ItemType.ASSISTANT: "asst_",
+    }
+
+    def __init__(self, *args, model_provider):
+        super().__init__(*args)
+        self.uri_to_list_idx = {}
+        self.list_idx_to_uris = defaultdict(set)
+        self.list_idxs = []
+        self.list_idx_to_track_idx = {}
+
+        self.model_provider = model_provider
+        self.item_type_to_uris = defaultdict(list)
+        self.uri_to_item_type = {}
+        self.item_type_to_count = {k: 0 for k in self.item_type_to_uri_prefix.keys()}
+
+    def get_tool_id_from_tool_output_uri(self, uri):
+        return uri[
+            len(self.item_type_to_uri_prefix[MessageList.ItemType.TOOL_OUTPUT]) :
+        ]
+
+    @classmethod
+    def get_tool_output_uri_from_tool_id(cls, tool_id):
+        return cls.item_type_to_uri_prefix[MessageList.ItemType.TOOL_OUTPUT] + tool_id
+
+    def pop_track_idx_ant(self, uri):
+        track_idx = self.get_track_idx_from_uri(uri)
+        item_type = self.uri_to_item_type[uri]
+        message = self[track_idx]
+        new_contents = []
+        for content in message["content"]:
+            if (
+                item_type == MessageList.ItemType.TOOL_CALL
+                and content["type"] == "tool_use"
+                and content["id"] == uri
+            ):
+                continue
+            elif (
+                item_type == MessageList.ItemType.TOOL_OUTPUT
+                and content["type"] == "tool_result"
+                and content["tool_use_id"] == self.get_tool_id_from_tool_output_uri(uri)
+            ):
+                continue
+            new_contents.append(content)
+
+        if new_contents:
+            if item_type == MessageList.ItemType.TOOL_CALL:
+                if len(new_contents) == 1 and new_contents[0]["type"] == "text":
+                    new_message = {
+                        "role": "assistant",
+                        "content": new_contents[0]["text"],
+                    }
+                else:
+                    new_message = {"role": "assistant", "content": new_contents}
+            elif item_type == MessageList.ItemType.TOOL_OUTPUT:
+                new_message = {"role": "user", "content": new_contents}
+
+            self[track_idx] = new_message
+            self.pop_track_idx(uri, shift_idxs=False)
+        else:
+            self._remove_by_uri(uri, True)
+
+    def track_idx(self, item_type, list_idx=None, uri=None, is_insert=False):
+        if uri is None:
+            self.item_type_to_count[item_type] += 1
+            uri = self.item_type_to_uri_prefix[item_type] + str(
+                self.item_type_to_count[item_type]
+            )
+        if list_idx is None:
+            list_idx = len(self) - 1
+
+        if uri in self.uri_to_list_idx:
+            raise ValueError()
+
+        self.uri_to_list_idx[uri] = list_idx
+        self.item_type_to_uris[item_type].append(uri)
+        self.uri_to_item_type[uri] = item_type
+        if list_idx not in self.list_idxs or is_insert:
+            if (self.list_idxs and self.list_idxs[-1] < list_idx) or not self.list_idxs:
+                self.list_idxs.append(list_idx)
+                self.list_idx_to_track_idx[list_idx] = len(self.list_idxs) - 1
+            else:
+                insert_idx = bisect_left(self.list_idxs, list_idx)
+
+                self.list_idxs.insert(insert_idx, list_idx)
+                self.shift_track_idxs(insert_idx + 1, 1)
+                self.list_idx_to_track_idx[list_idx] = insert_idx
+
+        self.list_idx_to_uris[list_idx].add(uri)
+
+    def track_idxs(self, item_type, start_list_idx, end_list_idx=None, uris=None):
+        if end_list_idx is None:
+            end_list_idx = len(self) - 1
+        if uris is None:
+            range_idx = end_list_idx - start_list_idx + 1
+            uris = [None] * range_idx
+
+        for i, uri in zip(range(start_list_idx, end_list_idx + 1), uris):
+            self.track_idx(item_type, i, uri)
+
+    def get_track_idx_from_uri(self, uri):
+        return self.uri_to_list_idx[uri]
+
+    def get_track_idx_for_item_type(self, item_type, order=-1):
+        order_validation = abs(order) if order < 0 else order + 1
+        target_uri = (
+            self.item_type_to_uris[item_type][order]
+            if self.item_type_to_uris[item_type]
+            and order_validation <= len(self.item_type_to_uris[item_type])
+            else None
+        )
+        return self.uri_to_list_idx[target_uri] if target_uri else None
+
+    def shift_track_idxs(self, start_track_idx, shift_direction):
+        for i in range(start_track_idx, len(self.list_idxs)):
+            curr_list_idx = self.list_idxs[i]
+            self.list_idx_to_track_idx.pop(curr_list_idx)
+            curr_uris = self.list_idx_to_uris[curr_list_idx]
+
+            self.list_idxs[i] += shift_direction
+            self.list_idx_to_track_idx[self.list_idxs[i]] = i
+
+            for uri in curr_uris:
+                self.uri_to_list_idx[uri] = self.list_idxs[i]
+            self.list_idx_to_uris.pop(curr_list_idx)
+            self.list_idx_to_uris[self.list_idxs[i]] = curr_uris
+
+    def pop_track_idx(self, uri, shift_idxs=True):
+        popped_list_idx = self.uri_to_list_idx.pop(uri)
+        all_uris = self.list_idx_to_uris[popped_list_idx]
+
+        item_type = self.uri_to_item_type.pop(uri)
+        self.item_type_to_uris[item_type].remove(uri)
+
+        all_uris.remove(uri)
+        if not all_uris:
+            popped_track_idx = self.list_idx_to_track_idx.pop(popped_list_idx)
+            self.list_idx_to_uris.pop(popped_list_idx)
+            del self.list_idxs[popped_track_idx]
+
+            if shift_idxs:
+                self.shift_track_idxs(popped_track_idx, -1)
+            else:
+                for i in range(popped_track_idx, len(self.list_idxs)):
+                    curr_list_idx = self.list_idxs[i]
+                    self.list_idx_to_track_idx.pop(curr_list_idx)
+                    self.list_idx_to_track_idx[curr_list_idx] = i
+
+            return popped_list_idx
+        else:
+            return None
+
+    def append(self, item, item_type=None, uri=None):
+        super().append(item)
+        if item_type is not None:
+            self.track_idx(item_type, uri=uri)
+
+    def insert(self, idx, item, item_type=None, uri=None):
+        super().insert(idx, item)
+        if item_type is not None:
+            self.track_idx(item_type, idx, uri, is_insert=True)
+
+    def extend(self, items, item_type=None):
+        curr_len = len(self) - 1
+        super().extend(items)
+        if items and item_type is not None:
+            self.track_idxs(item_type, curr_len + 1)
+
+    def _remove_by_uri(self, uri, raise_on_unpopped_idx=False):
+        popped_idx = self.pop_track_idx(uri)
+        if popped_idx is not None:
+            del self[popped_idx]
+        else:
+            if raise_on_unpopped_idx:
+                raise ValueError
+
+    def remove_by_uri(self, uri, raise_if_not_found=True):
+        if uri not in self.uri_to_item_type:
+            if raise_if_not_found:
+                raise ValueError()
+            return
+
+        item_type = self.uri_to_item_type[uri]
+        if self.model_provider != ModelProvider.ANTHROPIC or (
+            self.model_provider == ModelProvider.ANTHROPIC
+            and not (
+                item_type == MessageList.ItemType.TOOL_CALL
+                or item_type == MessageList.ItemType.TOOL_OUTPUT
+            )
+        ):
+            self._remove_by_uri(uri)
+        else:
+            self.pop_track_idx_ant(uri)
+
+    def clear(self, item_type_or_types=None):
+        if item_type_or_types is None:
+            super().clear()
+        else:
+            if not isinstance(item_type_or_types, list):
+                item_type_or_types = [item_type_or_types]
+            for item_type in item_type_or_types:
+                uris = copy.copy(self.item_type_to_uris[item_type])
+                for uri in uris:
+                    self.remove_by_uri(uri)
