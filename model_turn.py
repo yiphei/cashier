@@ -669,18 +669,12 @@ class MessageList(list):
             )
             track_idx = 0
             for i in range(len(self.list_idxs)):
-                if start_idx <=self.list_idxs[i] < stop_idx:
+                if start_idx <= self.list_idxs[i] < stop_idx:
                     mm.list_idxs.append(self.list_idxs[i])
                     mm.list_idx_to_track_idx[self.list_idxs[i]] = track_idx
                     # etc.
-                    
+
                     track_idx += 1
-
-            
-                
-            
-
-            
 
             return mm
         else:
