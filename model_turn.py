@@ -4,9 +4,9 @@ from abc import ABC, abstractmethod
 from bisect import bisect_left
 from collections import defaultdict
 from enum import StrEnum
-from typing import Any, Dict, List, Optional, ClassVar
+from typing import Any, ClassVar, Dict, List, Optional
 
-from pydantic import BaseModel, Field, constr, model_validator, field_validator
+from pydantic import BaseModel, Field, constr, field_validator, model_validator
 
 from function_call_context import ToolExceptionWrapper
 from model_tool_decorator import ToolRegistry
