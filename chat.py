@@ -136,6 +136,9 @@ def should_skip_node_schema(model, TM, current_node_schema, all_node_schemas):
     last_customer_msg = conversational_msgs.get_item_type_by_idx(
         MessageList.ItemType.USER, -1
     )
+    print("-------------------")
+    print(last_customer_msg)
+    print("-------------------")
     prompt = OffTopicPrompt(
         node_prompt=current_node_schema.node_prompt,
         state_json_schema=current_node_schema.state_pydantic_model.model_json_schema(),

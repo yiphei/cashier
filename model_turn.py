@@ -658,8 +658,30 @@ class MessageList(list):
 
     def __getitem__(self, index):
         if isinstance(index, slice):
-            return MessageList(
+            start_idx = index.start
+            stop_idx = index.stop
+
+            track_start_idx = None
+            track_end_idx = None
+
+            mm = MessageList(
                 super().__getitem__(index), model_provider=self.model_provider
             )
+            track_idx = 0
+            for i in range(len(self.list_idxs)):
+                if start_idx <=self.list_idxs[i] < stop_idx:
+                    mm.list_idxs.append(self.list_idxs[i])
+                    mm.list_idx_to_track_idx[self.list_idxs[i]] = track_idx
+                    # etc.
+                    
+                    track_idx += 1
+
+            
+                
+            
+
+            
+
+            return mm
         else:
             return super().__getitem__(index)
