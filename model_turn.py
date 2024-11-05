@@ -21,7 +21,7 @@ class ModelTurn(BaseModel, ABC):
     @field_validator("msg_content")
     @classmethod
     def strip_whitespace(cls, value):
-        return value.strip() if cls.should_strip_msg_content else value
+        return value.strip() if cls.should_strip_msg_content and value else value
 
     @abstractmethod
     def build_oai_messages(self):
