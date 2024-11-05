@@ -1,11 +1,12 @@
 import queue
+import tempfile
 import threading
 import time
 import wave
 
-from elevenlabs import Voice, VoiceSettings, stream
 import numpy as np
 import pyaudio
+from elevenlabs import Voice, VoiceSettings, stream
 
 from gui import remove_previous_line
 from logger import logger
