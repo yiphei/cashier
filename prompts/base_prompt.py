@@ -1,15 +1,21 @@
-class Prompt:
+
+class CallableMeta(type):
+    def __call__(cls, *args, **kwargs):
+        instance = super().__call__(*args, **kwargs)
+        return (
+            instance.f_string_prompt.format(**kwargs)
+            if instance.f_string_prompt
+            else instance.dynamic_prompt(**kwargs)
+        )
+
+class Prompt(metaclass=CallableMeta):
     f_string_prompt = None
+
+    def __init__(self, **kwargs):
+        pass
 
     def dynamic_prompt(self, **kwargs):
         return None
-
-    def __call__(self, **kwargs):
-        return (
-            self.f_string_prompt.format(**kwargs)
-            if self.f_string_prompt
-            else self.dynamic_prompt(**kwargs)
-        )
 
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
