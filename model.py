@@ -15,7 +15,7 @@ from model_util import FunctionCall, ModelProvider
 
 OpenAIModels = Literal["gpt-4o-mini", "gpt-4o"]
 
-AnthropicModels = Literal["claude-3.5", "claude-3-5-sonnet-latest"]
+AnthropicModels = Literal["claude-3.5", "claude-3-5-sonnet-latest", "claude-3-5-haiku-latest"]
 
 
 class Model:
@@ -23,6 +23,7 @@ class Model:
         "gpt-4o-mini": ModelProvider.OPENAI,
         "gpt-4o": ModelProvider.OPENAI,
         "claude-3-5-sonnet-latest": ModelProvider.ANTHROPIC,
+        "claude-3-5-haiku-latest": ModelProvider.ANTHROPIC,
     }
     alias_to_model_name = {"claude-3.5": "claude-3-5-sonnet-latest"}
 
