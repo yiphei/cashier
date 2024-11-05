@@ -346,9 +346,7 @@ class ChatContext(BaseModel):
         direction = Direction.FWD
         prev_node = self.get_prev_node(edge_schema, direction)
 
-        last_msg = TC.get_user_message()
-        if last_msg:
-            last_msg = last_msg["content"]
+        last_msg = TC.get_user_message(content_only=True)
 
         self.init_node_core(
             node_schema, edge_schema, TC, input, last_msg, prev_node, direction, False
@@ -370,9 +368,7 @@ class ChatContext(BaseModel):
         prev_node = self.get_prev_node(edge_schema, direction)
         input = prev_node.input
 
-        last_msg = TC.get_asst_message()
-        if last_msg:
-            last_msg = last_msg["content"]
+        last_msg = TC.get_asst_message(content_only=True)
 
         self.init_node_core(
             node_schema, edge_schema, TC, input, last_msg, prev_node, direction, True
