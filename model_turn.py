@@ -420,25 +420,26 @@ class TurnContainer:
         for mm in self.model_provider_to_message_manager.values():
             mm.add_assistant_turn(turn)
 
-    def get_user_message(
-        self, idx=-1, model_provider=ModelProvider.OPENAI, content_only=False
+    def get_message(
+        self, item_type, idx=-1, model_provider=ModelProvider.OPENAI, content_only=False
     ):
         mm = self.model_provider_to_message_manager[model_provider]
-        msg = mm.message_dicts.get_item_type_by_idx(MessageList.ItemType.USER, idx)
+        msg = mm.message_dicts.get_item_type_by_idx(item_type, idx)
         if content_only and msg:
             return msg["content"]
         else:
             return None
 
+
+    def get_user_message(
+        self, idx=-1, model_provider=ModelProvider.OPENAI, content_only=False
+    ):        
+        return self.get_message(MessageList.ItemType.USER, idx, model_provider, content_only)
+
     def get_asst_message(
         self, idx=-1, model_provider=ModelProvider.OPENAI, content_only=False
     ):
-        mm = self.model_provider_to_message_manager[model_provider]
-        msg = mm.message_dicts.get_item_type_by_idx(MessageList.ItemType.ASSISTANT, idx)
-        if content_only and msg:
-            return msg["content"]
-        else:
-            return None
+        return self.get_message(MessageList.ItemType.ASSISTANT, idx, model_provider, content_only)
 
 
 class MessageList(list):
