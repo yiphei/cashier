@@ -412,25 +412,15 @@ class TurnContainer:
         for mm in self.model_provider_to_message_manager.values():
             mm.add_assistant_turn(turn)
 
-    def get_user_message(self, order=-1, model_provider=ModelProvider.OPENAI):
+    def get_user_message(self, idx=-1, model_provider=ModelProvider.OPENAI):
         mm = self.model_provider_to_message_manager[model_provider]
-        idx = mm.message_dicts.get_track_idx_for_item_type(
-            MessageList.ItemType.USER, order
-        )
-        if idx:
-            return mm.message_dicts[idx]
-        else:
-            return None
+        return mm.message_dicts.get_item_type_by_idx(MessageList.ItemType.USER, idx)
 
-    def get_asst_message(self, order=-1, model_provider=ModelProvider.OPENAI):
+    def get_asst_message(self, idx=-1, model_provider=ModelProvider.OPENAI):
         mm = self.model_provider_to_message_manager[model_provider]
-        idx = mm.message_dicts.get_track_idx_for_item_type(
-            MessageList.ItemType.ASSISTANT, order
+        return mm.message_dicts.get_item_type_by_idx(
+            MessageList.ItemType.ASSISTANT, idx
         )
-        if idx:
-            return mm.message_dicts[idx]
-        else:
-            return None
 
     def get_conversation_msgs_since_last_node(
         self, model_provider=ModelProvider.OPENAI
@@ -557,15 +547,22 @@ class MessageList(list):
     def get_track_idx_from_uri(self, uri):
         return self.uri_to_list_idx[uri]
 
-    def get_track_idx_for_item_type(self, item_type, order=-1):
-        order_validation = abs(order) if order < 0 else order + 1
+    def get_track_idx_for_item_type(self, item_type, idx=-1):
+        order_validation = abs(idx) if idx < 0 else idx + 1
         target_uri = (
-            self.item_type_to_uris[item_type][order]
+            self.item_type_to_uris[item_type][idx]
             if self.item_type_to_uris[item_type]
             and order_validation <= len(self.item_type_to_uris[item_type])
             else None
         )
         return self.uri_to_list_idx[target_uri] if target_uri else None
+
+    def get_item_type_by_idx(self, item_type, idx):
+        track_idx = self.get_track_idx_for_item_type(item_type, idx)
+        if track_idx:
+            return self[track_idx]
+        else:
+            return None
 
     def shift_track_idxs(self, start_track_idx, shift_direction):
         for i in range(start_track_idx, len(self.list_idxs)):
@@ -658,3 +655,11 @@ class MessageList(list):
                 uris = copy.copy(self.item_type_to_uris[item_type])
                 for uri in uris:
                     self.remove_by_uri(uri)
+
+    def __getitem__(self, index):
+        if isinstance(index, slice):
+            return MessageList(
+                super().__getitem__(index), model_provider=self.model_provider
+            )
+        else:
+            return super().__getitem__(index)
