@@ -1,13 +1,15 @@
 import json
 
+from pydantic import BaseModel
+
 from model_tool_decorator import ToolRegistry
 from prompts.base_prompt import BasePrompt
 from prompts.cashier_background import CashierBackgroundPrompt
-from pydantic import BaseModel
 
 
 class Response(BaseModel):
     agent_id: int
+
 
 class NodeSchemaSelectionPrompt(BasePrompt):
 

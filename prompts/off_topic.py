@@ -1,9 +1,12 @@
+from pydantic import BaseModel
+
 from prompts.base_prompt import BasePrompt
 from prompts.cashier_background import CashierBackgroundPrompt
-from pydantic import BaseModel
+
 
 class Response(BaseModel):
     output: bool
+
 
 class OffTopicPrompt(BasePrompt):
 
