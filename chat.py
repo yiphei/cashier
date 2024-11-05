@@ -16,18 +16,15 @@ from pydantic import BaseModel, ConfigDict, Field
 from audio import get_audio_input, save_audio_to_wav
 from graph import (
     BACKGROUND,
-    EDGE_SCHEMA_ID_TO_EDGE_SCHEMA,
-    FROM_NODE_SCHEMA_ID_TO_EDGE_SCHEMA,
-    NODE_SCHEMA_ID_TO_NODE_SCHEMA,
     Direction,
     Edge,
     EdgeSchema,
     FwdSkipType,
     Node,
-    take_order_node_schema,
 )
 from db_functions import create_db_client
 from function_call_context import FunctionCallContext, InexistentFunctionError
+from graph_data import EDGE_SCHEMA_ID_TO_EDGE_SCHEMA, FROM_NODE_SCHEMA_ID_TO_EDGE_SCHEMA, NODE_SCHEMA_ID_TO_NODE_SCHEMA, take_order_node_schema
 from gui import remove_previous_line
 from logger import logger
 from model import CustomJSONEncoder, Model, TurnContainer
