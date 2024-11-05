@@ -430,16 +430,19 @@ class TurnContainer:
         else:
             return None
 
-
     def get_user_message(
         self, idx=-1, model_provider=ModelProvider.OPENAI, content_only=False
-    ):        
-        return self.get_message(MessageList.ItemType.USER, idx, model_provider, content_only)
+    ):
+        return self.get_message(
+            MessageList.ItemType.USER, idx, model_provider, content_only
+        )
 
     def get_asst_message(
         self, idx=-1, model_provider=ModelProvider.OPENAI, content_only=False
     ):
-        return self.get_message(MessageList.ItemType.ASSISTANT, idx, model_provider, content_only)
+        return self.get_message(
+            MessageList.ItemType.ASSISTANT, idx, model_provider, content_only
+        )
 
 
 class MessageList(list):
