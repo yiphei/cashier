@@ -29,7 +29,7 @@ from model import Model
 from model_tool_decorator import ToolRegistry
 from model_turn import TurnContainer
 from model_util import CustomJSONEncoder, ModelProvider
-from prompts.off_topic import OffTopicPrompt
+from prompts.node_schema_selection import NodeSchemaSelectionPrompt
 
 # Load environment variables from .env file
 load_dotenv()
@@ -203,7 +203,7 @@ def should_skip_node_schema(model, TM, current_node_schema, all_node_schemas):
 
     conversational_msgs.pop()
 
-    prompt = OffTopicPrompt(
+    prompt = NodeSchemaSelectionPrompt(
         all_node_schemas=all_node_schemas,
         model_provider=model_provider,
         last_customer_msg=conversational_msgs[-1]["content"],

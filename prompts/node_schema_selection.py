@@ -5,7 +5,7 @@ from model_tool_decorator import ToolRegistry
 from prompts.base_prompt import Prompt
 
 
-class OffTopicPrompt(Prompt):
+class NodeSchemaSelectionPrompt(Prompt):
 
     def dynamic_prompt(self, all_node_schemas, model_provider, last_customer_msg):
         prompt = (
