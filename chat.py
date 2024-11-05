@@ -16,7 +16,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from audio import get_audio_input, save_audio_to_wav
 from db_functions import create_db_client
 from function_call_context import FunctionCallContext, InexistentFunctionError
-from graph import BACKGROUND, Direction, Edge, EdgeSchema, FwdSkipType, Node
+from graph import Direction, Edge, EdgeSchema, FwdSkipType, Node
 from graph_data import (
     EDGE_SCHEMA_ID_TO_EDGE_SCHEMA,
     FROM_NODE_SCHEMA_ID_TO_EDGE_SCHEMA,
@@ -29,6 +29,8 @@ from model import Model
 from model_tool_decorator import ToolRegistry
 from model_turn import TurnContainer
 from model_util import CustomJSONEncoder, ModelProvider
+from prompts.node_schema_selection import NodeSchemaSelectionPrompt
+from prompts.off_topic import OffTopicPrompt
 
 # Load environment variables from .env file
 load_dotenv()
@@ -131,50 +133,20 @@ def should_skip_node_schema(model, TM, current_node_schema, all_node_schemas):
     conversational_msgs = copy.deepcopy(
         TM.get_conversation_msgs_since_last_node(model_provider)
     )
-    prompt = (
-        "You are an AI-agent orchestration engine and your job is to evaluate the current AI agent's performance. "
-        "The AI agent's background is:\n"
-        "<background>\n"
-        f"{BACKGROUND}\n"
-        "</background>\n\n"
-        "The AI agent is defined by 3 attributes: instructions, state, and tools (i.e. functions).\n\n"
-        "The instructions describe what the agent's conversation is supposed to be about and what they are expected to do.\n"
-        "<instructions>\n"
-        f"{current_node_schema.node_prompt}\n"
-        "</instructions>\n\n"
-        "The state keeps track of important data during the conversation.\n"
-        "<state>\n"
-        f"{current_node_schema.state_pydantic_model.model_json_schema()}\n"
-        "</state>\n\n"
-        "The tools represent explicit actions that the agent can perform.\n"
-        "<tools>\n"
-        f"{json.dumps(ToolRegistry.get_tool_defs_from_names(current_node_schema.tool_fn_names, model_provider, current_node_schema.tool_registry))}\n"
-        "</tools>\n\n"
-        "Given a conversation between a customer and the current AI agent, determine if the"
-        " conversation, especially given the last customer message, can continue to be fully handled by the current AI agent's <instructions>, <state>, or <tools> according to the guidelines defined in <guidelines>. Return true if"
-        " 100% certain, and return false if otherwise, meaning that we should at least explore letting another AI agent take over.\n\n"
-        "<guidelines>\n"
-        "<state_guidelines>\n"
-        "- Among the tools provided, there are functions for getting and updating the state defined in <state>. "
-        "For state updates, the agent will have field specific update functions, whose names are `update_state_<field>` and where <field> is a state field.\n"
-        "- The agent must update the state whenever applicable and as soon as possible. They cannot proceed to the next stage of the conversation without updating the state\n"
-        "- Only the agent can update the state, so there is no need to udpate the state to the same value that had already been updated to in the past.\n"
-        + "</state_guidelines>\n"
-        "<tools_guidelines>\n"
-        "- Minimize reliance on external knowledge. Always retrieve information from the system prompts and available tools. "
-        "If they dont provide the information needed, the agent must say they do not know.\n"
-        "- the agent must AVOID stating/mentioning that they can/will perform an action if there are no tools (including state updates) associated with that action.\n"
-        "- if the agent needs to perform an action, they can only state to the customer that they performed it after the associated tool (including state update) calls have been successfull.\n"
-        "</tools_guidelines>\n"
-        "<general_guidelines>\n"
-        "- the agent needs to think step-by-step before responding.\n"
-        "- the agent must decline to do anything that is not explicitly covered by <instructions> and <guidelines>.\n"
-        + "</general_guidelines>\n"
-        "</guidelines>\n\n"
-        "<last_customer_message>\n"
-        f"{conversational_msgs[-1]['content']}\n"
-        "</last_customer_message>\n\n"
+    last_customer_msg = conversational_msgs[-1]["content"]
+    prompt = OffTopicPrompt(
+        node_prompt=current_node_schema.node_prompt,
+        state_json_schema=current_node_schema.state_pydantic_model.model_json_schema(),
+        tool_defs=json.dumps(
+            ToolRegistry.get_tool_defs_from_names(
+                current_node_schema.tool_fn_names,
+                model_provider,
+                current_node_schema.tool_registry,
+            )
+        ),
+        last_customer_msg=last_customer_msg,
     )
+
     if model_provider == ModelProvider.ANTHROPIC:
         conversational_msgs.append({"role": "user", "content": prompt})
     elif model_provider == ModelProvider.OPENAI:
@@ -201,57 +173,11 @@ def should_skip_node_schema(model, TM, current_node_schema, all_node_schemas):
         return None
 
     conversational_msgs.pop()
-    prompt = (
-        "You are an AI-agent orchestration engine and your job is to select the best AI agent. "
-        "Each AI agent is defined by 3 attributes: instructions, state, and tools (i.e. functions). "
-        "The instructions <instructions> describe what the agent's conversation is supposed to be about and what they are expected to do. "
-        "The state <state> keeps track of important data during the conversation. "
-        "The tools <tools> represent explicit actions that the agent can perform.\n\n"
-    )
-    for node_schema in all_node_schemas:
-        prompt += (
-            f"<agent id={node_schema.id}>\n"
-            "<instructions>\n"
-            f"{node_schema.node_prompt}\n"
-            "</instructions>\n\n"
-            "<state>\n"
-            f"{node_schema.state_pydantic_model.model_json_schema()}\n"
-            "</state>\n\n"
-            "<tools>\n"
-            f"{json.dumps(ToolRegistry.get_tool_defs_from_names(node_schema.tool_fn_names, model_provider, node_schema.tool_registry))}\n"
-            "</tools>\n"
-            "</agent>\n\n"
-        )
 
-    prompt += (
-        "All agents share the following background:\n"
-        "<background>\n"
-        f"{BACKGROUND}\n"
-        "</background>\n\n"
-        "Given a conversation with a customer and the list above of AI agents with their attributes, "
-        "determine which AI agent can best continue the conversation, especially given last customer message, in accordance with the universal guidelines defined in <guidelines>. "
-        "Respond by returning the AI agent ID.\n\n"
-        "<guidelines>\n"
-        "<state_guidelines>\n"
-        "- Among the tools provided, there are functions for getting and updating the state defined in <state>. "
-        "For state updates, the agent will have field specific update functions, whose names are `update_state_<field>` and where <field> is a state field.\n"
-        "- The agent must update the state whenever applicable and as soon as possible. They cannot proceed to the next stage of the conversation without updating the state\n"
-        "- Only the agent can update the state, so there is no need to udpate the state to the same value that had already been updated to in the past.\n"
-        + "</state_guidelines>\n"
-        "<tools_guidelines>\n"
-        "- Minimize reliance on external knowledge. Always retrieve information from the system prompts and available tools. "
-        "If they dont provide the information needed, the agent must say they do not know.\n"
-        "- the agent must AVOID stating/mentioning that they can/will perform an action if there are no tools (including state updates) associated with that action.\n"
-        "- if the agent needs to perform an action, they can only state to the customer that they performed it after the associated tool (including state update) calls have been successfull.\n"
-        "</tools_guidelines>\n"
-        "<general_guidelines>\n"
-        "- the agent needs to think step-by-step before responding.\n"
-        "- the agent must decline to do anything that is not explicitly covered by <instructions> and <guidelines>.\n"
-        + "</general_guidelines>\n"
-        "</guidelines>\n\n"
-        "<last_customer_message>\n"
-        f"{conversational_msgs[-1]['content']}\n"
-        "</last_customer_message>\n\n"
+    prompt = NodeSchemaSelectionPrompt(
+        all_node_schemas=all_node_schemas,
+        model_provider=model_provider,
+        last_customer_msg=last_customer_msg,
     )
 
     class Response2(BaseModel):
