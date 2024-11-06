@@ -1,20 +1,16 @@
 from __future__ import annotations
 
 import copy
-from enum import StrEnum
-from typing import Any, Literal, NamedTuple, Optional, overload, Dict, List, Set
 from collections import defaultdict, deque
+from enum import StrEnum
+from typing import Any, Dict, List, Literal, NamedTuple, Optional, Set, overload
 
 from pydantic import BaseModel, ConfigDict, Field
-from colorama import Style
 
 from function_call_context import StateUpdateError
 from graph_data import EDGE_SCHEMA_ID_TO_EDGE_SCHEMA
 from model_tool_decorator import ToolRegistry
 from prompts.node_system import NodeSystemPrompt
-from gui import MessageDisplay
-from logger import logger
-
 
 
 class Direction(StrEnum):
@@ -295,6 +291,7 @@ class BaseStateModel(BaseModel):
                 new_data[field_name] = field_info.default
 
         return self.__class__(**new_data)
+
 
 class Graph(BaseModel):
     curr_node: Node = None
