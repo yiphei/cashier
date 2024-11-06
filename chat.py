@@ -155,7 +155,6 @@ class ChatContext(BaseModel):
     need_user_input: bool = True
     graph: Graph = Field(default_factory=Graph)
 
-
     def init_node_core(
         self,
         node_schema,
@@ -188,7 +187,7 @@ class ChatContext(BaseModel):
         self.graph.bridge_edges(edge_schema, direction, new_node)
 
         self.curr_node = new_node
-        self.graph.curr_node = new_node # TODO: remove this later
+        self.graph.curr_node = new_node  # TODO: remove this later
         self.graph.next_edge_schemas = set(
             FROM_NODE_SCHEMA_ID_TO_EDGE_SCHEMA.get(new_node.schema.id, [])
         )
@@ -235,12 +234,6 @@ class ChatContext(BaseModel):
         self.init_node_core(
             node_schema, edge_schema, TC, input, last_msg, prev_node, direction, True
         )
-
-
-
-
-
-
 
 
 def run_chat(args, model, elevenlabs_client):

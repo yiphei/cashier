@@ -416,7 +416,7 @@ class Graph(BaseModel):
                 break
 
         return edge_schema, input
-    
+
     def bridge_edges(self, edge_schema, direction, new_node):
         if edge_schema:
             if direction == Direction.FWD:
