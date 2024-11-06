@@ -306,7 +306,7 @@ class Graph(BaseModel):
     edge_schema_id_to_edges: Dict[str, List[Edge]] = Field(
         default_factory=lambda: defaultdict(list)
     )
-    from_node_schema_id_to_edge_schema_id: Dict[str, str] = Field(
+    from_node_schema_id_to_last_edge_schema_id: Dict[str, str] = Field(
         default_factory=lambda: defaultdict(lambda: None)
     )
     edge_schema_id_to_from_node: Dict[str, None] = Field(
@@ -315,7 +315,7 @@ class Graph(BaseModel):
 
     def add_edge(self, from_node, to_node, edge_schema_id):
         self.edge_schema_id_to_edges[edge_schema_id].append(Edge(from_node, to_node))
-        self.from_node_schema_id_to_edge_schema_id[from_node.schema.id] = edge_schema_id
+        self.from_node_schema_id_to_last_edge_schema_id[from_node.schema.id] = edge_schema_id
         self.edge_schema_id_to_from_node[edge_schema_id] = from_node
 
     def get_edge_by_edge_schema_id(self, edge_schema_id, idx=-1):
@@ -325,8 +325,8 @@ class Graph(BaseModel):
             else None
         )
 
-    def edge_schema_by_from_node_schema_id(self, node_schema_id):
-        edge_schema_id = self.from_node_schema_id_to_edge_schema_id[node_schema_id]
+    def get_last_edge_schema_by_from_node_schema_id(self, node_schema_id):
+        edge_schema_id = self.from_node_schema_id_to_last_edge_schema_id[node_schema_id]
         return (
             EdgeSchema.EDGE_SCHEMA_ID_TO_EDGE_SCHEMA[edge_schema_id]
             if edge_schema_id
@@ -370,7 +370,7 @@ class Graph(BaseModel):
                     ),
                 )[0]:
                     fwd_jump_edge_schemas.add(edge_schema)
-                    next_edge_schema = self.edge_schema_by_from_node_schema_id(
+                    next_edge_schema = self.get_last_edge_schema_by_from_node_schema_id(
                         to_node.schema.id
                     )
                     if next_edge_schema:
@@ -403,7 +403,7 @@ class Graph(BaseModel):
             if can_skip:
                 edge_schema = next_edge_schema
 
-                next_next_edge_schema = self.edge_schema_by_from_node_schema_id(
+                next_next_edge_schema = self.get_last_edge_schema_by_from_node_schema_id(
                     to_node.schema.id
                 )
 
