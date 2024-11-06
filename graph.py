@@ -429,7 +429,9 @@ class Graph(BaseModel):
 
         return edge_schema, input
 
-    def add_edge(self, start_from_node, start_to_node,edge_schema, direction=Direction.FWD):
+    def add_edge(
+        self, start_from_node, start_to_node, edge_schema, direction=Direction.FWD
+    ):
         if direction == Direction.FWD:
             immediate_from_node = start_from_node
             if edge_schema.from_node_schema != start_from_node.schema:
@@ -449,6 +451,8 @@ class Graph(BaseModel):
                 from_node, _ = self.get_edge_by_edge_schema_id(
                     start_to_node.in_edge_schema.id
                 )
-                self.add_fwd_edge(from_node, start_to_node, start_to_node.in_edge_schema.id)
+                self.add_fwd_edge(
+                    from_node, start_to_node, start_to_node.in_edge_schema.id
+                )
 
             self.edge_schema_id_to_from_node[edge_schema.id] = start_to_node
