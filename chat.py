@@ -281,6 +281,7 @@ def run_chat(args, model, elevenlabs_client):
         if message is not None:
             if args.audio_output:
                 get_speech_from_text(message, elevenlabs_client)
+                MessageDisplay.display_assistant_message(chat_completion.msg_content)
             else:
                 MessageDisplay.display_assistant_message(message)
             CT.need_user_input = True
