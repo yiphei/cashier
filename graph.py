@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from collections import defaultdict, deque
 import copy
+from collections import defaultdict, deque
 from enum import StrEnum
 from typing import Any, Dict, List, Literal, NamedTuple, Optional, overload
 

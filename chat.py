@@ -13,8 +13,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from audio import get_audio_input, get_speech_from_text, get_text_from_speech
 from db_functions import create_db_client
 from function_call_context import FunctionCallContext, InexistentFunctionError
-from graph import Direction, EdgeSchema, Node, NodeSchema
-from graph import Graph
+from graph import Direction, EdgeSchema, Graph, Node, NodeSchema
 from graph_data import FROM_NODE_SCHEMA_ID_TO_EDGE_SCHEMA, take_order_node_schema
 from gui import MessageDisplay, remove_previous_line
 from logger import logger
