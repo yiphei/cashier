@@ -2,13 +2,19 @@ from __future__ import annotations
 
 import copy
 from enum import StrEnum
-from typing import Any, Literal, NamedTuple, Optional, overload
+from typing import Any, Literal, NamedTuple, Optional, overload, Dict, List, Set
+from collections import defaultdict, deque
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
+from colorama import Style
 
 from function_call_context import StateUpdateError
+from graph_data import EDGE_SCHEMA_ID_TO_EDGE_SCHEMA
 from model_tool_decorator import ToolRegistry
 from prompts.node_system import NodeSystemPrompt
+from gui import MessageDisplay
+from logger import logger
+
 
 
 class Direction(StrEnum):
@@ -289,3 +295,127 @@ class BaseStateModel(BaseModel):
                 new_data[field_name] = field_info.default
 
         return self.__class__(**new_data)
+
+class Graph(BaseModel):
+    curr_node: Node = None
+    edge_schema_id_to_edges: Dict[str, List[Edge]] = Field(
+        default_factory=lambda: defaultdict(list)
+    )
+    from_node_schema_id_to_edge_schema_id: Dict[str, str] = Field(
+        default_factory=lambda: defaultdict(lambda: None)
+    )
+    edge_schema_id_to_from_node: Dict[str, None] = Field(
+        default_factory=lambda: defaultdict(lambda: None)
+    )
+    next_edge_schemas: Set[EdgeSchema] = Field(default_factory=set)
+    bwd_skip_edge_schemas: Set[EdgeSchema] = Field(default_factory=set)
+
+    def add_edge(self, from_node, to_node, edge_schema_id):
+        self.edge_schema_id_to_edges[edge_schema_id].append(Edge(from_node, to_node))
+        self.from_node_schema_id_to_edge_schema_id[from_node.schema.id] = edge_schema_id
+        self.edge_schema_id_to_from_node[edge_schema_id] = from_node
+
+    def get_edge_by_edge_schema_id(self, edge_schema_id, idx=-1):
+        return (
+            self.edge_schema_id_to_edges[edge_schema_id][idx]
+            if len(self.edge_schema_id_to_edges[edge_schema_id]) >= abs(idx)
+            else None
+        )
+
+    def edge_schema_by_from_node_schema_id(self, node_schema_id):
+        edge_schema_id = self.from_node_schema_id_to_edge_schema_id[node_schema_id]
+        return EDGE_SCHEMA_ID_TO_EDGE_SCHEMA[edge_schema_id] if edge_schema_id else None
+
+    def get_prev_node(self, edge_schema, direction):
+        if edge_schema and self.get_edge_by_edge_schema_id(edge_schema.id) is not None:
+            from_node, to_node = self.get_edge_by_edge_schema_id(edge_schema.id)
+            return to_node if direction == Direction.FWD else from_node
+        else:
+            return None
+
+    def compute_bwd_skip_edge_schemas(self):
+        from_node = self.curr_node
+        while from_node.in_edge_schema is not None:
+            if from_node.in_edge_schema in self.bwd_skip_edge_schemas:
+                return
+            self.bwd_skip_edge_schemas.add(from_node.in_edge_schema)
+            new_from_node, to_node = self.get_edge_by_edge_schema_id(
+                from_node.in_edge_schema.id
+            )
+            assert from_node == to_node
+            from_node = new_from_node
+
+    def compute_fwd_skip_edge_schemas(self):
+        fwd_jump_edge_schemas = set()
+        edge_schemas = deque(self.next_edge_schemas)
+        while edge_schemas:
+            edge_schema = edge_schemas.popleft()
+            if self.get_edge_by_edge_schema_id(edge_schema.id) is not None:
+                from_node, to_node = self.get_edge_by_edge_schema_id(edge_schema.id)
+                if from_node.schema == self.curr_node.schema:
+                    from_node = self.curr_node
+
+                if edge_schema.can_skip(
+                    from_node,
+                    to_node,
+                    self.is_prev_from_node_completed(
+                        edge_schema, from_node == self.curr_node
+                    ),
+                )[0]:
+                    fwd_jump_edge_schemas.add(edge_schema)
+                    next_edge_schema = self.edge_schema_by_from_node_schema_id(
+                        to_node.schema.id
+                    )
+                    if next_edge_schema:
+                        edge_schemas.append(next_edge_schema)
+
+        return fwd_jump_edge_schemas
+
+    def is_prev_from_node_completed(self, edge_schema, is_start_node):
+        idx = -1 if is_start_node else -2
+        edge = self.get_edge_by_edge_schema_id(edge_schema.id, idx)
+        return edge[0].status == Node.Status.COMPLETED if edge else False
+
+    def compute_next_edge_schema(self, start_edge_schema, start_input):
+        next_edge_schema = start_edge_schema
+        edge_schema = start_edge_schema
+        input = start_input
+        while self.get_edge_by_edge_schema_id(next_edge_schema.id) is not None:
+            from_node, to_node = self.get_edge_by_edge_schema_id(next_edge_schema.id)
+            if from_node.schema == self.curr_node.schema:
+                from_node = self.curr_node
+
+            can_skip, skip_type = next_edge_schema.can_skip(
+                from_node,
+                to_node,
+                self.is_prev_from_node_completed(
+                    next_edge_schema, from_node == self.curr_node
+                ),
+            )
+
+            if can_skip:
+                edge_schema = next_edge_schema
+
+                next_next_edge_schema = self.edge_schema_by_from_node_schema_id(
+                    to_node.schema.id
+                )
+
+                if next_next_edge_schema:
+                    next_edge_schema = next_next_edge_schema
+                else:
+                    input = to_node.input
+                    break
+            elif skip_type == FwdSkipType.SKIP_IF_INPUT_UNCHANGED:
+                if from_node.status != Node.Status.COMPLETED:
+                    input = from_node.input
+                else:
+                    edge_schema = next_edge_schema
+                    if from_node != self.curr_node:
+                        input = edge_schema.new_input_from_state_fn(from_node.state)
+                break
+            else:
+                if from_node != self.curr_node:
+                    input = from_node.input
+                break
+
+        return edge_schema, input
