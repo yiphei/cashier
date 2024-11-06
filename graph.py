@@ -192,7 +192,7 @@ class FwdSkipType(StrEnum):
 class EdgeSchema:
     _counter = 0
     EDGE_SCHEMA_ID_TO_EDGE_SCHEMA = {}
-    FROM_NODE_SCHEMA_ID_TO_EDGE_SCHEMA = {}
+    FROM_NODE_SCHEMA_ID_TO_EDGE_SCHEMA = defaultdict(list)
 
     def __init__(
         self,
@@ -210,7 +210,7 @@ class EdgeSchema:
         EdgeSchema._counter += 1
         self.id = EdgeSchema._counter
         self.EDGE_SCHEMA_ID_TO_EDGE_SCHEMA[self.id] = self
-        self.FROM_NODE_SCHEMA_ID_TO_EDGE_SCHEMA[from_node_schema.id] = self
+        self.FROM_NODE_SCHEMA_ID_TO_EDGE_SCHEMA[from_node_schema.id].append(self)
 
         self.from_node_schema = from_node_schema
         self.to_node_schema = to_node_schema
