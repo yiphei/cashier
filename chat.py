@@ -4,10 +4,9 @@ import json
 import os
 from collections import defaultdict, deque
 from distutils.util import strtobool
-from types import GeneratorType
 from typing import Dict, List, Set
 
-from colorama import Fore, Style
+from colorama import Style
 from dotenv import load_dotenv  # Add this import
 from elevenlabs import ElevenLabs
 from pydantic import BaseModel, ConfigDict, Field
@@ -22,7 +21,7 @@ from graph_data import (
     NODE_SCHEMA_ID_TO_NODE_SCHEMA,
     take_order_node_schema,
 )
-from gui import remove_previous_line
+from gui import MessageDisplay, remove_previous_line
 from logger import logger
 from model import Model
 from model_tool_decorator import ToolRegistry
@@ -44,53 +43,6 @@ def get_user_input(use_audio_input, openai_client):
         remove_previous_line()
 
     return text_input
-
-
-class MessageDisplay:
-    API_ROLE_TO_PREFIX = {
-        "system": "System",
-        "user": "You",
-        "assistant": "Assistant",
-    }
-
-    API_ROLE_TO_COLOR = {
-        "system": Fore.GREEN,
-        "user": Fore.WHITE,
-        "assistant": Fore.MAGENTA,
-    }
-
-    @classmethod
-    def display_assistant_message(cls, message_or_stream):
-        if isinstance(message_or_stream, GeneratorType):
-            cls.print_msg(role="assistant", msg=None, end="")
-            full_msg = ""
-            for msg_chunk in message_or_stream:
-                cls.print_msg(
-                    role="assistant", msg=msg_chunk, add_role_prefix=False, end=""
-                )
-                full_msg += msg_chunk
-
-            print("\n\n")
-        else:
-            cls.print_msg("assistant", message_or_stream)
-
-    @classmethod
-    def get_role_prefix(cls, role):
-        return f"{Style.BRIGHT}{cls.API_ROLE_TO_PREFIX[role]}: {Style.NORMAL}"
-
-    @classmethod
-    def print_msg(cls, role, msg, add_role_prefix=True, end="\n\n"):
-        formatted_msg = f"{cls.API_ROLE_TO_COLOR[role]}"
-        if add_role_prefix:
-            formatted_msg += f"{cls.get_role_prefix(role)}"
-        if msg is not None:
-            formatted_msg += f"{msg}"
-
-        formatted_msg += f"{Style.RESET_ALL}"
-        print(
-            formatted_msg,
-            end=end,
-        )
 
 
 def should_skip_node_schema(model, TM, current_node_schema, all_node_schemas):
