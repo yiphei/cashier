@@ -13,7 +13,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from audio import get_audio_input, get_speech_from_text, get_text_from_speech
 from db_functions import create_db_client
 from function_call_context import FunctionCallContext, InexistentFunctionError
-from graph import Direction, EdgeSchema, Node
+from graph import Direction, EdgeSchema, Node, NodeSchema
 from graph_context import Graph
 from graph_data import (
     FROM_NODE_SCHEMA_ID_TO_EDGE_SCHEMA,
@@ -139,11 +139,11 @@ def handle_skip(model, TC, CT):
     if node_schema_id is not None:
         for edge_schema in fwd_skip_edge_schemas:
             if edge_schema.to_node_schema.id == node_schema_id:
-                return edge_schema, NODE_SCHEMA_ID_TO_NODE_SCHEMA[node_schema_id]
+                return edge_schema, NodeSchema.NODE_SCHEMA_ID_TO_NODE_SCHEMA[node_schema_id]
 
         for edge_schema in bwd_skip_edge_schemas:
             if edge_schema.from_node_schema.id == node_schema_id:
-                return edge_schema, NODE_SCHEMA_ID_TO_NODE_SCHEMA[node_schema_id]
+                return edge_schema, NodeSchema.NODE_SCHEMA_ID_TO_NODE_SCHEMA[node_schema_id]
 
     return None, None
 

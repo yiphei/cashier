@@ -3,8 +3,7 @@ from typing import Dict, List
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from graph import Direction, Edge, FwdSkipType, Node
-from graph_data import EDGE_SCHEMA_ID_TO_EDGE_SCHEMA
+from graph import Direction, Edge, FwdSkipType, Node, EdgeSchema
 
 
 class Graph(BaseModel):
@@ -34,7 +33,7 @@ class Graph(BaseModel):
 
     def edge_schema_by_from_node_schema_id(self, node_schema_id):
         edge_schema_id = self.from_node_schema_id_to_edge_schema_id[node_schema_id]
-        return EDGE_SCHEMA_ID_TO_EDGE_SCHEMA[edge_schema_id] if edge_schema_id else None
+        return EdgeSchema.EDGE_SCHEMA_ID_TO_EDGE_SCHEMA[edge_schema_id] if edge_schema_id else None
 
     def get_prev_node(self, edge_schema, direction):
         if edge_schema and self.get_edge_by_edge_schema_id(edge_schema.id) is not None:

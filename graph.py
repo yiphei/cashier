@@ -18,6 +18,7 @@ class Direction(StrEnum):
 
 class NodeSchema:
     _counter = 0
+    NODE_SCHEMA_ID_TO_NODE_SCHEMA = {}
 
     def __init__(
         self,
@@ -29,6 +30,8 @@ class NodeSchema:
     ):
         NodeSchema._counter += 1
         self.id = NodeSchema._counter
+        self.NODE_SCHEMA_ID_TO_NODE_SCHEMA[self.id] = self
+
         self.node_prompt = node_prompt
         self.tool_fn_names = tool_fn_names
         self.input_pydantic_model = input_pydantic_model
@@ -187,6 +190,7 @@ class FwdSkipType(StrEnum):
 
 class EdgeSchema:
     _counter = 0
+    EDGE_SCHEMA_ID_TO_EDGE_SCHEMA = {}
 
     def __init__(
         self,
@@ -203,6 +207,8 @@ class EdgeSchema:
     ):
         EdgeSchema._counter += 1
         self.id = EdgeSchema._counter
+        self.EDGE_SCHEMA_ID_TO_EDGE_SCHEMA[self.id] = self
+
         self.from_node_schema = from_node_schema
         self.to_node_schema = to_node_schema
         self.state_condition_fn = state_condition_fn
