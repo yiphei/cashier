@@ -202,7 +202,9 @@ class ChatContext(BaseModel):
             input = edge_schema.new_input_from_state_fn(self.curr_node.state)
 
         if edge_schema:
-            edge_schema, input = self.graph.compute_next_edge_schema(edge_schema, input, self.curr_node)
+            edge_schema, input = self.graph.compute_next_edge_schema(
+                edge_schema, input, self.curr_node
+            )
             node_schema = edge_schema.to_node_schema
 
         direction = Direction.FWD
