@@ -303,7 +303,6 @@ class Graph(BaseModel):
     edge_schema_id_to_from_node: Dict[str, None] = Field(
         default_factory=lambda: defaultdict(lambda: None)
     )
-    next_edge_schemas: Set[EdgeSchema] = Field(default_factory=set)
     bwd_skip_edge_schemas: Set[EdgeSchema] = Field(default_factory=set)
 
     def add_edge(self, from_node, to_node, edge_schema_id):
@@ -341,9 +340,9 @@ class Graph(BaseModel):
             assert from_node == to_node
             from_node = new_from_node
 
-    def compute_fwd_skip_edge_schemas(self, start_node):
+    def compute_fwd_skip_edge_schemas(self, start_node, start_edge_schemas):
         fwd_jump_edge_schemas = set()
-        edge_schemas = deque(self.next_edge_schemas)
+        edge_schemas = deque(start_edge_schemas)
         while edge_schemas:
             edge_schema = edge_schemas.popleft()
             if self.get_edge_by_edge_schema_id(edge_schema.id) is not None:

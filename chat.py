@@ -154,6 +154,7 @@ class ChatContext(BaseModel):
     curr_node: Node = None
     need_user_input: bool = True
     graph: Graph = Field(default_factory=Graph)
+    next_edge_schemas: Set[EdgeSchema] = Field(default_factory=set)
 
     def init_node_core(
         self,
