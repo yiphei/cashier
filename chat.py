@@ -17,7 +17,6 @@ from graph import Direction, EdgeSchema, Node, NodeSchema
 from graph_context import Graph
 from graph_data import (
     FROM_NODE_SCHEMA_ID_TO_EDGE_SCHEMA,
-    NODE_SCHEMA_ID_TO_NODE_SCHEMA,
     take_order_node_schema,
 )
 from gui import MessageDisplay, remove_previous_line
@@ -139,11 +138,17 @@ def handle_skip(model, TC, CT):
     if node_schema_id is not None:
         for edge_schema in fwd_skip_edge_schemas:
             if edge_schema.to_node_schema.id == node_schema_id:
-                return edge_schema, NodeSchema.NODE_SCHEMA_ID_TO_NODE_SCHEMA[node_schema_id]
+                return (
+                    edge_schema,
+                    NodeSchema.NODE_SCHEMA_ID_TO_NODE_SCHEMA[node_schema_id],
+                )
 
         for edge_schema in bwd_skip_edge_schemas:
             if edge_schema.from_node_schema.id == node_schema_id:
-                return edge_schema, NodeSchema.NODE_SCHEMA_ID_TO_NODE_SCHEMA[node_schema_id]
+                return (
+                    edge_schema,
+                    NodeSchema.NODE_SCHEMA_ID_TO_NODE_SCHEMA[node_schema_id],
+                )
 
     return None, None
 
