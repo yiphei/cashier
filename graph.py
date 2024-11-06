@@ -294,6 +294,8 @@ class BaseStateModel(BaseModel):
 
 
 class Graph(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
     edge_schema_id_to_edges: Dict[str, List[Edge]] = Field(
         default_factory=lambda: defaultdict(list)
     )
