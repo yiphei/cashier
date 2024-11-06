@@ -187,7 +187,6 @@ class ChatContext(BaseModel):
         self.graph.bridge_edges(edge_schema, direction, new_node)
 
         self.curr_node = new_node
-        self.graph.curr_node = new_node  # TODO: remove this later
         self.graph.next_edge_schemas = set(
             FROM_NODE_SCHEMA_ID_TO_EDGE_SCHEMA.get(new_node.schema.id, [])
         )

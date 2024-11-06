@@ -294,7 +294,6 @@ class BaseStateModel(BaseModel):
 
 
 class Graph(BaseModel):
-    curr_node: Node = None
     edge_schema_id_to_edges: Dict[str, List[Edge]] = Field(
         default_factory=lambda: defaultdict(list)
     )
@@ -330,8 +329,8 @@ class Graph(BaseModel):
         else:
             return None
 
-    def compute_bwd_skip_edge_schemas(self):
-        from_node = self.curr_node
+    def compute_bwd_skip_edge_schemas(self, start_node):
+        from_node = start_node
         while from_node.in_edge_schema is not None:
             if from_node.in_edge_schema in self.bwd_skip_edge_schemas:
                 return
@@ -342,21 +341,21 @@ class Graph(BaseModel):
             assert from_node == to_node
             from_node = new_from_node
 
-    def compute_fwd_skip_edge_schemas(self):
+    def compute_fwd_skip_edge_schemas(self, start_node):
         fwd_jump_edge_schemas = set()
         edge_schemas = deque(self.next_edge_schemas)
         while edge_schemas:
             edge_schema = edge_schemas.popleft()
             if self.get_edge_by_edge_schema_id(edge_schema.id) is not None:
                 from_node, to_node = self.get_edge_by_edge_schema_id(edge_schema.id)
-                if from_node.schema == self.curr_node.schema:
-                    from_node = self.curr_node
+                if from_node.schema == start_node.schema:
+                    from_node = start_node
 
                 if edge_schema.can_skip(
                     from_node,
                     to_node,
                     self.is_prev_from_node_completed(
-                        edge_schema, from_node == self.curr_node
+                        edge_schema, from_node == start_node
                     ),
                 )[0]:
                     fwd_jump_edge_schemas.add(edge_schema)
@@ -373,20 +372,20 @@ class Graph(BaseModel):
         edge = self.get_edge_by_edge_schema_id(edge_schema.id, idx)
         return edge[0].status == Node.Status.COMPLETED if edge else False
 
-    def compute_next_edge_schema(self, start_edge_schema, start_input):
+    def compute_next_edge_schema(self, start_edge_schema, start_input, curr_node):
         next_edge_schema = start_edge_schema
         edge_schema = start_edge_schema
         input = start_input
         while self.get_edge_by_edge_schema_id(next_edge_schema.id) is not None:
             from_node, to_node = self.get_edge_by_edge_schema_id(next_edge_schema.id)
-            if from_node.schema == self.curr_node.schema:
-                from_node = self.curr_node
+            if from_node.schema == curr_node.schema:
+                from_node = curr_node
 
             can_skip, skip_type = next_edge_schema.can_skip(
                 from_node,
                 to_node,
                 self.is_prev_from_node_completed(
-                    next_edge_schema, from_node == self.curr_node
+                    next_edge_schema, from_node == curr_node
                 ),
             )
 
@@ -407,30 +406,30 @@ class Graph(BaseModel):
                     input = from_node.input
                 else:
                     edge_schema = next_edge_schema
-                    if from_node != self.curr_node:
+                    if from_node != curr_node:
                         input = edge_schema.new_input_from_state_fn(from_node.state)
                 break
             else:
-                if from_node != self.curr_node:
+                if from_node != curr_node:
                     input = from_node.input
                 break
 
         return edge_schema, input
 
-    def bridge_edges(self, edge_schema, direction, new_node):
+    def bridge_edges(self, edge_schema, direction, curr_node, new_node):
         if edge_schema:
             if direction == Direction.FWD:
-                immediate_from_node = self.curr_node
-                if edge_schema.from_node_schema != self.curr_node.schema:
+                immediate_from_node = curr_node
+                if edge_schema.from_node_schema != curr_node.schema:
                     from_node = self.edge_schema_id_to_from_node[edge_schema.id]
                     immediate_from_node = from_node
-                    while from_node.schema != self.curr_node.schema:
+                    while from_node.schema != curr_node.schema:
                         prev_edge_schema = from_node.in_edge_schema
                         from_node, to_node = self.get_edge_by_edge_schema_id(
                             prev_edge_schema.id
                         )
 
-                    self.add_edge(self.curr_node, to_node, prev_edge_schema.id)
+                    self.add_edge(curr_node, to_node, prev_edge_schema.id)
 
                 self.add_edge(immediate_from_node, new_node, edge_schema.id)
             elif direction == Direction.BWD:
