@@ -14,7 +14,7 @@ from audio import get_audio_input, get_speech_from_text, get_text_from_speech
 from db_functions import create_db_client
 from function_call_context import FunctionCallContext, InexistentFunctionError
 from graph import Direction, EdgeSchema, Graph, Node, NodeSchema
-from graph_data import FROM_NODE_SCHEMA_ID_TO_EDGE_SCHEMA, take_order_node_schema
+from graph_data import take_order_node_schema
 from gui import MessageDisplay, remove_previous_line
 from logger import logger
 from model import Model
@@ -192,7 +192,7 @@ class ChatContext(BaseModel):
 
         self.curr_node = new_node
         self.next_edge_schemas = set(
-            FROM_NODE_SCHEMA_ID_TO_EDGE_SCHEMA.get(new_node.schema.id, [])
+            EdgeSchema.FROM_NODE_SCHEMA_ID_TO_EDGE_SCHEMA.get(new_node.schema.id, [])
         )
         self.graph.compute_bwd_skip_edge_schemas(
             self.curr_node, self.bwd_skip_edge_schemas
