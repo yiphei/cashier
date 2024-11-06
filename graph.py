@@ -313,7 +313,7 @@ class Graph(BaseModel):
         default_factory=lambda: defaultdict(lambda: None)
     )
 
-    def add_edge(self, from_node, to_node, edge_schema_id):
+    def add_fwd_edge(self, from_node, to_node, edge_schema_id):
         self.edge_schema_id_to_edges[edge_schema_id].append(Edge(from_node, to_node))
         self.from_node_schema_id_to_last_edge_schema_id[from_node.schema.id] = (
             edge_schema_id
@@ -429,27 +429,26 @@ class Graph(BaseModel):
 
         return edge_schema, input
 
-    def bridge_edges(self, edge_schema, direction, curr_node, new_node):
-        if edge_schema:
-            if direction == Direction.FWD:
-                immediate_from_node = curr_node
-                if edge_schema.from_node_schema != curr_node.schema:
-                    from_node = self.edge_schema_id_to_from_node[edge_schema.id]
-                    immediate_from_node = from_node
-                    while from_node.schema != curr_node.schema:
-                        prev_edge_schema = from_node.in_edge_schema
-                        from_node, to_node = self.get_edge_by_edge_schema_id(
-                            prev_edge_schema.id
-                        )
-
-                    self.add_edge(curr_node, to_node, prev_edge_schema.id)
-
-                self.add_edge(immediate_from_node, new_node, edge_schema.id)
-            elif direction == Direction.BWD:
-                if new_node.in_edge_schema:
-                    from_node, _ = self.get_edge_by_edge_schema_id(
-                        new_node.in_edge_schema.id
+    def add_edge(self, curr_node, new_node, edge_schema, direction=Direction.FWD):
+        if direction == Direction.FWD:
+            immediate_from_node = curr_node
+            if edge_schema.from_node_schema != curr_node.schema:
+                from_node = self.edge_schema_id_to_from_node[edge_schema.id]
+                immediate_from_node = from_node
+                while from_node.schema != curr_node.schema:
+                    prev_edge_schema = from_node.in_edge_schema
+                    from_node, to_node = self.get_edge_by_edge_schema_id(
+                        prev_edge_schema.id
                     )
-                    self.add_edge(from_node, new_node, new_node.in_edge_schema.id)
 
-                self.edge_schema_id_to_from_node[edge_schema.id] = new_node
+                self.add_fwd_edge(curr_node, to_node, prev_edge_schema.id)
+
+            self.add_fwd_edge(immediate_from_node, new_node, edge_schema.id)
+        elif direction == Direction.BWD:
+            if new_node.in_edge_schema:
+                from_node, _ = self.get_edge_by_edge_schema_id(
+                    new_node.in_edge_schema.id
+                )
+                self.add_fwd_edge(from_node, new_node, new_node.in_edge_schema.id)
+
+            self.edge_schema_id_to_from_node[edge_schema.id] = new_node

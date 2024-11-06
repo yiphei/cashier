@@ -188,7 +188,8 @@ class ChatContext(BaseModel):
             TC.add_assistant_direct_turn(node_schema.first_turn)
             MessageDisplay.print_msg("assistant", node_schema.first_turn.msg_content)
 
-        self.graph.bridge_edges(edge_schema, direction, self.curr_node, new_node)
+        if edge_schema:
+            self.graph.add_edge(self.curr_node, new_node, edge_schema, direction)
 
         self.curr_node = new_node
         self.next_edge_schemas = set(
