@@ -1,7 +1,7 @@
 import sys
+from types import GeneratorType
 
 from colorama import Fore, Style
-from types import GeneratorType
 
 
 def remove_previous_line():
