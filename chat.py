@@ -195,7 +195,7 @@ class ChatContext(BaseModel):
         self.next_edge_schemas = set(
             EdgeSchema.FROM_NODE_SCHEMA_ID_TO_EDGE_SCHEMA.get(new_node.schema.id, [])
         )
-        self.graph.compute_bwd_skip_edge_schemas(
+        self.graph.add_bwd_skip_edge_schemas(
             self.curr_node, self.bwd_skip_edge_schemas
         )
 
