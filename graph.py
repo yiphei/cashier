@@ -315,7 +315,9 @@ class Graph(BaseModel):
 
     def add_edge(self, from_node, to_node, edge_schema_id):
         self.edge_schema_id_to_edges[edge_schema_id].append(Edge(from_node, to_node))
-        self.from_node_schema_id_to_last_edge_schema_id[from_node.schema.id] = edge_schema_id
+        self.from_node_schema_id_to_last_edge_schema_id[from_node.schema.id] = (
+            edge_schema_id
+        )
         self.edge_schema_id_to_from_node[edge_schema_id] = from_node
 
     def get_edge_by_edge_schema_id(self, edge_schema_id, idx=-1):
@@ -403,8 +405,8 @@ class Graph(BaseModel):
             if can_skip:
                 edge_schema = next_edge_schema
 
-                next_next_edge_schema = self.get_last_edge_schema_by_from_node_schema_id(
-                    to_node.schema.id
+                next_next_edge_schema = (
+                    self.get_last_edge_schema_by_from_node_schema_id(to_node.schema.id)
                 )
 
                 if next_next_edge_schema:
