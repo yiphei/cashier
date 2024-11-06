@@ -155,6 +155,7 @@ class ChatContext(BaseModel):
     need_user_input: bool = True
     graph: Graph = Field(default_factory=Graph)
     next_edge_schemas: Set[EdgeSchema] = Field(default_factory=set)
+    bwd_skip_edge_schemas: Set[EdgeSchema] = Field(default_factory=set)
 
     def init_node_core(
         self,
@@ -185,13 +186,13 @@ class ChatContext(BaseModel):
             TC.add_assistant_direct_turn(node_schema.first_turn)
             MessageDisplay.print_msg("assistant", node_schema.first_turn.msg_content)
 
-        self.graph.bridge_edges(edge_schema, direction, new_node)
+        self.graph.bridge_edges(edge_schema, direction, self.curr_node, new_node)
 
         self.curr_node = new_node
-        self.graph.next_edge_schemas = set(
+        self.next_edge_schemas = set(
             FROM_NODE_SCHEMA_ID_TO_EDGE_SCHEMA.get(new_node.schema.id, [])
         )
-        self.graph.compute_bwd_skip_edge_schemas()
+        self.graph.compute_bwd_skip_edge_schemas(self.bwd_skip_edge_schemas)
 
     def init_next_node(self, node_schema, edge_schema, TC, input=None):
         if self.curr_node:
@@ -201,7 +202,7 @@ class ChatContext(BaseModel):
             input = edge_schema.new_input_from_state_fn(self.curr_node.state)
 
         if edge_schema:
-            edge_schema, input = self.graph.compute_next_edge_schema(edge_schema, input)
+            edge_schema, input = self.graph.compute_next_edge_schema(edge_schema, input, self.curr_node)
             node_schema = edge_schema.to_node_schema
 
         direction = Direction.FWD
@@ -224,7 +225,7 @@ class ChatContext(BaseModel):
             direction = Direction.BWD
 
         if direction == Direction.BWD:
-            self.graph.bwd_skip_edge_schemas.clear()
+            self.bwd_skip_edge_schemas.clear()
 
         prev_node = self.graph.get_prev_node(edge_schema, direction)
         input = prev_node.input
