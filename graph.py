@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import copy
 from enum import StrEnum
-from typing import Any, Literal, NamedTuple, Optional, Set, overload
+from typing import Any, Literal, NamedTuple, Optional, overload
 
 from pydantic import BaseModel, ConfigDict
 
@@ -289,5 +289,3 @@ class BaseStateModel(BaseModel):
                 new_data[field_name] = field_info.default
 
         return self.__class__(**new_data)
-
-

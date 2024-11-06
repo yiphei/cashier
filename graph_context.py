@@ -1,12 +1,10 @@
-from graph import Direction, Edge, FwdSkipType, Node
-from graph_data import EDGE_SCHEMA_ID_TO_EDGE_SCHEMA
-
+from collections import defaultdict, deque
+from typing import Dict, List
 
 from pydantic import BaseModel, ConfigDict, Field
 
-
-from collections import defaultdict, deque
-from typing import Dict, List
+from graph import Direction, Edge, FwdSkipType, Node
+from graph_data import EDGE_SCHEMA_ID_TO_EDGE_SCHEMA
 
 
 class Graph(BaseModel):

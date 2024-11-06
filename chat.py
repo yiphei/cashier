@@ -2,9 +2,8 @@ import argparse
 import copy
 import json
 import os
-from collections import defaultdict, deque
 from distutils.util import strtobool
-from typing import Dict, List, Set
+from typing import Set
 
 from colorama import Style
 from dotenv import load_dotenv  # Add this import
@@ -14,10 +13,9 @@ from pydantic import BaseModel, ConfigDict, Field
 from audio import get_audio_input, get_speech_from_text, get_text_from_speech
 from db_functions import create_db_client
 from function_call_context import FunctionCallContext, InexistentFunctionError
-from graph import Direction, Edge, EdgeSchema, FwdSkipType, Node
+from graph import Direction, EdgeSchema, Node
 from graph_context import Graph
 from graph_data import (
-    EDGE_SCHEMA_ID_TO_EDGE_SCHEMA,
     FROM_NODE_SCHEMA_ID_TO_EDGE_SCHEMA,
     NODE_SCHEMA_ID_TO_NODE_SCHEMA,
     take_order_node_schema,
@@ -125,7 +123,9 @@ def should_skip_node_schema(model, TM, current_node_schema, all_node_schemas):
 
 
 def handle_skip(model, TC, CT):
-    fwd_skip_edge_schemas = CT.graph.compute_fwd_skip_edge_schemas(CT.curr_node, CT.next_edge_schemas)
+    fwd_skip_edge_schemas = CT.graph.compute_fwd_skip_edge_schemas(
+        CT.curr_node, CT.next_edge_schemas
+    )
     bwd_skip_edge_schemas = CT.bwd_skip_edge_schemas
 
     all_node_schemas = [CT.curr_node.schema]
@@ -193,7 +193,9 @@ class ChatContext(BaseModel):
         self.next_edge_schemas = set(
             FROM_NODE_SCHEMA_ID_TO_EDGE_SCHEMA.get(new_node.schema.id, [])
         )
-        self.graph.compute_bwd_skip_edge_schemas(self.curr_node, self.bwd_skip_edge_schemas)
+        self.graph.compute_bwd_skip_edge_schemas(
+            self.curr_node, self.bwd_skip_edge_schemas
+        )
 
     def init_next_node(self, node_schema, edge_schema, TC, input=None):
         if self.curr_node:
