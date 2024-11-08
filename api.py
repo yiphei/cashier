@@ -1,22 +1,13 @@
-import json
-
-from fastapi import FastAPI, WebSocket
-
-from agent import Agent
-
-import argparse
 import copy
 import json
-import os
-from distutils.util import strtobool
 from typing import Set
 
 from colorama import Style
 from dotenv import load_dotenv  # Add this import
-from elevenlabs import ElevenLabs
+from fastapi import FastAPI, WebSocket
 from pydantic import BaseModel, ConfigDict, Field
 
-from audio import get_audio_input, get_speech_from_text, get_text_from_speech
+from audio import get_audio_input, get_text_from_speech
 from db_functions import create_db_client
 from function_call_context import FunctionCallContext, InexistentFunctionError
 from graph import Direction, EdgeSchema, Graph, Node, NodeSchema
@@ -34,7 +25,6 @@ from prompts.off_topic import OffTopicPrompt
 load_dotenv()
 
 app = FastAPI()
-
 
 
 def get_user_input(use_audio_input, openai_client):
@@ -251,9 +241,9 @@ class ChatContext(BaseModel):
         )
 
 
-
 @app.websocket("/llm")
 async def websocket_endpoint(websocket: WebSocket):
+    create_db_client()
     TC = TurnContainer()
     CT = ChatContext(remove_prev_tool_calls=True)
     CT.init_next_node(take_order_node_schema, None, TC, None)
@@ -266,14 +256,17 @@ async def websocket_endpoint(websocket: WebSocket):
 
         if CT.need_user_input:
             if chat_completion is not None:
-                responses = [{"type": "assistant", "text": chat_completion.msg_content}, {"type": "assistant_end"}]
+                responses = [
+                    {"type": "assistant", "text": chat_completion.msg_content},
+                    {"type": "assistant_end"},
+                ]
                 for response in responses:
                     await websocket.send_text(response)
 
             data = await websocket.receive_text()
             socket_data = json.loads(data)
-            last_msg = socket_data['messages'][-1]['message']
-            last_msg_content = last_msg['content']
+            last_msg = socket_data["messages"][-1]["message"]
+            last_msg_content = last_msg["content"]
 
             MessageDisplay.print_msg("user", last_msg_content)
             TC.add_user_turn(last_msg_content)
