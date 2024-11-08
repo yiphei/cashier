@@ -52,7 +52,6 @@ class Agent:
 
         # Load external tools that the agent can use to enhance its responses. In this case, 'serpapi'
         # is loaded, which can be used for performing web searches and fetching results to include in responses.
-        tools = load_tools(["serpapi"])
 
         # Pull a chat prompt template from a repository.
         prompt = hub.pull("hwchase17/react-chat-json")
@@ -63,7 +62,7 @@ class Agent:
         # Create a chat agent using the language model, the loaded tools, and the chat prompt template.
         # This agent is capable of processing inputs, interacting with external tools, and generating responses
         # based on the template and language model.
-        agent = create_json_chat_agent(llm, tools, prompt)
+        agent = create_json_chat_agent(llm, prompt)
 
         # Initialize the AgentExecutor with the created chat agent, the tools, and configuration options.
         # The AgentExecutor is responsible for orchestrating the flow of data between the chat agent,
@@ -71,7 +70,7 @@ class Agent:
         # The 'verbose' option enables detailed logging of operations, and 'handle_parsing_errors' ensures
         # that any errors in parsing or execution are gracefully managed.
         self.agent_executor = AgentExecutor(
-            agent=agent, tools=tools, verbose=True, handle_parsing_errors=True
+            agent=agent, verbose=True, handle_parsing_errors=True
         )
 
     def add_prosody_to_utterance(self, utterance: str, prosody: dict) -> str:
