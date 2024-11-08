@@ -4,7 +4,7 @@ import re
 import inflect
 from dotenv import load_dotenv
 from langchain import hub
-from langchain.agents import AgentExecutor, create_json_chat_agent, load_tools
+from langchain.agents import AgentExecutor, create_json_chat_agent
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from langchain_openai import ChatOpenAI
 
