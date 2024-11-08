@@ -250,6 +250,7 @@ async def websocket_endpoint(websocket: WebSocket):
     model = Model()
     await websocket.accept()
     chat_completion = None
+    model_name = "claude-3.5"
 
     while True:
         force_tool_choice = None
@@ -257,11 +258,11 @@ async def websocket_endpoint(websocket: WebSocket):
         if CT.need_user_input:
             if chat_completion is not None:
                 responses = [
-                    {"type": "assistant", "text": chat_completion.msg_content},
+                    {"type": "assistant_input", "text": chat_completion.msg_content},
                     {"type": "assistant_end"},
                 ]
                 for response in responses:
-                    await websocket.send_text(response)
+                    await websocket.send_text(json.dumps(response))
 
             data = await websocket.receive_text()
             socket_data = json.loads(data)
@@ -281,7 +282,7 @@ async def websocket_endpoint(websocket: WebSocket):
             CT.curr_node.update_first_user_message()
 
         chat_completion = model.chat(
-            model_name=model,
+            model_name=model_name,
             turn_container=TC,
             tool_names_or_tool_defs=CT.curr_node.schema.tool_fn_names,
             stream=True,
@@ -336,7 +337,7 @@ async def websocket_endpoint(websocket: WebSocket):
                         new_edge_schema = edge_schema
                         break
 
-        model_provider = Model.get_model_provider(model)
+        model_provider = Model.get_model_provider(model_name)
         TC.add_assistant_turn(
             chat_completion.msg_content,
             model_provider,
