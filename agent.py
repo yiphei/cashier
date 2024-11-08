@@ -1,11 +1,12 @@
 import json
-from langchain import hub
-from langchain.agents import load_tools, AgentExecutor, create_json_chat_agent
-from langchain_openai import ChatOpenAI
-from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
-from dotenv import load_dotenv
-import inflect
 import re
+
+import inflect
+from dotenv import load_dotenv
+from langchain import hub
+from langchain.agents import AgentExecutor, create_json_chat_agent, load_tools
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
+from langchain_openai import ChatOpenAI
 
 load_dotenv()
 
@@ -112,7 +113,9 @@ class Agent:
             message_object = message["message"]
 
             # Extract the prosody model scores, if available
-            prosody_scores = message.get("models", {}).get("prosody", {}).get("scores", {})
+            prosody_scores = (
+                message.get("models", {}).get("prosody", {}).get("scores", {})
+            )
 
             # Sort the prosody scores based on score, in descending order
             sorted_entries = sorted(

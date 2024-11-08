@@ -1,6 +1,8 @@
-from fastapi import FastAPI, WebSocket
-from agent import Agent
 import json
+
+from fastapi import FastAPI, WebSocket
+
+from agent import Agent
 
 app = FastAPI()
 
@@ -42,7 +44,7 @@ async def websocket_endpoint(websocket: WebSocket):
     while True:
         # Wait for a text message from the WebSocket, then asynchronously receive it.
         data = await websocket.receive_text()
-        
+
         # Deserialize the text message (JSON format) to a Python dictionary.
         hume_socket_message = json.loads(data)
 
