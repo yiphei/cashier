@@ -258,6 +258,8 @@ class Model:
 
 
 class ModelOutput(ABC):
+    model_provider = None
+
     def __init__(self, output_obj, is_stream, response_format=None):
         self.output_obj = output_obj
         self.is_stream = is_stream
@@ -403,6 +405,8 @@ class ModelOutput(ABC):
 
 
 class OAIModelOutput(ModelOutput):
+    model_provider = ModelProvider.OPENAI
+
     def _get_tool_call(self, chunk):
         return chunk.choices[0].delta.tool_calls[0]
 
@@ -470,6 +474,8 @@ class OAIModelOutput(ModelOutput):
 
 
 class AnthropicModelOutput(ModelOutput):
+    model_provider = ModelProvider.ANTHROPIC
+
     def get_fn_call_id_from_chunk(self, chunk):
         return chunk.content_block.id
 

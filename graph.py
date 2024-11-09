@@ -363,17 +363,20 @@ class Graph(BaseModel):
         else:
             return None
 
-    def add_bwd_skip_edge_schemas(self, start_node, curr_bwd_skip_edge_schemas):
+    def compute_bwd_skip_edge_schemas(self, start_node, curr_bwd_skip_edge_schemas):
         from_node = start_node
+        new_edge_schemas = set()
         while from_node.in_edge_schema is not None:
             if from_node.in_edge_schema in curr_bwd_skip_edge_schemas:
-                return
-            curr_bwd_skip_edge_schemas.add(from_node.in_edge_schema)
+                break
+            new_edge_schemas.add(from_node.in_edge_schema)
             new_from_node, to_node = self.get_edge_by_edge_schema_id(
                 from_node.in_edge_schema.id
             )
             assert from_node == to_node
             from_node = new_from_node
+
+        return new_edge_schemas | curr_bwd_skip_edge_schemas
 
     def compute_fwd_skip_edge_schemas(self, start_node, start_edge_schemas):
         fwd_jump_edge_schemas = set()
