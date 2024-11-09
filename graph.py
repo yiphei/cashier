@@ -5,7 +5,7 @@ from collections import defaultdict, deque
 from enum import StrEnum
 from typing import Any, Dict, List, Literal, NamedTuple, Optional, overload
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from function_call_context import StateUpdateError
 from model_tool_decorator import ToolRegistry
@@ -19,7 +19,6 @@ class Direction(StrEnum):
 
 class NodeSchema:
     _counter = 0
-    NODE_SCHEMA_ID_TO_NODE_SCHEMA = {}
 
     def __init__(
         self,
@@ -31,7 +30,6 @@ class NodeSchema:
     ):
         NodeSchema._counter += 1
         self.id = NodeSchema._counter
-        self.NODE_SCHEMA_ID_TO_NODE_SCHEMA[self.id] = self
 
         self.node_prompt = node_prompt
         self.tool_fn_names = tool_fn_names
@@ -191,8 +189,6 @@ class FwdSkipType(StrEnum):
 
 class EdgeSchema:
     _counter = 0
-    EDGE_SCHEMA_ID_TO_EDGE_SCHEMA = {}
-    FROM_NODE_SCHEMA_ID_TO_EDGE_SCHEMA = defaultdict(list)
 
     def __init__(
         self,
@@ -209,8 +205,6 @@ class EdgeSchema:
     ):
         EdgeSchema._counter += 1
         self.id = EdgeSchema._counter
-        self.EDGE_SCHEMA_ID_TO_EDGE_SCHEMA[self.id] = self
-        self.FROM_NODE_SCHEMA_ID_TO_EDGE_SCHEMA[from_node_schema.id].append(self)
 
         self.from_node_schema = from_node_schema
         self.to_node_schema = to_node_schema
@@ -300,9 +294,36 @@ class BaseStateModel(BaseModel):
         return self.__class__(**new_data)
 
 
+class GraphSchema(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    start_node_schema: NodeSchema
+    edge_schemas: List[EdgeSchema]
+    node_schemas: List[NodeSchema]
+    node_schema_id_to_node_schema: Optional[Dict[str, NodeSchema]] = None
+    edge_schema_id_to_edge_schema: Optional[Dict[str, EdgeSchema]] = None
+    from_node_schema_id_to_edge_schema: Optional[Dict[str, List[EdgeSchema]]] = None
+
+    @model_validator(mode="after")
+    def init_computed_fields(self):
+        self.node_schema_id_to_node_schema = {
+            node_schema.id: node_schema for node_schema in self.node_schemas
+        }
+        self.edge_schema_id_to_edge_schema = {
+            edge_schema.id: edge_schema for edge_schema in self.edge_schemas
+        }
+        self.from_node_schema_id_to_edge_schema = defaultdict(list)
+        for edge_schema in self.edge_schemas:
+            self.from_node_schema_id_to_edge_schema[
+                edge_schema.from_node_schema.id
+            ].append(edge_schema)
+        return self
+
+
 class Graph(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
+    graph_schema: GraphSchema
     edge_schema_id_to_edges: Dict[str, List[Edge]] = Field(
         default_factory=lambda: defaultdict(list)
     )
@@ -330,7 +351,7 @@ class Graph(BaseModel):
     def get_last_edge_schema_by_from_node_schema_id(self, node_schema_id):
         edge_schema_id = self.from_node_schema_id_to_last_edge_schema_id[node_schema_id]
         return (
-            EdgeSchema.EDGE_SCHEMA_ID_TO_EDGE_SCHEMA[edge_schema_id]
+            self.graph_schema.edge_schema_id_to_edge_schema[edge_schema_id]
             if edge_schema_id
             else None
         )

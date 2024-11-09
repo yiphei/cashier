@@ -13,8 +13,8 @@ from pydantic import BaseModel, ConfigDict, Field
 from audio import get_audio_input, get_speech_from_text, get_text_from_speech
 from db_functions import create_db_client
 from function_call_context import FunctionCallContext, InexistentFunctionError
-from graph import Direction, EdgeSchema, Graph, Node, NodeSchema
-from graph_data import take_order_node_schema
+from graph import Direction, EdgeSchema, Graph, Node
+from graph_data import cashier_graph_schema
 from gui import MessageDisplay, remove_previous_line
 from logger import logger
 from model import Model
@@ -136,14 +136,14 @@ def handle_skip(model, TC, CT):
             if edge_schema.to_node_schema.id == node_schema_id:
                 return (
                     edge_schema,
-                    NodeSchema.NODE_SCHEMA_ID_TO_NODE_SCHEMA[node_schema_id],
+                    cashier_graph_schema.node_schema_id_to_node_schema[node_schema_id],
                 )
 
         for edge_schema in bwd_skip_edge_schemas:
             if edge_schema.from_node_schema.id == node_schema_id:
                 return (
                     edge_schema,
-                    NodeSchema.NODE_SCHEMA_ID_TO_NODE_SCHEMA[node_schema_id],
+                    cashier_graph_schema.node_schema_id_to_node_schema[node_schema_id],
                 )
 
     return None, None
@@ -193,7 +193,9 @@ class ChatContext(BaseModel):
 
         self.curr_node = new_node
         self.next_edge_schemas = set(
-            EdgeSchema.FROM_NODE_SCHEMA_ID_TO_EDGE_SCHEMA.get(new_node.schema.id, [])
+            cashier_graph_schema.from_node_schema_id_to_edge_schema.get(
+                new_node.schema.id, []
+            )
         )
         self.graph.add_bwd_skip_edge_schemas(self.curr_node, self.bwd_skip_edge_schemas)
 
@@ -244,8 +246,11 @@ class ChatContext(BaseModel):
 
 def run_chat(args, model, elevenlabs_client):
     TC = TurnContainer()
-    CT = ChatContext(remove_prev_tool_calls=args.remove_prev_tool_calls)
-    CT.init_next_node(take_order_node_schema, None, TC, None)
+    CT = ChatContext(
+        graph=Graph(graph_schema=cashier_graph_schema),
+        remove_prev_tool_calls=args.remove_prev_tool_calls,
+    )
+    CT.init_next_node(cashier_graph_schema.start_node_schema, None, TC, None)
 
     while True:
         force_tool_choice = None

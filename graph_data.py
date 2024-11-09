@@ -3,7 +3,7 @@ from typing import Optional
 from pydantic import Field
 
 from db_functions import Order
-from graph import BaseStateModel, EdgeSchema, NodeSchema
+from graph import BaseStateModel, EdgeSchema, GraphSchema, NodeSchema
 from model_turn import AssistantTurn
 from model_util import ModelProvider
 
@@ -97,4 +97,15 @@ confirm_to_terminal_edge_schema = EdgeSchema(
     to_node_schema=terminal_order_node_schema,
     state_condition_fn=lambda state: state.has_confirmed_order,
     new_input_from_state_fn=lambda state: None,
+)
+
+
+cashier_graph_schema = GraphSchema(
+    start_node_schema=take_order_node_schema,
+    edge_schemas=[take_to_confirm_edge_schema, confirm_to_terminal_edge_schema],
+    node_schemas=[
+        take_order_node_schema,
+        confirm_order_node_schema,
+        terminal_order_node_schema,
+    ],
 )
