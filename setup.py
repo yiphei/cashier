@@ -10,6 +10,6 @@ def parse_requirements(filename):
 setup(
     name="cashier",
     version="0.1",
-    packages=find_packages(),
+    packages=find_packages(include=["*"]),
     install_requires=parse_requirements("requirements.txt"),  # Load dependencies
 )
