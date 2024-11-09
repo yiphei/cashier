@@ -48,7 +48,9 @@ def run_chat(args, model, elevenlabs_client):
             AE.add_user_turn(text_input)
 
         chat_completion = model.chat(
-            model_name=args.model, stream=args.stream, **AE.get_model_completion_kwargs()
+            model_name=args.model,
+            stream=args.stream,
+            **AE.get_model_completion_kwargs(),
         )
         AE.add_assistant_turn(chat_completion)
 
