@@ -63,7 +63,7 @@ class ChatContext(BaseModel):
 
         self.curr_node = new_node
         self.next_edge_schemas = set(
-            cashier_graph_schema.from_node_schema_id_to_edge_schema.get(
+            self.graph.graph_schema.from_node_schema_id_to_edge_schema.get(
                 new_node.schema.id, []
             )
         )
@@ -211,14 +211,14 @@ def handle_skip(model, TC, CT):
             if edge_schema.to_node_schema.id == node_schema_id:
                 return (
                     edge_schema,
-                    cashier_graph_schema.node_schema_id_to_node_schema[node_schema_id],
+                    CT.graph.graph_schema.node_schema_id_to_node_schema[node_schema_id],
                 )
 
         for edge_schema in bwd_skip_edge_schemas:
             if edge_schema.from_node_schema.id == node_schema_id:
                 return (
                     edge_schema,
-                    cashier_graph_schema.node_schema_id_to_node_schema[node_schema_id],
+                    CT.graph.graph_schema.node_schema_id_to_node_schema[node_schema_id],
                 )
 
     return None, None
