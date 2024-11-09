@@ -1,19 +1,16 @@
+import copy
+import json
+from typing import Set
+
+from colorama import Style
+from pydantic import BaseModel, ConfigDict, Field
+
 from audio import get_speech_from_text
 from function_call_context import FunctionCallContext, InexistentFunctionError
 from graph import Direction, EdgeSchema, Graph, Node
 from graph_data import cashier_graph_schema
 from gui import MessageDisplay
 from logger import logger
-import json
-import copy
-
-
-from colorama import Style
-from pydantic import BaseModel, ConfigDict, Field
-
-
-from typing import Set
-
 from model import Model
 from model_tool_decorator import ToolRegistry
 from model_turn import MessageList, TurnContainer
@@ -116,6 +113,7 @@ class ChatContext(BaseModel):
             node_schema, edge_schema, TC, input, last_msg, prev_node, direction, True
         )
 
+
 def should_skip_node_schema(model, TM, current_node_schema, all_node_schemas):
     if len(all_node_schemas) == 1:
         return None
@@ -193,6 +191,7 @@ def should_skip_node_schema(model, TM, current_node_schema, all_node_schemas):
 
     return agent_id if agent_id != current_node_schema.id else None
 
+
 def handle_skip(model, TC, CT):
     fwd_skip_edge_schemas = CT.graph.compute_fwd_skip_edge_schemas(
         CT.curr_node, CT.next_edge_schemas
@@ -227,7 +226,14 @@ def handle_skip(model, TC, CT):
 
 class AgentExecutor:
 
-    def __init__(self, model,elevenlabs_client, graph_schema, audio_output, remove_prev_tool_calls):
+    def __init__(
+        self,
+        model,
+        elevenlabs_client,
+        graph_schema,
+        audio_output,
+        remove_prev_tool_calls,
+    ):
         self.model = model
         self.elevenlabs_client = elevenlabs_client
         self.graph_schema = graph_schema
@@ -238,9 +244,10 @@ class AgentExecutor:
             graph=Graph(graph_schema=cashier_graph_schema),
             remove_prev_tool_calls=remove_prev_tool_calls,
         )
-        self.CT.init_next_node(cashier_graph_schema.start_node_schema, None, self.TC, None)
+        self.CT.init_next_node(
+            cashier_graph_schema.start_node_schema, None, self.TC, None
+        )
         self.force_tool_choice = None
-
 
     def add_user_turn(self, msg):
         MessageDisplay.print_msg("user", msg)
@@ -273,7 +280,10 @@ class AgentExecutor:
                 f"[FUNCTION_CALL] {Style.BRIGHT}name: {function_call.function_name}, id: {function_call.tool_call_id}{Style.NORMAL} with args:\n{json.dumps(function_args, indent=4)}"
             )
             with FunctionCallContext() as fn_call_context:
-                if function_call.function_name not in self.CT.curr_node.schema.tool_fn_names:
+                if (
+                    function_call.function_name
+                    not in self.CT.curr_node.schema.tool_fn_names
+                ):
                     raise InexistentFunctionError(function_call.function_name)
 
                 if function_call.function_name.startswith("get_state"):
@@ -328,7 +338,7 @@ class AgentExecutor:
         self.force_tool_choice = None
         return {
             "turn_container": self.TC,
-            "tool_names_or_tool_defs":self.CT.curr_node.schema.tool_fn_names,
+            "tool_names_or_tool_defs": self.CT.curr_node.schema.tool_fn_names,
             "extra_tool_registry": self.CT.curr_node.schema.tool_registry,
-            "force_tool_choice":force_tool_choice,
+            "force_tool_choice": force_tool_choice,
         }

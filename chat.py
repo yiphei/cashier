@@ -1,24 +1,17 @@
 import argparse
-import json
 import os
 from distutils.util import strtobool
 
-from colorama import Style
 from dotenv import load_dotenv  # Add this import
 from elevenlabs import ElevenLabs
 
-from agent_executor import ChatContext, handle_skip, AgentExecutor
-from audio import get_audio_input, get_speech_from_text, get_text_from_speech
+from agent_executor import AgentExecutor
+from audio import get_audio_input, get_text_from_speech
 from db_functions import create_db_client
-from function_call_context import FunctionCallContext, InexistentFunctionError
-from graph import Graph
 from graph_data import cashier_graph_schema
-from gui import MessageDisplay, remove_previous_line
+from gui import remove_previous_line
 from logger import logger
 from model import Model
-from model_tool_decorator import ToolRegistry
-from model_turn import TurnContainer
-from model_util import CustomJSONEncoder
 
 # Load environment variables from .env file
 load_dotenv()
@@ -36,7 +29,13 @@ def get_user_input(use_audio_input, openai_client):
 
 
 def run_chat(args, model, elevenlabs_client):
-    AE = AgentExecutor(model, elevenlabs_client, cashier_graph_schema, args.audio_output, args.remove_prev_tool_calls)
+    AE = AgentExecutor(
+        model,
+        elevenlabs_client,
+        cashier_graph_schema,
+        args.audio_output,
+        args.remove_prev_tool_calls,
+    )
 
     while True:
         if AE.CT.need_user_input:
@@ -49,9 +48,7 @@ def run_chat(args, model, elevenlabs_client):
             AE.add_user_turn(text_input)
 
         chat_completion = model.chat(
-            model_name=args.model,
-            stream=args.stream,
-            **AE.get_model_completion_args()
+            model_name=args.model, stream=args.stream, **AE.get_model_completion_args()
         )
         AE.add_assistant_turn(chat_completion)
 

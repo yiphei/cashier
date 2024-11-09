@@ -475,7 +475,7 @@ class OAIModelOutput(ModelOutput):
 
 class AnthropicModelOutput(ModelOutput):
     model_provider = ModelProvider.OPENAI
-    
+
     def get_fn_call_id_from_chunk(self, chunk):
         return chunk.content_block.id
 
