@@ -318,7 +318,7 @@ class AgentExecutor:
                 new_edge_schema,
             )
 
-    def get_model_completion_args(self):
+    def get_model_completion_kwargs(self):
         force_tool_choice = self.force_tool_choice
         self.force_tool_choice = None
         return {
