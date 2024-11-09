@@ -157,7 +157,9 @@ class AgentExecutor:
                 new_node.schema.id, []
             )
         )
-        self.bwd_skip_edge_schemas = self.graph.compute_bwd_skip_edge_schemas(self.curr_node, self.bwd_skip_edge_schemas)
+        self.bwd_skip_edge_schemas = self.graph.compute_bwd_skip_edge_schemas(
+            self.curr_node, self.bwd_skip_edge_schemas
+        )
 
     def init_next_node(self, node_schema, edge_schema, input=None):
         if self.curr_node:
