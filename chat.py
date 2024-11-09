@@ -8,7 +8,7 @@ from elevenlabs import ElevenLabs
 from agent_executor import AgentExecutor
 from audio import get_audio_input, get_text_from_speech
 from db_functions import create_db_client
-from graph_data import cashier_graph_schema
+from graph_data.cashier import cashier_graph_schema
 from gui import remove_previous_line
 from logger import logger
 from model import Model
