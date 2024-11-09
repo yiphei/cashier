@@ -249,6 +249,39 @@ class AgentExecutor:
             self.force_tool_choice = "get_state"
         self.curr_node.update_first_user_message()
 
+    def execute_function_call(self, fn_call):
+        function_args = fn_call.function_args
+        logger.debug(
+            f"[FUNCTION_CALL] {Style.BRIGHT}name: {fn_call.function_name}, id: {fn_call.tool_call_id}{Style.NORMAL} with args:\n{json.dumps(function_args, indent=4)}"
+        )
+        with FunctionCallContext() as fn_call_context:
+            if (
+                fn_call.function_name
+                not in self.curr_node.schema.tool_fn_names
+            ):
+                raise InexistentFunctionError(fn_call.function_name)
+
+            if fn_call.function_name.startswith("get_state"):
+                fn_output = getattr(self.curr_node, fn_call.function_name)(
+                    **function_args
+                )
+            elif fn_call.function_name.startswith("update_state"):
+                fn_output = self.curr_node.update_state(**function_args)
+            else:
+                fn = ToolRegistry.GLOBAL_FN_NAME_TO_FN[fn_call.function_name]
+                fn_output = fn(**function_args)
+
+        if fn_call_context.has_exception():
+            logger.debug(
+                f"[FUNCTION_EXCEPTION] {Style.BRIGHT}name: {fn_call.function_name}, id: {fn_call.tool_call_id}{Style.NORMAL} with exception:\n{str(fn_call_context.exception)}"
+            )
+            return fn_call_context.exception, False
+        else:
+            logger.debug(
+                f"[FUNCTION_RETURN] {Style.BRIGHT}name: {fn_call.function_name}, id: {fn_call.tool_call_id}{Style.NORMAL} with output:\n{json.dumps(fn_output, cls=CustomJSONEncoder, indent=4)}"
+            )
+            return fn_output, True
+
     def add_assistant_turn(self, model_completion):
         message = model_completion.get_or_stream_message()
         if message is not None:
@@ -262,42 +295,12 @@ class AgentExecutor:
         fn_id_to_output = {}
         new_edge_schema = None
         for function_call in model_completion.get_or_stream_fn_calls():
-            function_args = function_call.function_args
-            logger.debug(
-                f"[FUNCTION_CALL] {Style.BRIGHT}name: {function_call.function_name}, id: {function_call.tool_call_id}{Style.NORMAL} with args:\n{json.dumps(function_args, indent=4)}"
-            )
-            with FunctionCallContext() as fn_call_context:
-                if (
-                    function_call.function_name
-                    not in self.curr_node.schema.tool_fn_names
-                ):
-                    raise InexistentFunctionError(function_call.function_name)
-
-                if function_call.function_name.startswith("get_state"):
-                    fn_output = getattr(self.curr_node, function_call.function_name)(
-                        **function_args
-                    )
-                elif function_call.function_name.startswith("update_state"):
-                    fn_output = self.curr_node.update_state(**function_args)
-                else:
-                    fn = ToolRegistry.GLOBAL_FN_NAME_TO_FN[function_call.function_name]
-                    fn_output = fn(**function_args)
-
-            if fn_call_context.has_exception():
-                logger.debug(
-                    f"[FUNCTION_EXCEPTION] {Style.BRIGHT}name: {function_call.function_name}, id: {function_call.tool_call_id}{Style.NORMAL} with exception:\n{str(fn_call_context.exception)}"
-                )
-                fn_id_to_output[function_call.tool_call_id] = fn_call_context.exception
-            else:
-                logger.debug(
-                    f"[FUNCTION_RETURN] {Style.BRIGHT}name: {function_call.function_name}, id: {function_call.tool_call_id}{Style.NORMAL} with output:\n{json.dumps(fn_output, cls=CustomJSONEncoder, indent=4)}"
-                )
-                fn_id_to_output[function_call.tool_call_id] = fn_output
+            fn_id_to_output[function_call.tool_call_id], is_success = self.execute_function_call(function_call)
 
             self.need_user_input = False
 
             if (
-                not fn_call_context.has_exception()
+                is_success
                 and function_call.function_name.startswith("update_state")
             ):
                 for edge_schema in self.next_edge_schemas:
