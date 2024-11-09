@@ -193,7 +193,9 @@ class ChatContext(BaseModel):
 
         self.curr_node = new_node
         self.next_edge_schemas = set(
-            cashier_graph_schema.from_node_schema_id_to_edge_schema.get(new_node.schema.id, [])
+            cashier_graph_schema.from_node_schema_id_to_edge_schema.get(
+                new_node.schema.id, []
+            )
         )
         self.graph.add_bwd_skip_edge_schemas(self.curr_node, self.bwd_skip_edge_schemas)
 
@@ -244,7 +246,10 @@ class ChatContext(BaseModel):
 
 def run_chat(args, model, elevenlabs_client):
     TC = TurnContainer()
-    CT = ChatContext(graph=Graph(graph_schema=cashier_graph_schema), remove_prev_tool_calls=args.remove_prev_tool_calls)
+    CT = ChatContext(
+        graph=Graph(graph_schema=cashier_graph_schema),
+        remove_prev_tool_calls=args.remove_prev_tool_calls,
+    )
     CT.init_next_node(cashier_graph_schema.start_node_schema, None, TC, None)
 
     while True:

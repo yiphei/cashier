@@ -293,6 +293,7 @@ class BaseStateModel(BaseModel):
 
         return self.__class__(**new_data)
 
+
 class GraphSchema(BaseModel):
     start_node_schema: NodeSchema
     edge_schemas: List[EdgeSchema]
@@ -303,15 +304,22 @@ class GraphSchema(BaseModel):
 
     @model_validator(mode="after")
     def init_computed_fields(self):
-        self.node_schema_id_to_node_schema = {node_schema.id: node_schema for node_schema in self.node_schemas}
-        self.edge_schema_id_to_edge_schema = {edge_schema.id: edge_schema for edge_schema in self.edge_schemas}
-        self.from_node_schema_id_to_edge_schema = {edge_schema.from_node_schema.id: edge_schema for edge_schema in self.edge_schemas}
+        self.node_schema_id_to_node_schema = {
+            node_schema.id: node_schema for node_schema in self.node_schemas
+        }
+        self.edge_schema_id_to_edge_schema = {
+            edge_schema.id: edge_schema for edge_schema in self.edge_schemas
+        }
+        self.from_node_schema_id_to_edge_schema = {
+            edge_schema.from_node_schema.id: edge_schema
+            for edge_schema in self.edge_schemas
+        }
         return self
 
 
 class Graph(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
-    
+
     graph_schema: GraphSchema
     edge_schema_id_to_edges: Dict[str, List[Edge]] = Field(
         default_factory=lambda: defaultdict(list)
