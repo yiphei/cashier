@@ -255,10 +255,7 @@ class AgentExecutor:
             f"[FUNCTION_CALL] {Style.BRIGHT}name: {fn_call.function_name}, id: {fn_call.tool_call_id}{Style.NORMAL} with args:\n{json.dumps(function_args, indent=4)}"
         )
         with FunctionCallContext() as fn_call_context:
-            if (
-                fn_call.function_name
-                not in self.curr_node.schema.tool_fn_names
-            ):
+            if fn_call.function_name not in self.curr_node.schema.tool_fn_names:
                 raise InexistentFunctionError(fn_call.function_name)
 
             if fn_call.function_name.startswith("get_state"):
@@ -295,14 +292,13 @@ class AgentExecutor:
         fn_id_to_output = {}
         new_edge_schema = None
         for function_call in model_completion.get_or_stream_fn_calls():
-            fn_id_to_output[function_call.tool_call_id], is_success = self.execute_function_call(function_call)
+            fn_id_to_output[function_call.tool_call_id], is_success = (
+                self.execute_function_call(function_call)
+            )
 
             self.need_user_input = False
 
-            if (
-                is_success
-                and function_call.function_name.startswith("update_state")
-            ):
+            if is_success and function_call.function_name.startswith("update_state"):
                 for edge_schema in self.next_edge_schemas:
                     if edge_schema.check_state_condition(self.curr_node.state):
                         new_edge_schema = edge_schema
