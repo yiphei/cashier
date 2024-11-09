@@ -1,13 +1,11 @@
 import copy
 import json
-from typing import Set
 
 from colorama import Style
-from pydantic import BaseModel, ConfigDict, Field
 
 from audio import get_speech_from_text
 from function_call_context import FunctionCallContext, InexistentFunctionError
-from graph import Direction, EdgeSchema, Graph, Node
+from graph import Direction, Graph
 from graph_data import cashier_graph_schema
 from gui import MessageDisplay
 from logger import logger
@@ -120,9 +118,7 @@ class AgentExecutor:
         self.next_edge_schemas = set()
         self.bwd_skip_edge_schemas = set()
 
-        self.init_next_node(
-            cashier_graph_schema.start_node_schema, None, None
-        )
+        self.init_next_node(cashier_graph_schema.start_node_schema, None, None)
         self.force_tool_choice = None
 
     def init_node_core(
@@ -207,7 +203,6 @@ class AgentExecutor:
             node_schema, edge_schema, input, last_msg, prev_node, direction, True
         )
 
-
     def handle_skip(self):
         fwd_skip_edge_schemas = self.graph.compute_fwd_skip_edge_schemas(
             self.curr_node, self.next_edge_schemas
@@ -227,14 +222,18 @@ class AgentExecutor:
                 if edge_schema.to_node_schema.id == node_schema_id:
                     return (
                         edge_schema,
-                        self.graph.graph_schema.node_schema_id_to_node_schema[node_schema_id],
+                        self.graph.graph_schema.node_schema_id_to_node_schema[
+                            node_schema_id
+                        ],
                     )
 
             for edge_schema in bwd_skip_edge_schemas:
                 if edge_schema.from_node_schema.id == node_schema_id:
                     return (
                         edge_schema,
-                        self.graph.graph_schema.node_schema_id_to_node_schema[node_schema_id],
+                        self.graph.graph_schema.node_schema_id_to_node_schema[
+                            node_schema_id
+                        ],
                     )
 
         return None, None
