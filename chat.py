@@ -38,7 +38,7 @@ def run_chat(args, model, elevenlabs_client):
     )
 
     while True:
-        if AE.CT.need_user_input:
+        if AE.need_user_input:
             # Read user input from stdin
             text_input = get_user_input(args.audio_input, model.oai_client)
             # If user types 'exit', break the loop and end the program

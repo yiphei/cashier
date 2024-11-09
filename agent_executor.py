@@ -19,101 +19,6 @@ from prompts.node_schema_selection import NodeSchemaSelectionPrompt
 from prompts.off_topic import OffTopicPrompt
 
 
-class ChatContext(BaseModel):
-    model_config = ConfigDict(arbitrary_types_allowed=True)
-
-    remove_prev_tool_calls: bool
-    curr_node: Node = None
-    need_user_input: bool = True
-    graph: Graph = Field(default_factory=Graph)
-    next_edge_schemas: Set[EdgeSchema] = Field(default_factory=set)
-    bwd_skip_edge_schemas: Set[EdgeSchema] = Field(default_factory=set)
-
-    def init_node_core(
-        self,
-        node_schema,
-        edge_schema,
-        TC,
-        input,
-        last_msg,
-        prev_node,
-        direction,
-        is_skip=False,
-    ):
-        logger.debug(
-            f"[NODE_SCHEMA] Initializing node with {Style.BRIGHT}node_schema_id: {node_schema.id}{Style.NORMAL}"
-        )
-        new_node = node_schema.create_node(
-            input, last_msg, prev_node, edge_schema, direction
-        )
-
-        TC.add_node_turn(
-            new_node,
-            remove_prev_tool_calls=self.remove_prev_tool_calls,
-            is_skip=is_skip,
-        )
-        MessageDisplay.print_msg("system", new_node.prompt)
-
-        if node_schema.first_turn and prev_node is None:
-            TC.add_assistant_direct_turn(node_schema.first_turn)
-            MessageDisplay.print_msg("assistant", node_schema.first_turn.msg_content)
-
-        if edge_schema:
-            self.graph.add_edge(self.curr_node, new_node, edge_schema, direction)
-
-        self.curr_node = new_node
-        self.next_edge_schemas = set(
-            self.graph.graph_schema.from_node_schema_id_to_edge_schema.get(
-                new_node.schema.id, []
-            )
-        )
-        self.graph.add_bwd_skip_edge_schemas(self.curr_node, self.bwd_skip_edge_schemas)
-
-    def init_next_node(self, node_schema, edge_schema, TC, input=None):
-        if self.curr_node:
-            self.curr_node.mark_as_completed()
-
-        if input is None and edge_schema:
-            input = edge_schema.new_input_from_state_fn(self.curr_node.state)
-
-        if edge_schema:
-            edge_schema, input = self.graph.compute_next_edge_schema(
-                edge_schema, input, self.curr_node
-            )
-            node_schema = edge_schema.to_node_schema
-
-        direction = Direction.FWD
-        prev_node = self.graph.get_prev_node(edge_schema, direction)
-
-        last_msg = TC.get_user_message(content_only=True)
-
-        self.init_node_core(
-            node_schema, edge_schema, TC, input, last_msg, prev_node, direction, False
-        )
-
-    def init_skip_node(
-        self,
-        node_schema,
-        edge_schema,
-        TC,
-    ):
-        direction = Direction.FWD
-        if edge_schema and edge_schema.from_node_schema == node_schema:
-            direction = Direction.BWD
-
-        if direction == Direction.BWD:
-            self.bwd_skip_edge_schemas.clear()
-
-        prev_node = self.graph.get_prev_node(edge_schema, direction)
-        input = prev_node.input
-
-        last_msg = TC.get_asst_message(content_only=True)
-
-        self.init_node_core(
-            node_schema, edge_schema, TC, input, last_msg, prev_node, direction, True
-        )
-
-
 def should_skip_node_schema(model, TM, current_node_schema, all_node_schemas):
     if len(all_node_schemas) == 1:
         return None
@@ -192,38 +97,6 @@ def should_skip_node_schema(model, TM, current_node_schema, all_node_schemas):
     return agent_id if agent_id != current_node_schema.id else None
 
 
-def handle_skip(model, TC, CT):
-    fwd_skip_edge_schemas = CT.graph.compute_fwd_skip_edge_schemas(
-        CT.curr_node, CT.next_edge_schemas
-    )
-    bwd_skip_edge_schemas = CT.bwd_skip_edge_schemas
-
-    all_node_schemas = [CT.curr_node.schema]
-    all_node_schemas += [edge.to_node_schema for edge in fwd_skip_edge_schemas]
-    all_node_schemas += [edge.from_node_schema for edge in bwd_skip_edge_schemas]
-
-    node_schema_id = should_skip_node_schema(
-        model, TC, CT.curr_node.schema, all_node_schemas
-    )
-
-    if node_schema_id is not None:
-        for edge_schema in fwd_skip_edge_schemas:
-            if edge_schema.to_node_schema.id == node_schema_id:
-                return (
-                    edge_schema,
-                    CT.graph.graph_schema.node_schema_id_to_node_schema[node_schema_id],
-                )
-
-        for edge_schema in bwd_skip_edge_schemas:
-            if edge_schema.from_node_schema.id == node_schema_id:
-                return (
-                    edge_schema,
-                    CT.graph.graph_schema.node_schema_id_to_node_schema[node_schema_id],
-                )
-
-    return None, None
-
-
 class AgentExecutor:
 
     def __init__(
@@ -240,27 +113,143 @@ class AgentExecutor:
         self.remove_prev_tool_calls = remove_prev_tool_calls
         self.audio_output = audio_output
         self.TC = TurnContainer()
-        self.CT = ChatContext(
-            graph=Graph(graph_schema=cashier_graph_schema),
-            remove_prev_tool_calls=remove_prev_tool_calls,
-        )
-        self.CT.init_next_node(
-            cashier_graph_schema.start_node_schema, None, self.TC, None
+
+        self.curr_node = None
+        self.need_user_input = True
+        self.graph = Graph(graph_schema=cashier_graph_schema)
+        self.next_edge_schemas = set()
+        self.bwd_skip_edge_schemas = set()
+
+        self.init_next_node(
+            cashier_graph_schema.start_node_schema, None, None
         )
         self.force_tool_choice = None
+
+    def init_node_core(
+        self,
+        node_schema,
+        edge_schema,
+        input,
+        last_msg,
+        prev_node,
+        direction,
+        is_skip=False,
+    ):
+        logger.debug(
+            f"[NODE_SCHEMA] Initializing node with {Style.BRIGHT}node_schema_id: {node_schema.id}{Style.NORMAL}"
+        )
+        new_node = node_schema.create_node(
+            input, last_msg, prev_node, edge_schema, direction
+        )
+
+        self.TC.add_node_turn(
+            new_node,
+            remove_prev_tool_calls=self.remove_prev_tool_calls,
+            is_skip=is_skip,
+        )
+        MessageDisplay.print_msg("system", new_node.prompt)
+
+        if node_schema.first_turn and prev_node is None:
+            self.TC.add_assistant_direct_turn(node_schema.first_turn)
+            MessageDisplay.print_msg("assistant", node_schema.first_turn.msg_content)
+
+        if edge_schema:
+            self.graph.add_edge(self.curr_node, new_node, edge_schema, direction)
+
+        self.curr_node = new_node
+        self.next_edge_schemas = set(
+            self.graph.graph_schema.from_node_schema_id_to_edge_schema.get(
+                new_node.schema.id, []
+            )
+        )
+        self.graph.add_bwd_skip_edge_schemas(self.curr_node, self.bwd_skip_edge_schemas)
+
+    def init_next_node(self, node_schema, edge_schema, input=None):
+        if self.curr_node:
+            self.curr_node.mark_as_completed()
+
+        if input is None and edge_schema:
+            input = edge_schema.new_input_from_state_fn(self.curr_node.state)
+
+        if edge_schema:
+            edge_schema, input = self.graph.compute_next_edge_schema(
+                edge_schema, input, self.curr_node
+            )
+            node_schema = edge_schema.to_node_schema
+
+        direction = Direction.FWD
+        prev_node = self.graph.get_prev_node(edge_schema, direction)
+
+        last_msg = self.TC.get_user_message(content_only=True)
+
+        self.init_node_core(
+            node_schema, edge_schema, input, last_msg, prev_node, direction, False
+        )
+
+    def init_skip_node(
+        self,
+        node_schema,
+        edge_schema,
+    ):
+        direction = Direction.FWD
+        if edge_schema and edge_schema.from_node_schema == node_schema:
+            direction = Direction.BWD
+
+        if direction == Direction.BWD:
+            self.bwd_skip_edge_schemas.clear()
+
+        prev_node = self.graph.get_prev_node(edge_schema, direction)
+        input = prev_node.input
+
+        last_msg = self.TC.get_asst_message(content_only=True)
+
+        self.init_node_core(
+            node_schema, edge_schema, input, last_msg, prev_node, direction, True
+        )
+
+
+    def handle_skip(self):
+        fwd_skip_edge_schemas = self.graph.compute_fwd_skip_edge_schemas(
+            self.curr_node, self.next_edge_schemas
+        )
+        bwd_skip_edge_schemas = self.bwd_skip_edge_schemas
+
+        all_node_schemas = [self.curr_node.schema]
+        all_node_schemas += [edge.to_node_schema for edge in fwd_skip_edge_schemas]
+        all_node_schemas += [edge.from_node_schema for edge in bwd_skip_edge_schemas]
+
+        node_schema_id = should_skip_node_schema(
+            self.model, self.TC, self.curr_node.schema, all_node_schemas
+        )
+
+        if node_schema_id is not None:
+            for edge_schema in fwd_skip_edge_schemas:
+                if edge_schema.to_node_schema.id == node_schema_id:
+                    return (
+                        edge_schema,
+                        self.graph.graph_schema.node_schema_id_to_node_schema[node_schema_id],
+                    )
+
+            for edge_schema in bwd_skip_edge_schemas:
+                if edge_schema.from_node_schema.id == node_schema_id:
+                    return (
+                        edge_schema,
+                        self.graph.graph_schema.node_schema_id_to_node_schema[node_schema_id],
+                    )
+
+        return None, None
 
     def add_user_turn(self, msg):
         MessageDisplay.print_msg("user", msg)
         self.TC.add_user_turn(msg)
-        skip_edge_schema, skip_node_schema = handle_skip(self.model, self.TC, self.CT)
+        skip_edge_schema, skip_node_schema = self.handle_skip()
         if skip_edge_schema is not None:
-            self.CT.init_skip_node(
+            self.init_skip_node(
                 skip_node_schema,
                 skip_edge_schema,
-                self.TC,
             )
             self.force_tool_choice = "get_state"
-        self.CT.curr_node.update_first_user_message()
+        self.curr_node.update_first_user_message()
 
     def add_assistant_turn(self, model_completion):
         message = model_completion.get_or_stream_message()
@@ -270,7 +259,7 @@ class AgentExecutor:
                 MessageDisplay.display_assistant_message(model_completion.msg_content)
             else:
                 MessageDisplay.display_assistant_message(message)
-            self.CT.need_user_input = True
+            self.need_user_input = True
 
         fn_id_to_output = {}
         new_edge_schema = None
@@ -282,16 +271,16 @@ class AgentExecutor:
             with FunctionCallContext() as fn_call_context:
                 if (
                     function_call.function_name
-                    not in self.CT.curr_node.schema.tool_fn_names
+                    not in self.curr_node.schema.tool_fn_names
                 ):
                     raise InexistentFunctionError(function_call.function_name)
 
                 if function_call.function_name.startswith("get_state"):
-                    fn_output = getattr(self.CT.curr_node, function_call.function_name)(
+                    fn_output = getattr(self.curr_node, function_call.function_name)(
                         **function_args
                     )
                 elif function_call.function_name.startswith("update_state"):
-                    fn_output = self.CT.curr_node.update_state(**function_args)
+                    fn_output = self.curr_node.update_state(**function_args)
                 else:
                     fn = ToolRegistry.GLOBAL_FN_NAME_TO_FN[function_call.function_name]
                     fn_output = fn(**function_args)
@@ -307,14 +296,14 @@ class AgentExecutor:
                 )
                 fn_id_to_output[function_call.tool_call_id] = fn_output
 
-            self.CT.need_user_input = False
+            self.need_user_input = False
 
             if (
                 not fn_call_context.has_exception()
                 and function_call.function_name.startswith("update_state")
             ):
-                for edge_schema in self.CT.next_edge_schemas:
-                    if edge_schema.check_state_condition(self.CT.curr_node.state):
+                for edge_schema in self.next_edge_schemas:
+                    if edge_schema.check_state_condition(self.curr_node.state):
                         new_edge_schema = edge_schema
                         break
 
@@ -327,10 +316,9 @@ class AgentExecutor:
 
         if new_edge_schema:
             new_node_schema = new_edge_schema.to_node_schema
-            self.CT.init_next_node(
+            self.init_next_node(
                 new_node_schema,
                 new_edge_schema,
-                self.TC,
             )
 
     def get_model_completion_args(self):
@@ -338,7 +326,7 @@ class AgentExecutor:
         self.force_tool_choice = None
         return {
             "turn_container": self.TC,
-            "tool_names_or_tool_defs": self.CT.curr_node.schema.tool_fn_names,
-            "extra_tool_registry": self.CT.curr_node.schema.tool_registry,
+            "tool_names_or_tool_defs": self.curr_node.schema.tool_fn_names,
+            "extra_tool_registry": self.curr_node.schema.tool_registry,
             "force_tool_choice": force_tool_choice,
         }
