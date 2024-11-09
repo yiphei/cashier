@@ -295,12 +295,14 @@ class BaseStateModel(BaseModel):
 
 
 class GraphSchema(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
     start_node_schema: NodeSchema
     edge_schemas: List[EdgeSchema]
     node_schemas: List[NodeSchema]
     node_schema_id_to_node_schema: Optional[Dict[str, NodeSchema]] = None
     edge_schema_id_to_edge_schema: Optional[Dict[str, EdgeSchema]] = None
-    from_node_schema_id_to_edge_schema: Optional[Dict[str, EdgeSchema]] = None
+    from_node_schema_id_to_edge_schema: Optional[Dict[str, List[EdgeSchema]]] = None
 
     @model_validator(mode="after")
     def init_computed_fields(self):
@@ -310,10 +312,9 @@ class GraphSchema(BaseModel):
         self.edge_schema_id_to_edge_schema = {
             edge_schema.id: edge_schema for edge_schema in self.edge_schemas
         }
-        self.from_node_schema_id_to_edge_schema = {
-            edge_schema.from_node_schema.id: edge_schema
-            for edge_schema in self.edge_schemas
-        }
+        self.from_node_schema_id_to_edge_schema = defaultdict(list)
+        for edge_schema in self.edge_schemas:
+            self.from_node_schema_id_to_edge_schema[edge_schema.from_node_schema.id].append(edge_schema)
         return self
 
 
