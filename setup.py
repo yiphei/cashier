@@ -1,9 +1,11 @@
-from setuptools import setup, find_packages
+from setuptools import find_packages, setup
+
 
 # Read requirements from requirements.txt
 def parse_requirements(filename):
     with open(filename, "r") as f:
         return [line.strip() for line in f if line and not line.startswith("#")]
+
 
 setup(
     name="cashier",
