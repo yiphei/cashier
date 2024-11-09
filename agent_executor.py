@@ -6,7 +6,6 @@ from colorama import Style
 from audio import get_speech_from_text
 from function_call_context import FunctionCallContext, InexistentFunctionError
 from graph import Direction, Graph
-from graph_data import cashier_graph_schema
 from gui import MessageDisplay
 from logger import logger
 from model import Model
@@ -114,11 +113,11 @@ class AgentExecutor:
 
         self.curr_node = None
         self.need_user_input = True
-        self.graph = Graph(graph_schema=cashier_graph_schema)
+        self.graph = Graph(graph_schema=graph_schema)
         self.next_edge_schemas = set()
         self.bwd_skip_edge_schemas = set()
 
-        self.init_next_node(cashier_graph_schema.start_node_schema, None, None)
+        self.init_next_node(graph_schema.start_node_schema, None, None)
         self.force_tool_choice = None
 
     def init_node_core(
