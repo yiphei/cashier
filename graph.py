@@ -314,7 +314,9 @@ class GraphSchema(BaseModel):
         }
         self.from_node_schema_id_to_edge_schema = defaultdict(list)
         for edge_schema in self.edge_schemas:
-            self.from_node_schema_id_to_edge_schema[edge_schema.from_node_schema.id].append(edge_schema)
+            self.from_node_schema_id_to_edge_schema[
+                edge_schema.from_node_schema.id
+            ].append(edge_schema)
         return self
 
 
