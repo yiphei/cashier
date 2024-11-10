@@ -66,7 +66,7 @@ def get_anthropic_tool_def_from_oai(oai_tool_def):
 
 
 class ToolRegistry:
-    def __init__(self, oai_tool_defs_map):
+    def __init__(self, oai_tool_defs_map=None):
         self.openai_tool_name_to_tool_def = {}
         self.anthropic_tool_name_to_tool_def = {}
         self.fn_name_to_fn = {}
