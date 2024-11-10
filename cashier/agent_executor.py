@@ -248,7 +248,7 @@ class AgentExecutor:
             self.force_tool_choice = "get_state"
         self.curr_node.update_first_user_message()
 
-    def execute_function_call(self, fn_call):
+    def execute_function_call(self, fn_call, fn_callback=None):
         function_args = fn_call.function_args
         logger.debug(
             f"[FUNCTION_CALL] {Style.BRIGHT}name: {fn_call.function_name}, id: {fn_call.tool_call_id}{Style.NORMAL} with args:\n{json.dumps(function_args, indent=4)}"
@@ -266,6 +266,9 @@ class AgentExecutor:
                 )
             elif fn_call.function_name.startswith("update_state"):
                 fn_output = self.curr_node.update_state(**function_args)
+            elif fn_callback is not None:
+                #TODO: this exists for benchmarking. remove this once done
+                fn_output = fn_callback(**function_args)
             else:
                 fn = self.curr_node.schema.tool_registry.fn_name_to_fn[
                     fn_call.function_name
@@ -283,7 +286,7 @@ class AgentExecutor:
             )
             return fn_output, True
 
-    def add_assistant_turn(self, model_completion):
+    def add_assistant_turn(self, model_completion, fn_callback=None):
         message = model_completion.get_or_stream_message()
         if message is not None:
             if self.audio_output:
@@ -297,7 +300,7 @@ class AgentExecutor:
         new_edge_schema = None
         for function_call in model_completion.get_or_stream_fn_calls():
             fn_id_to_output[function_call.tool_call_id], is_success = (
-                self.execute_function_call(function_call)
+                self.execute_function_call(function_call, fn_callback)
             )
 
             self.need_user_input = False
