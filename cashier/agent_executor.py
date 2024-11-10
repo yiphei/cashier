@@ -24,9 +24,8 @@ def should_skip_node_schema(model, TM, current_node_schema, all_node_schemas):
     node_conv_msgs = copy.deepcopy(
         TM.model_provider_to_message_manager[model_provider].node_conversation_dicts
     )
-    last_customer_msg = node_conv_msgs.get_item_type_by_idx(
-        MessageList.ItemType.USER, -1
-    )
+    last_customer_msg = TM.get_user_message(content_only=True)
+
     prompt = OffTopicPrompt(
         node_prompt=current_node_schema.node_prompt,
         state_json_schema=current_node_schema.state_pydantic_model.model_json_schema(),
