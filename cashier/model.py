@@ -108,7 +108,7 @@ class Model:
 
         tools = None
         if tool_registry is not None:
-            tools = tool_registry.model_provider_to_tool_def[model_provider].values()
+            tools = tool_registry.get_tool_defs(model_provider=model_provider)
 
         message_manager = None
         if turn_container is not None:

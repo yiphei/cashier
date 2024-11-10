@@ -32,7 +32,7 @@ class NodeSchemaSelectionPrompt(BasePrompt):
                 f"{node_schema.state_pydantic_model.model_json_schema()}\n"
                 "</state>\n\n"
                 "<tools>\n"
-                f"{json.dumps(node_schema.tool_registry.model_provider_to_tool_def[model_provider])}\n"
+                f"{json.dumps(node_schema.tool_registry.get_tool_defs(model_provider=model_provider))}\n"
                 "</tools>\n"
                 "</agent>\n\n"
             )
