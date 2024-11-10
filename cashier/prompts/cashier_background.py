@@ -1,4 +1,4 @@
-from prompts.base_prompt import BasePrompt
+from cashier.prompts.base_prompt import BasePrompt
 
 
 class CashierBackgroundPrompt(BasePrompt):

@@ -9,9 +9,9 @@ import numpy as np
 from openai import OpenAI
 from pydantic import BaseModel
 
-from model_tool_decorator import ToolRegistry
-from model_turn import TurnContainer
-from model_util import FunctionCall, ModelProvider
+from cashier.model_tool_decorator import ToolRegistry
+from cashier.model_turn import TurnContainer
+from cashier.model_util import FunctionCall, ModelProvider
 
 OpenAIModels = Literal["gpt-4o-mini", "gpt-4o"]
 

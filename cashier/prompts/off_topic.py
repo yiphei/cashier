@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 
-from prompts.base_prompt import BasePrompt
-from prompts.cashier_background import CashierBackgroundPrompt
+from cashier.prompts.base_prompt import BasePrompt
+from cashier.prompts.cashier_background import CashierBackgroundPrompt
 
 
 class Response(BaseModel):

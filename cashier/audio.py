@@ -8,8 +8,8 @@ import numpy as np
 import pyaudio
 from elevenlabs import Voice, VoiceSettings, stream
 
-from gui import remove_previous_line
-from logger import logger
+from cashier.gui import remove_previous_line
+from cashier.logger import logger
 
 # Settings for audio recording
 FORMAT = pyaudio.paInt16  # Audio format (16-bit)
