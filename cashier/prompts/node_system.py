@@ -1,20 +1,31 @@
 from cashier.prompts.base_prompt import BasePrompt
+from cashier.prompts.general_guideline import GeneralGuidelinePrompt
+from cashier.prompts.response_guideline import ResponseGuidelinePrompt
+from cashier.prompts.state_guideline import StateGuidelinePrompt
+from cashier.prompts.tool_guideline import ToolGuidelinePrompt
 
 
 class NodeSystemPrompt(BasePrompt):
+    BACKGROUND_PROMPT = None
+    GUIDELINE_PROMPTS = [
+        ResponseGuidelinePrompt,
+        StateGuidelinePrompt,
+        ToolGuidelinePrompt,
+        GeneralGuidelinePrompt,
+    ]
 
     def dynamic_prompt(
         self,
         node_prompt,
-        background_prompt,
         input,
         node_input_json_schema,
         state_json_schema,
         last_msg,
-        is_voice_only,
     ):
+        fn_kwargs = locals()
+        fn_kwargs.pop("self")
         NODE_PROMPT = (
-            background_prompt + "\n\n"
+            self.BACKGROUND_PROMPT() + "\n\n"
             "This instructions section describes what the conversation is supposed to be about and what you are expected to do\n"
             "<instructions>\n"
             f"{node_prompt}\n"
@@ -53,47 +64,11 @@ class NodeSystemPrompt(BasePrompt):
         GUIDELINES = (
             "This guidelines section enumerates important guidelines on how you should behave. These must be strictly followed\n"
             "<guidelines>\n"
-            "<response_guidelines>\n"
-            + (
-                "- because your responses will be converted to speech, "
-                "you must respond in a conversational way: natural, easy to understand when converted to speech, and generally concise and brief (no long responses).\n"
-                "- AVOID using any rich text formatting like hashtags, bold, italic, bullet points, numbered points, headers, etc.\n"
-                "- When responding to customers, AVOID providing unrequested information.\n"
-                if is_voice_only
-                else ""
-            )
-            + "- If a response to a request is naturally long, then either ask claryfing questions to further refine the request, "
-            "summarize the response, or break down the response in many separate responses.\n"
-            "- Overall, try to be professional, polite, empathetic, and friendly\n"
-            "</response_guidelines>\n"
-            "<state_guidelines>\n"
-            "- Among the tools provided, there are functions for getting and updating the state defined in <state>. "
-            "For state updates, you will have field specific update functions, whose names are `update_state_<field>` and where <field> is a state field.\n"
-            "- You must update the state whenever applicable and as soon as possible. You cannot proceed to the next stage of the conversation without updating the state\n"
-            "- Only you can update the state, so there is no need to udpate the state to the same value that had already been updated to in the past.\n"
-            + (
-                "- state updates can only happen in response to new messages (i.e. messages after <cutoff_msg>).\n"
-                if last_msg
-                else ""
-            )
-            + "</state_guidelines>\n"
-            "<tools_guidelines>\n"
-            "- Minimize reliance on external knowledge. Always retrieve information from the system prompts and available tools. "
-            "If they dont provide the information needed, just say you do not know.\n"
-            "- AVOID stating/mentioning that you can/will perform an action if there are no tools (including state updates) associated with that action.\n"
-            "- if you need to perform an action, you can only state to the customer that you performed it after the associated tool (including state update) calls have been successfull.\n"
-            "</tools_guidelines>\n"
-            "<general_guidelines>\n"
-            "- think step-by-step before you respond.\n"
-            "- you must decline to do anything that is not explicitly covered by <instructions> and <guidelines>.\n"
-            + (
-                "- everthing stated in <instructions> and here in <guidelines> only applies to the conversation starting after <cutoff_msg>\n"
-                if last_msg
-                else ""
-            )
-            + "</general_guidelines>\n"
-            "</guidelines>"
         )
+        for guideline in self.GUIDELINE_PROMPTS:
+            GUIDELINES += guideline(strict_kwargs_check=False, **fn_kwargs)
+
+        GUIDELINES += "</guidelines>"
 
         NODE_PROMPT += GUIDELINES
         kwargs = {"state_json_schema": state_json_schema}
