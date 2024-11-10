@@ -6,7 +6,7 @@ from cashier.graph import BaseStateModel, EdgeSchema, GraphSchema, NodeSchema
 from cashier.model_turn import AssistantTurn
 from cashier.model_util import ModelProvider
 from cashier.tool_registries.cashier_tool_registry import CASHIER_TOOL_REGISTRY, Order
-
+from cashier.prompts.cashier_background import CashierBackgroundPrompt
 
 class TakeOrderState(BaseStateModel):
     order: Optional[Order] = None
@@ -40,6 +40,7 @@ take_order_node_schema = NodeSchema(
         " small talk about any topic, but you need to steer the conversation back to ordering after some"
         " back-and-forths."
     ),
+    background_prompt=CashierBackgroundPrompt(),
     tool_names=[
         "get_menu_items_options",
         "get_menu_item_from_name",
@@ -66,6 +67,7 @@ confirm_order_node_schema = NodeSchema(
         "Confirm the order with the customer. You do this by"
         " repeating the order back to them and get their confirmation."
     ),
+    background_prompt=CashierBackgroundPrompt(),
     tool_names=None,
     tool_registry_or_tool_defs_map=None,
     input_pydantic_model=Order,
@@ -90,6 +92,7 @@ class TerminalOrderState(BaseStateModel):
 
 terminal_order_node_schema = NodeSchema(
     node_prompt=("Order has been successfully placed. Thank the customer."),
+    background_prompt=CashierBackgroundPrompt(),
     tool_names=None,
     tool_registry_or_tool_defs_map=None,
     input_pydantic_model=None,

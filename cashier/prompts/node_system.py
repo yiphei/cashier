@@ -1,14 +1,13 @@
 from cashier.prompts.base_prompt import BasePrompt
-from cashier.prompts.cashier_background import CashierBackgroundPrompt
 
 
 class NodeSystemPrompt(BasePrompt):
 
     def dynamic_prompt(
-        self, node_prompt, input, node_input_json_schema, state_json_schema, last_msg
+        self, node_prompt, background_prompt, input, node_input_json_schema, state_json_schema, last_msg
     ):
         NODE_PROMPT = (
-            CashierBackgroundPrompt.f_string_prompt + "\n\n"
+            background_prompt + "\n\n"
             "This instructions section describes what the conversation is supposed to be about and what you are expected to do\n"
             "<instructions>\n"
             f"{node_prompt}\n"
