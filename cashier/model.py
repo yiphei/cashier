@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import itertools
 from abc import ABC, abstractmethod
-from typing import Dict, List, Literal, Optional, Union, overload
+from typing import Dict, List, Literal, Optional, overload
 
 import anthropic
 import numpy as np

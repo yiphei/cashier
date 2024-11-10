@@ -18,7 +18,9 @@ def create_db_client():
         os.environ.get("SUPABASE_URL"), os.environ.get("SUPABASE_KEY")
     )
 
+
 CASHIER_TOOL_REGISTRY = ToolRegistry()
+
 
 class Option(BaseModel):
     name: str

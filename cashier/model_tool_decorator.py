@@ -89,10 +89,13 @@ class ToolRegistry:
         remove_default(fn_json_schema)
         self.add_oai_tool_def(tool_name, fn_json_schema)
 
-    def get_tool_def_dicts(self, tool_names, model_provider= ModelProvider.OPENAI):
-        return {tool_name: self.model_provider_to_tool_def[model_provider][tool_name] for tool_name in tool_names}
-    
-    def get_tool_defs(self, tool_names, model_provider= ModelProvider.OPENAI):
+    def get_tool_def_dicts(self, tool_names, model_provider=ModelProvider.OPENAI):
+        return {
+            tool_name: self.model_provider_to_tool_def[model_provider][tool_name]
+            for tool_name in tool_names
+        }
+
+    def get_tool_defs(self, tool_names, model_provider=ModelProvider.OPENAI):
         return [self.model_provider_to_tool_def[tool_name] for tool_name in tool_names]
 
     def add_oai_tool_def(self, tool_name, oai_tool_def):
@@ -124,9 +127,7 @@ class ToolRegistry:
             self.openai_tool_name_to_tool_def[func.__name__] = oai_tool_def
 
             anthropic_tool_def = get_anthropic_tool_def_from_oai(oai_tool_def)
-            self.anthropic_tool_name_to_tool_def[func.__name__] = (
-                anthropic_tool_def
-            )
+            self.anthropic_tool_name_to_tool_def[func.__name__] = anthropic_tool_def
 
             # Generate function return type schema
             return_description = get_return_description_from_docstring(docstring)

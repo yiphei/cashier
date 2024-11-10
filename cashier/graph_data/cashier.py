@@ -5,7 +5,7 @@ from pydantic import Field
 from cashier.graph import BaseStateModel, EdgeSchema, GraphSchema, NodeSchema
 from cashier.model_turn import AssistantTurn
 from cashier.model_util import ModelProvider
-from cashier.tool_registries.cashier_tool_registry import Order, CASHIER_TOOL_REGISTRY
+from cashier.tool_registries.cashier_tool_registry import CASHIER_TOOL_REGISTRY, Order
 
 
 class TakeOrderState(BaseStateModel):
@@ -40,10 +40,12 @@ take_order_node_schema = NodeSchema(
         " small talk about any topic, but you need to steer the conversation back to ordering after some"
         " back-and-forths."
     ),
-    oai_tool_defs_dicts = CASHIER_TOOL_REGISTRY.get_tool_def_dicts([
-        "get_menu_items_options",
-        "get_menu_item_from_name",
-    ]),
+    oai_tool_defs_dicts=CASHIER_TOOL_REGISTRY.get_tool_def_dicts(
+        [
+            "get_menu_items_options",
+            "get_menu_item_from_name",
+        ]
+    ),
     input_pydantic_model=None,
     state_pydantic_model=TakeOrderState,
     first_turn=AssistantTurn(
