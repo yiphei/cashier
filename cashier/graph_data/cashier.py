@@ -40,12 +40,12 @@ take_order_node_schema = NodeSchema(
         " small talk about any topic, but you need to steer the conversation back to ordering after some"
         " back-and-forths."
     ),
-    tool_names=CASHIER_TOOL_REGISTRY.get_tool_def_dicts(
+    tool_names=
         [
             "get_menu_items_options",
             "get_menu_item_from_name",
         ]
-    ),
+    ,
     tool_registry=CASHIER_TOOL_REGISTRY,
     input_pydantic_model=None,
     state_pydantic_model=TakeOrderState,
