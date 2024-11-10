@@ -2,7 +2,7 @@ from typing import Optional
 
 from pydantic import Field
 
-from cashier.db_functions import Order
+from cashier.tool_registries.cashier_tool_registry import Order
 from cashier.graph import BaseStateModel, EdgeSchema, GraphSchema, NodeSchema
 from cashier.model_turn import AssistantTurn
 from cashier.model_util import ModelProvider
