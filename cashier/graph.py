@@ -23,7 +23,7 @@ class NodeSchema:
     def __init__(
         self,
         node_prompt,
-        background_prompt,
+        node_system_prompt,
         input_pydantic_model,
         state_pydantic_model,
         tool_registry_or_tool_defs_map=None,
@@ -33,8 +33,8 @@ class NodeSchema:
         NodeSchema._counter += 1
         self.id = NodeSchema._counter
 
-        self.background_prompt = background_prompt
         self.node_prompt = node_prompt
+        self.node_system_prompt = node_system_prompt
         self.input_pydantic_model = input_pydantic_model
         self.state_pydantic_model = state_pydantic_model
         self.first_turn = first_turn
@@ -92,9 +92,8 @@ class NodeSchema:
             self.state_pydantic_model, prev_node, edge_schema, direction, input
         )
 
-        prompt = NodeSystemPrompt(
+        prompt = self.node_system_prompt(
             node_prompt=self.node_prompt,
-            background_prompt=self.background_prompt,
             input=(
                 input.model_dump_json()
                 if self.input_pydantic_model is not None

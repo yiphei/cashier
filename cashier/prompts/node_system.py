@@ -6,6 +6,7 @@ from cashier.prompts.tool_guideline import ToolGuidelinePrompt
 
 
 class NodeSystemPrompt(BasePrompt):
+    BACKGROUND_PROMPT = None
     GUIDELINE_PROMPTS = [
         ResponseGuidelinePrompt,
         StateGuidelinePrompt,
@@ -16,7 +17,6 @@ class NodeSystemPrompt(BasePrompt):
     def dynamic_prompt(
         self,
         node_prompt,
-        background_prompt,
         input,
         node_input_json_schema,
         state_json_schema,
@@ -25,7 +25,7 @@ class NodeSystemPrompt(BasePrompt):
         fn_kwargs = locals()
         fn_kwargs.pop("self")
         NODE_PROMPT = (
-            background_prompt + "\n\n"
+            self.BACKGROUND_PROMPT() + "\n\n"
             "This instructions section describes what the conversation is supposed to be about and what you are expected to do\n"
             "<instructions>\n"
             f"{node_prompt}\n"
