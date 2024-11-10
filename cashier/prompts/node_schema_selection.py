@@ -3,7 +3,6 @@ import json
 from pydantic import BaseModel
 
 from cashier.prompts.base_prompt import BasePrompt
-from cashier.prompts.cashier_background import CashierBackgroundPrompt
 
 
 class Response(BaseModel):
@@ -40,7 +39,7 @@ class NodeSchemaSelectionPrompt(BasePrompt):
         prompt += (
             "All agents share the following background:\n"
             "<background>\n"
-            f"{CashierBackgroundPrompt.f_string_prompt}\n"
+            f"{all_node_schemas[0].background_prompt}\n"
             "</background>\n\n"
             "Given a conversation with a customer and the list above of AI agents with their attributes, "
             "determine which AI agent can best continue the conversation, especially given last customer message, in accordance with the universal guidelines defined in <guidelines>. "

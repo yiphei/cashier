@@ -27,6 +27,7 @@ def should_skip_node_schema(model, TM, current_node_schema, all_node_schemas):
     last_customer_msg = TM.get_user_message(content_only=True)
 
     prompt = OffTopicPrompt(
+        background_prompt=current_node_schema.background_prompt,
         node_prompt=current_node_schema.node_prompt,
         state_json_schema=current_node_schema.state_pydantic_model.model_json_schema(),
         tool_defs=json.dumps(
