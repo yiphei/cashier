@@ -115,7 +115,10 @@ class ToolRegistry:
 
     def get_tool_defs(self, tool_names=None, model_provider=ModelProvider.OPENAI):
         if tool_names:
-            return [self.model_provider_to_tool_def[model_provider][tool_name] for tool_name in tool_names]
+            return [
+                self.model_provider_to_tool_def[model_provider][tool_name]
+                for tool_name in tool_names
+            ]
         else:
             return self.model_provider_to_tool_def[model_provider].values()
 
