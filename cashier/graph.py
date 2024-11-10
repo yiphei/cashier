@@ -107,7 +107,6 @@ class NodeSchema:
             ),
             state_json_schema=self.state_pydantic_model.model_json_schema(),
             last_msg=last_msg,
-            is_voice_only=False,
         )
 
         if direction == Direction.BWD:
