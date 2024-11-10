@@ -9,7 +9,7 @@ from cashier.graph import Direction, Graph
 from cashier.gui import MessageDisplay
 from cashier.logger import logger
 from cashier.model import Model
-from cashier.model_turn import MessageList, TurnContainer
+from cashier.model_turn import TurnContainer
 from cashier.model_util import CustomJSONEncoder, ModelProvider
 from cashier.prompts.node_schema_selection import NodeSchemaSelectionPrompt
 from cashier.prompts.off_topic import OffTopicPrompt
