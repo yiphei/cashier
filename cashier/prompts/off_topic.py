@@ -1,7 +1,6 @@
 from pydantic import BaseModel
 
 from cashier.prompts.base_prompt import BasePrompt
-from cashier.prompts.cashier_background import CashierBackgroundPrompt
 
 
 class Response(BaseModel):
@@ -14,7 +13,7 @@ class OffTopicPrompt(BasePrompt):
         "You are an AI-agent orchestration engine and your job is to evaluate the current AI agent's performance. "
         "The AI agent's background is:\n"
         "<background>\n"
-        f"{CashierBackgroundPrompt.f_string_prompt}\n"
+        "{background_prompt}\n"
         "</background>\n\n"
         "The AI agent is defined by 3 attributes: instructions, state, and tools (i.e. functions).\n\n"
         "The instructions describe what the agent's conversation is supposed to be about and what they are expected to do.\n"
@@ -30,7 +29,7 @@ class OffTopicPrompt(BasePrompt):
         "{tool_defs}\n"
         "</tools>\n\n"
         "Given a conversation between a customer and the current AI agent, determine if the"
-        " conversation, especially given the last customer message, can continue to be fully handled by the current AI agent's <instructions>, <state>, or <tools> according to the guidelines defined in <guidelines>. Return true if"
+        " conversation, especially given the last customer message, can continue to be fully handled by the current AI agent's <instructions>, <state>, or <tools> according to the guidelines defined in <guidelines>. Return true only if"
         " 100% certain, and return false if otherwise, meaning that we should at least explore letting another AI agent take over.\n\n"
         "<guidelines>\n"
         "<state_guidelines>\n"

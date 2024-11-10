@@ -9,7 +9,7 @@ from cashier.graph import Direction, Graph
 from cashier.gui import MessageDisplay
 from cashier.logger import logger
 from cashier.model import Model
-from cashier.model_turn import MessageList, TurnContainer
+from cashier.model_turn import TurnContainer
 from cashier.model_util import CustomJSONEncoder, ModelProvider
 from cashier.prompts.node_schema_selection import NodeSchemaSelectionPrompt
 from cashier.prompts.off_topic import OffTopicPrompt
@@ -24,10 +24,10 @@ def should_skip_node_schema(model, TM, current_node_schema, all_node_schemas):
     node_conv_msgs = copy.deepcopy(
         TM.model_provider_to_message_manager[model_provider].node_conversation_dicts
     )
-    last_customer_msg = node_conv_msgs.get_item_type_by_idx(
-        MessageList.ItemType.USER, -1
-    )
+    last_customer_msg = TM.get_user_message(content_only=True)
+
     prompt = OffTopicPrompt(
+        background_prompt=current_node_schema.background_prompt,
         node_prompt=current_node_schema.node_prompt,
         state_json_schema=current_node_schema.state_pydantic_model.model_json_schema(),
         tool_defs=json.dumps(
