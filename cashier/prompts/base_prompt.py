@@ -6,7 +6,7 @@ class CallableMeta(type):
     def __call__(cls, strict_kwargs_check=True, **kwargs):
         instance = super().__call__(**kwargs)
         if not strict_kwargs_check:
-            kwargs = {k: v for k, v in kwargs.items() if k in instance.kwargs}
+            kwargs = {k: v for k, v in kwargs.items() if k in cls.kwargs}
 
         return (
             instance.f_string_prompt.format(**kwargs)
