@@ -66,7 +66,7 @@ def get_anthropic_tool_def_from_oai(oai_tool_def):
 
 
 class ToolRegistry:
-    def __init__(self):
+    def __init__(self, oai_tool_defs_dict=None):
         self.openai_tool_name_to_tool_def = {}
         self.anthropic_tool_name_to_tool_def = {}
         self.fn_name_to_fn = {}
@@ -75,6 +75,9 @@ class ToolRegistry:
             ModelProvider.OPENAI: self.openai_tool_name_to_tool_def,
             ModelProvider.ANTHROPIC: self.anthropic_tool_name_to_tool_def,
         }
+        if oai_tool_defs_dict:
+            for tool_name, tool_def in oai_tool_defs_dict.items():
+                self.add_oai_tool_def(tool_name, tool_def)
 
     def add_tool_def(self, tool_name, description, field_args):
         fn_pydantic_model = create_model(tool_name, **field_args)
@@ -84,21 +87,19 @@ class ToolRegistry:
             description=description,
         )
         remove_default(fn_json_schema)
-        self.openai_tool_name_to_tool_def[tool_name] = fn_json_schema
+        self.add_oai_tool_def(tool_name, fn_json_schema)
+
+    def get_tool_def_dicts(self, tool_names, model_provider= ModelProvider.OPENAI):
+        return {tool_name: self.model_provider_to_tool_def[model_provider][tool_name] for tool_name in tool_names}
+    
+    def get_tool_defs(self, tool_names, model_provider= ModelProvider.OPENAI):
+        return [self.model_provider_to_tool_def[tool_name] for tool_name in tool_names]
+
+    def add_oai_tool_def(self, tool_name, oai_tool_def):
+        self.openai_tool_name_to_tool_def[tool_name] = oai_tool_def
         self.anthropic_tool_name_to_tool_def[tool_name] = (
-            get_anthropic_tool_def_from_oai(fn_json_schema)
+            get_anthropic_tool_def_from_oai(oai_tool_def)
         )
-
-    def get_tool_defs_from_names(
-        self, tool_names, model_provider, extra_tool_registry=None
-    ):
-        all_tool_defs = self.model_provider_to_tool_def[model_provider]
-        if extra_tool_registry is not None:
-            all_tool_defs |= extra_tool_registry.model_provider_to_tool_def.get(
-                model_provider, {}
-            )
-
-        return [all_tool_defs[tool_name] for tool_name in tool_names]
 
     def model_tool_decorator(self, tool_instructions=None):
         def decorator_fn(func):

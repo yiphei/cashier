@@ -5,7 +5,7 @@ from pydantic import Field
 from cashier.graph import BaseStateModel, EdgeSchema, GraphSchema, NodeSchema
 from cashier.model_turn import AssistantTurn
 from cashier.model_util import ModelProvider
-from cashier.tool_registries.cashier_tool_registry import Order
+from cashier.tool_registries.cashier_tool_registry import Order, CASHIER_TOOL_REGISTRY
 
 
 class TakeOrderState(BaseStateModel):
@@ -40,10 +40,10 @@ take_order_node_schema = NodeSchema(
         " small talk about any topic, but you need to steer the conversation back to ordering after some"
         " back-and-forths."
     ),
-    tool_fn_names=[
+    oai_tool_defs_dicts = CASHIER_TOOL_REGISTRY.get_tool_def_dicts([
         "get_menu_items_options",
         "get_menu_item_from_name",
-    ],
+    ]),
     input_pydantic_model=None,
     state_pydantic_model=TakeOrderState,
     first_turn=AssistantTurn(
@@ -65,7 +65,7 @@ confirm_order_node_schema = NodeSchema(
         "Confirm the order with the customer. You do this by"
         " repeating the order back to them and get their confirmation."
     ),
-    tool_fn_names=[],
+    oai_tool_defs_dict=None,
     input_pydantic_model=Order,
     state_pydantic_model=ConfirmOrderState,
 )
@@ -88,7 +88,7 @@ class TerminalOrderState(BaseStateModel):
 
 terminal_order_node_schema = NodeSchema(
     node_prompt=("Order has been successfully placed. Thank the customer."),
-    tool_fn_names=[],
+    oai_tool_defs_dict=None,
     input_pydantic_model=None,
     state_pydantic_model=TerminalOrderState,
 )

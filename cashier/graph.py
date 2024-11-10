@@ -23,7 +23,7 @@ class NodeSchema:
     def __init__(
         self,
         node_prompt,
-        tool_fn_names,
+        oai_tool_defs_dict,
         input_pydantic_model,
         state_pydantic_model,
         first_turn=None,
@@ -32,11 +32,10 @@ class NodeSchema:
         self.id = NodeSchema._counter
 
         self.node_prompt = node_prompt
-        self.tool_fn_names = tool_fn_names
         self.input_pydantic_model = input_pydantic_model
         self.state_pydantic_model = state_pydantic_model
         self.first_turn = first_turn
-        self.tool_registry = ToolRegistry()
+        self.tool_registry = ToolRegistry(oai_tool_defs_dict)
 
         for field_name, field_info in self.state_pydantic_model.model_fields.items():
             new_tool_fn_name = f"update_state_{field_name}"
@@ -46,12 +45,10 @@ class NodeSchema:
                 f"Function to update the `{field_name}` field in the state",
                 field_args,
             )
-            self.tool_fn_names.append(new_tool_fn_name)
 
         self.tool_registry.add_tool_def(
             "get_state", "Function to get the current state, as defined in <state>", {}
         )
-        self.tool_fn_names.append("get_state")
 
     @overload
     def create_node(  # noqa: E704

@@ -2,7 +2,6 @@ import json
 
 from pydantic import BaseModel
 
-from cashier.model_tool_decorator import ToolRegistry
 from cashier.prompts.base_prompt import BasePrompt
 from cashier.prompts.cashier_background import CashierBackgroundPrompt
 
@@ -33,7 +32,7 @@ class NodeSchemaSelectionPrompt(BasePrompt):
                 f"{node_schema.state_pydantic_model.model_json_schema()}\n"
                 "</state>\n\n"
                 "<tools>\n"
-                f"{json.dumps(ToolRegistry.get_tool_defs_from_names(node_schema.tool_fn_names, model_provider, node_schema.tool_registry))}\n"
+                f"{json.dumps(node_schema.tool_registry.model_provider_to_tool_def[model_provider])}\n"
                 "</tools>\n"
                 "</agent>\n\n"
             )
