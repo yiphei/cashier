@@ -5,13 +5,13 @@ from distutils.util import strtobool
 from dotenv import load_dotenv  # Add this import
 from elevenlabs import ElevenLabs
 
-from agent_executor import AgentExecutor
-from audio import get_audio_input, get_text_from_speech
-from db_functions import create_db_client
+from cashier.agent_executor import AgentExecutor
+from cashier.audio import get_audio_input, get_text_from_speech
+from cashier.db_functions import create_db_client
 from graph_data.cashier import cashier_graph_schema
-from gui import remove_previous_line
-from logger import logger
-from model import Model
+from cashier.gui import remove_previous_line
+from cashier.logger import logger
+from cashier.model import Model
 
 # Load environment variables from .env file
 load_dotenv()

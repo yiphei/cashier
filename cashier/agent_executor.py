@@ -3,15 +3,15 @@ import json
 
 from colorama import Style
 
-from audio import get_speech_from_text
-from function_call_context import FunctionCallContext, InexistentFunctionError
-from graph import Direction, Graph
-from gui import MessageDisplay
-from logger import logger
-from model import Model
-from model_tool_decorator import ToolRegistry
-from model_turn import MessageList, TurnContainer
-from model_util import CustomJSONEncoder, ModelProvider
+from cashier.audio import get_speech_from_text
+from cashier.function_call_context import FunctionCallContext, InexistentFunctionError
+from cashier.graph import Direction, Graph
+from cashier.gui import MessageDisplay
+from cashier.logger import logger
+from cashier.model import Model
+from cashier.model_tool_decorator import ToolRegistry
+from cashier.model_turn import MessageList, TurnContainer
+from cashier.model_util import CustomJSONEncoder, ModelProvider
 from prompts.node_schema_selection import NodeSchemaSelectionPrompt
 from prompts.off_topic import OffTopicPrompt
 

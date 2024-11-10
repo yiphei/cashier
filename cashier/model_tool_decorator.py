@@ -7,7 +7,7 @@ from functools import wraps
 from openai import pydantic_function_tool
 from pydantic import Field, create_model
 
-from model_util import ModelProvider
+from cashier.model_util import ModelProvider
 
 
 def get_return_description_from_docstring(docstring):

@@ -2,7 +2,7 @@ import json
 
 from pydantic import BaseModel
 
-from model_tool_decorator import ToolRegistry
+from cashier.model_tool_decorator import ToolRegistry
 from prompts.base_prompt import BasePrompt
 from prompts.cashier_background import CashierBackgroundPrompt
 

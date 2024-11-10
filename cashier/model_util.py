@@ -5,7 +5,7 @@ from typing import Dict, Optional
 
 from pydantic import BaseModel, model_validator
 
-from function_call_context import ToolExceptionWrapper
+from cashier.function_call_context import ToolExceptionWrapper
 
 
 class ModelProvider(StrEnum):

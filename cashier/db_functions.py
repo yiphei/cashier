@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field
 from supabase import Client
 from supabase import create_client as create_supabase_client
 
-from model_tool_decorator import ToolRegistry
+from cashier.model_tool_decorator import ToolRegistry
 
 supabase: Client = None
 
