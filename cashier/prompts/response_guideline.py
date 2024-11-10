@@ -3,6 +3,7 @@ from cashier.prompts.base_prompt import BasePrompt
 
 class ResponseGuidelinePrompt(BasePrompt):
     IS_VOICE_ONLY = True
+
     def dynamic_prompt(
         self,
     ):

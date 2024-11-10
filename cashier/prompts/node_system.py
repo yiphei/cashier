@@ -1,11 +1,17 @@
 from cashier.prompts.base_prompt import BasePrompt
 from cashier.prompts.general_guideline import GeneralGuidelinePrompt
-from cashier.prompts.state_guideline import StateGuidelinePrompt
 from cashier.prompts.response_guideline import ResponseGuidelinePrompt
+from cashier.prompts.state_guideline import StateGuidelinePrompt
 from cashier.prompts.tool_guideline import ToolGuidelinePrompt
 
+
 class NodeSystemPrompt(BasePrompt):
-    GUIDELINE_PROMPTS = [ResponseGuidelinePrompt, StateGuidelinePrompt, ToolGuidelinePrompt, GeneralGuidelinePrompt]
+    GUIDELINE_PROMPTS = [
+        ResponseGuidelinePrompt,
+        StateGuidelinePrompt,
+        ToolGuidelinePrompt,
+        GeneralGuidelinePrompt,
+    ]
 
     def dynamic_prompt(
         self,
@@ -17,7 +23,7 @@ class NodeSystemPrompt(BasePrompt):
         last_msg,
     ):
         fn_kwargs = locals()
-        fn_kwargs.pop('self')
+        fn_kwargs.pop("self")
         NODE_PROMPT = (
             background_prompt + "\n\n"
             "This instructions section describes what the conversation is supposed to be about and what you are expected to do\n"
@@ -62,9 +68,7 @@ class NodeSystemPrompt(BasePrompt):
         for guideline in self.GUIDELINE_PROMPTS:
             GUIDELINES += guideline(strict_kwargs_check=False, **fn_kwargs)
 
-        GUIDELINES += (
-            "</guidelines>"
-        )
+        GUIDELINES += "</guidelines>"
 
         NODE_PROMPT += GUIDELINES
         kwargs = {"state_json_schema": state_json_schema}
