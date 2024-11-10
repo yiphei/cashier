@@ -16,8 +16,8 @@ from pydantic import (
 )
 
 from cashier.function_call_context import ToolExceptionWrapper
-from cashier.tool_registry import ToolRegistry
 from cashier.model_util import CustomJSONEncoder, FunctionCall, ModelProvider
+from cashier.tool_registry import ToolRegistry
 
 
 class ModelTurn(BaseModel, ABC):
