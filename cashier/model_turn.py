@@ -6,7 +6,7 @@ from collections import defaultdict
 from enum import StrEnum
 from typing import Any, ClassVar, Dict, List, Optional
 
-from pydantic import BaseModel, Field, constr, field_validator, model_validator
+from pydantic import BaseModel, Field, constr, field_validator, model_validator, ConfigDict
 
 from cashier.function_call_context import ToolExceptionWrapper
 from cashier.model_tool_decorator import ToolRegistry
@@ -59,8 +59,10 @@ class NodeSystemTurn(SystemTurn):
 
 
 class AssistantTurn(ModelTurn):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
     model_provider: ModelProvider
-    tool_registry: ToolRegistry
+    tool_registry: Optional[ToolRegistry] = None
     msg_content: Optional[str]
     fn_calls: Optional[List[FunctionCall]] = Field(default_factory=list)
     fn_call_id_to_fn_output: Optional[Dict[str, Any]] = Field(default_factory=dict)
@@ -75,6 +77,10 @@ class AssistantTurn(ModelTurn):
             raise ValueError(
                 "Mismatch between fn_calls' and fn_call_id_to_fn_output's lengths"
             )
+        
+        if (self.fn_calls and self.tool_registry is None):
+            raise ValueError()
+
         return self
 
     def build_oai_messages(self):

@@ -23,7 +23,8 @@ class NodeSchema:
     def __init__(
         self,
         node_prompt,
-        oai_tool_defs_dict,
+        tool_names,
+        tool_registry,
         input_pydantic_model,
         state_pydantic_model,
         first_turn=None,
@@ -35,7 +36,9 @@ class NodeSchema:
         self.input_pydantic_model = input_pydantic_model
         self.state_pydantic_model = state_pydantic_model
         self.first_turn = first_turn
-        self.tool_registry = ToolRegistry(oai_tool_defs_dict)
+        self.tool_registry = ToolRegistry()
+        if tool_names:
+            self.tool_registry.init_from_tool_registry(tool_names, tool_registry)
 
         for field_name, field_info in self.state_pydantic_model.model_fields.items():
             new_tool_fn_name = f"update_state_{field_name}"

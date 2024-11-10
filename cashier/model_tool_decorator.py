@@ -69,6 +69,7 @@ class ToolRegistry:
     def __init__(self, oai_tool_defs_dict=None):
         self.openai_tool_name_to_tool_def = {}
         self.anthropic_tool_name_to_tool_def = {}
+        self.tool_names = []
         self.fn_name_to_fn = {}
         self.openai_tools_return_description = {}
         self.model_provider_to_tool_def = {
@@ -78,6 +79,17 @@ class ToolRegistry:
         if oai_tool_defs_dict:
             for tool_name, tool_def in oai_tool_defs_dict.items():
                 self.add_oai_tool_def(tool_name, tool_def)
+
+    def init_from_tool_registry(self, tool_names, tool_registry):
+        for tool_name in tool_names:
+            self.tool_names.append(tool_name)
+            self.openai_tool_name_to_tool_def[tool_name] = tool_registry.openai_tool_name_to_tool_def[tool_name]
+            self.anthropic_tool_name_to_tool_def[tool_name] = tool_registry.anthropic_tool_name_to_tool_def[tool_name]
+            if tool_name in tool_registry.openai_tools_return_description:
+                self.openai_tools_return_description[tool_name] = tool_registry.openai_tools_return_description[tool_name]
+
+            if tool_name in tool_registry.fn_name_to_fn:
+                self.fn_name_to_fn[tool_name] = tool_registry.fn_name_to_fn[tool_name]
 
     def add_tool_def(self, tool_name, description, field_args):
         fn_pydantic_model = create_model(tool_name, **field_args)
@@ -103,6 +115,7 @@ class ToolRegistry:
         self.anthropic_tool_name_to_tool_def[tool_name] = (
             get_anthropic_tool_def_from_oai(oai_tool_def)
         )
+        self.tool_names.append(tool_name)
 
     def model_tool_decorator(self, tool_instructions=None):
         def decorator_fn(func):
@@ -124,10 +137,8 @@ class ToolRegistry:
             oai_tool_def = pydantic_function_tool(
                 fn_signature_pydantic_model, name=func.__name__, description=description
             )
-            self.openai_tool_name_to_tool_def[func.__name__] = oai_tool_def
 
-            anthropic_tool_def = get_anthropic_tool_def_from_oai(oai_tool_def)
-            self.anthropic_tool_name_to_tool_def[func.__name__] = anthropic_tool_def
+            self.add_oai_tool_def(func.__name__, oai_tool_def)
 
             # Generate function return type schema
             return_description = get_return_description_from_docstring(docstring)

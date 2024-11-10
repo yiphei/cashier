@@ -252,7 +252,7 @@ class AgentExecutor:
             f"[FUNCTION_CALL] {Style.BRIGHT}name: {fn_call.function_name}, id: {fn_call.tool_call_id}{Style.NORMAL} with args:\n{json.dumps(function_args, indent=4)}"
         )
         with FunctionCallContext() as fn_call_context:
-            if fn_call.function_name not in self.curr_node.schema.tool_fn_names:
+            if fn_call.function_name not in self.curr_node.schema.tool_registry.tool_names:
                 raise InexistentFunctionError(fn_call.function_name)
 
             if fn_call.function_name.startswith("get_state"):
