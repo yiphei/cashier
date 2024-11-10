@@ -6,7 +6,14 @@ from collections import defaultdict
 from enum import StrEnum
 from typing import Any, ClassVar, Dict, List, Optional
 
-from pydantic import BaseModel, Field, constr, field_validator, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    constr,
+    field_validator,
+    model_validator,
+)
 
 from cashier.function_call_context import ToolExceptionWrapper
 from cashier.model_tool_decorator import ToolRegistry
@@ -59,7 +66,10 @@ class NodeSystemTurn(SystemTurn):
 
 
 class AssistantTurn(ModelTurn):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
     model_provider: ModelProvider
+    tool_registry: Optional[ToolRegistry] = None
     msg_content: Optional[str]
     fn_calls: Optional[List[FunctionCall]] = Field(default_factory=list)
     fn_call_id_to_fn_output: Optional[Dict[str, Any]] = Field(default_factory=dict)
@@ -74,6 +84,10 @@ class AssistantTurn(ModelTurn):
             raise ValueError(
                 "Mismatch between fn_calls' and fn_call_id_to_fn_output's lengths"
             )
+
+        if self.fn_calls and self.tool_registry is None:
+            raise ValueError()
+
         return self
 
     def build_oai_messages(self):
@@ -112,13 +126,13 @@ class AssistantTurn(ModelTurn):
 
                 if (
                     fn_call.function_name
-                    in ToolRegistry.GLOBAL_OPENAI_TOOLS_RETUN_DESCRIPTION
+                    in self.tool_registry.openai_tools_return_description
                     and not isinstance(
                         self.fn_call_id_to_fn_output[fn_call.tool_call_id],
                         ToolExceptionWrapper,
                     )
                 ):
-                    json_schema = ToolRegistry.GLOBAL_OPENAI_TOOLS_RETUN_DESCRIPTION[
+                    json_schema = self.tool_registry.openai_tools_return_description[
                         fn_call.function_name
                     ]
                     system_msg = f"This is the JSON Schema of {fn_call.function_name}'s return type: {json.dumps(json_schema)}"
@@ -404,11 +418,13 @@ class TurnContainer:
         self,
         msg_content,
         model_provider,
+        tool_registry,
         fn_calls=None,
         fn_id_to_outputs=None,
     ):
         turn = AssistantTurn(
             msg_content=msg_content,
+            tool_registry=tool_registry,
             model_provider=model_provider,
             fn_calls=fn_calls,
             fn_call_id_to_fn_output=fn_id_to_outputs,

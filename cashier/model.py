@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import itertools
 from abc import ABC, abstractmethod
-from typing import Dict, List, Literal, Optional, Union, overload
+from typing import Dict, List, Literal, Optional, overload
 
 import anthropic
 import numpy as np
@@ -49,11 +49,10 @@ class Model:
         message_dicts: List[Dict[str, str]],
         system: Optional[str] = None,
         system_idx: int = -1,
-        tool_names_or_tool_defs: List[Union[str, Dict]] = None,
+        tool_registry: Optional[ToolRegistry] = None,
         stream: bool = False,
         logprobs: bool = False,
         response_format: Optional[BaseModel] = None,
-        extra_tool_registry: Optional[ToolRegistry] = None,
         **kwargs,
     ): ...
 
@@ -66,11 +65,10 @@ class Model:
         message_dicts: List[Dict[str, str]],
         system: Optional[str] = None,
         system_idx: Literal[None] = None,
-        tool_names_or_tool_defs: List[Union[str, Dict]] = None,
+        tool_registry: Optional[ToolRegistry] = None,
         stream: bool = False,
         logprobs: bool = False,
         response_format: Optional[BaseModel] = None,
-        extra_tool_registry: Optional[ToolRegistry] = None,
         **kwargs,
     ): ...
 
@@ -83,11 +81,10 @@ class Model:
         message_dicts: Literal[None] = None,
         system: Literal[None] = None,
         system_idx: Literal[None] = None,
-        tool_names_or_tool_defs: List[Union[str, Dict]] = None,
+        tool_registry: Optional[ToolRegistry] = None,
         stream: bool = False,
         logprobs: bool = False,
         response_format: Optional[BaseModel] = None,
-        extra_tool_registry: Optional[ToolRegistry] = None,
         **kwargs,
     ): ...
 
@@ -99,11 +96,10 @@ class Model:
         message_dicts: Optional[List[Dict[str, str]]] = None,
         system: Optional[str] = None,
         system_idx: int = -1,
-        tool_names_or_tool_defs: Optional[List[Union[str, Dict]]] = None,
+        tool_registry: Optional[ToolRegistry] = None,
         stream: bool = False,
         logprobs: bool = False,
         response_format: Optional[BaseModel] = None,
-        extra_tool_registry: Optional[ToolRegistry] = None,
         **kwargs,
     ):
         if model_name in self.alias_to_model_name:
@@ -111,24 +107,8 @@ class Model:
         model_provider = self.get_model_provider(model_name)
 
         tools = None
-        if tool_names_or_tool_defs is not None:
-            if type(tool_names_or_tool_defs[0]) is str:
-                tools = ToolRegistry.get_tool_defs_from_names(
-                    tool_names_or_tool_defs,
-                    model_provider,
-                    extra_tool_registry,
-                )
-            else:
-                tools = tool_names_or_tool_defs
-                if (
-                    extra_tool_registry.model_provider_to_tool_def.get(
-                        model_provider, None
-                    )
-                    is not None
-                ):
-                    tools += extra_tool_registry.model_provider_to_tool_def.get(
-                        model_provider
-                    ).values()
+        if tool_registry is not None:
+            tools = tool_registry.get_tool_defs(model_provider=model_provider)
 
         message_manager = None
         if turn_container is not None:

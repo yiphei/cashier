@@ -66,23 +66,44 @@ def get_anthropic_tool_def_from_oai(oai_tool_def):
 
 
 class ToolRegistry:
-    GLOBAL_OPENAI_TOOL_NAME_TO_TOOL_DEF = {}
-    GLOBAL_ANTHROPIC_TOOL_NAME_TO_TOOL_DEF = {}
-    GLOBAL_FN_NAME_TO_FN = {}
-    GLOBAL_OPENAI_TOOLS_RETUN_DESCRIPTION = {}
-
-    model_provider_to_global_tool_def = {
-        ModelProvider.OPENAI: GLOBAL_OPENAI_TOOL_NAME_TO_TOOL_DEF,
-        ModelProvider.ANTHROPIC: GLOBAL_ANTHROPIC_TOOL_NAME_TO_TOOL_DEF,
-    }
-
     def __init__(self):
         self.openai_tool_name_to_tool_def = {}
         self.anthropic_tool_name_to_tool_def = {}
+        self.fn_name_to_fn = {}
+        self.openai_tools_return_description = {}
         self.model_provider_to_tool_def = {
             ModelProvider.OPENAI: self.openai_tool_name_to_tool_def,
             ModelProvider.ANTHROPIC: self.anthropic_tool_name_to_tool_def,
         }
+
+    @property
+    def tool_names(self):
+        return list(self.openai_tool_name_to_tool_def.keys())
+
+    @classmethod
+    def create_from_tool_registry(cls, tool_registry, tool_names=None):
+        if tool_names is None:
+            return copy.deepcopy(tool_registry)
+        else:
+            new_tool_registry = ToolRegistry()
+            for tool_name in tool_names:
+                new_tool_registry.openai_tool_name_to_tool_def[tool_name] = (
+                    tool_registry.openai_tool_name_to_tool_def[tool_name]
+                )
+                new_tool_registry.anthropic_tool_name_to_tool_def[tool_name] = (
+                    tool_registry.anthropic_tool_name_to_tool_def[tool_name]
+                )
+                if tool_name in tool_registry.openai_tools_return_description:
+                    new_tool_registry.openai_tools_return_description[tool_name] = (
+                        tool_registry.openai_tools_return_description[tool_name]
+                    )
+
+                if tool_name in tool_registry.fn_name_to_fn:
+                    new_tool_registry.fn_name_to_fn[tool_name] = (
+                        tool_registry.fn_name_to_fn[tool_name]
+                    )
+
+            return new_tool_registry
 
     def add_tool_def(self, tool_name, description, field_args):
         fn_pydantic_model = create_model(tool_name, **field_args)
@@ -92,25 +113,24 @@ class ToolRegistry:
             description=description,
         )
         remove_default(fn_json_schema)
-        self.openai_tool_name_to_tool_def[tool_name] = fn_json_schema
+        self.add_tool_def_w_oai_def(tool_name, fn_json_schema)
+
+    def get_tool_defs(self, tool_names=None, model_provider=ModelProvider.OPENAI):
+        if tool_names:
+            return [
+                self.model_provider_to_tool_def[model_provider][tool_name]
+                for tool_name in tool_names
+            ]
+        else:
+            return list(self.model_provider_to_tool_def[model_provider].values())
+
+    def add_tool_def_w_oai_def(self, tool_name, oai_tool_def):
+        self.openai_tool_name_to_tool_def[tool_name] = oai_tool_def
         self.anthropic_tool_name_to_tool_def[tool_name] = (
-            get_anthropic_tool_def_from_oai(fn_json_schema)
+            get_anthropic_tool_def_from_oai(oai_tool_def)
         )
 
-    @classmethod
-    def get_tool_defs_from_names(
-        cls, tool_names, model_provider, extra_tool_registry=None
-    ):
-        all_tool_defs = cls.model_provider_to_global_tool_def[model_provider]
-        if extra_tool_registry is not None:
-            all_tool_defs |= extra_tool_registry.model_provider_to_tool_def.get(
-                model_provider, {}
-            )
-
-        return [all_tool_defs[tool_name] for tool_name in tool_names]
-
-    @classmethod
-    def model_tool_decorator(cls, tool_instructions=None):
+    def model_tool_decorator(self, tool_instructions=None):
         def decorator_fn(func):
             docstring = inspect.getdoc(func)
             fn_signature = inspect.signature(func)
@@ -130,12 +150,8 @@ class ToolRegistry:
             oai_tool_def = pydantic_function_tool(
                 fn_signature_pydantic_model, name=func.__name__, description=description
             )
-            cls.GLOBAL_OPENAI_TOOL_NAME_TO_TOOL_DEF[func.__name__] = oai_tool_def
 
-            anthropic_tool_def = get_anthropic_tool_def_from_oai(oai_tool_def)
-            cls.GLOBAL_ANTHROPIC_TOOL_NAME_TO_TOOL_DEF[func.__name__] = (
-                anthropic_tool_def
-            )
+            self.add_tool_def_w_oai_def(func.__name__, oai_tool_def)
 
             # Generate function return type schema
             return_description = get_return_description_from_docstring(docstring)
@@ -157,7 +173,7 @@ class ToolRegistry:
             if "title" in actual_return_json_schema:
                 actual_return_json_schema.pop("title")
 
-            cls.GLOBAL_OPENAI_TOOLS_RETUN_DESCRIPTION[func.__name__] = (
+            self.openai_tools_return_description[func.__name__] = (
                 actual_return_json_schema
             )
 
@@ -173,7 +189,7 @@ class ToolRegistry:
                 # Call the original function with the modified arguments
                 return func(*bound_args.args, **bound_args.kwargs)
 
-            cls.GLOBAL_FN_NAME_TO_FN[func.__name__] = wrapper
+            self.fn_name_to_fn[func.__name__] = wrapper
 
             return wrapper
 

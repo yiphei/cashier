@@ -19,6 +19,9 @@ def create_db_client():
     )
 
 
+CASHIER_TOOL_REGISTRY = ToolRegistry()
+
+
 class Option(BaseModel):
     name: str
     type: str
@@ -28,7 +31,7 @@ class Option(BaseModel):
     str_option_values: Optional[List[str]] = None
 
 
-@ToolRegistry.model_tool_decorator(
+@CASHIER_TOOL_REGISTRY.model_tool_decorator(
     "Most customers either don't provide a complete order (i.e. not specifying required options like size)"
     "or are not aware of all the options available for a menu item. It is your job to help them with both cases."
 )
@@ -94,7 +97,7 @@ class MenuItem(BaseModel):
     group: str = Field(description="the menu category it belongs to")
 
 
-@ToolRegistry.model_tool_decorator()
+@CASHIER_TOOL_REGISTRY.model_tool_decorator()
 def get_menu_item_from_name(menu_item_name: str) -> MenuItem:
     """
     Get the menu item given the name of the menu item.

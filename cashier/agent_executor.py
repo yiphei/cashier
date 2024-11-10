@@ -9,7 +9,6 @@ from cashier.graph import Direction, Graph
 from cashier.gui import MessageDisplay
 from cashier.logger import logger
 from cashier.model import Model
-from cashier.model_tool_decorator import ToolRegistry
 from cashier.model_turn import MessageList, TurnContainer
 from cashier.model_util import CustomJSONEncoder, ModelProvider
 from cashier.prompts.node_schema_selection import NodeSchemaSelectionPrompt
@@ -32,10 +31,8 @@ def should_skip_node_schema(model, TM, current_node_schema, all_node_schemas):
         node_prompt=current_node_schema.node_prompt,
         state_json_schema=current_node_schema.state_pydantic_model.model_json_schema(),
         tool_defs=json.dumps(
-            ToolRegistry.get_tool_defs_from_names(
-                current_node_schema.tool_fn_names,
-                model_provider,
-                current_node_schema.tool_registry,
+            current_node_schema.tool_registry.get_tool_defs(
+                model_provider=model_provider
             )
         ),
         last_customer_msg=last_customer_msg,
@@ -257,7 +254,10 @@ class AgentExecutor:
             f"[FUNCTION_CALL] {Style.BRIGHT}name: {fn_call.function_name}, id: {fn_call.tool_call_id}{Style.NORMAL} with args:\n{json.dumps(function_args, indent=4)}"
         )
         with FunctionCallContext() as fn_call_context:
-            if fn_call.function_name not in self.curr_node.schema.tool_fn_names:
+            if (
+                fn_call.function_name
+                not in self.curr_node.schema.tool_registry.tool_names
+            ):
                 raise InexistentFunctionError(fn_call.function_name)
 
             if fn_call.function_name.startswith("get_state"):
@@ -267,7 +267,9 @@ class AgentExecutor:
             elif fn_call.function_name.startswith("update_state"):
                 fn_output = self.curr_node.update_state(**function_args)
             else:
-                fn = ToolRegistry.GLOBAL_FN_NAME_TO_FN[fn_call.function_name]
+                fn = self.curr_node.schema.tool_registry.fn_name_to_fn[
+                    fn_call.function_name
+                ]
                 fn_output = fn(**function_args)
 
         if fn_call_context.has_exception():
@@ -309,6 +311,7 @@ class AgentExecutor:
         self.TC.add_assistant_turn(
             model_completion.msg_content,
             model_completion.model_provider,
+            self.curr_node.schema.tool_registry,
             model_completion.fn_calls,
             fn_id_to_output,
         )
@@ -325,7 +328,6 @@ class AgentExecutor:
         self.force_tool_choice = None
         return {
             "turn_container": self.TC,
-            "tool_names_or_tool_defs": self.curr_node.schema.tool_fn_names,
-            "extra_tool_registry": self.curr_node.schema.tool_registry,
+            "tool_registry": self.curr_node.schema.tool_registry,
             "force_tool_choice": force_tool_choice,
         }
