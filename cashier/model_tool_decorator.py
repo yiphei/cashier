@@ -113,7 +113,7 @@ class ToolRegistry:
             description=description,
         )
         remove_default(fn_json_schema)
-        self.add_oai_tool_def(tool_name, fn_json_schema)
+        self.add_tool_def_w_oai_def(tool_name, fn_json_schema)
 
     def get_tool_defs(self, tool_names=None, model_provider=ModelProvider.OPENAI):
         if tool_names:
@@ -124,7 +124,7 @@ class ToolRegistry:
         else:
             return list(self.model_provider_to_tool_def[model_provider].values())
 
-    def add_oai_tool_def(self, tool_name, oai_tool_def):
+    def add_tool_def_w_oai_def(self, tool_name, oai_tool_def):
         self.openai_tool_name_to_tool_def[tool_name] = oai_tool_def
         self.anthropic_tool_name_to_tool_def[tool_name] = (
             get_anthropic_tool_def_from_oai(oai_tool_def)
@@ -151,7 +151,7 @@ class ToolRegistry:
                 fn_signature_pydantic_model, name=func.__name__, description=description
             )
 
-            self.add_oai_tool_def(func.__name__, oai_tool_def)
+            self.add_tool_def_w_oai_def(func.__name__, oai_tool_def)
 
             # Generate function return type schema
             return_description = get_return_description_from_docstring(docstring)
