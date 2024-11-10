@@ -13,6 +13,7 @@ from cashier.tool_registries.cashier_tool_registry import CASHIER_TOOL_REGISTRY,
 class CashierNodeSystemPrompt(NodeSystemPrompt):
     BACKGROUND_PROMPT = CashierBackgroundPrompt
 
+
 class TakeOrderState(BaseStateModel):
     order: Optional[Order] = None
     has_finished_ordering: bool = Field(
