@@ -23,11 +23,11 @@ class NodeSchema:
     def __init__(
         self,
         node_prompt,
-        tool_names,
-        tool_registry,
         input_pydantic_model,
         state_pydantic_model,
+        tool_registry=None,
         first_turn=None,
+        tool_names=None,
     ):
         NodeSchema._counter += 1
         self.id = NodeSchema._counter
@@ -36,9 +36,10 @@ class NodeSchema:
         self.input_pydantic_model = input_pydantic_model
         self.state_pydantic_model = state_pydantic_model
         self.first_turn = first_turn
-        self.tool_registry = ToolRegistry()
-        if tool_names:
-            self.tool_registry.init_from_tool_registry(tool_names, tool_registry)
+        if tool_registry is not None:
+            self.tool_registry = ToolRegistry.create_from_tool_registry(tool_registry, tool_names)
+        else:
+            self.tool_registry = ToolRegistry()
 
         for field_name, field_info in self.state_pydantic_model.model_fields.items():
             new_tool_fn_name = f"update_state_{field_name}"

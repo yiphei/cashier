@@ -66,36 +66,42 @@ def get_anthropic_tool_def_from_oai(oai_tool_def):
 
 
 class ToolRegistry:
-    def __init__(self, oai_tool_defs_dict=None):
+    def __init__(self):
         self.openai_tool_name_to_tool_def = {}
         self.anthropic_tool_name_to_tool_def = {}
-        self.tool_names = []
         self.fn_name_to_fn = {}
         self.openai_tools_return_description = {}
         self.model_provider_to_tool_def = {
             ModelProvider.OPENAI: self.openai_tool_name_to_tool_def,
             ModelProvider.ANTHROPIC: self.anthropic_tool_name_to_tool_def,
         }
-        if oai_tool_defs_dict:
-            for tool_name, tool_def in oai_tool_defs_dict.items():
-                self.add_oai_tool_def(tool_name, tool_def)
 
-    def init_from_tool_registry(self, tool_names, tool_registry):
-        for tool_name in tool_names:
-            self.tool_names.append(tool_name)
-            self.openai_tool_name_to_tool_def[tool_name] = (
-                tool_registry.openai_tool_name_to_tool_def[tool_name]
-            )
-            self.anthropic_tool_name_to_tool_def[tool_name] = (
-                tool_registry.anthropic_tool_name_to_tool_def[tool_name]
-            )
-            if tool_name in tool_registry.openai_tools_return_description:
-                self.openai_tools_return_description[tool_name] = (
-                    tool_registry.openai_tools_return_description[tool_name]
+    @property
+    def tool_names(self):
+        return list(self.openai_tool_name_to_tool_def.keys())
+
+    @classmethod
+    def create_from_tool_registry(cls, tool_registry, tool_names=None):
+        if tool_names is None:
+            return copy.deepcopy(tool_registry)
+        else:
+            new_tool_registry = ToolRegistry()
+            for tool_name in tool_names:
+                new_tool_registry.openai_tool_name_to_tool_def[tool_name] = (
+                    tool_registry.openai_tool_name_to_tool_def[tool_name]
                 )
+                new_tool_registry.anthropic_tool_name_to_tool_def[tool_name] = (
+                    tool_registry.anthropic_tool_name_to_tool_def[tool_name]
+                )
+                if tool_name in tool_registry.openai_tools_return_description:
+                    new_tool_registry.openai_tools_return_description[tool_name] = (
+                        tool_registry.openai_tools_return_description[tool_name]
+                    )
 
-            if tool_name in tool_registry.fn_name_to_fn:
-                self.fn_name_to_fn[tool_name] = tool_registry.fn_name_to_fn[tool_name]
+                if tool_name in tool_registry.fn_name_to_fn:
+                    new_tool_registry.fn_name_to_fn[tool_name] = tool_registry.fn_name_to_fn[tool_name]
+
+            return new_tool_registry
 
     def add_tool_def(self, tool_name, description, field_args):
         fn_pydantic_model = create_model(tool_name, **field_args)
@@ -127,7 +133,6 @@ class ToolRegistry:
         self.anthropic_tool_name_to_tool_def[tool_name] = (
             get_anthropic_tool_def_from_oai(oai_tool_def)
         )
-        self.tool_names.append(tool_name)
 
     def model_tool_decorator(self, tool_instructions=None):
         def decorator_fn(func):
