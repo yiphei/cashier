@@ -267,7 +267,7 @@ class AgentExecutor:
             elif fn_call.function_name.startswith("update_state"):
                 fn_output = self.curr_node.update_state(**function_args)
             else:
-                fn = ToolRegistry.GLOBAL_FN_NAME_TO_FN[fn_call.function_name]
+                fn = ToolRegistry.fn_name_to_fn[fn_call.function_name]
                 fn_output = fn(**function_args)
 
         if fn_call_context.has_exception():
