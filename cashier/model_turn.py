@@ -16,7 +16,7 @@ from pydantic import (
 )
 
 from cashier.function_call_context import ToolExceptionWrapper
-from cashier.model_tool_decorator import ToolRegistry
+from cashier.tool_registry import ToolRegistry
 from cashier.model_util import CustomJSONEncoder, FunctionCall, ModelProvider
 
 

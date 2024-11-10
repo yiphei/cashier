@@ -9,7 +9,7 @@ import numpy as np
 from openai import OpenAI
 from pydantic import BaseModel
 
-from cashier.model_tool_decorator import ToolRegistry
+from cashier.tool_registry import ToolRegistry
 from cashier.model_turn import TurnContainer
 from cashier.model_util import FunctionCall, ModelProvider
 
