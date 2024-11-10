@@ -37,7 +37,9 @@ class NodeSchema:
         self.state_pydantic_model = state_pydantic_model
         self.first_turn = first_turn
         if tool_registry is not None:
-            self.tool_registry = ToolRegistry.create_from_tool_registry(tool_registry, tool_names)
+            self.tool_registry = ToolRegistry.create_from_tool_registry(
+                tool_registry, tool_names
+            )
         else:
             self.tool_registry = ToolRegistry()
 

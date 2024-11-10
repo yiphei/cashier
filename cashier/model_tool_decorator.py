@@ -99,7 +99,9 @@ class ToolRegistry:
                     )
 
                 if tool_name in tool_registry.fn_name_to_fn:
-                    new_tool_registry.fn_name_to_fn[tool_name] = tool_registry.fn_name_to_fn[tool_name]
+                    new_tool_registry.fn_name_to_fn[tool_name] = (
+                        tool_registry.fn_name_to_fn[tool_name]
+                    )
 
             return new_tool_registry
 
