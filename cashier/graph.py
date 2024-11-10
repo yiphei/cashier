@@ -36,7 +36,9 @@ class NodeSchema:
         self.input_pydantic_model = input_pydantic_model
         self.state_pydantic_model = state_pydantic_model
         self.first_turn = first_turn
-        if tool_registry_or_tool_defs_map is not None and isinstance(tool_registry_or_tool_defs_map, ToolRegistry):
+        if tool_registry_or_tool_defs_map is not None and isinstance(
+            tool_registry_or_tool_defs_map, ToolRegistry
+        ):
             self.tool_registry = ToolRegistry.create_from_tool_registry(
                 tool_registry_or_tool_defs_map, tool_names
             )
