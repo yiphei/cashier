@@ -267,7 +267,7 @@ class AgentExecutor:
             elif fn_call.function_name.startswith("update_state"):
                 fn_output = self.curr_node.update_state(**function_args)
             elif fn_callback is not None:
-                #TODO: this exists for benchmarking. remove this once done
+                # TODO: this exists for benchmarking. remove this once done
                 fn_output = fn_callback(**function_args)
             else:
                 fn = self.curr_node.schema.tool_registry.fn_name_to_fn[
