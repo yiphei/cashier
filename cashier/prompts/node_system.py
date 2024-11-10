@@ -4,7 +4,13 @@ from cashier.prompts.base_prompt import BasePrompt
 class NodeSystemPrompt(BasePrompt):
 
     def dynamic_prompt(
-        self, node_prompt, background_prompt, input, node_input_json_schema, state_json_schema, last_msg
+        self,
+        node_prompt,
+        background_prompt,
+        input,
+        node_input_json_schema,
+        state_json_schema,
+        last_msg,
     ):
         NODE_PROMPT = (
             background_prompt + "\n\n"

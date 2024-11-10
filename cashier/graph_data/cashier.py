@@ -5,8 +5,9 @@ from pydantic import Field
 from cashier.graph import BaseStateModel, EdgeSchema, GraphSchema, NodeSchema
 from cashier.model_turn import AssistantTurn
 from cashier.model_util import ModelProvider
-from cashier.tool_registries.cashier_tool_registry import CASHIER_TOOL_REGISTRY, Order
 from cashier.prompts.cashier_background import CashierBackgroundPrompt
+from cashier.tool_registries.cashier_tool_registry import CASHIER_TOOL_REGISTRY, Order
+
 
 class TakeOrderState(BaseStateModel):
     order: Optional[Order] = None

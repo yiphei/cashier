@@ -94,7 +94,7 @@ class NodeSchema:
 
         prompt = NodeSystemPrompt(
             node_prompt=self.node_prompt,
-            background_prompt = self.background_prompt,
+            background_prompt=self.background_prompt,
             input=(
                 input.model_dump_json()
                 if self.input_pydantic_model is not None
