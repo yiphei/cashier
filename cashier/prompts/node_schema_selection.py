@@ -39,7 +39,7 @@ class NodeSchemaSelectionPrompt(BasePrompt):
         prompt += (
             "All agents share the following background:\n"
             "<background>\n"
-            f"{all_node_schemas[0].background_prompt}\n"
+            f"{all_node_schemas[0].node_system_prompt.BACKGROUND_PROMPT()}\n"
             "</background>\n\n"
             "Given a conversation with a customer and the list above of AI agents with their attributes, "
             "determine which AI agent can best continue the conversation, especially given last customer message, in accordance with the universal guidelines defined in <guidelines>. "
