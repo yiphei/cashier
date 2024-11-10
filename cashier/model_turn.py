@@ -6,7 +6,14 @@ from collections import defaultdict
 from enum import StrEnum
 from typing import Any, ClassVar, Dict, List, Optional
 
-from pydantic import BaseModel, Field, constr, field_validator, model_validator, ConfigDict
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    constr,
+    field_validator,
+    model_validator,
+)
 
 from cashier.function_call_context import ToolExceptionWrapper
 from cashier.model_tool_decorator import ToolRegistry
@@ -77,8 +84,8 @@ class AssistantTurn(ModelTurn):
             raise ValueError(
                 "Mismatch between fn_calls' and fn_call_id_to_fn_output's lengths"
             )
-        
-        if (self.fn_calls and self.tool_registry is None):
+
+        if self.fn_calls and self.tool_registry is None:
             raise ValueError()
 
         return self

@@ -83,10 +83,16 @@ class ToolRegistry:
     def init_from_tool_registry(self, tool_names, tool_registry):
         for tool_name in tool_names:
             self.tool_names.append(tool_name)
-            self.openai_tool_name_to_tool_def[tool_name] = tool_registry.openai_tool_name_to_tool_def[tool_name]
-            self.anthropic_tool_name_to_tool_def[tool_name] = tool_registry.anthropic_tool_name_to_tool_def[tool_name]
+            self.openai_tool_name_to_tool_def[tool_name] = (
+                tool_registry.openai_tool_name_to_tool_def[tool_name]
+            )
+            self.anthropic_tool_name_to_tool_def[tool_name] = (
+                tool_registry.anthropic_tool_name_to_tool_def[tool_name]
+            )
             if tool_name in tool_registry.openai_tools_return_description:
-                self.openai_tools_return_description[tool_name] = tool_registry.openai_tools_return_description[tool_name]
+                self.openai_tools_return_description[tool_name] = (
+                    tool_registry.openai_tools_return_description[tool_name]
+                )
 
             if tool_name in tool_registry.fn_name_to_fn:
                 self.fn_name_to_fn[tool_name] = tool_registry.fn_name_to_fn[tool_name]
