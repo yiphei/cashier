@@ -8,7 +8,7 @@ from elevenlabs import ElevenLabs
 from cashier.agent_executor import AgentExecutor
 from cashier.audio import get_audio_input, get_text_from_speech
 from cashier.db_functions import create_db_client
-from graph_data.cashier import cashier_graph_schema
+from cashier.graph_data.cashier import cashier_graph_schema
 from cashier.gui import remove_previous_line
 from cashier.logger import logger
 from cashier.model import Model

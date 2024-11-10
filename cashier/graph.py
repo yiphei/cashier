@@ -9,7 +9,7 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from cashier.function_call_context import StateUpdateError
 from cashier.model_tool_decorator import ToolRegistry
-from prompts.node_system import NodeSystemPrompt
+from cashier.prompts.node_system import NodeSystemPrompt
 
 
 class Direction(StrEnum):
