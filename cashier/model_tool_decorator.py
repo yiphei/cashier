@@ -115,7 +115,6 @@ class ToolRegistry:
         remove_default(fn_json_schema)
         self.add_oai_tool_def(tool_name, fn_json_schema)
 
-
     def get_tool_defs(self, tool_names=None, model_provider=ModelProvider.OPENAI):
         if tool_names:
             return [
