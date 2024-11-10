@@ -120,7 +120,7 @@ class ToolRegistry:
                 for tool_name in tool_names
             ]
         else:
-            return self.model_provider_to_tool_def[model_provider].values()
+            return list(self.model_provider_to_tool_def[model_provider].values())
 
     def add_oai_tool_def(self, tool_name, oai_tool_def):
         self.openai_tool_name_to_tool_def[tool_name] = oai_tool_def

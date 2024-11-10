@@ -31,7 +31,7 @@ def should_skip_node_schema(model, TM, current_node_schema, all_node_schemas):
         node_prompt=current_node_schema.node_prompt,
         state_json_schema=current_node_schema.state_pydantic_model.model_json_schema(),
         tool_defs=json.dumps(
-            current_node_schema.get_tool_defs(model_provider=model_provider)
+            current_node_schema.tool_registry.get_tool_defs(model_provider=model_provider)
         ),
         last_customer_msg=last_customer_msg,
     )
