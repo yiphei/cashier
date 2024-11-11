@@ -269,6 +269,8 @@ class AgentExecutor:
             elif fn_callback is not None:
                 # TODO: this exists for benchmarking. remove this once done
                 fn_output = fn_callback(**function_args)
+                if fn_output.strip().startswith("Error:"):
+                    fn_output = json.loads(fn_output)
             else:
                 fn = self.curr_node.schema.tool_registry.fn_name_to_fn[
                     fn_call.function_name
