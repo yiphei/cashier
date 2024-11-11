@@ -25,7 +25,7 @@ class NodeSchema:
         node_system_prompt,
         input_pydantic_model,
         state_pydantic_model,
-        tool_registry_or_tool_defs_map=None,
+        tool_registry_or_tool_defs=None,
         first_turn=None,
         tool_names=None,
     ):
@@ -38,14 +38,14 @@ class NodeSchema:
         assert issubclass(state_pydantic_model, BaseStateModel)
         self.state_pydantic_model = state_pydantic_model
         self.first_turn = first_turn
-        if tool_registry_or_tool_defs_map is not None and isinstance(
-            tool_registry_or_tool_defs_map, ToolRegistry
+        if tool_registry_or_tool_defs is not None and isinstance(
+            tool_registry_or_tool_defs, ToolRegistry
         ):
             self.tool_registry = ToolRegistry.create_from_tool_registry(
-                tool_registry_or_tool_defs_map, tool_names
+                tool_registry_or_tool_defs, tool_names
             )
         else:
-            self.tool_registry = ToolRegistry(tool_registry_or_tool_defs_map)
+            self.tool_registry = ToolRegistry(tool_registry_or_tool_defs)
 
         for field_name, field_info in self.state_pydantic_model.model_fields.items():
             new_tool_fn_name = f"update_state_{field_name}"

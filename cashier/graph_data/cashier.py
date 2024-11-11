@@ -51,7 +51,7 @@ take_order_node_schema = NodeSchema(
         "get_menu_items_options",
         "get_menu_item_from_name",
     ],
-    tool_registry_or_tool_defs_map=CASHIER_TOOL_REGISTRY,
+    tool_registry_or_tool_defs=CASHIER_TOOL_REGISTRY,
     input_pydantic_model=None,
     state_pydantic_model=TakeOrderState,
     first_turn=AssistantTurn(
@@ -75,7 +75,7 @@ confirm_order_node_schema = NodeSchema(
     ),
     node_system_prompt=CashierNodeSystemPrompt,
     tool_names=None,
-    tool_registry_or_tool_defs_map=None,
+    tool_registry_or_tool_defs=None,
     input_pydantic_model=Order,
     state_pydantic_model=ConfirmOrderState,
 )
@@ -100,7 +100,7 @@ terminal_order_node_schema = NodeSchema(
     node_prompt=("Order has been successfully placed. Thank the customer."),
     node_system_prompt=CashierNodeSystemPrompt,
     tool_names=None,
-    tool_registry_or_tool_defs_map=None,
+    tool_registry_or_tool_defs=None,
     input_pydantic_model=None,
     state_pydantic_model=TerminalOrderState,
 )
