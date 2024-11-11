@@ -35,6 +35,7 @@ class NodeSchema:
         self.node_prompt = node_prompt
         self.node_system_prompt = node_system_prompt
         self.input_pydantic_model = input_pydantic_model
+        assert issubclass(state_pydantic_model, BaseStateModel)
         self.state_pydantic_model = state_pydantic_model
         self.first_turn = first_turn
         if tool_registry_or_tool_defs_map is not None and isinstance(
