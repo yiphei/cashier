@@ -254,6 +254,7 @@ class ModelOutput(ABC):
         self.msg_content = None
         self.last_chunk = None
         self.fn_calls = []
+        self.fn_call_ids = set()
 
     @abstractmethod
     def get_message(self):
@@ -455,7 +456,9 @@ class OAIModelOutput(ModelOutput):
                 tool_call_id=tool_call.id,
                 function_args_json=tool_call.function.arguments,
             )
-            self.fn_calls.append(fn_call)
+            if tool_call.id not in self.fn_call_ids:
+                self.fn_calls.append(fn_call)
+                self.fn_call_ids.add(tool_call.id)
             yield fn_call
 
 
@@ -526,5 +529,7 @@ class AnthropicModelOutput(ModelOutput):
                     tool_call_id=content.id,
                     function_args=content.input,
                 )
-                self.fn_calls.append(fn_call)
+                if content.id not in self.fn_call_ids:
+                    self.fn_calls.append(fn_call)
+                    self.fn_call_ids.add(content.id)
                 yield fn_call
