@@ -36,7 +36,7 @@ def run_chat(args, model, elevenlabs_client):
         cashier_graph_schema,
         args.audio_output,
         args.remove_prev_tool_calls,
-        model_provider
+        model_provider,
     )
 
     while True:
