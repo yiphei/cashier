@@ -53,8 +53,13 @@ class FunctionCall(BaseModel):
         if self.function_args is not None and self.function_args_json is None:
             self.function_args_json = json.dumps(self.function_args)
         return self
-    
+
     @classmethod
     def create_fake_call(cls, fn_name, fn_args_json, fn_args):
         id = "toolu_01CmtofC946qXZNABne7Lobb"
-        return FunctionCall(function_name=fn_name, tool_call_id=id,  function_args_json = fn_args_json, function_args= fn_args)
+        return FunctionCall(
+            function_name=fn_name,
+            tool_call_id=id,
+            function_args_json=fn_args_json,
+            function_args=fn_args,
+        )
