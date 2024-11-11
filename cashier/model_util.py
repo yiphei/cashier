@@ -6,7 +6,8 @@ from typing import Dict, Optional
 from pydantic import BaseModel, model_validator
 
 from cashier.function_call_context import ToolExceptionWrapper
-
+import string
+import random
 
 class ModelProvider(StrEnum):
     OPENAI = "OPENAI"
@@ -28,6 +29,30 @@ class CustomJSONEncoder(json.JSONEncoder):
             return str(obj)
         return super().default(obj)
 
+
+def generate_random_string(length):
+    """
+    Generate a random string of specified length using alphanumeric characters
+    (both uppercase and lowercase).
+    
+    Args:
+        length (int): The desired length of the random string
+        
+    Returns:
+        str: A random alphanumeric string
+    """
+    # Define the character set: uppercase + lowercase + digits
+    charset = string.ascii_letters + string.digits
+    
+    # Generate random string using random.choices
+    # choices() is preferred over choice() in a loop as it's more efficient
+    return ''.join(random.choices(charset, k=length))
+
+
+MODEL_PROVIDER_TO_FAKE_TOOL_CALL_ID_ARGS = {
+    ModelProvider.ANTHROPIC: ("toolu_", 24),
+    ModelProvider.OPENAI: ("call_", 24)
+}
 
 class FunctionCall(BaseModel):
     function_name: str
@@ -55,11 +80,13 @@ class FunctionCall(BaseModel):
         return self
 
     @classmethod
-    def create_fake_call(cls, fn_name, fn_args_json, fn_args):
-        id = "toolu_01CmtofC946qXZNABne7Lobb"
+    def create_fake_call(cls, fn_name, fn_args_json, fn_args, model_provider):
+        id_prefix, id_lenght = MODEL_PROVIDER_TO_FAKE_TOOL_CALL_ID_ARGS[model_provider]
+        fake_id = id_prefix + generate_random_string(id_lenght)
+
         return FunctionCall(
             function_name=fn_name,
-            tool_call_id=id,
+            tool_call_id=fake_id,
             function_args_json=fn_args_json,
             function_args=fn_args,
         )
