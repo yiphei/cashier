@@ -162,6 +162,8 @@ class ToolRegistry:
             return_annotation = fn_signature.return_annotation
             if return_annotation == inspect.Signature.empty:
                 raise Exception("Type annotation is required for return type")
+            if return_annotation is None:
+                return_annotation = type(None)
             fn_return_type_model = create_model(
                 func.__name__ + "_return",
                 return_obj=(return_annotation, Field(description=return_description)),
