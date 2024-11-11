@@ -1,4 +1,6 @@
 import json
+import random
+import string
 from collections import defaultdict
 from enum import StrEnum
 from typing import Dict, Optional
@@ -6,8 +8,7 @@ from typing import Dict, Optional
 from pydantic import BaseModel, model_validator
 
 from cashier.function_call_context import ToolExceptionWrapper
-import string
-import random
+
 
 class ModelProvider(StrEnum):
     OPENAI = "OPENAI"
@@ -34,25 +35,26 @@ def generate_random_string(length):
     """
     Generate a random string of specified length using alphanumeric characters
     (both uppercase and lowercase).
-    
+
     Args:
         length (int): The desired length of the random string
-        
+
     Returns:
         str: A random alphanumeric string
     """
     # Define the character set: uppercase + lowercase + digits
     charset = string.ascii_letters + string.digits
-    
+
     # Generate random string using random.choices
     # choices() is preferred over choice() in a loop as it's more efficient
-    return ''.join(random.choices(charset, k=length))
+    return "".join(random.choices(charset, k=length))
 
 
 MODEL_PROVIDER_TO_FAKE_TOOL_CALL_ID_ARGS = {
     ModelProvider.ANTHROPIC: ("toolu_", 24),
-    ModelProvider.OPENAI: ("call_", 24)
+    ModelProvider.OPENAI: ("call_", 24),
 }
+
 
 class FunctionCall(BaseModel):
     function_name: str
