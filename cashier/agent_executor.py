@@ -100,12 +100,14 @@ class AgentExecutor:
         graph_schema,
         audio_output,
         remove_prev_tool_calls,
+        model_provider, # TODO: remove this and allow model provider (thus model name) to change mid-conversation
     ):
         self.model = model
         self.elevenlabs_client = elevenlabs_client
         self.graph_schema = graph_schema
         self.remove_prev_tool_calls = remove_prev_tool_calls
         self.audio_output = audio_output
+        self.model_provider = model_provider
         self.TC = TurnContainer()
 
         self.curr_node = None
@@ -246,10 +248,10 @@ class AgentExecutor:
                 skip_edge_schema,
             )
 
-            fake_fn_call = FunctionCall.create_fake_fn_call("get_state", None, {})
+            fake_fn_call = FunctionCall.create_fake_fn_call(self.model_provider, "get_state", fn_args={})
             self.TC.add_assistant_turn(
                 None,
-                ModelProvider.ANTHROPIC,
+                self.model_provider,
                 self.curr_node.schema.tool_registry,
                 [fake_fn_call],
                 {fake_fn_call.tool_call_id: self.curr_node.get_state()},
