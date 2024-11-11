@@ -50,7 +50,7 @@ def generate_random_string(length):
     return "".join(random.choices(charset, k=length))
 
 
-MODEL_PROVIDER_TO_FAKE_TOOL_CALL_ID_ARGS = {
+MODEL_PROVIDER_TO_TOOL_CALL_ID_PREFIX = {
     ModelProvider.ANTHROPIC: "toolu_",
     ModelProvider.OPENAI: "call_",
 }
@@ -82,8 +82,8 @@ class FunctionCall(BaseModel):
         return self
 
     @classmethod
-    def create_fake_call(cls, fn_name, fn_args_json, fn_args, model_provider):
-        id_prefix = MODEL_PROVIDER_TO_FAKE_TOOL_CALL_ID_ARGS[model_provider]
+    def create_fake_fn_call(cls, model_provider, fn_name, fn_args_json=None, fn_args=None ):
+        id_prefix = MODEL_PROVIDER_TO_TOOL_CALL_ID_PREFIX[model_provider]
         fake_id = id_prefix + generate_random_string(24)
 
         return FunctionCall(

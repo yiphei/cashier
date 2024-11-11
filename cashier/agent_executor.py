@@ -246,7 +246,7 @@ class AgentExecutor:
                 skip_edge_schema,
             )
 
-            fake_fn_call = FunctionCall.create_fake_call("get_state", None, {})
+            fake_fn_call = FunctionCall.create_fake_fn_call("get_state", None, {})
             self.TC.add_assistant_turn(
                 None,
                 ModelProvider.ANTHROPIC,
