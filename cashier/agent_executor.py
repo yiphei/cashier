@@ -10,7 +10,7 @@ from cashier.gui import MessageDisplay
 from cashier.logger import logger
 from cashier.model import Model
 from cashier.model_turn import TurnContainer
-from cashier.model_util import CustomJSONEncoder, ModelProvider
+from cashier.model_util import CustomJSONEncoder, FunctionCall, ModelProvider
 from cashier.prompts.node_schema_selection import NodeSchemaSelectionPrompt
 from cashier.prompts.off_topic import OffTopicPrompt
 
@@ -100,12 +100,14 @@ class AgentExecutor:
         graph_schema,
         audio_output,
         remove_prev_tool_calls,
+        model_provider,  # TODO: remove this and allow model provider (thus model name) to change mid-conversation
     ):
         self.model = model
         self.elevenlabs_client = elevenlabs_client
         self.graph_schema = graph_schema
         self.remove_prev_tool_calls = remove_prev_tool_calls
         self.audio_output = audio_output
+        self.model_provider = model_provider
         self.TC = TurnContainer()
 
         self.curr_node = None
@@ -245,7 +247,18 @@ class AgentExecutor:
                 skip_node_schema,
                 skip_edge_schema,
             )
-            self.force_tool_choice = "get_state"
+
+            fake_fn_call = FunctionCall.create_fake_fn_call(
+                self.model_provider, "get_state", fn_args={}
+            )
+            self.TC.add_assistant_turn(
+                None,
+                self.model_provider,
+                self.curr_node.schema.tool_registry,
+                [fake_fn_call],
+                {fake_fn_call.tool_call_id: self.curr_node.get_state()},
+            )
+
         self.curr_node.update_first_user_message()
 
     def execute_function_call(self, fn_call, fn_callback=None):

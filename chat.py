@@ -29,12 +29,14 @@ def get_user_input(use_audio_input, openai_client):
 
 
 def run_chat(args, model, elevenlabs_client):
+    model_provider = Model.get_model_provider(args.model)
     AE = AgentExecutor(
         model,
         elevenlabs_client,
         cashier_graph_schema,
         args.audio_output,
         args.remove_prev_tool_calls,
+        model_provider,
     )
 
     while True:

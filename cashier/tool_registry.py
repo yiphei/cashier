@@ -23,7 +23,7 @@ def get_field_map_from_docstring(docstring, func_signature):
     field_name_to_field = defaultdict(lambda: [None, Field()])
 
     # Regex patterns to capture Args and Returns sections
-    args_regex_pattern = re.compile(r"Args:\n(.*?)\n\n", re.DOTALL)
+    args_regex_pattern = re.compile(r"Args:\n(.*?)\n", re.DOTALL)
 
     # Find args section
     args_match = args_regex_pattern.search(docstring)

@@ -1,4 +1,6 @@
 import json
+import random
+import string
 from collections import defaultdict
 from enum import StrEnum
 from typing import Dict, Optional
@@ -29,6 +31,31 @@ class CustomJSONEncoder(json.JSONEncoder):
         return super().default(obj)
 
 
+def generate_random_string(length):
+    """
+    Generate a random string of specified length using alphanumeric characters
+    (both uppercase and lowercase).
+
+    Args:
+        length (int): The desired length of the random string
+
+    Returns:
+        str: A random alphanumeric string
+    """
+    # Define the character set: uppercase + lowercase + digits
+    charset = string.ascii_letters + string.digits
+
+    # Generate random string using random.choices
+    # choices() is preferred over choice() in a loop as it's more efficient
+    return "".join(random.choices(charset, k=length))
+
+
+MODEL_PROVIDER_TO_TOOL_CALL_ID_PREFIX = {
+    ModelProvider.ANTHROPIC: "toolu_",
+    ModelProvider.OPENAI: "call_",
+}
+
+
 class FunctionCall(BaseModel):
     function_name: str
     tool_call_id: str
@@ -53,3 +80,17 @@ class FunctionCall(BaseModel):
         if self.function_args is not None and self.function_args_json is None:
             self.function_args_json = json.dumps(self.function_args)
         return self
+
+    @classmethod
+    def create_fake_fn_call(
+        cls, model_provider, fn_name, fn_args_json=None, fn_args=None
+    ):
+        id_prefix = MODEL_PROVIDER_TO_TOOL_CALL_ID_PREFIX[model_provider]
+        fake_id = id_prefix + generate_random_string(24)
+
+        return FunctionCall(
+            function_name=fn_name,
+            tool_call_id=fake_id,
+            function_args_json=fn_args_json,
+            function_args=fn_args,
+        )
