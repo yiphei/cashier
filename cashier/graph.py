@@ -216,7 +216,7 @@ class EdgeSchema:
         self.from_node_schema = from_node_schema
         self.to_node_schema = to_node_schema
         self.state_condition_fn = state_condition_fn
-        self.new_input_from_state_fn = new_input_fn
+        self.new_input_fn = new_input_fn
         self.bwd_state_init = bwd_state_init
         self.fwd_state_init = fwd_state_init
         self.skip_from_complete_to_prev_complete = skip_from_complete_to_prev_complete
@@ -242,7 +242,7 @@ class EdgeSchema:
             return True, skip_type
         elif (
             skip_type == FwdSkipType.SKIP_IF_INPUT_UNCHANGED
-            and self.new_input_from_state_fn(from_node.state) == to_node.input
+            and self.new_input_fn(from_node.state) == to_node.input
         ):
             return True, skip_type
         return False, skip_type
@@ -451,7 +451,7 @@ class Graph(BaseModel):
                 else:
                     edge_schema = next_edge_schema
                     if from_node != curr_node:
-                        input = edge_schema.new_input_from_state_fn(from_node.state)
+                        input = edge_schema.new_input_fn(from_node.state)
                 break
             else:
                 if from_node != curr_node:
