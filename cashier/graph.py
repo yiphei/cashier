@@ -451,7 +451,9 @@ class Graph(BaseModel):
                 else:
                     edge_schema = next_edge_schema
                     if from_node != curr_node:
-                        input = edge_schema.new_input_fn(from_node.state, from_node.input)
+                        input = edge_schema.new_input_fn(
+                            from_node.state, from_node.input
+                        )
                 break
             else:
                 if from_node != curr_node:
