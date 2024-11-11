@@ -163,7 +163,7 @@ class AgentExecutor:
             self.curr_node.mark_as_completed()
 
         if input is None and edge_schema:
-            input = edge_schema.new_input_from_state_fn(self.curr_node.state)
+            input = edge_schema.new_input_fn(self.curr_node.state, self.curr_node.input)
 
         if edge_schema:
             edge_schema, input = self.graph.compute_next_edge_schema(

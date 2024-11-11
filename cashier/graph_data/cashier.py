@@ -84,7 +84,7 @@ take_to_confirm_edge_schema = EdgeSchema(
     to_node_schema=confirm_order_node_schema,
     state_condition_fn=lambda state: state.has_finished_ordering
     and state.order is not None,
-    new_input_from_state_fn=lambda state: state.order,
+    new_input_fn=lambda state, input: state.order,
 )
 
 
@@ -108,7 +108,7 @@ confirm_to_terminal_edge_schema = EdgeSchema(
     from_node_schema=confirm_order_node_schema,
     to_node_schema=terminal_order_node_schema,
     state_condition_fn=lambda state: state.has_confirmed_order,
-    new_input_from_state_fn=lambda state: None,
+    new_input_fn=lambda state, input: None,
 )
 
 

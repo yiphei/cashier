@@ -202,7 +202,7 @@ class EdgeSchema:
         from_node_schema,
         to_node_schema,
         state_condition_fn,
-        new_input_from_state_fn,
+        new_input_fn,
         bwd_state_init=BwdStateInit.RESUME,
         fwd_state_init=FwdStateInit.RESET,
         skip_from_complete_to_prev_complete=FwdSkipType.SKIP_IF_INPUT_UNCHANGED,
@@ -216,7 +216,7 @@ class EdgeSchema:
         self.from_node_schema = from_node_schema
         self.to_node_schema = to_node_schema
         self.state_condition_fn = state_condition_fn
-        self.new_input_from_state_fn = new_input_from_state_fn
+        self.new_input_from_state_fn = new_input_fn
         self.bwd_state_init = bwd_state_init
         self.fwd_state_init = fwd_state_init
         self.skip_from_complete_to_prev_complete = skip_from_complete_to_prev_complete
