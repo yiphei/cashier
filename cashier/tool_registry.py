@@ -77,7 +77,7 @@ class ToolRegistry:
         }
         if oai_tool_defs:
             for tool_def in oai_tool_defs:
-                tool_name = tool_def['function']['name']
+                tool_name = tool_def["function"]["name"]
                 self.openai_tool_name_to_tool_def[tool_name] = tool_def
                 self.anthropic_tool_name_to_tool_def[tool_name] = tool_def
 
