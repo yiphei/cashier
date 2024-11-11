@@ -10,7 +10,7 @@ from cashier.gui import MessageDisplay
 from cashier.logger import logger
 from cashier.model import Model
 from cashier.model_turn import TurnContainer
-from cashier.model_util import CustomJSONEncoder, ModelProvider
+from cashier.model_util import CustomJSONEncoder, FunctionCall, ModelProvider
 from cashier.prompts.node_schema_selection import NodeSchemaSelectionPrompt
 from cashier.prompts.off_topic import OffTopicPrompt
 
@@ -245,7 +245,16 @@ class AgentExecutor:
                 skip_node_schema,
                 skip_edge_schema,
             )
-            self.force_tool_choice = "get_state"
+
+            fake_fn_call = FunctionCall.create_fake_call("get_state", None, {})
+            self.TC.add_assistant_turn(
+                None,
+                ModelProvider.ANTHROPIC,
+                self.curr_node.schema.tool_registry,
+                [fake_fn_call],
+                {fake_fn_call.tool_call_id: self.curr_node.get_state()},
+            )
+
         self.curr_node.update_first_user_message()
 
     def execute_function_call(self, fn_call, fn_callback=None):
