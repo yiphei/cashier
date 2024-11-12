@@ -282,7 +282,9 @@ class AgentExecutor:
         if edge_schema:
             return edge_schema, node_schema, True
 
-        edge_schema, node_schema = self.handle_skip(fwd_skip_edge_schemas, bwd_skip_edge_schemas)
+        edge_schema, node_schema = self.handle_skip(
+            fwd_skip_edge_schemas, bwd_skip_edge_schemas
+        )
         return edge_schema, node_schema, False
 
     def add_user_turn(self, msg):
