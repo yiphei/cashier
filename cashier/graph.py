@@ -168,7 +168,7 @@ class Node:
             self.state = self.state.__class__(**new_state)
         else:
             raise StateUpdateError(
-                "cannot update any state field until you get the first customer message in this conversation."
+                "cannot update any state field until you get the first customer message in the current conversation. Remember, the current conversation starts after <cutoff_msg>"
             )
 
     def get_state(self):
