@@ -275,7 +275,11 @@ class AgentExecutor:
         wait_edge_schema, wait_node_schema = self.handle_wait()
         if wait_edge_schema is not None:
             fake_fn_call = FunctionCall.create_fake_fn_call(
-                self.model_provider, "think", args={"thought": "The customer is asking/requesting something that will actually be addressed later. I must tell the customer 1) that their request/questions will be addressed later and 2) we must finish the current business before we can get to it"}
+                self.model_provider,
+                "think",
+                args={
+                    "thought": "The customer is asking/requesting something that will actually be addressed later. I must tell the customer 1) that their request/questions will be addressed later and 2) we must finish the current business before we can get to it"
+                },
             )
             self.TC.add_assistant_turn(
                 None,

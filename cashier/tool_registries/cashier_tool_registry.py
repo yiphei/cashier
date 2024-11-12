@@ -132,9 +132,10 @@ def think(thought: str) -> None:
     Args:
         thought: A thought to think about.
 
-            
+
     """
     return None
+
 
 class CupSize(StrEnum):
     SHORT = "SHORT"
