@@ -8,7 +8,7 @@ class GeneralToolRegistry(ToolRegistry):
 @GeneralToolRegistry.model_tool_decorator()
 def think(thought: str) -> None:
     """
-    Use the tool to think about something. It will not obtain new information or change the database, but just append the thought to the log. Use it when complex reasoning is needed.
+    Use the tool to think about something or when complex reasoning is needed. This is a pure function (i.e. has no side effect).
 
     Args:
         thought: A thought to think about.
