@@ -256,7 +256,7 @@ class AgentExecutor:
                 self.model_provider,
                 self.curr_node.schema.tool_registry,
                 [fake_fn_call],
-                {fake_fn_call.tool_call_id: self.curr_node.get_state()},
+                {fake_fn_call.id: self.curr_node.get_state()},
             )
 
         self.curr_node.update_first_user_message()

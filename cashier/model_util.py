@@ -57,28 +57,28 @@ MODEL_PROVIDER_TO_TOOL_CALL_ID_PREFIX = {
 
 
 class FunctionCall(BaseModel):
-    function_name: str
-    tool_call_id: str
-    function_args_json: Optional[str] = None
-    function_args: Optional[Dict] = None
+    name: str
+    id: str
+    args_json: Optional[str] = None
+    args: Optional[Dict] = None
 
     @model_validator(mode="after")
     def check_function_args(self):
-        if self.function_args_json is None and self.function_args is None:
+        if self.args_json is None and self.args is None:
             raise ValueError(
-                "One of [function_args_json, function_args] must be provided"
+                "One of [args_json, args] must be provided"
             )
 
-        if self.function_args_json is not None and self.function_args is None:
-            if self.function_args_json:
-                self.function_args = json.loads(self.function_args_json)
+        if self.args_json is not None and self.args is None:
+            if self.args_json:
+                self.args = json.loads(self.args_json)
             else:
                 # This case always happens when claude models call inexistent functions.
                 # We still want to construct the function call and let it error downstream.
-                self.function_args = {}
-                self.function_args_json = "{}"
-        if self.function_args is not None and self.function_args_json is None:
-            self.function_args_json = json.dumps(self.function_args)
+                self.args = {}
+                self.args_json = "{}"
+        if self.args is not None and self.args_json is None:
+            self.args_json = json.dumps(self.args)
         return self
 
     @classmethod
@@ -89,8 +89,8 @@ class FunctionCall(BaseModel):
         fake_id = id_prefix + generate_random_string(24)
 
         return FunctionCall(
-            function_name=fn_name,
-            tool_call_id=fake_id,
-            function_args_json=fn_args_json,
-            function_args=fn_args,
+            name=fn_name,
+            id=fake_id,
+            args_json=fn_args_json,
+            args=fn_args,
         )

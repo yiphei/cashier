@@ -103,11 +103,11 @@ class AssistantTurn(ModelTurn):
                         "role": "assistant",
                         "tool_calls": [
                             {
-                                "id": fn_call.tool_call_id,
+                                "id": fn_call.id,
                                 "type": "function",
                                 "function": {
-                                    "arguments": fn_call.function_args_json,
-                                    "name": fn_call.function_name,
+                                    "arguments": fn_call.args_json,
+                                    "name": fn_call.name,
                                 },
                             }
                         ],
@@ -117,25 +117,25 @@ class AssistantTurn(ModelTurn):
                     {
                         "role": "tool",
                         "content": json.dumps(
-                            self.fn_call_id_to_fn_output[fn_call.tool_call_id],
+                            self.fn_call_id_to_fn_output[fn_call.id],
                             cls=CustomJSONEncoder,
                         ),
-                        "tool_call_id": fn_call.tool_call_id,
+                        "tool_call_id": fn_call.id,
                     }
                 )
 
                 if (
-                    fn_call.function_name
+                    fn_call.name
                     in self.tool_registry.openai_tools_return_description
                     and not isinstance(
-                        self.fn_call_id_to_fn_output[fn_call.tool_call_id],
+                        self.fn_call_id_to_fn_output[fn_call.id],
                         ToolExceptionWrapper,
                     )
                 ):
                     json_schema = self.tool_registry.openai_tools_return_description[
-                        fn_call.function_name
+                        fn_call.name
                     ]
-                    system_msg = f"This is the JSON Schema of {fn_call.function_name}'s return type: {json.dumps(json_schema)}"
+                    system_msg = f"This is the JSON Schema of {fn_call.name}'s return type: {json.dumps(json_schema)}"
 
                     messages.append({"role": "system", "content": system_msg})
 
@@ -153,9 +153,9 @@ class AssistantTurn(ModelTurn):
                 contents.append(
                     {
                         "type": "tool_use",
-                        "id": fn_call.tool_call_id,
-                        "name": fn_call.function_name,
-                        "input": fn_call.function_args,
+                        "id": fn_call.id,
+                        "name": fn_call.name,
+                        "input": fn_call.args,
                     }
                 )
 
@@ -171,13 +171,13 @@ class AssistantTurn(ModelTurn):
                 return_contents.append(
                     {
                         "content": json.dumps(
-                            self.fn_call_id_to_fn_output[fn_call.tool_call_id],
+                            self.fn_call_id_to_fn_output[fn_call.id],
                             cls=CustomJSONEncoder,
                         ),
                         "type": "tool_result",
-                        "tool_use_id": fn_call.tool_call_id,
+                        "tool_use_id": fn_call.id,
                         "is_error": isinstance(
-                            self.fn_call_id_to_fn_output[fn_call.tool_call_id],
+                            self.fn_call_id_to_fn_output[fn_call.id],
                             ToolExceptionWrapper,
                         ),
                     }
