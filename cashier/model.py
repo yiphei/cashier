@@ -354,9 +354,9 @@ class ModelOutput(ABC):
             if self.has_function_call_id(chunk):
                 if tool_call_id is not None:
                     fn_call = FunctionCall(
-                        function_name=function_name,
-                        tool_call_id=tool_call_id,
-                        function_args_json=function_args_json,
+                        name=function_name,
+                        id=tool_call_id,
+                        args_json=function_args_json,
                     )
                     self.fn_calls.append(fn_call)
                     yield fn_call
@@ -369,9 +369,9 @@ class ModelOutput(ABC):
 
         if tool_call_id is not None:
             fn_call = FunctionCall(
-                function_name=function_name,
-                tool_call_id=tool_call_id,
-                function_args_json=function_args_json,
+                name=function_name,
+                id=tool_call_id,
+                args_json=function_args_json,
             )
 
             self.fn_calls.append(fn_call)
@@ -452,9 +452,9 @@ class OAIModelOutput(ModelOutput):
         tool_calls = self.output_obj.choices[0].message.tool_calls or []
         for tool_call in tool_calls:
             fn_call = FunctionCall(
-                function_name=tool_call.function.name,
-                tool_call_id=tool_call.id,
-                function_args_json=tool_call.function.arguments,
+                name=tool_call.function.name,
+                id=tool_call.id,
+                args_json=tool_call.function.arguments,
             )
             if tool_call.id not in self.fn_call_ids:
                 self.fn_calls.append(fn_call)
@@ -518,16 +518,16 @@ class AnthropicModelOutput(ModelOutput):
     def get_message_prop(self, prop_name):
         if self.parsed_msg is None:
             fn_call = next(self.get_fn_calls())
-            self.parsed_msg = self.response_format(**fn_call.function_args)
+            self.parsed_msg = self.response_format(**fn_call.args)
         return getattr(self.parsed_msg, prop_name)
 
     def get_fn_calls(self):
         for content in self.output_obj.content:
             if content.type == "tool_use":
                 fn_call = FunctionCall(
-                    function_name=content.name,
-                    tool_call_id=content.id,
-                    function_args=content.input,
+                    name=content.name,
+                    id=content.id,
+                    args=content.input,
                 )
                 if content.id not in self.fn_call_ids:
                     self.fn_calls.append(fn_call)
