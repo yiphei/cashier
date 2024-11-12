@@ -94,7 +94,9 @@ def should_skip_node_schema(model, TM, current_node_schema, all_node_schemas, is
             f"{'SKIP_AGENT_ID' if not is_wait else 'WAIT_AGENT_ID'}: {agent_id} with {prob}"
         )
     else:
-        logger.debug(f"{'SKIP_AGENT_ID' if not is_wait else 'WAIT_AGENT_ID'}: {agent_id}")
+        logger.debug(
+            f"{'SKIP_AGENT_ID' if not is_wait else 'WAIT_AGENT_ID'}: {agent_id}"
+        )
 
     return agent_id if agent_id != current_node_schema.id else None
 
