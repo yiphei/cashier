@@ -83,8 +83,9 @@ class ToolRegistry:
         super().__init_subclass__()
         for base in cls.__bases__:
             for key, value in base.__dict__.items():
-                if (not key.startswith('__') 
-                    and not isinstance(value, (FunctionType, classmethod, staticmethod, property))):
+                if not key.startswith("__") and not isinstance(
+                    value, (FunctionType, classmethod, staticmethod, property)
+                ):
                     setattr(cls, key, copy.deepcopy(value))
 
     def __init__(self, oai_tool_defs=None):
