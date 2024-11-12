@@ -237,13 +237,17 @@ class AgentExecutor:
                     )
 
         return None, None
-    
+
     def handle_wait(self):
         fwd_skip_edge_schemas = self.graph.compute_fwd_skip_edge_schemas(
             self.curr_node, self.next_edge_schemas
         )
         bwd_skip_edge_schemas = self.bwd_skip_edge_schemas
-        remaining_edge_schemas = set(self.graph_schema.edge_schemas) - set(fwd_skip_edge_schemas) - set(bwd_skip_edge_schemas)
+        remaining_edge_schemas = (
+            set(self.graph_schema.edge_schemas)
+            - set(fwd_skip_edge_schemas)
+            - set(bwd_skip_edge_schemas)
+        )
 
         all_node_schemas = [self.curr_node.schema]
         all_node_schemas += [edge.to_node_schema for edge in remaining_edge_schemas]
