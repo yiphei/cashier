@@ -262,22 +262,22 @@ class AgentExecutor:
         self.curr_node.update_first_user_message()
 
     def execute_function_call(self, fn_call, fn_callback=None):
-        function_args = fn_call.function_args
+        function_args = fn_call.args
         logger.debug(
-            f"[FUNCTION_CALL] {Style.BRIGHT}name: {fn_call.function_name}, id: {fn_call.tool_call_id}{Style.NORMAL} with args:\n{json.dumps(function_args, indent=4)}"
+            f"[FUNCTION_CALL] {Style.BRIGHT}name: {fn_call.name}, id: {fn_call.id}{Style.NORMAL} with args:\n{json.dumps(function_args, indent=4)}"
         )
         with FunctionCallContext() as fn_call_context:
             if (
-                fn_call.function_name
+                fn_call.name
                 not in self.curr_node.schema.tool_registry.tool_names
             ):
-                raise InexistentFunctionError(fn_call.function_name)
+                raise InexistentFunctionError(fn_call.name)
 
-            if fn_call.function_name.startswith("get_state"):
-                fn_output = getattr(self.curr_node, fn_call.function_name)(
+            if fn_call.name.startswith("get_state"):
+                fn_output = getattr(self.curr_node, fn_call.name)(
                     **function_args
                 )
-            elif fn_call.function_name.startswith("update_state"):
+            elif fn_call.name.startswith("update_state"):
                 fn_output = self.curr_node.update_state(**function_args)
             elif fn_callback is not None:
                 # TODO: this exists for benchmarking. remove this once done
@@ -288,18 +288,18 @@ class AgentExecutor:
                     fn_output = json.loads(fn_output)
             else:
                 fn = self.curr_node.schema.tool_registry.fn_name_to_fn[
-                    fn_call.function_name
+                    fn_call.name
                 ]
                 fn_output = fn(**function_args)
 
         if fn_call_context.has_exception():
             logger.debug(
-                f"[FUNCTION_EXCEPTION] {Style.BRIGHT}name: {fn_call.function_name}, id: {fn_call.tool_call_id}{Style.NORMAL} with exception:\n{str(fn_call_context.exception)}"
+                f"[FUNCTION_EXCEPTION] {Style.BRIGHT}name: {fn_call.name}, id: {fn_call.id}{Style.NORMAL} with exception:\n{str(fn_call_context.exception)}"
             )
             return fn_call_context.exception, False
         else:
             logger.debug(
-                f"[FUNCTION_RETURN] {Style.BRIGHT}name: {fn_call.function_name}, id: {fn_call.tool_call_id}{Style.NORMAL} with output:\n{json.dumps(fn_output, cls=CustomJSONEncoder, indent=4)}"
+                f"[FUNCTION_RETURN] {Style.BRIGHT}name: {fn_call.name}, id: {fn_call.id}{Style.NORMAL} with output:\n{json.dumps(fn_output, cls=CustomJSONEncoder, indent=4)}"
             )
             return fn_output, True
 
@@ -316,13 +316,13 @@ class AgentExecutor:
         fn_id_to_output = {}
         new_edge_schema = None
         for function_call in model_completion.get_or_stream_fn_calls():
-            fn_id_to_output[function_call.tool_call_id], is_success = (
+            fn_id_to_output[function_call.id], is_success = (
                 self.execute_function_call(function_call, fn_callback)
             )
 
             self.need_user_input = False
 
-            if is_success and function_call.function_name.startswith("update_state"):
+            if is_success and function_call.name.startswith("update_state"):
                 for edge_schema in self.next_edge_schemas:
                     if edge_schema.check_state_condition(self.curr_node.state):
                         new_edge_schema = edge_schema
