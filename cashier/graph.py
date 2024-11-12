@@ -170,7 +170,7 @@ class Node:
             self.state = self.state.__class__(**new_state)
         else:
             raise StateUpdateError(
-                "cannot update any state field until first customer message"
+                "cannot update any state field until you get the first customer message in this conversation."
             )
 
     def get_state(self):
