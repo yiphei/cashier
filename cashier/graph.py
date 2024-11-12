@@ -41,7 +41,7 @@ class NodeSchema:
         if tool_registry_or_tool_defs is not None and isinstance(
             tool_registry_or_tool_defs, ToolRegistry
         ):
-            self.tool_registry = ToolRegistry.create_from_tool_registry(
+            self.tool_registry = tool_registry_or_tool_defs.__class__.create_from_tool_registry(
                 tool_registry_or_tool_defs, tool_names
             )
         else:
