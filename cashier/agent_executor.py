@@ -88,17 +88,18 @@ def should_skip_node_schema(model, TM, current_node_schema, all_node_schemas, is
     )
 
     agent_id = chat_completion.get_message_prop("agent_id")
+    actual_agent_id = agent_id if agent_id != current_node_schema.id else None
     if model_provider == ModelProvider.OPENAI:
         prob = chat_completion.get_prob(-2)
         logger.debug(
-            f"{'SKIP_AGENT_ID' if not is_wait else 'WAIT_AGENT_ID'}: {agent_id} with {prob}"
+            f"{'SKIP_AGENT_ID' if not is_wait else 'WAIT_AGENT_ID'}: {actual_agent_id or 'current_id'} with {prob}"
         )
     else:
         logger.debug(
-            f"{'SKIP_AGENT_ID' if not is_wait else 'WAIT_AGENT_ID'}: {agent_id}"
+            f"{'SKIP_AGENT_ID' if not is_wait else 'WAIT_AGENT_ID'}: {actual_agent_id or 'current_id'}"
         )
 
-    return agent_id if agent_id != current_node_schema.id else None
+    return actual_agent_id
 
 
 class AgentExecutor:
