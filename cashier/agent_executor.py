@@ -269,17 +269,19 @@ class AgentExecutor:
                     )
 
         return None, None
-    
+
     def handle_is_off_topic(self):
         fwd_skip_edge_schemas = self.graph.compute_fwd_skip_edge_schemas(
             self.curr_node, self.next_edge_schemas
         )
         bwd_skip_edge_schemas = self.bwd_skip_edge_schemas
 
-        edge_schema, node_schema = self.handle_wait(fwd_skip_edge_schemas, bwd_skip_edge_schemas)
+        edge_schema, node_schema = self.handle_wait(
+            fwd_skip_edge_schemas, bwd_skip_edge_schemas
+        )
         if edge_schema:
             return edge_schema, node_schema, True
-        
+
         return self.handle_skip(fwd_skip_edge_schemas, bwd_skip_edge_schemas), False
 
     def add_user_turn(self, msg):
