@@ -14,6 +14,7 @@ from cashier.model_util import CustomJSONEncoder, FunctionCall, ModelProvider
 from cashier.prompts.node_schema_selection import NodeSchemaSelectionPrompt
 from cashier.prompts.off_topic import OffTopicPrompt
 
+
 def is_on_topic(model, TM, current_node_schema):
     model_name = "claude-3.5"
     model_provider = Model.get_model_provider(model_name)
@@ -55,6 +56,7 @@ def is_on_topic(model, TM, current_node_schema):
 
     return is_on_topic
 
+
 def should_skip_node_schema(model, TM, current_node_schema, all_node_schemas, is_wait):
     if len(all_node_schemas) == 1:
         return None
@@ -88,7 +90,9 @@ def should_skip_node_schema(model, TM, current_node_schema, all_node_schemas, is
     agent_id = chat_completion.get_message_prop("agent_id")
     if model_provider == ModelProvider.OPENAI:
         prob = chat_completion.get_prob(-2)
-        logger.debug(f"{'SKIP_AGENT_ID' if is_wait else 'WAIT_AGENT_ID'}: {agent_id} with {prob}")
+        logger.debug(
+            f"{'SKIP_AGENT_ID' if is_wait else 'WAIT_AGENT_ID'}: {agent_id} with {prob}"
+        )
     else:
         logger.debug(f"{'SKIP_AGENT_ID' if is_wait else 'WAIT_AGENT_ID'}: {agent_id}")
 
