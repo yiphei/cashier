@@ -37,7 +37,9 @@ def get_field_map_from_docstring(docstring, func_signature):
             parts = line.split(":", 1)
             if len(parts) == 2:
                 arg_name, arg_description = parts
-                field_name_to_field[arg_name.strip()][1].description = arg_description.strip()
+                field_name_to_field[arg_name.strip()][
+                    1
+                ].description = arg_description.strip()
 
     for param_name, param in func_signature.parameters.items():
         if param_name in field_name_to_field:
