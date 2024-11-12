@@ -15,6 +15,7 @@ class class_or_instance_method(classmethod):
         descr_get = super().__get__ if instance is None else self.__func__.__get__
         return descr_get(instance, type_)
 
+
 def get_return_description_from_docstring(docstring):
     return_description = ""
     returns_pattern = re.compile(r"Returns:\n(.*)", re.DOTALL)
@@ -156,7 +157,9 @@ class ToolRegistry:
         is_class = isinstance(self_or_cls, type)
         if is_class:
             fn_name_to_fn_attr = self_or_cls.GLOBAL_FN_NAME_TO_FN
-            oai_tools_return_map_attr = self_or_cls.GLOBAL_OPENAI_TOOLS_RETURN_DESCRIPTION
+            oai_tools_return_map_attr = (
+                self_or_cls.GLOBAL_OPENAI_TOOLS_RETURN_DESCRIPTION
+            )
         else:
             fn_name_to_fn_attr = self_or_cls.fn_name_to_fn
             oai_tools_return_map_attr = self_or_cls.openai_tools_return_description
@@ -180,7 +183,7 @@ class ToolRegistry:
             oai_tool_def = pydantic_function_tool(
                 fn_signature_pydantic_model, name=func.__name__, description=description
             )
-            
+
             if is_class:
                 self_or_cls._add_tool_def_w_oai_def_cls(func.__name__, oai_tool_def)
             else:
@@ -208,9 +211,7 @@ class ToolRegistry:
             if "title" in actual_return_json_schema:
                 actual_return_json_schema.pop("title")
 
-            oai_tools_return_map_attr[func.__name__] = (
-                actual_return_json_schema
-            )
+            oai_tools_return_map_attr[func.__name__] = actual_return_json_schema
 
             @wraps(func)
             def wrapper(*args, **kwargs):
