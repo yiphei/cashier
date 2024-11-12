@@ -289,7 +289,7 @@ class AgentExecutor:
                     self.model_provider,
                     "think",
                     args={
-                        "thought": "At least part of the customer request/question is off-topic for the current conversation but will actually be addressed later. According to the policies, I must tell the customer 1) that their off-topic request/question will be addressed later and 2) we must finish the current business before we can get to it. I must refuse to engage with the off-topic request/question in any way."
+                        "thought": "At least part of the customer request/question is off-topic for the current conversation and will actually be addressed later. According to the policies, I must tell the customer 1) that their off-topic request/question will be addressed later and 2) we must finish the current business before we can get to it. I must refuse to engage with the off-topic request/question in any way."
                     },
                 )
                 self.TC.add_assistant_turn(
