@@ -3,12 +3,12 @@ import inspect
 import re
 from collections import defaultdict
 from functools import wraps
-import copy
 
 from openai import pydantic_function_tool
 from pydantic import Field, create_model
 
 from cashier.model_util import ModelProvider
+
 
 # got this from: https://stackoverflow.com/questions/28237955/same-name-for-classmethod-and-instancemethod
 class class_or_instance_method(classmethod):
@@ -79,10 +79,16 @@ class ToolRegistry:
     GLOBAL_OPENAI_TOOLS_RETURN_DESCRIPTION = {}
 
     def __init__(self, oai_tool_defs=None):
-        self.openai_tool_name_to_tool_def = copy.copy(self.GLOBAL_OPENAI_TOOL_NAME_TO_TOOL_DEF)
-        self.anthropic_tool_name_to_tool_def = copy.copy(self.GLOBAL_ANTHROPIC_TOOL_NAME_TO_TOOL_DEF)
+        self.openai_tool_name_to_tool_def = copy.copy(
+            self.GLOBAL_OPENAI_TOOL_NAME_TO_TOOL_DEF
+        )
+        self.anthropic_tool_name_to_tool_def = copy.copy(
+            self.GLOBAL_ANTHROPIC_TOOL_NAME_TO_TOOL_DEF
+        )
         self.fn_name_to_fn = copy.copy(self.GLOBAL_FN_NAME_TO_FN)
-        self.openai_tools_return_description = copy.copy(self.GLOBAL_OPENAI_TOOLS_RETURN_DESCRIPTION)
+        self.openai_tools_return_description = copy.copy(
+            self.GLOBAL_OPENAI_TOOLS_RETURN_DESCRIPTION
+        )
         self.model_provider_to_tool_def = {
             ModelProvider.OPENAI: self.openai_tool_name_to_tool_def,
             ModelProvider.ANTHROPIC: self.anthropic_tool_name_to_tool_def,
