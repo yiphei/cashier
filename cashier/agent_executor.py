@@ -306,22 +306,21 @@ class AgentExecutor:
                         {fake_fn_call.id: None},
                     )
                 else:
-                    if edge_schema is not None:
-                        self.init_skip_node(
-                            node_schema,
-                            edge_schema,
-                        )
+                    self.init_skip_node(
+                        node_schema,
+                        edge_schema,
+                    )
 
-                        fake_fn_call = FunctionCall.create_fake_fn_call(
-                            self.model_provider, "get_state", args={}
-                        )
-                        self.TC.add_assistant_turn(
-                            None,
-                            self.model_provider,
-                            self.curr_node.schema.tool_registry,
-                            [fake_fn_call],
-                            {fake_fn_call.id: self.curr_node.get_state()},
-                        )
+                    fake_fn_call = FunctionCall.create_fake_fn_call(
+                        self.model_provider, "get_state", args={}
+                    )
+                    self.TC.add_assistant_turn(
+                        None,
+                        self.model_provider,
+                        self.curr_node.schema.tool_registry,
+                        [fake_fn_call],
+                        {fake_fn_call.id: self.curr_node.get_state()},
+                    )
         self.curr_node.update_first_user_message()
 
     def execute_function_call(self, fn_call, fn_callback=None):
