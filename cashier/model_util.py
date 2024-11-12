@@ -80,9 +80,7 @@ class FunctionCall(BaseModel):
         return self
 
     @classmethod
-    def create_fake_fn_call(
-        cls, model_provider, name, args_json=None, args=None
-    ):
+    def create_fake_fn_call(cls, model_provider, name, args_json=None, args=None):
         id_prefix = MODEL_PROVIDER_TO_TOOL_CALL_ID_PREFIX[model_provider]
         fake_id = id_prefix + generate_random_string(24)
 
