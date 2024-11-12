@@ -14,11 +14,7 @@ from cashier.model_util import CustomJSONEncoder, FunctionCall, ModelProvider
 from cashier.prompts.node_schema_selection import NodeSchemaSelectionPrompt
 from cashier.prompts.off_topic import OffTopicPrompt
 
-
-def should_skip_node_schema(model, TM, current_node_schema, all_node_schemas):
-    if len(all_node_schemas) == 1:
-        return None
-
+def is_on_topic(model, TM, current_node_schema):
     model_name = "claude-3.5"
     model_provider = Model.get_model_provider(model_name)
     node_conv_msgs = copy.deepcopy(
@@ -57,10 +53,18 @@ def should_skip_node_schema(model, TM, current_node_schema, all_node_schemas):
     else:
         logger.debug(f"IS_ON_TOPIC: {is_on_topic}")
 
-    if is_on_topic:
+    return is_on_topic
+
+def should_skip_node_schema(model, TM, current_node_schema, all_node_schemas, is_wait):
+    if len(all_node_schemas) == 1:
         return None
 
-    node_conv_msgs.pop()
+    model_name = "claude-3.5"
+    model_provider = Model.get_model_provider(model_name)
+    node_conv_msgs = copy.deepcopy(
+        TM.model_provider_to_message_manager[model_provider].node_conversation_dicts
+    )
+    last_customer_msg = TM.get_user_message(content_only=True)
 
     prompt = NodeSchemaSelectionPrompt(
         all_node_schemas=all_node_schemas,
@@ -84,9 +88,9 @@ def should_skip_node_schema(model, TM, current_node_schema, all_node_schemas):
     agent_id = chat_completion.get_message_prop("agent_id")
     if model_provider == ModelProvider.OPENAI:
         prob = chat_completion.get_prob(-2)
-        logger.debug(f"AGENT_ID: {agent_id} with {prob}")
+        logger.debug(f"{'SKIP_AGENT_ID' if is_wait else 'WAIT_AGENT_ID'}: {agent_id} with {prob}")
     else:
-        logger.debug(f"AGENT_ID: {agent_id}")
+        logger.debug(f"{'SKIP_AGENT_ID' if is_wait else 'WAIT_AGENT_ID'}: {agent_id}")
 
     return agent_id if agent_id != current_node_schema.id else None
 
@@ -214,7 +218,7 @@ class AgentExecutor:
         all_node_schemas += [edge.from_node_schema for edge in bwd_skip_edge_schemas]
 
         node_schema_id = should_skip_node_schema(
-            self.model, self.TC, self.curr_node.schema, all_node_schemas
+            self.model, self.TC, self.curr_node.schema, all_node_schemas, False
         )
 
         if node_schema_id is not None:
@@ -253,7 +257,7 @@ class AgentExecutor:
         all_node_schemas += [edge.to_node_schema for edge in remaining_edge_schemas]
 
         node_schema_id = should_skip_node_schema(
-            self.model, self.TC, self.curr_node.schema, all_node_schemas
+            self.model, self.TC, self.curr_node.schema, all_node_schemas, True
         )
 
         if node_schema_id is not None:
@@ -271,40 +275,41 @@ class AgentExecutor:
     def add_user_turn(self, msg):
         MessageDisplay.print_msg("user", msg)
         self.TC.add_user_turn(msg)
-        skip_edge_schema, skip_node_schema = self.handle_skip()
-        wait_edge_schema, wait_node_schema = self.handle_wait()
-        if wait_edge_schema is not None:
-            fake_fn_call = FunctionCall.create_fake_fn_call(
-                self.model_provider,
-                "think",
-                args={
-                    "thought": "The customer is asking/requesting something that will actually be addressed later. I must tell the customer 1) that their request/questions will be addressed later and 2) we must finish the current business before we can get to it"
-                },
-            )
-            self.TC.add_assistant_turn(
-                None,
-                self.model_provider,
-                self.curr_node.schema.tool_registry,
-                [fake_fn_call],
-                {fake_fn_call.id: None},
-            )
-        elif skip_edge_schema is not None:
-            self.init_skip_node(
-                skip_node_schema,
-                skip_edge_schema,
-            )
+        if not is_on_topic(self.model, self.TC, self.curr_node.schema):
+            wait_edge_schema, wait_node_schema = self.handle_wait()
+            if wait_edge_schema is not None:
+                fake_fn_call = FunctionCall.create_fake_fn_call(
+                    self.model_provider,
+                    "think",
+                    args={
+                        "thought": "The customer is asking/requesting something that will actually be addressed later. I must tell the customer 1) that their request/questions will be addressed later and 2) we must finish the current business before we can get to it"
+                    },
+                )
+                self.TC.add_assistant_turn(
+                    None,
+                    self.model_provider,
+                    self.curr_node.schema.tool_registry,
+                    [fake_fn_call],
+                    {fake_fn_call.id: None},
+                )
+            else:
+                skip_edge_schema, skip_node_schema = self.handle_skip()
+                if skip_edge_schema is not None:
+                    self.init_skip_node(
+                        skip_node_schema,
+                        skip_edge_schema,
+                    )
 
-            fake_fn_call = FunctionCall.create_fake_fn_call(
-                self.model_provider, "get_state", args={}
-            )
-            self.TC.add_assistant_turn(
-                None,
-                self.model_provider,
-                self.curr_node.schema.tool_registry,
-                [fake_fn_call],
-                {fake_fn_call.id: self.curr_node.get_state()},
-            )
-
+                    fake_fn_call = FunctionCall.create_fake_fn_call(
+                        self.model_provider, "get_state", args={}
+                    )
+                    self.TC.add_assistant_turn(
+                        None,
+                        self.model_provider,
+                        self.curr_node.schema.tool_registry,
+                        [fake_fn_call],
+                        {fake_fn_call.id: self.curr_node.get_state()},
+                    )
         self.curr_node.update_first_user_message()
 
     def execute_function_call(self, fn_call, fn_callback=None):
