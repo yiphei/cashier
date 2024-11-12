@@ -3,6 +3,7 @@ import inspect
 import re
 from collections import defaultdict
 from functools import wraps
+from types import FunctionType
 
 from openai import pydantic_function_tool
 from pydantic import Field, create_model
@@ -77,6 +78,14 @@ class ToolRegistry:
     GLOBAL_ANTHROPIC_TOOL_NAME_TO_TOOL_DEF = {}
     GLOBAL_FN_NAME_TO_FN = {}
     GLOBAL_OPENAI_TOOLS_RETURN_DESCRIPTION = {}
+
+    def __init_subclass__(cls):
+        super().__init_subclass__()
+        for base in cls.__bases__:
+            for key, value in base.__dict__.items():
+                if (not key.startswith('__') 
+                    and not isinstance(value, (FunctionType, classmethod, staticmethod, property))):
+                    setattr(cls, key, copy.deepcopy(value))
 
     def __init__(self, oai_tool_defs=None):
         self.openai_tool_name_to_tool_def = copy.copy(
