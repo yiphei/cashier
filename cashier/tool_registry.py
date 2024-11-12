@@ -10,6 +10,11 @@ from pydantic import Field, create_model
 from cashier.model_util import ModelProvider
 
 
+class class_or_instance_method(classmethod):
+    def __get__(self, instance, type_):
+        descr_get = super().__get__ if instance is None else self.__func__.__get__
+        return descr_get(instance, type_)
+
 def get_return_description_from_docstring(docstring):
     return_description = ""
     returns_pattern = re.compile(r"Returns:\n(.*)", re.DOTALL)
@@ -66,6 +71,11 @@ def get_anthropic_tool_def_from_oai(oai_tool_def):
 
 
 class ToolRegistry:
+    GLOBAL_OPENAI_TOOL_NAME_TO_TOOL_DEF = {}
+    GLOBAL_ANTHROPIC_TOOL_NAME_TO_TOOL_DEF = {}
+    GLOBAL_FN_NAME_TO_FN = {}
+    GLOBAL_OPENAI_TOOLS_RETURN_DESCRIPTION = {}
+
     def __init__(self, oai_tool_defs=None):
         self.openai_tool_name_to_tool_def = {}
         self.anthropic_tool_name_to_tool_def = {}
@@ -134,7 +144,23 @@ class ToolRegistry:
             get_anthropic_tool_def_from_oai(oai_tool_def)
         )
 
-    def model_tool_decorator(self, tool_instructions=None):
+    @classmethod
+    def _add_tool_def_w_oai_def_cls(cls, tool_name, oai_tool_def):
+        cls.GLOBAL_OPENAI_TOOL_NAME_TO_TOOL_DEF[tool_name] = oai_tool_def
+        cls.GLOBAL_ANTHROPIC_TOOL_NAME_TO_TOOL_DEF[tool_name] = (
+            get_anthropic_tool_def_from_oai(oai_tool_def)
+        )
+
+    @class_or_instance_method
+    def model_tool_decorator(self_or_cls, tool_instructions=None):
+        is_class = isinstance(self_or_cls, type)
+        if is_class:
+            fn_name_to_fn_attr = self_or_cls.GLOBAL_FN_NAME_TO_FN
+            oai_tools_return_map_attr = self_or_cls.GLOBAL_OPENAI_TOOLS_RETURN_DESCRIPTION
+        else:
+            fn_name_to_fn_attr = self_or_cls.fn_name_to_fn
+            oai_tools_return_map_attr = self_or_cls.openai_tools_return_description
+
         def decorator_fn(func):
             docstring = inspect.getdoc(func)
             fn_signature = inspect.signature(func)
@@ -154,8 +180,11 @@ class ToolRegistry:
             oai_tool_def = pydantic_function_tool(
                 fn_signature_pydantic_model, name=func.__name__, description=description
             )
-
-            self.add_tool_def_w_oai_def(func.__name__, oai_tool_def)
+            
+            if is_class:
+                self_or_cls._add_tool_def_w_oai_def_cls(func.__name__, oai_tool_def)
+            else:
+                self_or_cls.add_tool_def_w_oai_def(func.__name__, oai_tool_def)
 
             # Generate function return type schema
             return_description = get_return_description_from_docstring(docstring)
@@ -179,7 +208,7 @@ class ToolRegistry:
             if "title" in actual_return_json_schema:
                 actual_return_json_schema.pop("title")
 
-            self.openai_tools_return_description[func.__name__] = (
+            oai_tools_return_map_attr[func.__name__] = (
                 actual_return_json_schema
             )
 
@@ -195,7 +224,7 @@ class ToolRegistry:
                 # Call the original function with the modified arguments
                 return func(*bound_args.args, **bound_args.kwargs)
 
-            self.fn_name_to_fn[func.__name__] = wrapper
+            fn_name_to_fn_attr[func.__name__] = wrapper
 
             return wrapper
 
