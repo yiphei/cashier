@@ -275,14 +275,14 @@ class AgentExecutor:
         wait_edge_schema, wait_node_schema = self.handle_wait()
         if wait_edge_schema is not None:
             fake_fn_call = FunctionCall.create_fake_fn_call(
-                self.model_provider, "get_state", args={}
+                self.model_provider, "think", args={"thought": "The customer is asking/requesting something that will actually be addressed later. I must tell the customer 1) that their request/questions will be addressed later and 2) we must finish the current business before we can get to it"}
             )
             self.TC.add_assistant_turn(
                 None,
                 self.model_provider,
                 self.curr_node.schema.tool_registry,
                 [fake_fn_call],
-                {fake_fn_call.id: self.curr_node.get_state()},
+                {fake_fn_call.id: None},
             )
         elif skip_edge_schema is not None:
             self.init_skip_node(
