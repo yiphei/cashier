@@ -125,8 +125,7 @@ class AssistantTurn(ModelTurn):
                 )
 
                 if (
-                    fn_call.name
-                    in self.tool_registry.openai_tools_return_description
+                    fn_call.name in self.tool_registry.openai_tools_return_description
                     and not isinstance(
                         self.fn_call_id_to_fn_output[fn_call.id],
                         ToolExceptionWrapper,

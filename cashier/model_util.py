@@ -65,9 +65,7 @@ class FunctionCall(BaseModel):
     @model_validator(mode="after")
     def check_function_args(self):
         if self.args_json is None and self.args is None:
-            raise ValueError(
-                "One of [args_json, args] must be provided"
-            )
+            raise ValueError("One of [args_json, args] must be provided")
 
         if self.args_json is not None and self.args is None:
             if self.args_json:
