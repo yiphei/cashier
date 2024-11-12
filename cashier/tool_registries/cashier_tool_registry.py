@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field
 from supabase import Client
 from supabase import create_client as create_supabase_client
 
-from cashier.tool_registry import ToolRegistry
+from cashier.tool_registries.general import GeneralToolRegistry
 
 supabase: Client = None
 
@@ -19,7 +19,7 @@ def create_db_client():
     )
 
 
-CASHIER_TOOL_REGISTRY = ToolRegistry()
+CASHIER_TOOL_REGISTRY = GeneralToolRegistry()
 
 
 class Option(BaseModel):
@@ -122,19 +122,6 @@ def get_menu_item_from_name(menu_item_name: str) -> MenuItem:
         description=item["description"],
         group=item["group"],
     )
-
-
-@CASHIER_TOOL_REGISTRY.model_tool_decorator()
-def think(thought: str) -> None:
-    """
-    Use the tool to think about something. It will not obtain new information or change the database, but just append the thought to the log. Use it when complex reasoning is needed.
-
-    Args:
-        thought: A thought to think about.
-
-
-    """
-    return None
 
 
 class CupSize(StrEnum):
