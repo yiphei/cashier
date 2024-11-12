@@ -15,10 +15,7 @@ from cashier.prompts.node_schema_selection import NodeSchemaSelectionPrompt
 from cashier.prompts.off_topic import OffTopicPrompt
 
 
-def should_skip_node_schema(model, TM, current_node_schema, all_node_schemas):
-    if len(all_node_schemas) == 1:
-        return None
-
+def is_on_topic(model, TM, current_node_schema):
     model_name = "claude-3.5"
     model_provider = Model.get_model_provider(model_name)
     node_conv_msgs = copy.deepcopy(
@@ -57,10 +54,19 @@ def should_skip_node_schema(model, TM, current_node_schema, all_node_schemas):
     else:
         logger.debug(f"IS_ON_TOPIC: {is_on_topic}")
 
-    if is_on_topic:
+    return is_on_topic
+
+
+def should_skip_node_schema(model, TM, current_node_schema, all_node_schemas, is_wait):
+    if len(all_node_schemas) == 1:
         return None
 
-    node_conv_msgs.pop()
+    model_name = "claude-3.5"
+    model_provider = Model.get_model_provider(model_name)
+    node_conv_msgs = copy.deepcopy(
+        TM.model_provider_to_message_manager[model_provider].node_conversation_dicts
+    )
+    last_customer_msg = TM.get_user_message(content_only=True)
 
     prompt = NodeSchemaSelectionPrompt(
         all_node_schemas=all_node_schemas,
@@ -82,13 +88,18 @@ def should_skip_node_schema(model, TM, current_node_schema, all_node_schemas):
     )
 
     agent_id = chat_completion.get_message_prop("agent_id")
+    actual_agent_id = agent_id if agent_id != current_node_schema.id else None
     if model_provider == ModelProvider.OPENAI:
         prob = chat_completion.get_prob(-2)
-        logger.debug(f"AGENT_ID: {agent_id} with {prob}")
+        logger.debug(
+            f"{'SKIP_AGENT_ID' if not is_wait else 'WAIT_AGENT_ID'}: {actual_agent_id or 'current_id'} with {prob}"
+        )
     else:
-        logger.debug(f"AGENT_ID: {agent_id}")
+        logger.debug(
+            f"{'SKIP_AGENT_ID' if not is_wait else 'WAIT_AGENT_ID'}: {actual_agent_id or 'current_id'}"
+        )
 
-    return agent_id if agent_id != current_node_schema.id else None
+    return actual_agent_id
 
 
 class AgentExecutor:
@@ -203,18 +214,13 @@ class AgentExecutor:
             node_schema, edge_schema, input, last_msg, prev_node, direction, True
         )
 
-    def handle_skip(self):
-        fwd_skip_edge_schemas = self.graph.compute_fwd_skip_edge_schemas(
-            self.curr_node, self.next_edge_schemas
-        )
-        bwd_skip_edge_schemas = self.bwd_skip_edge_schemas
-
+    def handle_skip(self, fwd_skip_edge_schemas, bwd_skip_edge_schemas):
         all_node_schemas = [self.curr_node.schema]
         all_node_schemas += [edge.to_node_schema for edge in fwd_skip_edge_schemas]
         all_node_schemas += [edge.from_node_schema for edge in bwd_skip_edge_schemas]
 
         node_schema_id = should_skip_node_schema(
-            self.model, self.TC, self.curr_node.schema, all_node_schemas
+            self.model, self.TC, self.curr_node.schema, all_node_schemas, False
         )
 
         if node_schema_id is not None:
@@ -238,27 +244,86 @@ class AgentExecutor:
 
         return None, None
 
+    def handle_wait(self, fwd_skip_edge_schemas, bwd_skip_edge_schemas):
+        remaining_edge_schemas = (
+            set(self.graph_schema.edge_schemas)
+            - set(fwd_skip_edge_schemas)
+            - set(bwd_skip_edge_schemas)
+        )
+
+        all_node_schemas = [self.curr_node.schema]
+        all_node_schemas += [edge.to_node_schema for edge in remaining_edge_schemas]
+
+        node_schema_id = should_skip_node_schema(
+            self.model, self.TC, self.curr_node.schema, all_node_schemas, True
+        )
+
+        if node_schema_id is not None:
+            for edge_schema in remaining_edge_schemas:
+                if edge_schema.to_node_schema.id == node_schema_id:
+                    return (
+                        edge_schema,
+                        self.graph.graph_schema.node_schema_id_to_node_schema[
+                            node_schema_id
+                        ],
+                    )
+
+        return None, None
+
+    def handle_is_off_topic(self):
+        fwd_skip_edge_schemas = self.graph.compute_fwd_skip_edge_schemas(
+            self.curr_node, self.next_edge_schemas
+        )
+        bwd_skip_edge_schemas = self.bwd_skip_edge_schemas
+
+        edge_schema, node_schema = self.handle_wait(
+            fwd_skip_edge_schemas, bwd_skip_edge_schemas
+        )
+        if edge_schema:
+            return edge_schema, node_schema, True
+
+        edge_schema, node_schema = self.handle_skip(
+            fwd_skip_edge_schemas, bwd_skip_edge_schemas
+        )
+        return edge_schema, node_schema, False
+
     def add_user_turn(self, msg):
         MessageDisplay.print_msg("user", msg)
         self.TC.add_user_turn(msg)
-        skip_edge_schema, skip_node_schema = self.handle_skip()
-        if skip_edge_schema is not None:
-            self.init_skip_node(
-                skip_node_schema,
-                skip_edge_schema,
-            )
+        if not is_on_topic(self.model, self.TC, self.curr_node.schema):
+            edge_schema, node_schema, is_wait = self.handle_is_off_topic()
+            if edge_schema:
+                if is_wait:
+                    fake_fn_call = FunctionCall.create_fake_fn_call(
+                        self.model_provider,
+                        "think",
+                        args={
+                            "thought": "At least part of the customer request/question is off-topic for the current conversation and will actually be addressed later. According to the policies, I must tell the customer that 1) their off-topic request/question will be addressed later and 2) we must finish the current business before we can get to it. I must refuse to engage with the off-topic request/question in any way."
+                        },
+                    )
+                    self.TC.add_assistant_turn(
+                        None,
+                        self.model_provider,
+                        self.curr_node.schema.tool_registry,
+                        [fake_fn_call],
+                        {fake_fn_call.id: None},
+                    )
+                else:
+                    self.init_skip_node(
+                        node_schema,
+                        edge_schema,
+                    )
 
-            fake_fn_call = FunctionCall.create_fake_fn_call(
-                self.model_provider, "get_state", args={}
-            )
-            self.TC.add_assistant_turn(
-                None,
-                self.model_provider,
-                self.curr_node.schema.tool_registry,
-                [fake_fn_call],
-                {fake_fn_call.id: self.curr_node.get_state()},
-            )
-
+                    fake_fn_call = FunctionCall.create_fake_fn_call(
+                        self.model_provider, "get_state", args={}
+                    )
+                    self.TC.add_assistant_turn(
+                        None,
+                        self.model_provider,
+                        self.curr_node.schema.tool_registry,
+                        [fake_fn_call],
+                        {fake_fn_call.id: self.curr_node.get_state()},
+                    )
         self.curr_node.update_first_user_message()
 
     def execute_function_call(self, fn_call, fn_callback=None):

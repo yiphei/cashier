@@ -30,19 +30,24 @@ def get_return_description_from_docstring(docstring):
 def get_field_map_from_docstring(docstring, func_signature):
     field_name_to_field = defaultdict(lambda: [None, Field()])
 
-    # Regex patterns to capture Args and Returns sections
-    args_regex_pattern = re.compile(r"Args:\n(.*?)\n", re.DOTALL)
+    # Simplified regex pattern that captures everything between "Args:" and the first empty line
+    args_regex_pattern = re.compile(r"Args:\n((?:(?!\n\s*\n).)*)", re.DOTALL)
 
     # Find args section
     args_match = args_regex_pattern.search(docstring)
     if args_match:
         args_section = args_match.group(1).strip()
         for line in args_section.splitlines():
+            line = line.strip()
+            if not line:  # Skip empty lines
+                continue
             # Split by the first colon to separate the argument name from its description
-            arg_name, arg_description = line.split(":", 1)
-            field_name_to_field[arg_name.strip()][
-                1
-            ].description = arg_description.strip()
+            parts = line.split(":", 1)
+            if len(parts) == 2:
+                arg_name, arg_description = parts
+                field_name_to_field[arg_name.strip()][
+                    1
+                ].description = arg_description.strip()
 
     for param_name, param in func_signature.parameters.items():
         if param_name in field_name_to_field:
