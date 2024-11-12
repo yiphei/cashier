@@ -249,7 +249,7 @@ class AgentExecutor:
             )
 
             fake_fn_call = FunctionCall.create_fake_fn_call(
-                self.model_provider, "get_state", fn_args={}
+                self.model_provider, "get_state", args={}
             )
             self.TC.add_assistant_turn(
                 None,
