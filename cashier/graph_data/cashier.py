@@ -50,7 +50,6 @@ take_order_node_schema = NodeSchema(
     tool_names=[
         "get_menu_items_options",
         "get_menu_item_from_name",
-        "think",
     ],
     tool_registry_or_tool_defs=CASHIER_TOOL_REGISTRY,
     input_pydantic_model=None,
