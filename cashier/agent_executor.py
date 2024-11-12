@@ -267,16 +267,11 @@ class AgentExecutor:
             f"[FUNCTION_CALL] {Style.BRIGHT}name: {fn_call.name}, id: {fn_call.id}{Style.NORMAL} with args:\n{json.dumps(function_args, indent=4)}"
         )
         with FunctionCallContext() as fn_call_context:
-            if (
-                fn_call.name
-                not in self.curr_node.schema.tool_registry.tool_names
-            ):
+            if fn_call.name not in self.curr_node.schema.tool_registry.tool_names:
                 raise InexistentFunctionError(fn_call.name)
 
             if fn_call.name.startswith("get_state"):
-                fn_output = getattr(self.curr_node, fn_call.name)(
-                    **function_args
-                )
+                fn_output = getattr(self.curr_node, fn_call.name)(**function_args)
             elif fn_call.name.startswith("update_state"):
                 fn_output = self.curr_node.update_state(**function_args)
             elif fn_callback is not None:
@@ -287,9 +282,7 @@ class AgentExecutor:
                 ):
                     fn_output = json.loads(fn_output)
             else:
-                fn = self.curr_node.schema.tool_registry.fn_name_to_fn[
-                    fn_call.name
-                ]
+                fn = self.curr_node.schema.tool_registry.fn_name_to_fn[fn_call.name]
                 fn_output = fn(**function_args)
 
         if fn_call_context.has_exception():
@@ -316,8 +309,8 @@ class AgentExecutor:
         fn_id_to_output = {}
         new_edge_schema = None
         for function_call in model_completion.get_or_stream_fn_calls():
-            fn_id_to_output[function_call.id], is_success = (
-                self.execute_function_call(function_call, fn_callback)
+            fn_id_to_output[function_call.id], is_success = self.execute_function_call(
+                function_call, fn_callback
             )
 
             self.need_user_input = False
