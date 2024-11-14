@@ -45,6 +45,8 @@ class ModelTurn(BaseModel, ABC):
             return self.build_oai_messages()
         elif model_provider == ModelProvider.ANTHROPIC:
             return self.build_anthropic_messages()
+        else:
+            raise TypeError
 
 
 class UserTurn(ModelTurn):
@@ -190,14 +192,14 @@ class AssistantTurn(ModelTurn):
 
 
 class MessageManager(ABC):
-    model_provider = None
+    model_provider: Optional[ModelProvider] = None
 
-    def __init__(self):
+    def __init__(self)-> None:
         self.message_dicts = MessageList(model_provider=self.model_provider)
         self.conversation_dicts = MessageList(model_provider=self.model_provider)
         self.node_conversation_dicts = MessageList(model_provider=self.model_provider)
 
-    def __init_subclass__(cls, **kwargs):
+    def __init_subclass__(cls, **kwargs: Any):
         super().__init_subclass__(**kwargs)
         if cls.model_provider is None:
             raise TypeError(f"{cls.__name__} must define 'model_provider'")
@@ -235,17 +237,17 @@ class MessageManager(ABC):
             self.node_conversation_dicts.clear()
 
     @abstractmethod
-    def parse_system_messages(self, msgs):
+    def parse_system_messages(self, msgs: List[Dict[str, Any]]):
         raise NotImplementedError
 
     @abstractmethod
-    def parse_assistant_messages(self, msgs):
+    def parse_assistant_messages(self, msgs: List[Dict[str, Any]]):
         raise NotImplementedError
 
     def add_system_turn(self, turn: ModelTurn) -> None:
         self.parse_system_messages(turn.build_messages(self.model_provider))
 
-    def add_assistant_turn(self, turn: ModelTurn) -> None:
+    def add_assistant_turn(self, turn: AssistantTurn) -> None:
         # TODO: maybe move this logic to AssistantTurn
         if turn.msg_content and (
             turn.model_provider != ModelProvider.ANTHROPIC
@@ -265,7 +267,7 @@ class MessageManager(ABC):
 class OAIMessageManager(MessageManager):
     model_provider = ModelProvider.OPENAI
 
-    def parse_system_messages(self, msgs: List[Dict, Any]) -> None:
+    def parse_system_messages(self, msgs: List[Dict[str, Any]]) -> None:
         self.message_dicts.extend(msgs)
 
     def add_node_turn(
@@ -287,7 +289,7 @@ class OAIMessageManager(MessageManager):
         else:
             self.message_dicts.append(msg, MessageList.ItemType.NODE)
 
-    def parse_assistant_messages(self, msgs: List[Dict, Any]) -> None:
+    def parse_assistant_messages(self, msgs: List[Dict[str, Any]]) -> None:
         curr_fn_name = None
         for message in msgs:
             if message.get("tool_calls", None) is not None:
@@ -316,11 +318,11 @@ class OAIMessageManager(MessageManager):
 class AnthropicMessageManager(MessageManager):
     model_provider = ModelProvider.ANTHROPIC
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.system = None
 
-    def parse_system_messages(self, msgs: List[Dict, Any]) -> None:
+    def parse_system_messages(self, msgs: List[Dict[str, Any]]) -> None:
         return None
 
     def add_node_turn(
