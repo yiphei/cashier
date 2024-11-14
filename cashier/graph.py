@@ -8,10 +8,10 @@ from typing import Any, Callable, Dict, List, Literal, NamedTuple, Optional, Tup
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from cashier.function_call_context import StateUpdateError
-from cashier.model_turn import ModelTurn
 from cashier.tool_registry import ToolRegistry
 from cashier.prompts.base_prompt import BasePrompt
 from typing import Union, Type
+from cashier.model_turn import ModelTurn
 
 
 class Direction(StrEnum):
