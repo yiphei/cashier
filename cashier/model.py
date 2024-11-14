@@ -316,7 +316,7 @@ class ModelOutput(ABC):
     def get_fn_args_json_from_chunk(self, chunk):
         raise NotImplementedError
 
-    def stream_message(self):
+    def stream_message(self) -> Optional[Iterator[str]]:
         chunk = self.get_next_usable_chunk()
         self.last_chunk = chunk
         if self.is_message_start_chunk(chunk):
@@ -344,7 +344,7 @@ class ModelOutput(ABC):
         except StopIteration:
             pass  # Signal end of iteration
 
-    def stream_fn_calls(self):
+    def stream_fn_calls(self)-> Iterator[FunctionCall]:
         self.last_chunk = self.get_next_usable_chunk()
         function_name = None
         tool_call_id = None
