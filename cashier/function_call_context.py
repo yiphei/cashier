@@ -1,5 +1,5 @@
 class InexistentFunctionError(Exception):
-    def __init__(self, fn_name):
+    def __init__(self, fn_name: str):
         self.fn_name = fn_name
 
     def __str__(self):
@@ -11,7 +11,7 @@ class StateUpdateError(Exception):
 
 
 class ToolExceptionWrapper:
-    def __init__(self, exception):
+    def __init__(self, exception: Exception):
         self.exception = exception
 
     def __str__(self):
@@ -22,7 +22,7 @@ class FunctionCallContext:
     def __init__(self):
         self.exception = None
 
-    def has_exception(self):
+    def has_exception(self)-> bool:
         return self.exception is not None
 
     def __enter__(self):

@@ -1,21 +1,24 @@
 import copy
 import json
+from typing import Callable, Dict, List, Optional, Any, Tuple
 
 from colorama import Style
 
 from cashier.audio import get_speech_from_text
 from cashier.function_call_context import FunctionCallContext, InexistentFunctionError
-from cashier.graph import Direction, Graph
+from cashier.graph import Direction, EdgeSchema, Graph, GraphSchema, Node
 from cashier.gui import MessageDisplay
 from cashier.logger import logger
-from cashier.model import Model
+from cashier.model import Model, ModelOutput
 from cashier.model_turn import TurnContainer
 from cashier.model_util import CustomJSONEncoder, FunctionCall, ModelProvider
 from cashier.prompts.node_schema_selection import NodeSchemaSelectionPrompt
 from cashier.prompts.off_topic import OffTopicPrompt
+from cashier.model import Model
+from cashier.model_turn import TurnContainer
+from cashier.graph import NodeSchema
 
-
-def is_on_topic(model, TM, current_node_schema):
+def is_on_topic(model: Model, TM: TurnContainer, current_node_schema: NodeSchema) -> bool:
     model_name = "claude-3.5"
     model_provider = Model.get_model_provider(model_name)
     node_conv_msgs = copy.deepcopy(
@@ -57,7 +60,7 @@ def is_on_topic(model, TM, current_node_schema):
     return is_on_topic
 
 
-def should_skip_node_schema(model, TM, current_node_schema, all_node_schemas, is_wait):
+def should_skip_node_schema(model: Model, TM: TurnContainer, current_node_schema: NodeSchema, all_node_schemas: List[NodeSchema], is_wait: bool) -> Optional[int]:
     if len(all_node_schemas) == 1:
         return None
 
@@ -106,12 +109,12 @@ class AgentExecutor:
 
     def __init__(
         self,
-        model,
-        elevenlabs_client,
-        graph_schema,
-        audio_output,
-        remove_prev_tool_calls,
-        model_provider,  # TODO: remove this and allow model provider (thus model name) to change mid-conversation
+        model: Model,
+        elevenlabs_client: Any,
+        graph_schema: GraphSchema,
+        audio_output: bool,
+        remove_prev_tool_calls: bool,
+        model_provider: ModelProvider,  # TODO: remove this and allow model provider (thus model name) to change mid-conversation
     ):
         self.model = model
         self.elevenlabs_client = elevenlabs_client
@@ -121,7 +124,7 @@ class AgentExecutor:
         self.model_provider = model_provider
         self.TC = TurnContainer()
 
-        self.curr_node = None
+        self.curr_node: Optional[Node] = None
         self.need_user_input = True
         self.graph = Graph(graph_schema=graph_schema)
         self.next_edge_schemas = set()
@@ -132,14 +135,14 @@ class AgentExecutor:
 
     def init_node_core(
         self,
-        node_schema,
-        edge_schema,
-        input,
-        last_msg,
-        prev_node,
-        direction,
-        is_skip=False,
-    ):
+        node_schema: NodeSchema,
+        edge_schema: EdgeSchema,
+        input: Any,
+        last_msg: str,
+        prev_node: Optional[Node],
+        direction: Direction,
+        is_skip: bool=False,
+    )-> None:
         logger.debug(
             f"[NODE_SCHEMA] Initializing node with {Style.BRIGHT}node_schema_id: {node_schema.id}{Style.NORMAL}"
         )
@@ -171,7 +174,7 @@ class AgentExecutor:
             self.curr_node, self.bwd_skip_edge_schemas
         )
 
-    def init_next_node(self, node_schema, edge_schema, input=None):
+    def init_next_node(self, node_schema: NodeSchema, edge_schema: EdgeSchema, input: Any=None)-> None:
         if self.curr_node:
             self.curr_node.mark_as_completed()
 
@@ -195,9 +198,9 @@ class AgentExecutor:
 
     def init_skip_node(
         self,
-        node_schema,
-        edge_schema,
-    ):
+        node_schema: NodeSchema,
+        edge_schema: EdgeSchema,
+    ) -> None:
         direction = Direction.FWD
         if edge_schema and edge_schema.from_node_schema == node_schema:
             direction = Direction.BWD
@@ -214,7 +217,7 @@ class AgentExecutor:
             node_schema, edge_schema, input, last_msg, prev_node, direction, True
         )
 
-    def handle_skip(self, fwd_skip_edge_schemas, bwd_skip_edge_schemas):
+    def handle_skip(self, fwd_skip_edge_schemas: List[EdgeSchema], bwd_skip_edge_schemas: List[EdgeSchema]) -> Tuple[Optional[EdgeSchema], Optional[NodeSchema]]:
         all_node_schemas = [self.curr_node.schema]
         all_node_schemas += [edge.to_node_schema for edge in fwd_skip_edge_schemas]
         all_node_schemas += [edge.from_node_schema for edge in bwd_skip_edge_schemas]
@@ -244,7 +247,7 @@ class AgentExecutor:
 
         return None, None
 
-    def handle_wait(self, fwd_skip_edge_schemas, bwd_skip_edge_schemas):
+    def handle_wait(self, fwd_skip_edge_schemas: List[EdgeSchema], bwd_skip_edge_schemas: List[EdgeSchema])->Tuple[Optional[EdgeSchema], Optional[NodeSchema]]:
         remaining_edge_schemas = (
             set(self.graph_schema.edge_schemas)
             - set(fwd_skip_edge_schemas)
@@ -270,7 +273,7 @@ class AgentExecutor:
 
         return None, None
 
-    def handle_is_off_topic(self):
+    def handle_is_off_topic(self)-> Tuple[Optional[EdgeSchema], Optional[NodeSchema], bool]:
         fwd_skip_edge_schemas = self.graph.compute_fwd_skip_edge_schemas(
             self.curr_node, self.next_edge_schemas
         )
@@ -287,7 +290,7 @@ class AgentExecutor:
         )
         return edge_schema, node_schema, False
 
-    def add_user_turn(self, msg):
+    def add_user_turn(self, msg: str) -> None:
         MessageDisplay.print_msg("user", msg)
         self.TC.add_user_turn(msg)
         if not is_on_topic(self.model, self.TC, self.curr_node.schema):
@@ -326,7 +329,7 @@ class AgentExecutor:
                     )
         self.curr_node.update_first_user_message()
 
-    def execute_function_call(self, fn_call, fn_callback=None):
+    def execute_function_call(self, fn_call: FunctionCall, fn_callback: Optional[Callable]=None)-> Tuple[Any, bool]:
         function_args = fn_call.args
         logger.debug(
             f"[FUNCTION_CALL] {Style.BRIGHT}name: {fn_call.name}, id: {fn_call.id}{Style.NORMAL} with args:\n{json.dumps(function_args, indent=4)}"
@@ -361,7 +364,7 @@ class AgentExecutor:
             )
             return fn_output, True
 
-    def add_assistant_turn(self, model_completion, fn_callback=None):
+    def add_assistant_turn(self, model_completion: ModelOutput, fn_callback: Optional[Callable]=None)-> None:
         message = model_completion.get_or_stream_message()
         if message is not None:
             if self.audio_output:
@@ -401,7 +404,7 @@ class AgentExecutor:
                 new_edge_schema,
             )
 
-    def get_model_completion_kwargs(self):
+    def get_model_completion_kwargs(self)-> Dict[str, Any]:
         force_tool_choice = self.force_tool_choice
         self.force_tool_choice = None
         return {
