@@ -194,7 +194,7 @@ class AssistantTurn(ModelTurn):
 class MessageManager(ABC):
     model_provider: Optional[ModelProvider] = None
 
-    def __init__(self)-> None:
+    def __init__(self) -> None:
         self.message_dicts = MessageList(model_provider=self.model_provider)
         self.conversation_dicts = MessageList(model_provider=self.model_provider)
         self.node_conversation_dicts = MessageList(model_provider=self.model_provider)
