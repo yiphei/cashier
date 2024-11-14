@@ -7,7 +7,7 @@ from collections import defaultdict
 from functools import wraps
 from inspect import Signature
 from types import FunctionType
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from openai import pydantic_function_tool
 from pydantic import Field, create_model
@@ -17,7 +17,7 @@ from cashier.model_util import ModelProvider
 
 # got this from: https://stackoverflow.com/questions/28237955/same-name-for-classmethod-and-instancemethod
 class class_or_instance_method(classmethod):
-    def __get__(self, instance, type_):
+    def __get__(self, instance: Any, type_: Any):
         descr_get = super().__get__ if instance is None else self.__func__.__get__
         return descr_get(instance, type_)
 
@@ -85,10 +85,10 @@ def get_anthropic_tool_def_from_oai(oai_tool_def: Dict) -> Dict:
 
 
 class ToolRegistry:
-    GLOBAL_OPENAI_TOOL_NAME_TO_TOOL_DEF = {}
-    GLOBAL_ANTHROPIC_TOOL_NAME_TO_TOOL_DEF = {}
-    GLOBAL_FN_NAME_TO_FN = {}
-    GLOBAL_OPENAI_TOOLS_RETURN_DESCRIPTION = {}
+    GLOBAL_OPENAI_TOOL_NAME_TO_TOOL_DEF: Dict[str, Dict] = {}
+    GLOBAL_ANTHROPIC_TOOL_NAME_TO_TOOL_DEF: Dict[str, Dict] = {}
+    GLOBAL_FN_NAME_TO_FN: Dict[str, Callable] = {}
+    GLOBAL_OPENAI_TOOLS_RETURN_DESCRIPTION: Dict[str, Dict] = {}
 
     def __init_subclass__(cls):
         super().__init_subclass__()
@@ -120,7 +120,7 @@ class ToolRegistry:
                 self.add_tool_def_w_oai_def(tool_name, tool_def)
 
     @property
-    def tool_names(self):
+    def tool_names(self)-> List[str]:
         return list(self.openai_tool_name_to_tool_def.keys())
 
     @classmethod
@@ -173,21 +173,21 @@ class ToolRegistry:
         else:
             return list(self.model_provider_to_tool_def[model_provider].values())
 
-    def add_tool_def_w_oai_def(self, tool_name: str, oai_tool_def: Dict):
+    def add_tool_def_w_oai_def(self, tool_name: str, oai_tool_def: Dict)-> None:
         self.openai_tool_name_to_tool_def[tool_name] = oai_tool_def
         self.anthropic_tool_name_to_tool_def[tool_name] = (
             get_anthropic_tool_def_from_oai(oai_tool_def)
         )
 
     @classmethod
-    def _add_tool_def_w_oai_def_cls(cls, tool_name: str, oai_tool_def: Dict):
+    def _add_tool_def_w_oai_def_cls(cls, tool_name: str, oai_tool_def: Dict)-> None:
         cls.GLOBAL_OPENAI_TOOL_NAME_TO_TOOL_DEF[tool_name] = oai_tool_def
         cls.GLOBAL_ANTHROPIC_TOOL_NAME_TO_TOOL_DEF[tool_name] = (
             get_anthropic_tool_def_from_oai(oai_tool_def)
         )
 
     @class_or_instance_method
-    def model_tool_decorator(self_or_cls, tool_instructions: Optional[str] = None):
+    def model_tool_decorator(self_or_cls, tool_instructions: Optional[str] = None)-> Callable:
         is_class = isinstance(self_or_cls, type)
         if is_class:
             fn_name_to_fn_attr = self_or_cls.GLOBAL_FN_NAME_TO_FN
@@ -198,7 +198,7 @@ class ToolRegistry:
             fn_name_to_fn_attr = self_or_cls.fn_name_to_fn
             oai_tools_return_map_attr = self_or_cls.openai_tools_return_description
 
-        def decorator_fn(func):
+        def decorator_fn(func: Callable):
             docstring = inspect.getdoc(func)
             fn_signature = inspect.signature(func)
 
@@ -248,7 +248,7 @@ class ToolRegistry:
             oai_tools_return_map_attr[func.__name__] = actual_return_json_schema
 
             @wraps(func)
-            def wrapper(*args, **kwargs):
+            def wrapper(*args, **kwargs)-> Any:
                 bound_args = fn_signature.bind(*args, **kwargs)
                 bound_args.apply_defaults()
 

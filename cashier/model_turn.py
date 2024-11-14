@@ -40,7 +40,7 @@ class ModelTurn(BaseModel, ABC):
     def build_anthropic_messages(self) -> List[Dict[str, Any]]:
         raise NotImplementedError
 
-    def build_messages(self, model_provider: ModelProvider) -> Dict[str, Any]:
+    def build_messages(self, model_provider: ModelProvider) -> List[Dict[str, Any]]:
         if model_provider == ModelProvider.OPENAI:
             return self.build_oai_messages()
         elif model_provider == ModelProvider.ANTHROPIC:

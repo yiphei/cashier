@@ -1,12 +1,12 @@
 import inspect
 from string import Formatter
-from typing import Callable, Optional, Set
+from typing import Callable, Optional, Set, Any
 
 from pydantic import BaseModel
 
 
 class CallableMeta(type):
-    def __call__(cls, strict_kwargs_check: bool = True, **kwargs) -> str:
+    def __call__(cls, strict_kwargs_check: bool = True, **kwargs: Any) -> str:
         instance = super().__call__(**kwargs)
         if not strict_kwargs_check:
             kwargs = {k: v for k, v in kwargs.items() if k in cls.kwargs}
@@ -23,13 +23,13 @@ class BasePrompt(metaclass=CallableMeta):
     response_format: Optional[BaseModel] = None
     kwargs: Optional[Set[str]] = None
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any):
         pass
 
-    def dynamic_prompt(self, **kwargs) -> str:
+    def dynamic_prompt(self, **kwargs: Any) -> Optional[str]:
         return None
 
-    def __init_subclass__(cls, **kwargs):
+    def __init_subclass__(cls, **kwargs: Any):
         super().__init_subclass__(**kwargs)
         has_fstring = cls.f_string_prompt is not None
         has_dynamic = cls.dynamic_prompt != BasePrompt.dynamic_prompt

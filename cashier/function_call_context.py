@@ -24,7 +24,7 @@ class ToolExceptionWrapper:
 
 
 class FunctionCallContext:
-    def __init__(self):
+    def __init__(self)-> None:
         self.exception = None
 
     def has_exception(self) -> bool:

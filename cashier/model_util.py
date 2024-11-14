@@ -19,7 +19,7 @@ class ModelProvider(StrEnum):
 
 
 class CustomJSONEncoder(json.JSONEncoder):
-    def default(self, obj) -> Any:
+    def default(self, obj: Any) -> Any:
         if isinstance(obj, BaseModel):
             return obj.model_dump()
         elif isinstance(obj, (defaultdict, dict)):
