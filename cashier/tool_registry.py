@@ -1,17 +1,19 @@
 from __future__ import annotations
+
 import copy
 import inspect
-from inspect import Signature
 import re
 from collections import defaultdict
 from functools import wraps
+from inspect import Signature
 from types import FunctionType
+from typing import Any, Dict, List, Optional, Tuple
 
 from openai import pydantic_function_tool
 from pydantic import Field, create_model
 
 from cashier.model_util import ModelProvider
-from typing import Any, Dict, Tuple, List, Optional
+
 
 # got this from: https://stackoverflow.com/questions/28237955/same-name-for-classmethod-and-instancemethod
 class class_or_instance_method(classmethod):
@@ -20,7 +22,7 @@ class class_or_instance_method(classmethod):
         return descr_get(instance, type_)
 
 
-def get_return_description_from_docstring(docstring: str)-> str:
+def get_return_description_from_docstring(docstring: str) -> str:
     return_description = ""
     returns_pattern = re.compile(r"Returns:\n(.*)", re.DOTALL)
     returns_match = returns_pattern.search(docstring)
@@ -29,7 +31,9 @@ def get_return_description_from_docstring(docstring: str)-> str:
     return return_description
 
 
-def get_field_map_from_docstring(docstring: str, func_signature: Signature)-> Dict[str, Tuple[Any, Field ]]:
+def get_field_map_from_docstring(
+    docstring: str, func_signature: Signature
+) -> Dict[str, Tuple[Any, Field]]:
     field_name_to_field = defaultdict(lambda: [None, Field()])
 
     # Simplified regex pattern that captures everything between "Args:" and the first empty line
@@ -63,7 +67,7 @@ def get_field_map_from_docstring(docstring: str, func_signature: Signature)-> Di
     return {k: tuple(v) for k, v in field_name_to_field.items()}
 
 
-def get_description_from_docstring(docstring: str)-> str:
+def get_description_from_docstring(docstring: str) -> str:
     if "Args:" in docstring:
         description = docstring.split("Args:")[0].strip()
     else:
@@ -71,7 +75,7 @@ def get_description_from_docstring(docstring: str)-> str:
     return description
 
 
-def get_anthropic_tool_def_from_oai(oai_tool_def: Dict)-> Dict:
+def get_anthropic_tool_def_from_oai(oai_tool_def: Dict) -> Dict:
     anthropic_tool_def_body = copy.deepcopy(oai_tool_def["function"]["parameters"])
     return {
         "name": oai_tool_def["function"]["name"],
@@ -95,7 +99,7 @@ class ToolRegistry:
                 ):
                     setattr(cls, key, copy.deepcopy(value))
 
-    def __init__(self, oai_tool_defs: Optional[List[Dict]]=None):
+    def __init__(self, oai_tool_defs: Optional[List[Dict]] = None):
         self.openai_tool_name_to_tool_def = copy.copy(
             self.GLOBAL_OPENAI_TOOL_NAME_TO_TOOL_DEF
         )
@@ -120,7 +124,9 @@ class ToolRegistry:
         return list(self.openai_tool_name_to_tool_def.keys())
 
     @classmethod
-    def create_from_tool_registry(cls, tool_registry: ToolRegistry, tool_names: Optional[List[str]]=None)-> ToolRegistry:
+    def create_from_tool_registry(
+        cls, tool_registry: ToolRegistry, tool_names: Optional[List[str]] = None
+    ) -> ToolRegistry:
         if tool_names is None:
             return copy.deepcopy(tool_registry)
         else:
@@ -144,7 +150,7 @@ class ToolRegistry:
 
             return new_tool_registry
 
-    def add_tool_def(self, tool_name: str, description:str, field_args: Any) -> None:
+    def add_tool_def(self, tool_name: str, description: str, field_args: Any) -> None:
         fn_pydantic_model = create_model(tool_name, **field_args)
         fn_json_schema = pydantic_function_tool(
             fn_pydantic_model,
@@ -154,7 +160,11 @@ class ToolRegistry:
         remove_default(fn_json_schema)
         self.add_tool_def_w_oai_def(tool_name, fn_json_schema)
 
-    def get_tool_defs(self, tool_names: Optional[List[str]]=None, model_provider: ModelProvider=ModelProvider.OPENAI) -> List[Dict]:
+    def get_tool_defs(
+        self,
+        tool_names: Optional[List[str]] = None,
+        model_provider: ModelProvider = ModelProvider.OPENAI,
+    ) -> List[Dict]:
         if tool_names:
             return [
                 self.model_provider_to_tool_def[model_provider][tool_name]
@@ -177,7 +187,7 @@ class ToolRegistry:
         )
 
     @class_or_instance_method
-    def model_tool_decorator(self_or_cls, tool_instructions: Optional[str]=None):
+    def model_tool_decorator(self_or_cls, tool_instructions: Optional[str] = None):
         is_class = isinstance(self_or_cls, type)
         if is_class:
             fn_name_to_fn_attr = self_or_cls.GLOBAL_FN_NAME_TO_FN
@@ -256,7 +266,7 @@ class ToolRegistry:
         return decorator_fn
 
 
-def remove_default(schema: Dict)-> None:
+def remove_default(schema: Dict) -> None:
     found_key = False
     for key, value in schema.items():
         if key == "default":

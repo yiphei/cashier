@@ -22,7 +22,7 @@ class FunctionCallContext:
     def __init__(self):
         self.exception = None
 
-    def has_exception(self)-> bool:
+    def has_exception(self) -> bool:
         return self.exception is not None
 
     def __enter__(self):

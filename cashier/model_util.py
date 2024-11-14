@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 import json
 import random
 import string
@@ -32,7 +33,7 @@ class CustomJSONEncoder(json.JSONEncoder):
         return super().default(obj)
 
 
-def generate_random_string(length: int)-> str:
+def generate_random_string(length: int) -> str:
     """
     Generate a random string of specified length using alphanumeric characters
     (both uppercase and lowercase).
@@ -81,7 +82,13 @@ class FunctionCall(BaseModel):
         return self
 
     @classmethod
-    def create_fake_fn_call(cls, model_provider: ModelProvider, name: str, args_json: Optional[str]=None, args: Optional[Dict]=None)-> FunctionCall:
+    def create_fake_fn_call(
+        cls,
+        model_provider: ModelProvider,
+        name: str,
+        args_json: Optional[str] = None,
+        args: Optional[Dict] = None,
+    ) -> FunctionCall:
         id_prefix = MODEL_PROVIDER_TO_TOOL_CALL_ID_PREFIX[model_provider]
         fake_id = id_prefix + generate_random_string(24)
 

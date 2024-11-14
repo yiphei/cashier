@@ -40,7 +40,7 @@ class Model:
         self.anthropic_client = anthropic.Anthropic()
 
     @classmethod
-    def get_model_provider(cls, model_name: str)-> ModelProvider:
+    def get_model_provider(cls, model_name: str) -> ModelProvider:
         if model_name in cls.alias_to_model_name:
             model_name = cls.alias_to_model_name[model_name]
 
@@ -107,7 +107,7 @@ class Model:
         logprobs: bool = False,
         response_format: Optional[BaseModel] = None,
         **kwargs,
-    )-> ModelOutput:
+    ) -> ModelOutput:
         if model_name in self.alias_to_model_name:
             model_name = self.alias_to_model_name[model_name]
         model_provider = self.get_model_provider(model_name)
@@ -143,7 +143,7 @@ class Model:
                 model_name, messages, system, tools, stream, response_format, **kwargs
             )
 
-    def get_tool_choice_arg(self, args, model_provider: ModelProvider)-> None:
+    def get_tool_choice_arg(self, args, model_provider: ModelProvider) -> None:
         if "force_tool_choice" in args:
             if args["force_tool_choice"] is not None:
                 fn_name = args["force_tool_choice"]
@@ -160,13 +160,13 @@ class Model:
     def oai_chat(
         self,
         model_name: OpenAIModels,
-        messages: Dict[str,Any],
-        tools: Optional[Dict[str, Any]]=None,
-        stream: bool=False,
-        logprobs: bool=False,
-        response_format: Optional[BaseModel]=None,
+        messages: Dict[str, Any],
+        tools: Optional[Dict[str, Any]] = None,
+        stream: bool = False,
+        logprobs: bool = False,
+        response_format: Optional[BaseModel] = None,
         **kwargs,
-    )-> OAIModelOutput:
+    ) -> OAIModelOutput:
         chat_fn = (
             self.oai_client.chat.completions.create
             if response_format is None
@@ -197,12 +197,12 @@ class Model:
         self,
         model_name: AnthropicModels,
         messages: Dict[str, Any],
-        system: Optional[str]=None,
-        tools: Optional[Dict[str, Any]]=None,
-        stream: bool=False,
-        response_format: Optional[BaseModel]=None,
+        system: Optional[str] = None,
+        tools: Optional[Dict[str, Any]] = None,
+        stream: bool = False,
+        response_format: Optional[BaseModel] = None,
         **kwargs,
-    )-> AnthropicModelOutput:
+    ) -> AnthropicModelOutput:
         tool_choice = None
         if response_format is not None:
             if stream:
@@ -246,7 +246,12 @@ class Model:
 class ModelOutput(ABC):
     model_provider = None
 
-    def __init__(self, output_obj: Any, is_stream: bool, response_format: Optional[BaseModel]=None):
+    def __init__(
+        self,
+        output_obj: Any,
+        is_stream: bool,
+        response_format: Optional[BaseModel] = None,
+    ):
         self.output_obj = output_obj
         self.is_stream = is_stream
         self.response_format = response_format
@@ -264,13 +269,13 @@ class ModelOutput(ABC):
     def get_fn_calls(self):
         raise NotImplementedError
 
-    def get_or_stream_message(self)-> Union[str, Iterator[str]]:
+    def get_or_stream_message(self) -> Union[str, Iterator[str]]:
         if self.is_stream:
             return self.stream_message()
         else:
             return self.get_message()
 
-    def get_or_stream_fn_calls(self)-> Iterator[FunctionCall]:
+    def get_or_stream_fn_calls(self) -> Iterator[FunctionCall]:
         if self.is_stream:
             return self.stream_fn_calls()
         else:
@@ -344,7 +349,7 @@ class ModelOutput(ABC):
         except StopIteration:
             pass  # Signal end of iteration
 
-    def stream_fn_calls(self)-> Iterator[FunctionCall]:
+    def stream_fn_calls(self) -> Iterator[FunctionCall]:
         self.last_chunk = self.get_next_usable_chunk()
         function_name = None
         tool_call_id = None

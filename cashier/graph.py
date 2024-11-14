@@ -3,15 +3,26 @@ from __future__ import annotations
 import copy
 from collections import defaultdict, deque
 from enum import StrEnum
-from typing import Any, Callable, Dict, List, Literal, NamedTuple, Optional, Tuple, overload
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Literal,
+    NamedTuple,
+    Optional,
+    Tuple,
+    Type,
+    Union,
+    overload,
+)
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from cashier.function_call_context import StateUpdateError
-from cashier.tool_registry import ToolRegistry
-from cashier.prompts.base_prompt import BasePrompt
-from typing import Union, Type
 from cashier.model_turn import ModelTurn
+from cashier.prompts.base_prompt import BasePrompt
+from cashier.tool_registry import ToolRegistry
 
 
 class Direction(StrEnum):
@@ -28,9 +39,9 @@ class NodeSchema:
         node_system_prompt: BasePrompt,
         input_pydantic_model: Type[BaseModel],
         state_pydantic_model: Type[BaseStateModel],
-        tool_registry_or_tool_defs: Optional[Union[ToolRegistry, List[Dict]]]=None,
-        first_turn: ModelTurn=None,
-        tool_names: Optional[List[str]]=None,
+        tool_registry_or_tool_defs: Optional[Union[ToolRegistry, List[Dict]]] = None,
+        first_turn: ModelTurn = None,
+        tool_names: Optional[List[str]] = None,
     ):
         NodeSchema._counter += 1
         self.id = NodeSchema._counter
@@ -83,7 +94,7 @@ class NodeSchema:
         prev_node: Node,
         edge_schema: EdgeSchema = None,
         direction: Direction = Direction.FWD,
-    )-> Node: ...
+    ) -> Node: ...
 
     def create_node(
         self,
@@ -92,7 +103,7 @@ class NodeSchema:
         prev_node: Optional[Node] = None,
         edge_schema: Optional[EdgeSchema] = None,
         direction: Direction = Direction.FWD,
-    )-> Node:
+    ) -> Node:
         state = Node.init_state(
             self.state_pydantic_model, prev_node, edge_schema, direction, input
         )
@@ -128,7 +139,13 @@ class Node:
         COMPLETED = "COMPLETED"
 
     def __init__(
-        self, schema: NodeSchema, input: Any, state: BaseStateModel, prompt: str, in_edge_schema: EdgeSchema, direction: Direction=Direction.FWD
+        self,
+        schema: NodeSchema,
+        input: Any,
+        state: BaseStateModel,
+        prompt: str,
+        in_edge_schema: EdgeSchema,
+        direction: Direction = Direction.FWD,
     ):
         Node._counter += 1
         self.id = Node._counter
@@ -142,7 +159,14 @@ class Node:
         self.direction = direction
 
     @classmethod
-    def init_state(cls, state_pydantic_model: Type[BaseStateModel], prev_node: Node, edge_schema: EdgeSchema, direction: Direction, input: Any)-> BaseStateModel:
+    def init_state(
+        cls,
+        state_pydantic_model: Type[BaseStateModel],
+        prev_node: Node,
+        edge_schema: EdgeSchema,
+        direction: Direction,
+        input: Any,
+    ) -> BaseStateModel:
         if prev_node is not None:
             state_init_val = getattr(
                 edge_schema,
@@ -163,10 +187,10 @@ class Node:
 
         return state_pydantic_model()
 
-    def mark_as_completed(self)-> None:
+    def mark_as_completed(self) -> None:
         self.status = self.Status.COMPLETED
 
-    def update_state(self, **kwargs)-> None:
+    def update_state(self, **kwargs) -> None:
         if self.first_user_message:
             old_state = self.state.model_dump()
             new_state = old_state | kwargs
@@ -176,10 +200,10 @@ class Node:
                 "cannot update any state field until you get the first customer message in the current conversation. Remember, the current conversation starts after <cutoff_msg>"
             )
 
-    def get_state(self)-> BaseStateModel:
+    def get_state(self) -> BaseStateModel:
         return self.state
 
-    def update_first_user_message(self)-> None:
+    def update_first_user_message(self) -> None:
         self.first_user_message = True
 
 
@@ -208,12 +232,16 @@ class EdgeSchema:
         to_node_schema: NodeSchema,
         state_condition_fn: Callable[[BaseStateModel], bool],
         new_input_fn: Callable[[BaseStateModel, BaseModel], Any],
-        bwd_state_init: BwdStateInit=BwdStateInit.RESUME,
-        fwd_state_init:FwdStateInit=FwdStateInit.RESET,
-        skip_from_complete_to_prev_complete: Optional[FwdSkipType]=FwdSkipType.SKIP_IF_INPUT_UNCHANGED,
-        skip_from_complete_to_prev_incomplete: Optional[FwdSkipType]=None,
-        skip_from_incomplete_to_prev_complete: Optional[FwdSkipType]=FwdSkipType.SKIP_IF_INPUT_UNCHANGED,
-        skip_from_incomplete_to_prev_incomplete: Optional[FwdSkipType]=None,
+        bwd_state_init: BwdStateInit = BwdStateInit.RESUME,
+        fwd_state_init: FwdStateInit = FwdStateInit.RESET,
+        skip_from_complete_to_prev_complete: Optional[
+            FwdSkipType
+        ] = FwdSkipType.SKIP_IF_INPUT_UNCHANGED,
+        skip_from_complete_to_prev_incomplete: Optional[FwdSkipType] = None,
+        skip_from_incomplete_to_prev_complete: Optional[
+            FwdSkipType
+        ] = FwdSkipType.SKIP_IF_INPUT_UNCHANGED,
+        skip_from_incomplete_to_prev_incomplete: Optional[FwdSkipType] = None,
     ):
         EdgeSchema._counter += 1
         self.id = EdgeSchema._counter
@@ -236,10 +264,12 @@ class EdgeSchema:
             skip_from_incomplete_to_prev_incomplete
         )
 
-    def check_state_condition(self, state: BaseStateModel)-> bool:
+    def check_state_condition(self, state: BaseStateModel) -> bool:
         return self.state_condition_fn(state)
 
-    def _can_skip(self, skip_type: Optional[FwdSkipType], from_node: Node, to_node: Node)-> Tuple[bool, Optional[FwdSkipType]]:
+    def _can_skip(
+        self, skip_type: Optional[FwdSkipType], from_node: Node, to_node: Node
+    ) -> Tuple[bool, Optional[FwdSkipType]]:
         if skip_type is None:
             return False, skip_type
 
@@ -252,7 +282,9 @@ class EdgeSchema:
             return True, skip_type
         return False, skip_type
 
-    def can_skip(self, from_node: Node, to_node: Node, is_prev_from_node_completed: bool)-> Tuple[bool, Optional[FwdSkipType]]:
+    def can_skip(
+        self, from_node: Node, to_node: Node, is_prev_from_node_completed: bool
+    ) -> Tuple[bool, Optional[FwdSkipType]]:
         assert from_node.schema == self.from_node_schema
         assert to_node.schema == self.to_node_schema
 
@@ -292,7 +324,7 @@ class Edge(NamedTuple):
 class BaseStateModel(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    def copy_resume(self)-> BaseStateModel:
+    def copy_resume(self) -> BaseStateModel:
         new_data = copy.deepcopy(dict(self))
 
         # Iterate through fields and reset those marked as resettable
@@ -353,14 +385,18 @@ class Graph(BaseModel):
         )
         self.edge_schema_id_to_from_node[edge_schema_id] = from_node
 
-    def get_edge_by_edge_schema_id(self, edge_schema_id: int, idx: int=-1)-> Optional[Edge]:
+    def get_edge_by_edge_schema_id(
+        self, edge_schema_id: int, idx: int = -1
+    ) -> Optional[Edge]:
         return (
             self.edge_schema_id_to_edges[edge_schema_id][idx]
             if len(self.edge_schema_id_to_edges[edge_schema_id]) >= abs(idx)
             else None
         )
 
-    def get_last_edge_schema_by_from_node_schema_id(self, node_schema_id: str)->EdgeSchema:
+    def get_last_edge_schema_by_from_node_schema_id(
+        self, node_schema_id: str
+    ) -> EdgeSchema:
         edge_schema_id = self.from_node_schema_id_to_last_edge_schema_id[node_schema_id]
         return (
             self.graph_schema.edge_schema_id_to_edge_schema[edge_schema_id]
@@ -368,14 +404,18 @@ class Graph(BaseModel):
             else None
         )
 
-    def get_prev_node(self, edge_schema: Optional[EdgeSchema], direction: Direction)-> Optional[Node]:
+    def get_prev_node(
+        self, edge_schema: Optional[EdgeSchema], direction: Direction
+    ) -> Optional[Node]:
         if edge_schema and self.get_edge_by_edge_schema_id(edge_schema.id) is not None:
             from_node, to_node = self.get_edge_by_edge_schema_id(edge_schema.id)
             return to_node if direction == Direction.FWD else from_node
         else:
             return None
 
-    def compute_bwd_skip_edge_schemas(self, start_node: Node, curr_bwd_skip_edge_schemas: List[EdgeSchema])-> List[EdgeSchema]:
+    def compute_bwd_skip_edge_schemas(
+        self, start_node: Node, curr_bwd_skip_edge_schemas: List[EdgeSchema]
+    ) -> List[EdgeSchema]:
         from_node = start_node
         new_edge_schemas = set()
         while from_node.in_edge_schema is not None:
@@ -390,7 +430,9 @@ class Graph(BaseModel):
 
         return new_edge_schemas | curr_bwd_skip_edge_schemas
 
-    def compute_fwd_skip_edge_schemas(self, start_node: Node, start_edge_schemas: List[EdgeSchema])-> List[EdgeSchema]:
+    def compute_fwd_skip_edge_schemas(
+        self, start_node: Node, start_edge_schemas: List[EdgeSchema]
+    ) -> List[EdgeSchema]:
         fwd_jump_edge_schemas = set()
         edge_schemas = deque(start_edge_schemas)
         while edge_schemas:
@@ -416,12 +458,16 @@ class Graph(BaseModel):
 
         return fwd_jump_edge_schemas
 
-    def is_prev_from_node_completed(self, edge_schema: EdgeSchema, is_start_node: bool)-> bool:
+    def is_prev_from_node_completed(
+        self, edge_schema: EdgeSchema, is_start_node: bool
+    ) -> bool:
         idx = -1 if is_start_node else -2
         edge = self.get_edge_by_edge_schema_id(edge_schema.id, idx)
         return edge[0].status == Node.Status.COMPLETED if edge else False
 
-    def compute_next_edge_schema(self, start_edge_schema: EdgeSchema, start_input: Any, curr_node: Node)-> Tuple[EdgeSchema, Any]:
+    def compute_next_edge_schema(
+        self, start_edge_schema: EdgeSchema, start_input: Any, curr_node: Node
+    ) -> Tuple[EdgeSchema, Any]:
         next_edge_schema = start_edge_schema
         edge_schema = start_edge_schema
         input = start_input
@@ -467,7 +513,13 @@ class Graph(BaseModel):
 
         return edge_schema, input
 
-    def add_edge(self, curr_node: Node, new_node: Node, edge_schema: EdgeSchema, direction: Direction=Direction.FWD)->None:
+    def add_edge(
+        self,
+        curr_node: Node,
+        new_node: Node,
+        edge_schema: EdgeSchema,
+        direction: Direction = Direction.FWD,
+    ) -> None:
         if direction == Direction.FWD:
             immediate_from_node = curr_node
             if edge_schema.from_node_schema != curr_node.schema:
