@@ -36,11 +36,11 @@ class NodeSchema:
     def __init__(
         self,
         node_prompt: str,
-        node_system_prompt: BasePrompt,
+        node_system_prompt: Type[BasePrompt],
         input_pydantic_model: Type[BaseModel],
         state_pydantic_model: Type[BaseStateModel],
         tool_registry_or_tool_defs: Optional[Union[ToolRegistry, List[Dict]]] = None,
-        first_turn: ModelTurn = None,
+        first_turn: Optional[ModelTurn] = None,
         tool_names: Optional[List[str]] = None,
     ):
         NodeSchema._counter += 1
@@ -92,7 +92,7 @@ class NodeSchema:
         input: Any,
         last_msg: str,
         prev_node: Node,
-        edge_schema: EdgeSchema = None,
+        edge_schema: Optional[EdgeSchema] = None,
         direction: Direction = Direction.FWD,
     ) -> Node: ...
 
@@ -162,8 +162,8 @@ class Node:
     def init_state(
         cls,
         state_pydantic_model: Type[BaseStateModel],
-        prev_node: Node,
-        edge_schema: EdgeSchema,
+        prev_node: Optional[Node],
+        edge_schema: Optional[EdgeSchema],
         direction: Direction,
         input: Any,
     ) -> BaseStateModel:
@@ -190,7 +190,7 @@ class Node:
     def mark_as_completed(self) -> None:
         self.status = self.Status.COMPLETED
 
-    def update_state(self, **kwargs) -> None:
+    def update_state(self, **kwargs: Any) -> None:
         if self.first_user_message:
             old_state = self.state.model_dump()
             new_state = old_state | kwargs
@@ -344,12 +344,12 @@ class GraphSchema(BaseModel):
     start_node_schema: NodeSchema
     edge_schemas: List[EdgeSchema]
     node_schemas: List[NodeSchema]
-    node_schema_id_to_node_schema: Optional[Dict[str, NodeSchema]] = None
-    edge_schema_id_to_edge_schema: Optional[Dict[str, EdgeSchema]] = None
-    from_node_schema_id_to_edge_schema: Optional[Dict[str, List[EdgeSchema]]] = None
+    node_schema_id_to_node_schema: Optional[Dict[int, NodeSchema]] = None
+    edge_schema_id_to_edge_schema: Optional[Dict[int, EdgeSchema]] = None
+    from_node_schema_id_to_edge_schema: Optional[Dict[int, List[EdgeSchema]]] = None
 
     @model_validator(mode="after")
-    def init_computed_fields(self):
+    def init_computed_fields(self)-> GraphSchema:
         self.node_schema_id_to_node_schema = {
             node_schema.id: node_schema for node_schema in self.node_schemas
         }

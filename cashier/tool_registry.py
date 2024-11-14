@@ -33,7 +33,7 @@ def get_return_description_from_docstring(docstring: str) -> str:
 
 def get_field_map_from_docstring(
     docstring: str, func_signature: Signature
-) -> Dict[str, Tuple[Any, Field]]:
+) -> Dict[str, Tuple[Any, Any]]:
     field_name_to_field = defaultdict(lambda: [None, Field()])
 
     # Simplified regex pattern that captures everything between "Args:" and the first empty line

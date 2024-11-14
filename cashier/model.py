@@ -23,6 +23,8 @@ AnthropicModels = Literal[
     "claude-3-5-haiku-20241022",
 ]
 
+ModelName = Union[OpenAIModels, AnthropicModels]
+
 
 class Model:
     model_name_to_provider = {
@@ -97,7 +99,7 @@ class Model:
     def chat(
         self,
         *,
-        model_name: str,
+        model_name: ModelName,
         turn_container: Optional[TurnContainer] = None,
         message_dicts: Optional[List[Dict[str, str]]] = None,
         system: Optional[str] = None,
