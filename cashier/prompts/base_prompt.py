@@ -1,6 +1,6 @@
 import inspect
 from string import Formatter
-from typing import Callable, Optional, Set, Any
+from typing import Any, Callable, Optional, Set
 
 from pydantic import BaseModel
 

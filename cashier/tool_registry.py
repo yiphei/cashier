@@ -120,7 +120,7 @@ class ToolRegistry:
                 self.add_tool_def_w_oai_def(tool_name, tool_def)
 
     @property
-    def tool_names(self)-> List[str]:
+    def tool_names(self) -> List[str]:
         return list(self.openai_tool_name_to_tool_def.keys())
 
     @classmethod
@@ -173,21 +173,23 @@ class ToolRegistry:
         else:
             return list(self.model_provider_to_tool_def[model_provider].values())
 
-    def add_tool_def_w_oai_def(self, tool_name: str, oai_tool_def: Dict)-> None:
+    def add_tool_def_w_oai_def(self, tool_name: str, oai_tool_def: Dict) -> None:
         self.openai_tool_name_to_tool_def[tool_name] = oai_tool_def
         self.anthropic_tool_name_to_tool_def[tool_name] = (
             get_anthropic_tool_def_from_oai(oai_tool_def)
         )
 
     @classmethod
-    def _add_tool_def_w_oai_def_cls(cls, tool_name: str, oai_tool_def: Dict)-> None:
+    def _add_tool_def_w_oai_def_cls(cls, tool_name: str, oai_tool_def: Dict) -> None:
         cls.GLOBAL_OPENAI_TOOL_NAME_TO_TOOL_DEF[tool_name] = oai_tool_def
         cls.GLOBAL_ANTHROPIC_TOOL_NAME_TO_TOOL_DEF[tool_name] = (
             get_anthropic_tool_def_from_oai(oai_tool_def)
         )
 
     @class_or_instance_method
-    def model_tool_decorator(self_or_cls, tool_instructions: Optional[str] = None)-> Callable:
+    def model_tool_decorator(
+        self_or_cls, tool_instructions: Optional[str] = None
+    ) -> Callable:
         is_class = isinstance(self_or_cls, type)
         if is_class:
             fn_name_to_fn_attr = self_or_cls.GLOBAL_FN_NAME_TO_FN
@@ -248,7 +250,7 @@ class ToolRegistry:
             oai_tools_return_map_attr[func.__name__] = actual_return_json_schema
 
             @wraps(func)
-            def wrapper(*args, **kwargs)-> Any:
+            def wrapper(*args, **kwargs) -> Any:
                 bound_args = fn_signature.bind(*args, **kwargs)
                 bound_args.apply_defaults()
 
