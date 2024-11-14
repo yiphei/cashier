@@ -1,10 +1,12 @@
 import inspect
 from string import Formatter
-from typing import Set, Callable
+from typing import Callable, Set
+
 from pydantic import BaseModel
 
+
 class CallableMeta(type):
-    def __call__(cls, strict_kwargs_check:bool=True, **kwargs)->str:
+    def __call__(cls, strict_kwargs_check: bool = True, **kwargs) -> str:
         instance = super().__call__(**kwargs)
         if not strict_kwargs_check:
             kwargs = {k: v for k, v in kwargs.items() if k in cls.kwargs}
@@ -24,7 +26,7 @@ class BasePrompt(metaclass=CallableMeta):
     def __init__(self, **kwargs):
         pass
 
-    def dynamic_prompt(self, **kwargs)-> str:
+    def dynamic_prompt(self, **kwargs) -> str:
         return None
 
     def __init_subclass__(cls, **kwargs):

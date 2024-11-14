@@ -1,9 +1,11 @@
+from typing import Any, Dict
+
 from cashier.prompts.base_prompt import BasePrompt
 from cashier.prompts.general_guideline import GeneralGuidelinePrompt
 from cashier.prompts.response_guideline import ResponseGuidelinePrompt
 from cashier.prompts.state_guideline import StateGuidelinePrompt
 from cashier.prompts.tool_guideline import ToolGuidelinePrompt
-from typing import Any, Dict
+
 
 class NodeSystemPrompt(BasePrompt):
     BACKGROUND_PROMPT = None

@@ -12,7 +12,7 @@ from cashier.tool_registries.general import GeneralToolRegistry
 supabase: Client = None
 
 
-def create_db_client()-> None:
+def create_db_client() -> None:
     global supabase
     supabase = create_supabase_client(
         os.environ.get("SUPABASE_URL"), os.environ.get("SUPABASE_KEY")
