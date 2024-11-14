@@ -1,9 +1,10 @@
 import inspect
 from string import Formatter
-
+from typing import Set, Callable
+from pydantic import BaseModel
 
 class CallableMeta(type):
-    def __call__(cls, strict_kwargs_check=True, **kwargs):
+    def __call__(cls, strict_kwargs_check:bool=True, **kwargs)->str:
         instance = super().__call__(**kwargs)
         if not strict_kwargs_check:
             kwargs = {k: v for k, v in kwargs.items() if k in cls.kwargs}
@@ -16,14 +17,14 @@ class CallableMeta(type):
 
 
 class BasePrompt(metaclass=CallableMeta):
-    f_string_prompt = None
-    response_format = None
-    kwargs = None
+    f_string_prompt: str = None
+    response_format: BaseModel = None
+    kwargs: Set[str] = None
 
     def __init__(self, **kwargs):
         pass
 
-    def dynamic_prompt(self, **kwargs):
+    def dynamic_prompt(self, **kwargs)-> str:
         return None
 
     def __init_subclass__(cls, **kwargs):
@@ -47,7 +48,7 @@ class BasePrompt(metaclass=CallableMeta):
         )
 
     @staticmethod
-    def extract_fstring_args(f_string):
+    def extract_fstring_args(f_string: str) -> Set[str]:
         """
         Extract argument names from an f-string format using string.Formatter.
 
@@ -68,7 +69,7 @@ class BasePrompt(metaclass=CallableMeta):
         return fields
 
     @staticmethod
-    def extract_dynamic_args(dynamic_func):
+    def extract_dynamic_args(dynamic_func: Callable) -> Set[str]:
         """
         Extract argument names from a dynamic_prompt method using inspection.
 

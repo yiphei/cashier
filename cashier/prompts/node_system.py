@@ -3,7 +3,7 @@ from cashier.prompts.general_guideline import GeneralGuidelinePrompt
 from cashier.prompts.response_guideline import ResponseGuidelinePrompt
 from cashier.prompts.state_guideline import StateGuidelinePrompt
 from cashier.prompts.tool_guideline import ToolGuidelinePrompt
-
+from typing import Any, Dict
 
 class NodeSystemPrompt(BasePrompt):
     BACKGROUND_PROMPT = None
@@ -16,12 +16,12 @@ class NodeSystemPrompt(BasePrompt):
 
     def dynamic_prompt(
         self,
-        node_prompt,
-        input,
-        node_input_json_schema,
-        state_json_schema,
-        last_msg,
-    ):
+        node_prompt: str,
+        input: Any,
+        node_input_json_schema: Dict,
+        state_json_schema: Dict,
+        last_msg: str,
+    ) -> str:
         fn_kwargs = locals()
         fn_kwargs.pop("self")
         NODE_PROMPT = (

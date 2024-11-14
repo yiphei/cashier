@@ -5,8 +5,8 @@ class StateGuidelinePrompt(BasePrompt):
 
     def dynamic_prompt(
         self,
-        last_msg,
-    ):
+        last_msg: str,
+    )-> str:
         return (
             "<state_guidelines>\n"
             "- Among the tools provided, there are functions for getting and updating the state defined in <state>. "

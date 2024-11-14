@@ -6,7 +6,7 @@ class ResponseGuidelinePrompt(BasePrompt):
 
     def dynamic_prompt(
         self,
-    ):
+    ) -> str:
         return (
             "<response_guidelines>\n"
             + (

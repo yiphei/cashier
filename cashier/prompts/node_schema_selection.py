@@ -3,7 +3,9 @@ import json
 from pydantic import BaseModel
 
 from cashier.prompts.base_prompt import BasePrompt
-
+from cashier.graph import NodeSchema
+from typing import List
+from cashier.model_util import ModelProvider
 
 class Response(BaseModel):
     agent_id: int
@@ -13,7 +15,7 @@ class NodeSchemaSelectionPrompt(BasePrompt):
 
     response_format = Response
 
-    def dynamic_prompt(self, all_node_schemas, model_provider, last_customer_msg):
+    def dynamic_prompt(self, all_node_schemas: List[NodeSchema], model_provider: ModelProvider, last_customer_msg: str) -> str:
         prompt = (
             "You are an AI-agent orchestration engine and your job is to select the best AI agent. "
             "Each AI agent is defined by 3 attributes: instructions, state, and tools (i.e. functions). "

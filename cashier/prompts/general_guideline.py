@@ -5,8 +5,8 @@ class GeneralGuidelinePrompt(BasePrompt):
 
     def dynamic_prompt(
         self,
-        last_msg,
-    ):
+        last_msg: str,
+    ) -> str:
         return (
             "<general_guidelines>\n"
             "- think step-by-step before you respond.\n"
