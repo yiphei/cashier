@@ -25,7 +25,7 @@ class ToolExceptionWrapper:
 
 class FunctionCallContext:
     def __init__(self) -> None:
-        self.exception = None
+        self.exception: Optional[ToolExceptionWrapper] = None
 
     def has_exception(self) -> bool:
         return self.exception is not None
@@ -33,7 +33,7 @@ class FunctionCallContext:
     def __enter__(self) -> FunctionCallContext:
         return self
 
-    def __exit__(self, exc_type: Any, exc_val: Optional[Exception], exc_tb: Any) -> bool:
+    def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> bool:
         if exc_val:
             self.exception = ToolExceptionWrapper(exc_val)
         return True
