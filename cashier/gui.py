@@ -26,7 +26,9 @@ class MessageDisplay:
     }
 
     @classmethod
-    def display_assistant_message(cls, message_or_stream: Union[str, Iterator[str]]) -> None:
+    def display_assistant_message(
+        cls, message_or_stream: Union[str, Iterator[str]]
+    ) -> None:
         if isinstance(message_or_stream, GeneratorType):
             cls.print_msg(role="assistant", msg=None, end="")
             full_msg = ""
@@ -46,7 +48,11 @@ class MessageDisplay:
 
     @classmethod
     def print_msg(
-        cls, role: str, msg: Optional[str], add_role_prefix: bool = True, end: str = "\n\n"
+        cls,
+        role: str,
+        msg: Optional[str],
+        add_role_prefix: bool = True,
+        end: str = "\n\n",
     ) -> None:
         formatted_msg = f"{cls.API_ROLE_TO_COLOR[role]}"
         if add_role_prefix:

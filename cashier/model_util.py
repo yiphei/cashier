@@ -19,7 +19,7 @@ class ModelProvider(StrEnum):
 
 
 class CustomJSONEncoder(json.JSONEncoder):
-    def default(self, obj)-> Any:
+    def default(self, obj) -> Any:
         if isinstance(obj, BaseModel):
             return obj.model_dump()
         elif isinstance(obj, (defaultdict, dict)):
@@ -65,7 +65,7 @@ class FunctionCall(BaseModel):
     args: Optional[Dict] = None
 
     @model_validator(mode="after")
-    def check_function_args(self)-> FunctionCall:
+    def check_function_args(self) -> FunctionCall:
         if self.args_json is None and self.args is None:
             raise ValueError("One of [args_json, args] must be provided")
 

@@ -349,7 +349,7 @@ class GraphSchema(BaseModel):
     from_node_schema_id_to_edge_schema: Optional[Dict[int, List[EdgeSchema]]] = None
 
     @model_validator(mode="after")
-    def init_computed_fields(self)-> GraphSchema:
+    def init_computed_fields(self) -> GraphSchema:
         self.node_schema_id_to_node_schema = {
             node_schema.id: node_schema for node_schema in self.node_schemas
         }

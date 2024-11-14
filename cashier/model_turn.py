@@ -33,11 +33,11 @@ class ModelTurn(BaseModel, ABC):
         return value.strip() if cls.should_strip_msg_content and value else value
 
     @abstractmethod
-    def build_oai_messages(self)-> List[Dict[str,Any]]:
+    def build_oai_messages(self) -> List[Dict[str, Any]]:
         raise NotImplementedError
 
     @abstractmethod
-    def build_anthropic_messages(self)->List[Dict[str,Any]]:
+    def build_anthropic_messages(self) -> List[Dict[str, Any]]:
         raise NotImplementedError
 
     def build_messages(self, model_provider: ModelProvider) -> Dict[str, Any]:
@@ -77,7 +77,7 @@ class AssistantTurn(ModelTurn):
     fn_call_id_to_fn_output: Optional[Dict[str, Any]] = Field(default_factory=dict)
 
     @model_validator(mode="after")
-    def check_function_args(self)-> AssistantTurn:
+    def check_function_args(self) -> AssistantTurn:
         if (
             self.fn_calls
             and self.fn_call_id_to_fn_output
