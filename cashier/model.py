@@ -11,10 +11,10 @@ from typing import (
     Literal,
     Optional,
     Set,
+    Type,
     TypeVar,
     Union,
     overload,
-    Type
 )
 
 import anthropic
