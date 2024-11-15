@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import itertools
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Iterator, List, Literal, Optional, Set, Union, overload
+from typing import Any, Dict, Iterator, List, Literal, Optional, Set, Union, overload, TypeVar, Generic
 
 import anthropic
 import numpy as np
@@ -31,6 +31,7 @@ AnthropicModels = Literal[
 ModelName = Union[OpenAIModels, AnthropicModels]
 ModelResponseChunk = Union[ChatCompletionChunk, RawMessageStreamEvent]
 
+ModelResponseChunkType = TypeVar('ModelResponseChunkType', ChatCompletionChunk, RawMessageStreamEvent)
 
 class Model:
     model_name_to_provider = {
@@ -255,7 +256,7 @@ class Model:
         )
 
 
-class ModelOutput(ABC):
+class ModelOutput(ABC, Generic[ModelResponseChunkType]):
 
     def __init__(
         self,
@@ -298,43 +299,43 @@ class ModelOutput(ABC):
             return self.get_fn_calls()
 
     @abstractmethod
-    def is_message_start_chunk(self, chunk: ModelResponseChunk) -> bool:
+    def is_message_start_chunk(self, chunk: ModelResponseChunkType) -> bool:
         raise NotImplementedError
 
     @abstractmethod
-    def is_tool_start_chunk(self, chunk: ModelResponseChunk) -> bool:
+    def is_tool_start_chunk(self, chunk: ModelResponseChunkType) -> bool:
         raise NotImplementedError
 
     @abstractmethod
-    def is_final_chunk(self, chunk: ModelResponseChunk) -> bool:
+    def is_final_chunk(self, chunk: ModelResponseChunkType) -> bool:
         raise NotImplementedError
 
     @abstractmethod
-    def has_function_call_id(self, chunk: ModelResponseChunk) -> bool:
+    def has_function_call_id(self, chunk: ModelResponseChunkType) -> bool:
         raise NotImplementedError
 
     @abstractmethod
-    def get_msg_from_chunk(self, chunk: ModelResponseChunk) -> str:
+    def get_msg_from_chunk(self, chunk: ModelResponseChunkType) -> str:
         raise NotImplementedError
 
     @abstractmethod
-    def has_msg_content(self, chunk: ModelResponseChunk) -> bool:
+    def has_msg_content(self, chunk: ModelResponseChunkType) -> bool:
         raise NotImplementedError
 
     @abstractmethod
-    def has_fn_args_json(self, chunk: ModelResponseChunk) -> bool:
+    def has_fn_args_json(self, chunk: ModelResponseChunkType) -> bool:
         raise NotImplementedError
 
     @abstractmethod
-    def get_fn_call_id_from_chunk(self, chunk: ModelResponseChunk) -> str:
+    def get_fn_call_id_from_chunk(self, chunk: ModelResponseChunkType) -> str:
         raise NotImplementedError
 
     @abstractmethod
-    def get_fn_name_from_chunk(self, chunk: ModelResponseChunk) -> str:
+    def get_fn_name_from_chunk(self, chunk: ModelResponseChunkType) -> str:
         raise NotImplementedError
 
     @abstractmethod
-    def get_fn_args_json_from_chunk(self, chunk: ModelResponseChunk) -> str:
+    def get_fn_args_json_from_chunk(self, chunk: ModelResponseChunkType) -> str:
         raise NotImplementedError
 
     def stream_message(self) -> Optional[Iterator[str]]:
@@ -345,7 +346,7 @@ class ModelOutput(ABC):
         else:
             return None
 
-    def _stream_message(self, chunk: ModelResponseChunk) -> Iterator[str]:
+    def _stream_message(self, chunk: ModelResponseChunkType) -> Iterator[str]:
         self.msg_content = ""
         while not self.has_msg_content(chunk):
             chunk = next(self.output_obj)
@@ -398,7 +399,7 @@ class ModelOutput(ABC):
             self.fn_calls.append(fn_call)
             yield fn_call
 
-    def get_next_usable_chunk(self) -> ModelResponseChunk:
+    def get_next_usable_chunk(self) -> ModelResponseChunkType:
         if self.last_chunk is None:
             chunk = next(self.output_obj)
         else:
@@ -412,7 +413,7 @@ class ModelOutput(ABC):
         return chunk
 
 
-class OAIModelOutput(ModelOutput):
+class OAIModelOutput(ModelOutput[ChatCompletionChunk]):
     model_provider = ModelProvider.OPENAI
 
     def _get_tool_call(self, chunk: ChatCompletionChunk) -> ChoiceDeltaToolCall:
@@ -483,32 +484,32 @@ class OAIModelOutput(ModelOutput):
             yield fn_call
 
 
-class AnthropicModelOutput(ModelOutput):
+class AnthropicModelOutput(ModelOutput[RawMessageStreamEvent]):
     model_provider = ModelProvider.ANTHROPIC
 
     def get_fn_call_id_from_chunk(self, chunk: RawMessageStreamEvent) -> str:
-        return chunk.content_block.id
+        return chunk.content_block.id # type: ignore
 
     def get_fn_name_from_chunk(self, chunk: RawMessageStreamEvent) -> str:
-        return chunk.content_block.name
+        return chunk.content_block.name # type: ignore
 
     def get_fn_args_json_from_chunk(self, chunk: RawMessageStreamEvent) -> str:
-        return chunk.delta.partial_json
+        return chunk.delta.partial_json # type: ignore
 
     def has_fn_args_json(self, chunk: RawMessageStreamEvent) -> bool:
-        return self._is_delta_chunk(chunk) and hasattr(chunk.delta, "partial_json")
+        return self._is_delta_chunk(chunk) and hasattr(chunk.delta, "partial_json") # type: ignore
 
     def _is_content_block(self, chunk: RawMessageStreamEvent) -> bool:
-        return hasattr(chunk, "content_block")
+        return hasattr(chunk, "content_block") # type: ignore
 
     def _is_delta_chunk(self, chunk: RawMessageStreamEvent) -> bool:
         return hasattr(chunk, "delta")
 
     def is_message_start_chunk(self, chunk: RawMessageStreamEvent) -> bool:
-        return self._is_content_block(chunk) and chunk.content_block.type == "text"
+        return self._is_content_block(chunk) and chunk.content_block.type == "text" # type: ignore
 
     def is_tool_start_chunk(self, chunk: RawMessageStreamEvent) -> bool:
-        return self._is_content_block(chunk) and chunk.content_block.type == "tool_use"
+        return self._is_content_block(chunk) and chunk.content_block.type == "tool_use" # type: ignore
 
     def is_end_block_chunk(self, chunk: RawMessageStreamEvent) -> bool:
         return chunk.type == "content_block_stop"
@@ -519,14 +520,14 @@ class AnthropicModelOutput(ModelOutput):
     def has_msg_content(self, chunk: RawMessageStreamEvent) -> bool:
         return (
             self._is_delta_chunk(chunk)
-            and getattr(chunk.delta, "text", None) is not None
+            and getattr(chunk.delta, "text", None) is not None # type: ignore
         )
 
     def has_function_call_id(self, chunk: RawMessageStreamEvent) -> str:
-        return self._is_content_block(chunk) and hasattr(chunk.content_block, "id")
+        return self._is_content_block(chunk) and hasattr(chunk.content_block, "id") # type: ignore
 
     def get_msg_from_chunk(self, chunk: RawMessageStreamEvent) -> str:
-        return chunk.delta.text
+        return chunk.delta.text # type: ignore
 
     def get_message(self) -> Optional[str]:
         content = self.output_obj.content[0]
