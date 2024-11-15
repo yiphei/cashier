@@ -108,4 +108,4 @@ class FunctionCall(BaseModel):
 
     @property
     def args(self) -> Dict:
-        return cast(Dict, self.input_args_json)
+        return cast(Dict, self.input_args)
