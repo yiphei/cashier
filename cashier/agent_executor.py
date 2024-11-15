@@ -1,6 +1,6 @@
 import copy
 import json
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Set, Tuple
 
 from colorama import Style
 
@@ -10,7 +10,7 @@ from cashier.graph import Direction, EdgeSchema, Graph, GraphSchema, Node, NodeS
 from cashier.gui import MessageDisplay
 from cashier.logger import logger
 from cashier.model import Model, ModelOutput
-from cashier.model_turn import TurnContainer
+from cashier.model_turn import AssistantTurn, TurnContainer
 from cashier.model_util import CustomJSONEncoder, FunctionCall, ModelProvider
 from cashier.prompts.node_schema_selection import NodeSchemaSelectionPrompt
 from cashier.prompts.off_topic import OffTopicPrompt
@@ -133,8 +133,8 @@ class AgentExecutor:
         self.curr_node: Optional[Node] = None
         self.need_user_input = True
         self.graph = Graph(graph_schema=graph_schema)
-        self.next_edge_schemas = set()
-        self.bwd_skip_edge_schemas = set()
+        self.next_edge_schemas: Set[EdgeSchema] = set()
+        self.bwd_skip_edge_schemas: Set[EdgeSchema] = set()
 
         self.init_next_node(graph_schema.start_node_schema, None, None)
         self.force_tool_choice = None
@@ -142,7 +142,7 @@ class AgentExecutor:
     def init_node_core(
         self,
         node_schema: NodeSchema,
-        edge_schema: EdgeSchema,
+        edge_schema: Optional[EdgeSchema],
         input: Any,
         last_msg: str,
         prev_node: Optional[Node],
@@ -164,6 +164,7 @@ class AgentExecutor:
         MessageDisplay.print_msg("system", new_node.prompt)
 
         if node_schema.first_turn and prev_node is None:
+            assert isinstance(node_schema.first_turn, AssistantTurn)
             self.TC.add_assistant_direct_turn(node_schema.first_turn)
             MessageDisplay.print_msg("assistant", node_schema.first_turn.msg_content)
 
@@ -181,7 +182,7 @@ class AgentExecutor:
         )
 
     def init_next_node(
-        self, node_schema: NodeSchema, edge_schema: EdgeSchema, input: Any = None
+        self, node_schema: NodeSchema, edge_schema: Optional[EdgeSchema], input: Any = None
     ) -> None:
         if self.curr_node:
             self.curr_node.mark_as_completed()
@@ -227,8 +228,8 @@ class AgentExecutor:
 
     def handle_skip(
         self,
-        fwd_skip_edge_schemas: List[EdgeSchema],
-        bwd_skip_edge_schemas: List[EdgeSchema],
+        fwd_skip_edge_schemas: Set[EdgeSchema],
+        bwd_skip_edge_schemas: Set[EdgeSchema],
     ) -> Tuple[Optional[EdgeSchema], Optional[NodeSchema]]:
         all_node_schemas = [self.curr_node.schema]
         all_node_schemas += [edge.to_node_schema for edge in fwd_skip_edge_schemas]
@@ -261,13 +262,13 @@ class AgentExecutor:
 
     def handle_wait(
         self,
-        fwd_skip_edge_schemas: List[EdgeSchema],
-        bwd_skip_edge_schemas: List[EdgeSchema],
+        fwd_skip_edge_schemas: Set[EdgeSchema],
+        bwd_skip_edge_schemas: Set[EdgeSchema],
     ) -> Tuple[Optional[EdgeSchema], Optional[NodeSchema]]:
         remaining_edge_schemas = (
             set(self.graph_schema.edge_schemas)
-            - set(fwd_skip_edge_schemas)
-            - set(bwd_skip_edge_schemas)
+            - fwd_skip_edge_schemas
+            - bwd_skip_edge_schemas
         )
 
         all_node_schemas = [self.curr_node.schema]

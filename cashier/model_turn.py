@@ -429,11 +429,11 @@ class TurnContainer:
 
     def add_assistant_turn(
         self,
-        msg_content: str,
+        msg_content: Optional[str],
         model_provider: ModelProvider,
         tool_registry: ToolRegistry,
         fn_calls: Optional[List[FunctionCall]] = None,
-        fn_id_to_outputs: Optional[Dict[int, Any]] = None,
+        fn_id_to_outputs: Optional[Dict[str, Any]] = None,
     ) -> None:
         turn = AssistantTurn(
             msg_content=msg_content,

@@ -16,7 +16,7 @@ class NodeSchemaSelectionPrompt(BasePrompt):
 
     response_format = Response
 
-    def dynamic_prompt(
+    def dynamic_prompt( # type: ignore
         self,
         all_node_schemas: List[NodeSchema],
         model_provider: ModelProvider,

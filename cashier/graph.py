@@ -11,10 +11,12 @@ from typing import (
     Literal,
     NamedTuple,
     Optional,
+    Set,
     Tuple,
     Type,
     Union,
     overload,
+    cast
 )
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
@@ -128,7 +130,7 @@ class NodeSchema:
             in_edge_schema = prev_node.in_edge_schema
         else:
             in_edge_schema = edge_schema
-        return Node(self, input, state, prompt, in_edge_schema, direction)
+        return Node(self, input, state, cast(str, prompt), in_edge_schema, direction)
 
 
 class Node:
@@ -368,13 +370,13 @@ class Graph(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     graph_schema: GraphSchema
-    edge_schema_id_to_edges: Dict[str, List[Edge]] = Field(
+    edge_schema_id_to_edges: Dict[int, List[Edge]] = Field(
         default_factory=lambda: defaultdict(list)
     )
-    from_node_schema_id_to_last_edge_schema_id: Dict[str, str] = Field(
+    from_node_schema_id_to_last_edge_schema_id: Dict[int, str] = Field(
         default_factory=lambda: defaultdict(lambda: None)
     )
-    edge_schema_id_to_from_node: Dict[str, None] = Field(
+    edge_schema_id_to_from_node: Dict[int, None] = Field(
         default_factory=lambda: defaultdict(lambda: None)
     )
 
@@ -414,8 +416,8 @@ class Graph(BaseModel):
             return None
 
     def compute_bwd_skip_edge_schemas(
-        self, start_node: Node, curr_bwd_skip_edge_schemas: List[EdgeSchema]
-    ) -> List[EdgeSchema]:
+        self, start_node: Node, curr_bwd_skip_edge_schemas: Set[EdgeSchema]
+    ) -> Set[EdgeSchema]:
         from_node = start_node
         new_edge_schemas = set()
         while from_node.in_edge_schema is not None:
@@ -432,7 +434,7 @@ class Graph(BaseModel):
 
     def compute_fwd_skip_edge_schemas(
         self, start_node: Node, start_edge_schemas: List[EdgeSchema]
-    ) -> List[EdgeSchema]:
+    ) -> Set[EdgeSchema]:
         fwd_jump_edge_schemas = set()
         edge_schemas = deque(start_edge_schemas)
         while edge_schemas:
