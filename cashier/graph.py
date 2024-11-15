@@ -346,24 +346,33 @@ class GraphSchema(BaseModel):
     start_node_schema: NodeSchema
     edge_schemas: List[EdgeSchema]
     node_schemas: List[NodeSchema]
-    node_schema_id_to_node_schema: Optional[Dict[int, NodeSchema]] = None
-    edge_schema_id_to_edge_schema: Optional[Dict[int, EdgeSchema]] = None
-    from_node_schema_id_to_edge_schema: Optional[Dict[int, List[EdgeSchema]]] = None
 
     @model_validator(mode="after")
     def init_computed_fields(self) -> GraphSchema:
-        self.node_schema_id_to_node_schema = {
+        self._node_schema_id_to_node_schema = {
             node_schema.id: node_schema for node_schema in self.node_schemas
         }
-        self.edge_schema_id_to_edge_schema = {
+        self._edge_schema_id_to_edge_schema = {
             edge_schema.id: edge_schema for edge_schema in self.edge_schemas
         }
-        self.from_node_schema_id_to_edge_schema = defaultdict(list)
+        self._from_node_schema_id_to_edge_schema = defaultdict(list)
         for edge_schema in self.edge_schemas:
-            self.from_node_schema_id_to_edge_schema[
+            self._from_node_schema_id_to_edge_schema[
                 edge_schema.from_node_schema.id
             ].append(edge_schema)
         return self
+    
+    @property
+    def node_schema_id_to_node_schema(self)-> Dict[int, NodeSchema]:
+        return self._node_schema_id_to_node_schema
+    
+    @property
+    def edge_schema_id_to_edge_schema(self)-> Dict[int, EdgeSchema]:
+        return self._edge_schema_id_to_edge_schema
+    
+    @property
+    def from_node_schema_id_to_edge_schema(self)->Dict[int, List[EdgeSchema]]:
+        return self._from_node_schema_id_to_edge_schema
 
 
 class Graph(BaseModel):
