@@ -395,7 +395,9 @@ class AgentExecutor:
         if message is not None:
             if self.audio_output:
                 get_speech_from_text(message, self.elevenlabs_client)
-                MessageDisplay.display_assistant_message(cast(str, model_completion.msg_content))
+                MessageDisplay.display_assistant_message(
+                    cast(str, model_completion.msg_content)
+                )
             else:
                 MessageDisplay.display_assistant_message(message)
             self.need_user_input = True
