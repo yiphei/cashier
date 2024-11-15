@@ -82,9 +82,9 @@ confirm_order_node_schema = NodeSchema(
 take_to_confirm_edge_schema = EdgeSchema(
     from_node_schema=take_order_node_schema,
     to_node_schema=confirm_order_node_schema,
-    state_condition_fn=lambda state: state.has_finished_ordering # type: ignore
-    and state.order is not None, # type: ignore
-    new_input_fn=lambda state, input: state.order, # type: ignore
+    state_condition_fn=lambda state: state.has_finished_ordering  # type: ignore
+    and state.order is not None,  # type: ignore
+    new_input_fn=lambda state, input: state.order,  # type: ignore
 )
 
 
@@ -107,7 +107,7 @@ terminal_order_node_schema = NodeSchema(
 confirm_to_terminal_edge_schema = EdgeSchema(
     from_node_schema=confirm_order_node_schema,
     to_node_schema=terminal_order_node_schema,
-    state_condition_fn=lambda state: state.has_confirmed_order, # type: ignore
+    state_condition_fn=lambda state: state.has_confirmed_order,  # type: ignore
     new_input_fn=lambda state, input: None,
 )
 
