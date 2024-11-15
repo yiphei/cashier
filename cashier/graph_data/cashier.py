@@ -16,7 +16,7 @@ class CashierNodeSystemPrompt(NodeSystemPrompt):
 
 class TakeOrderState(BaseStateModel):
     order: Optional[Order] = None
-    has_finished_ordering: bool = Field( # type: ignore
+    has_finished_ordering: bool = Field(  # type: ignore
         description=(
             "whether the customer has finished ordering. This can only be true after"
             " you have explicitly confirmed with them that they have finished ordering,"
@@ -61,7 +61,7 @@ take_order_node_schema = NodeSchema(
 
 
 class ConfirmOrderState(BaseStateModel):
-    has_confirmed_order: bool = Field( # type: ignore
+    has_confirmed_order: bool = Field(  # type: ignore
         description="whether the customer has confirmed their order",
         default=False,
         resettable=True,
@@ -89,7 +89,7 @@ take_to_confirm_edge_schema = EdgeSchema(
 
 
 class TerminalOrderState(BaseStateModel):
-    has_said_goodbye: bool = Field( # type: ignore
+    has_said_goodbye: bool = Field(  # type: ignore
         description="whether the customer has said goodbye",
         default=False,
         resettable=True,
