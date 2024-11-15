@@ -407,7 +407,7 @@ class Graph(BaseModel):
         )
 
     def get_last_edge_schema_by_from_node_schema_id(
-        self, node_schema_id: str
+        self, node_schema_id: int
     ) -> EdgeSchema:
         edge_schema_id = self.from_node_schema_id_to_last_edge_schema_id[node_schema_id]
         return (
