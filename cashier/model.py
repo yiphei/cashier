@@ -269,7 +269,7 @@ class ModelOutput(ABC):
         self.response_format = response_format
         self.parsed_msg = None
         self.msg_content = None
-        self.last_chunk = None
+        self.last_chunk: Optional[ModelResponseChunk] = None
         self.fn_calls: List[FunctionCall] = []
         self.fn_call_ids: Set[str] = set()
 
@@ -294,15 +294,15 @@ class ModelOutput(ABC):
             return self.get_fn_calls()
 
     @abstractmethod
-    def is_message_start_chunk(self) -> bool:
+    def is_message_start_chunk(self, chunk: ModelResponseChunk) -> bool:
         raise NotImplementedError
 
     @abstractmethod
-    def is_tool_start_chunk(self) -> bool:
+    def is_tool_start_chunk(self, chunk: ModelResponseChunk) -> bool:
         raise NotImplementedError
 
     @abstractmethod
-    def is_final_chunk(self) -> bool:
+    def is_final_chunk(self, chunk: ModelResponseChunk) -> bool:
         raise NotImplementedError
 
     @abstractmethod
