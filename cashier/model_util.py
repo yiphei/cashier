@@ -7,7 +7,7 @@ from collections import defaultdict
 from enum import StrEnum
 from typing import Any, Dict, Optional, cast
 
-from pydantic import BaseModel, model_validator, Field
+from pydantic import BaseModel, Field, model_validator
 
 from cashier.function_call_context import ToolExceptionWrapper
 
@@ -61,8 +61,8 @@ MODEL_PROVIDER_TO_TOOL_CALL_ID_PREFIX = {
 class FunctionCall(BaseModel):
     name: str
     id: str
-    input_args_json: Optional[str] = Field(default=None, alias='args_json')
-    input_args: Optional[Dict] = Field(default=None, alias='args')
+    input_args_json: Optional[str] = Field(default=None, alias="args_json")
+    input_args: Optional[Dict] = Field(default=None, alias="args")
 
     @model_validator(mode="after")
     def check_function_args(self) -> FunctionCall:
@@ -100,10 +100,10 @@ class FunctionCall(BaseModel):
         )
 
     @property
-    def args_json(self)-> str:
-        
+    def args_json(self) -> str:
+
         return cast(str, self.input_args_json)
-    
+
     @property
-    def args(self)-> Dict:
+    def args(self) -> Dict:
         return cast(Dict, self.input_args_json)
