@@ -432,8 +432,8 @@ class TurnContainer:
         msg_content: str,
         model_provider: ModelProvider,
         tool_registry: ToolRegistry,
-        fn_calls: List[FunctionCall] = None,
-        fn_id_to_outputs: Dict[int, Any] = None,
+        fn_calls: Optional[List[FunctionCall]] = None,
+        fn_id_to_outputs: Optional[Dict[int, Any]] = None,
     ) -> None:
         turn = AssistantTurn(
             msg_content=msg_content,
@@ -444,7 +444,7 @@ class TurnContainer:
         )
         self.add_assistant_direct_turn(turn)
 
-    def add_assistant_direct_turn(self, turn: ModelTurn) -> None:
+    def add_assistant_direct_turn(self, turn: AssistantTurn) -> None:
         self.turns.append(turn)
         for mm in self.model_provider_to_message_manager.values():
             mm.add_assistant_turn(turn)
@@ -500,9 +500,9 @@ class MessageList(list):
         ItemType.ASSISTANT: "asst_",
     }
 
-    def __init__(self, *args, model_provider: ModelProvider):
+    def __init__(self, *args: Any, model_provider: ModelProvider):
         super().__init__(*args)
-        self.uri_to_list_idx = {}
+        self.uri_to_list_idx: Dict[str, str] = {}
         self.list_idx_to_uris = defaultdict(set)
         self.list_idxs = []
         self.list_idx_to_track_idx = {}
