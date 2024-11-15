@@ -256,7 +256,6 @@ class Model:
 
 
 class ModelOutput(ABC):
-    model_provider = None
 
     def __init__(
         self,
@@ -268,10 +267,15 @@ class ModelOutput(ABC):
         self.is_stream = is_stream
         self.response_format = response_format
         self.parsed_msg = None
-        self.msg_content = None
+        self.msg_content: Optional[str] = None
         self.last_chunk: Optional[ModelResponseChunk] = None
         self.fn_calls: List[FunctionCall] = []
         self.fn_call_ids: Set[str] = set()
+
+    @property
+    @abstractmethod
+    def model_provider(self)-> ModelProvider:
+        raise NotImplementedError
 
     @abstractmethod
     def get_message(self) -> Optional[str]:
