@@ -671,7 +671,7 @@ class MessageList(list):
 
     def append(
         self, item: Any, item_type: Optional[ItemType] = None, uri: Optional[str] = None
-    ):
+    )-> None:
         super().append(item)
         if item_type is not None:
             self.track_idx(item_type, uri=uri)
@@ -682,18 +682,18 @@ class MessageList(list):
         item: Any,
         item_type: Optional[ItemType] = None,
         uri: Optional[str] = None,
-    ):
+    ) -> None:
         super().insert(idx, item)
         if item_type is not None:
             self.track_idx(item_type, idx, uri, is_insert=True)
 
-    def extend(self, items: List[Any], item_type: Optional[ItemType] = None):
+    def extend(self, items: List[Any], item_type: Optional[ItemType] = None)-> None:
         curr_len = len(self) - 1
         super().extend(items)
         if items and item_type is not None:
             self.track_idxs(item_type, curr_len + 1)
 
-    def _remove_by_uri(self, uri: str, raise_on_unpopped_idx: bool = False):
+    def _remove_by_uri(self, uri: str, raise_on_unpopped_idx: bool = False)-> None:
         popped_idx = self.pop_track_idx(uri)
         if popped_idx is not None:
             del self[popped_idx]
@@ -701,7 +701,7 @@ class MessageList(list):
             if raise_on_unpopped_idx:
                 raise ValueError
 
-    def remove_by_uri(self, uri: str, raise_if_not_found: bool = True):
+    def remove_by_uri(self, uri: str, raise_if_not_found: bool = True)-> None:
         if uri not in self.uri_to_item_type:
             if raise_if_not_found:
                 raise ValueError()
@@ -721,7 +721,7 @@ class MessageList(list):
 
     def clear(
         self, item_type_or_types: Optional[Union[ItemType, List[ItemType]]] = None
-    ):
+    )-> None:
         if item_type_or_types is None:
             super().clear()
         else:
@@ -732,7 +732,7 @@ class MessageList(list):
                 for uri in uris:
                     self.remove_by_uri(uri)
 
-    def __getitem__(self, index: Union[int, slice]):
+    def __getitem__(self, index: Union[int, slice])-> Any:
         if isinstance(index, slice):
             if index.step:
                 raise ValueError()

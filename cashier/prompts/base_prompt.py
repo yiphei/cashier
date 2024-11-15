@@ -1,6 +1,6 @@
 import inspect
 from string import Formatter
-from typing import Any, Callable, Optional, Set
+from typing import Any, Callable, Optional, Set, Type
 
 from pydantic import BaseModel
 
@@ -20,7 +20,7 @@ class CallableMeta(type):
 
 class BasePrompt(metaclass=CallableMeta):
     f_string_prompt: Optional[str] = None
-    response_format: Optional[BaseModel] = None
+    response_format: Optional[Type[BaseModel]] = None
     kwargs: Optional[Set[str]] = None
 
     def __init__(self, **kwargs: Any):
