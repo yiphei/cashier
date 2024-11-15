@@ -2,7 +2,19 @@ from __future__ import annotations
 
 import itertools
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Iterator, List, Literal, Optional, Set, Union, overload, TypeVar, Generic
+from typing import (
+    Any,
+    Dict,
+    Generic,
+    Iterator,
+    List,
+    Literal,
+    Optional,
+    Set,
+    TypeVar,
+    Union,
+    overload,
+)
 
 import anthropic
 import numpy as np
@@ -31,7 +43,10 @@ AnthropicModels = Literal[
 ModelName = Union[OpenAIModels, AnthropicModels]
 ModelResponseChunk = Union[ChatCompletionChunk, RawMessageStreamEvent]
 
-ModelResponseChunkType = TypeVar('ModelResponseChunkType', ChatCompletionChunk, RawMessageStreamEvent)
+ModelResponseChunkType = TypeVar(
+    "ModelResponseChunkType", ChatCompletionChunk, RawMessageStreamEvent
+)
+
 
 class Model:
     model_name_to_provider = {
@@ -488,28 +503,28 @@ class AnthropicModelOutput(ModelOutput[RawMessageStreamEvent]):
     model_provider = ModelProvider.ANTHROPIC
 
     def get_fn_call_id_from_chunk(self, chunk: RawMessageStreamEvent) -> str:
-        return chunk.content_block.id # type: ignore
+        return chunk.content_block.id  # type: ignore
 
     def get_fn_name_from_chunk(self, chunk: RawMessageStreamEvent) -> str:
-        return chunk.content_block.name # type: ignore
+        return chunk.content_block.name  # type: ignore
 
     def get_fn_args_json_from_chunk(self, chunk: RawMessageStreamEvent) -> str:
-        return chunk.delta.partial_json # type: ignore
+        return chunk.delta.partial_json  # type: ignore
 
     def has_fn_args_json(self, chunk: RawMessageStreamEvent) -> bool:
-        return self._is_delta_chunk(chunk) and hasattr(chunk.delta, "partial_json") # type: ignore
+        return self._is_delta_chunk(chunk) and hasattr(chunk.delta, "partial_json")  # type: ignore
 
     def _is_content_block(self, chunk: RawMessageStreamEvent) -> bool:
-        return hasattr(chunk, "content_block") # type: ignore
+        return hasattr(chunk, "content_block")  # type: ignore
 
     def _is_delta_chunk(self, chunk: RawMessageStreamEvent) -> bool:
         return hasattr(chunk, "delta")
 
     def is_message_start_chunk(self, chunk: RawMessageStreamEvent) -> bool:
-        return self._is_content_block(chunk) and chunk.content_block.type == "text" # type: ignore
+        return self._is_content_block(chunk) and chunk.content_block.type == "text"  # type: ignore
 
     def is_tool_start_chunk(self, chunk: RawMessageStreamEvent) -> bool:
-        return self._is_content_block(chunk) and chunk.content_block.type == "tool_use" # type: ignore
+        return self._is_content_block(chunk) and chunk.content_block.type == "tool_use"  # type: ignore
 
     def is_end_block_chunk(self, chunk: RawMessageStreamEvent) -> bool:
         return chunk.type == "content_block_stop"
@@ -520,14 +535,14 @@ class AnthropicModelOutput(ModelOutput[RawMessageStreamEvent]):
     def has_msg_content(self, chunk: RawMessageStreamEvent) -> bool:
         return (
             self._is_delta_chunk(chunk)
-            and getattr(chunk.delta, "text", None) is not None # type: ignore
+            and getattr(chunk.delta, "text", None) is not None  # type: ignore
         )
 
     def has_function_call_id(self, chunk: RawMessageStreamEvent) -> str:
-        return self._is_content_block(chunk) and hasattr(chunk.content_block, "id") # type: ignore
+        return self._is_content_block(chunk) and hasattr(chunk.content_block, "id")  # type: ignore
 
     def get_msg_from_chunk(self, chunk: RawMessageStreamEvent) -> str:
-        return chunk.delta.text # type: ignore
+        return chunk.delta.text  # type: ignore
 
     def get_message(self) -> Optional[str]:
         content = self.output_obj.content[0]
