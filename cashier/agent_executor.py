@@ -1,6 +1,6 @@
 import copy
 import json
-from typing import Any, Callable, Dict, List, Optional, Set, Tuple, cast
+from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Union, cast
 
 from colorama import Style
 
@@ -133,7 +133,7 @@ class AgentExecutor:
         self.curr_node = None  # type: Node
         self.need_user_input = True
         self.graph = Graph(graph_schema=graph_schema)
-        self.next_edge_schemas: Set[EdgeSchema] = set()
+        self.next_edge_schemas: List[EdgeSchema] = set()
         self.bwd_skip_edge_schemas: Set[EdgeSchema] = set()
 
         self.init_next_node(graph_schema.start_node_schema, None, None)
@@ -233,7 +233,7 @@ class AgentExecutor:
         self,
         fwd_skip_edge_schemas: Set[EdgeSchema],
         bwd_skip_edge_schemas: Set[EdgeSchema],
-    ) -> Tuple[Optional[EdgeSchema], Optional[NodeSchema]]:
+    ) -> Union[Tuple[EdgeSchema, NodeSchema], Tuple[None, None]]:
         all_node_schemas = [self.curr_node.schema]
         all_node_schemas += [edge.to_node_schema for edge in fwd_skip_edge_schemas]
         all_node_schemas += [edge.from_node_schema for edge in bwd_skip_edge_schemas]
@@ -267,7 +267,7 @@ class AgentExecutor:
         self,
         fwd_skip_edge_schemas: Set[EdgeSchema],
         bwd_skip_edge_schemas: Set[EdgeSchema],
-    ) -> Tuple[Optional[EdgeSchema], Optional[NodeSchema]]:
+    ) -> Union[Tuple[EdgeSchema, NodeSchema], Tuple[None, None]]:
         remaining_edge_schemas = (
             set(self.graph_schema.edge_schemas)
             - fwd_skip_edge_schemas
@@ -295,7 +295,7 @@ class AgentExecutor:
 
     def handle_is_off_topic(
         self,
-    ) -> Tuple[Optional[EdgeSchema], Optional[NodeSchema], bool]:
+    ) -> Union[Tuple[EdgeSchema, NodeSchema, bool], Tuple[None, None, bool]]:
         fwd_skip_edge_schemas = self.graph.compute_fwd_skip_edge_schemas(
             self.curr_node, self.next_edge_schemas
         )
@@ -305,19 +305,19 @@ class AgentExecutor:
             fwd_skip_edge_schemas, bwd_skip_edge_schemas
         )
         if edge_schema:
-            return edge_schema, node_schema, True
+            return edge_schema, node_schema, True # type: ignore
 
         edge_schema, node_schema = self.handle_skip(
             fwd_skip_edge_schemas, bwd_skip_edge_schemas
         )
-        return edge_schema, node_schema, False
+        return edge_schema, node_schema, False # type: ignore
 
     def add_user_turn(self, msg: str) -> None:
         MessageDisplay.print_msg("user", msg)
         self.TC.add_user_turn(msg)
         if not is_on_topic(self.model, self.TC, self.curr_node.schema):
             edge_schema, node_schema, is_wait = self.handle_is_off_topic()
-            if edge_schema:
+            if edge_schema and node_schema:
                 if is_wait:
                     fake_fn_call = FunctionCall.create_fake_fn_call(
                         self.model_provider,
@@ -365,7 +365,7 @@ class AgentExecutor:
             if fn_call.name.startswith("get_state"):
                 fn_output = getattr(self.curr_node, fn_call.name)(**function_args)
             elif fn_call.name.startswith("update_state"):
-                fn_output = self.curr_node.update_state(**function_args)
+                fn_output = self.curr_node.update_state(**function_args) # type: ignore
             elif fn_callback is not None:
                 # TODO: this exists for benchmarking. remove this once done
                 fn_output = fn_callback(**function_args)
