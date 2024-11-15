@@ -305,12 +305,12 @@ class AgentExecutor:
             fwd_skip_edge_schemas, bwd_skip_edge_schemas
         )
         if edge_schema:
-            return edge_schema, node_schema, True # type: ignore
+            return edge_schema, node_schema, True  # type: ignore
 
         edge_schema, node_schema = self.handle_skip(
             fwd_skip_edge_schemas, bwd_skip_edge_schemas
         )
-        return edge_schema, node_schema, False # type: ignore
+        return edge_schema, node_schema, False  # type: ignore
 
     def add_user_turn(self, msg: str) -> None:
         MessageDisplay.print_msg("user", msg)
@@ -365,7 +365,7 @@ class AgentExecutor:
             if fn_call.name.startswith("get_state"):
                 fn_output = getattr(self.curr_node, fn_call.name)(**function_args)
             elif fn_call.name.startswith("update_state"):
-                fn_output = self.curr_node.update_state(**function_args) # type: ignore
+                fn_output = self.curr_node.update_state(**function_args)  # type: ignore
             elif fn_callback is not None:
                 # TODO: this exists for benchmarking. remove this once done
                 fn_output = fn_callback(**function_args)
