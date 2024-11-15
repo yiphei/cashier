@@ -361,17 +361,17 @@ class GraphSchema(BaseModel):
                 edge_schema.from_node_schema.id
             ].append(edge_schema)
         return self
-    
+
     @property
-    def node_schema_id_to_node_schema(self)-> Dict[int, NodeSchema]:
+    def node_schema_id_to_node_schema(self) -> Dict[int, NodeSchema]:
         return self._node_schema_id_to_node_schema
-    
+
     @property
-    def edge_schema_id_to_edge_schema(self)-> Dict[int, EdgeSchema]:
+    def edge_schema_id_to_edge_schema(self) -> Dict[int, EdgeSchema]:
         return self._edge_schema_id_to_edge_schema
-    
+
     @property
-    def from_node_schema_id_to_edge_schema(self)->Dict[int, List[EdgeSchema]]:
+    def from_node_schema_id_to_edge_schema(self) -> Dict[int, List[EdgeSchema]]:
         return self._from_node_schema_id_to_edge_schema
 
 
