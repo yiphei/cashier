@@ -61,6 +61,7 @@ MODEL_PROVIDER_TO_TOOL_CALL_ID_PREFIX = {
 class FunctionCall(BaseModel):
     name: str
     id: str
+    # when using model_dump, must add by_alias=True to get the alias names
     input_args_json: Optional[str] = Field(default=None, alias="args_json")
     input_args: Optional[Dict] = Field(default=None, alias="args")
 
