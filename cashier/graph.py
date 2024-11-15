@@ -24,6 +24,7 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 from cashier.function_call_context import StateUpdateError
 from cashier.model_turn import ModelTurn
 from cashier.prompts.base_prompt import BasePrompt
+from cashier.prompts.node_system import NodeSystemPrompt
 from cashier.tool_registry import ToolRegistry
 
 
@@ -38,7 +39,7 @@ class NodeSchema:
     def __init__(
         self,
         node_prompt: str,
-        node_system_prompt: Type[BasePrompt],
+        node_system_prompt: Type[NodeSystemPrompt],
         input_pydantic_model: Optional[Type[BaseModel]],
         state_pydantic_model: Type[BaseStateModel],
         tool_registry_or_tool_defs: Optional[Union[ToolRegistry, List[Dict]]] = None,
