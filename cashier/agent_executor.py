@@ -130,7 +130,7 @@ class AgentExecutor:
         self.model_provider = model_provider
         self.TC = TurnContainer()
 
-        self.curr_node: Optional[Node] = None
+        self.curr_node = None # type: Node
         self.need_user_input = True
         self.graph = Graph(graph_schema=graph_schema)
         self.next_edge_schemas: Set[EdgeSchema] = set()
