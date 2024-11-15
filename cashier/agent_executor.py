@@ -182,7 +182,10 @@ class AgentExecutor:
         )
 
     def init_next_node(
-        self, node_schema: NodeSchema, edge_schema: Optional[EdgeSchema], input: Any = None
+        self,
+        node_schema: NodeSchema,
+        edge_schema: Optional[EdgeSchema],
+        input: Any = None,
     ) -> None:
         if self.curr_node:
             self.curr_node.mark_as_completed()

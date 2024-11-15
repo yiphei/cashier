@@ -15,8 +15,8 @@ from typing import (
     Tuple,
     Type,
     Union,
+    cast,
     overload,
-    cast
 )
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
