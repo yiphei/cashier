@@ -39,7 +39,7 @@ class NodeSchema:
         self,
         node_prompt: str,
         node_system_prompt: Type[BasePrompt],
-        input_pydantic_model: Type[BaseModel],
+        input_pydantic_model: Optional[Type[BaseModel]],
         state_pydantic_model: Type[BaseStateModel],
         tool_registry_or_tool_defs: Optional[Union[ToolRegistry, List[Dict]]] = None,
         first_turn: Optional[ModelTurn] = None,

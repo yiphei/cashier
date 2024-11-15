@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any, Dict, Optional, Type
 
 from cashier.prompts.base_prompt import BasePrompt
 from cashier.prompts.general_guideline import GeneralGuidelinePrompt
@@ -8,7 +8,7 @@ from cashier.prompts.tool_guideline import ToolGuidelinePrompt
 
 
 class NodeSystemPrompt(BasePrompt):
-    BACKGROUND_PROMPT = None
+    BACKGROUND_PROMPT: Optional[Type[BasePrompt]] = None
     GUIDELINE_PROMPTS = [
         ResponseGuidelinePrompt,
         StateGuidelinePrompt,
