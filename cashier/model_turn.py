@@ -192,7 +192,7 @@ class AssistantTurn(ModelTurn):
 
 
 class MessageManager(ABC):
-    
+
     @property
     @abstractmethod
     def model_provider(self) -> ModelProvider:
