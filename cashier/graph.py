@@ -442,7 +442,7 @@ class Graph(BaseModel):
         return new_edge_schemas | curr_bwd_skip_edge_schemas
 
     def compute_fwd_skip_edge_schemas(
-        self, start_node: Node, start_edge_schemas: List[EdgeSchema]
+        self, start_node: Node, start_edge_schemas: Set[EdgeSchema]
     ) -> Set[EdgeSchema]:
         fwd_jump_edge_schemas = set()
         edge_schemas = deque(start_edge_schemas)

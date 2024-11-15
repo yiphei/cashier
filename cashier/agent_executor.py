@@ -133,7 +133,7 @@ class AgentExecutor:
         self.curr_node = None  # type: Node
         self.need_user_input = True
         self.graph = Graph(graph_schema=graph_schema)
-        self.next_edge_schemas: List[EdgeSchema] = set()
+        self.next_edge_schemas: Set[EdgeSchema] = set()
         self.bwd_skip_edge_schemas: Set[EdgeSchema] = set()
 
         self.init_next_node(graph_schema.start_node_schema, None, None)
@@ -144,7 +144,7 @@ class AgentExecutor:
         node_schema: NodeSchema,
         edge_schema: Optional[EdgeSchema],
         input: Any,
-        last_msg: str,
+        last_msg: Optional[str],
         prev_node: Optional[Node],
         direction: Direction,
         is_skip: bool = False,
@@ -221,6 +221,7 @@ class AgentExecutor:
             self.bwd_skip_edge_schemas.clear()
 
         prev_node = self.graph.get_prev_node(edge_schema, direction)
+        assert prev_node is not None
         input = prev_node.input
 
         last_msg = self.TC.get_asst_message(content_only=True)
