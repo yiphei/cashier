@@ -99,9 +99,10 @@ class FunctionCall(BaseModel):
             args=args,
         )
 
+    # the following is to pass mypy checks
+
     @property
     def args_json(self) -> str:
-
         return cast(str, self.input_args_json)
 
     @property
