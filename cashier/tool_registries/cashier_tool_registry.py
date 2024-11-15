@@ -9,13 +9,13 @@ from supabase import create_client as create_supabase_client
 
 from cashier.tool_registries.general import GeneralToolRegistry
 
-supabase: Client = None
+supabase: Optional[Client] = None
 
 
 def create_db_client() -> None:
     global supabase
     supabase = create_supabase_client(
-        os.environ.get("SUPABASE_URL"), os.environ.get("SUPABASE_KEY")
+        os.environ.get("SUPABASE_URL"), os.environ.get("SUPABASE_KEY") # type: ignore
     )
 
 
@@ -45,7 +45,7 @@ def get_menu_items_options(menu_item_id: int) -> Dict[str, List[Option]]:
     Returns:
         A mapping of cup size to the list of options available for that size.
     """
-
+    assert supabase is not None
     response = (
         supabase.table("menu_item_to_options_map")
         .select(
@@ -108,6 +108,7 @@ def get_menu_item_from_name(menu_item_name: str) -> MenuItem:
     Returns:
         A MenuItem object.
     """
+    assert supabase is not None
     formatted_menu_item_name = menu_item_name.replace(" ", "&")
     response = (
         supabase.table("menu_item")
