@@ -14,6 +14,7 @@ from typing import (
     TypeVar,
     Union,
     overload,
+    Type
 )
 
 import anthropic
@@ -277,7 +278,7 @@ class ModelOutput(ABC, Generic[ModelResponseChunkType]):
         self,
         output_obj: Any,
         is_stream: bool,
-        response_format: Optional[BaseModel] = None,
+        response_format: Optional[Type[BaseModel]] = None,
     ):
         self.output_obj = output_obj
         self.is_stream = is_stream
@@ -467,7 +468,7 @@ class OAIModelOutput(ModelOutput[ChatCompletionChunk]):
     def get_msg_from_chunk(self, chunk: ChatCompletionChunk) -> str:
         return chunk.choices[0].delta.content
 
-    def is_final_chunk(self, chunk: ChatCompletionChunk) -> str:
+    def is_final_chunk(self, chunk: ChatCompletionChunk) -> bool:
         return chunk.choices[0].finish_reason is not None
 
     def get_message(self) -> Optional[str]:
@@ -538,7 +539,7 @@ class AnthropicModelOutput(ModelOutput[RawMessageStreamEvent]):
             and getattr(chunk.delta, "text", None) is not None  # type: ignore
         )
 
-    def has_function_call_id(self, chunk: RawMessageStreamEvent) -> str:
+    def has_function_call_id(self, chunk: RawMessageStreamEvent) -> bool:
         return self._is_content_block(chunk) and hasattr(chunk.content_block, "id")  # type: ignore
 
     def get_msg_from_chunk(self, chunk: RawMessageStreamEvent) -> str:
@@ -553,6 +554,9 @@ class AnthropicModelOutput(ModelOutput[RawMessageStreamEvent]):
             return None
 
     def get_message_prop(self, prop_name: str) -> Any:
+        if self.response_format is None:
+            raise ValueError()
+
         if self.parsed_msg is None:
             fn_call = next(self.get_fn_calls())
             self.parsed_msg = self.response_format(**fn_call.args)
