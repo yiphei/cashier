@@ -274,7 +274,7 @@ class ModelOutput(ABC):
 
     @property
     @abstractmethod
-    def model_provider(self)-> ModelProvider:
+    def model_provider(self) -> ModelProvider:
         raise NotImplementedError
 
     @abstractmethod
