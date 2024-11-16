@@ -17,7 +17,7 @@ from cashier.model_util import ModelProvider
 
 # got this from: https://stackoverflow.com/questions/28237955/same-name-for-classmethod-and-instancemethod
 class class_or_instance_method(classmethod):
-    def __get__(self, instance: Any, type_: Any) -> Any:
+    def __get__(self, instance: Any, type_: Any) -> Any: # type: ignore
         descr_get = super().__get__ if instance is None else self.__func__.__get__
         return descr_get(instance, type_)
 

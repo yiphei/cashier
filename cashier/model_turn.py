@@ -103,6 +103,7 @@ class AssistantTurn(ModelTurn):
         if self.fn_calls:
             for fn_call in self.fn_calls:
                 assert self.fn_call_id_to_fn_output is not None
+                assert self.tool_registry is not None
                 messages.append(
                     {
                         "role": "assistant",
