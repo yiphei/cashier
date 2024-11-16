@@ -141,6 +141,7 @@ class NodeSchema:
         )
 
         if direction == Direction.BWD:
+            assert prev_node is not None
             in_edge_schema = prev_node.in_edge_schema
         else:
             in_edge_schema = edge_schema
@@ -160,7 +161,7 @@ class Node:
         input: Any,
         state: BaseStateModel,
         prompt: str,
-        in_edge_schema: EdgeSchema,
+        in_edge_schema: Optional[EdgeSchema],
         direction: Direction = Direction.FWD,
     ):
         Node._counter += 1
@@ -566,10 +567,10 @@ class Graph(BaseModel):
                 while from_node.schema != curr_node.schema:
                     prev_edge_schema = from_node.in_edge_schema
                     from_node, to_node = self.get_edge_by_edge_schema_id(
-                        prev_edge_schema.id
+                        prev_edge_schema.id # type: ignore
                     )
 
-                self.add_fwd_edge(curr_node, to_node, prev_edge_schema.id)
+                self.add_fwd_edge(curr_node, to_node, prev_edge_schema.id) # type: ignore
 
             self.add_fwd_edge(immediate_from_node, new_node, edge_schema.id)
         elif direction == Direction.BWD:
