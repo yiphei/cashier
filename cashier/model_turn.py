@@ -693,10 +693,12 @@ class MessageList(list):
             self.track_idx(item_type, uri=uri)
 
     @overload
-    def insert(self, __index: SupportsIndex, __object: Any, /) -> None: ... # noqa: E704
+    def insert( # noqa: E704
+        self, __index: SupportsIndex, __object: Any, /
+    ) -> None: ...  
 
     @overload
-    def insert( # noqa: E704
+    def insert(  # noqa: E704
         self,
         idx: int,
         item: Any,
@@ -717,10 +719,10 @@ class MessageList(list):
             self.track_idx(item_type, idx, uri, is_insert=True)
 
     @overload
-    def extend(self, __iterable: Iterable[Any], /) -> None: ... # noqa: E704
+    def extend(self, __iterable: Iterable[Any], /) -> None: ...  # noqa: E704
 
     @overload
-    def extend( # noqa: E704
+    def extend(  # noqa: E704
         self, items: List[Any], item_type: Optional[ItemType] = None
     ) -> None: ...
 
@@ -774,10 +776,10 @@ class MessageList(list):
                     self.remove_by_uri(uri)
 
     @overload
-    def __getitem__(self, index: SupportsIndex, /) -> Any: ... # noqa: E704
+    def __getitem__(self, index: SupportsIndex, /) -> Any: ...  # noqa: E704
 
     @overload
-    def __getitem__(self, index: slice, /) -> "MessageList": ... # noqa: E704
+    def __getitem__(self, index: slice, /) -> "MessageList": ...  # noqa: E704
 
     def __getitem__(self, index: Union[SupportsIndex, slice]) -> Any:
         if isinstance(index, slice):
