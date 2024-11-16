@@ -2,8 +2,8 @@ import queue
 import tempfile
 import threading
 import time
-from typing import Any, Iterator, Union
 import wave
+from typing import Any, Iterator, Union
 
 import numpy as np
 import pyaudio
@@ -29,7 +29,7 @@ stop_recording_event = (
 )  # Event to signal when to stop the recording thread
 
 
-def is_silent(data: bytes)-> bool:
+def is_silent(data: bytes) -> bool:
     # Convert raw audio data to NumPy array to analyze sound levels
     audio_data = np.frombuffer(data, dtype=np.int16).astype(np.float32)
     # Compute the volume (RMS)
@@ -37,14 +37,14 @@ def is_silent(data: bytes)-> bool:
     return rms < SILENCE_THRESHOLD
 
 
-def record_audio(stream: pyaudio.Stream)-> None:
+def record_audio(stream: pyaudio.Stream) -> None:
     print("You: Recording...")
     while not stop_recording_event.is_set():
         data = stream.read(CHUNK)
         audio_queue.put(data)
 
 
-def process_audio()-> bytes:
+def process_audio() -> bytes:
     frames = []
     has_spoken = False
     silence_start = None
@@ -73,7 +73,7 @@ def process_audio()-> bytes:
     return b"".join(frames)  # Return raw audio data
 
 
-def get_audio_input()-> bytes:
+def get_audio_input() -> bytes:
     audio = pyaudio.PyAudio()
     stream = audio.open(
         format=FORMAT, channels=CHANNELS, rate=RATE, input=True, frames_per_buffer=CHUNK
@@ -95,7 +95,7 @@ def get_audio_input()-> bytes:
     return audio_data
 
 
-def save_audio_to_wav(audio_data: bytes, file_path: str)-> None:
+def save_audio_to_wav(audio_data: bytes, file_path: str) -> None:
     """Save raw audio data to a .wav file."""
     with wave.open(file_path, "wb") as wf:
         wf.setnchannels(CHANNELS)
@@ -104,7 +104,7 @@ def save_audio_to_wav(audio_data: bytes, file_path: str)-> None:
         wf.writeframes(audio_data)
 
 
-def get_text_from_speech(audio_data: bytes, oai_client: Any)-> str:
+def get_text_from_speech(audio_data: bytes, oai_client: Any) -> str:
     with tempfile.NamedTemporaryFile(suffix=".wav", delete=True) as temp_wav_file:
         # Save the audio data as a WAV file
         save_audio_to_wav(audio_data, temp_wav_file.name)
@@ -118,7 +118,9 @@ def get_text_from_speech(audio_data: bytes, oai_client: Any)-> str:
     return transcription.text
 
 
-def get_speech_from_text(text_iterator: Union[str, Iterator[str]], elabs_client: Any)-> None:
+def get_speech_from_text(
+    text_iterator: Union[str, Iterator[str]], elabs_client: Any
+) -> None:
     audio = elabs_client.generate(
         voice=Voice(
             voice_id="cgSgspJ2msm6clMCkdW9",
