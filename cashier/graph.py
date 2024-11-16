@@ -86,18 +86,8 @@ class NodeSchema:
         self,
         input: Any,
         last_msg: Literal[None] = None,
-        prev_node: Literal[None] = None,
         edge_schema: Literal[None] = None,
-        direction: Literal[Direction.FWD] = Direction.FWD,
-    ) -> Node: ...
-
-    @overload
-    def create_node(  # noqa: E704
-        self,
-        input: Any,
-        last_msg: Optional[str] = None,
         prev_node: Literal[None] = None,
-        edge_schema: Literal[None] = None,
         direction: Literal[Direction.FWD] = Direction.FWD,
     ) -> Node: ...
 
@@ -106,8 +96,18 @@ class NodeSchema:
         self,
         input: Any,
         last_msg: str,
+        edge_schema: EdgeSchema,
+        prev_node: Literal[None] = None,
+        direction: Literal[Direction.FWD] = Direction.FWD,
+    ) -> Node: ...
+
+    @overload
+    def create_node(  # noqa: E704
+        self,
+        input: Any,
+        last_msg: str,
+        edge_schema: EdgeSchema,
         prev_node: Node,
-        edge_schema: Optional[EdgeSchema] = None,
         direction: Direction = Direction.FWD,
     ) -> Node: ...
 
@@ -115,8 +115,8 @@ class NodeSchema:
         self,
         input: Any,
         last_msg: Optional[str] = None,
-        prev_node: Optional[Node] = None,
         edge_schema: Optional[EdgeSchema] = None,
+        prev_node: Optional[Node] = None,
         direction: Direction = Direction.FWD,
     ) -> Node:
         state = Node.init_state(
