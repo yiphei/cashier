@@ -507,7 +507,7 @@ class Graph(BaseModel):
         self, edge_schema: EdgeSchema, is_start_node: bool
     ) -> bool:
         idx = -1 if is_start_node else -2
-        edge = self.get_edge_by_edge_schema_id(edge_schema.id, idx)
+        edge = self.get_edge_by_edge_schema_id(edge_schema.id, idx, raise_if_none=False)
         return edge[0].status == Node.Status.COMPLETED if edge else False
 
     def compute_next_edge_schema(
