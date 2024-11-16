@@ -502,7 +502,7 @@ class MessageList(list):
 
     def __init__(self, *args: Any, model_provider: ModelProvider):
         super().__init__(*args)
-        self.uri_to_list_idx: Dict[str, str] = {}
+        self.uri_to_list_idx: Dict[str, int] = {}
         self.list_idx_to_uris = defaultdict(set)
         self.list_idxs = []
         self.list_idx_to_track_idx = {}
