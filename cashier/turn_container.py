@@ -1,10 +1,19 @@
+from typing import Any, Dict, List, Optional
+
 from cashier.graph import Node
-from cashier.model_turn import AnthropicMessageManager, AssistantTurn, MessageList, MessageManager, ModelTurn, NodeSystemTurn, OAIMessageManager, SystemTurn, UserTurn
+from cashier.model_turn import (
+    AnthropicMessageManager,
+    AssistantTurn,
+    MessageList,
+    MessageManager,
+    ModelTurn,
+    NodeSystemTurn,
+    OAIMessageManager,
+    SystemTurn,
+    UserTurn,
+)
 from cashier.model_util import FunctionCall, ModelProvider
 from cashier.tool_registry import ToolRegistry
-
-
-from typing import Any, Dict, List, Optional
 
 
 class TurnContainer:
