@@ -14,6 +14,7 @@ from typing import (
     Type,
     TypeVar,
     Union,
+    cast,
     overload,
 )
 
@@ -159,13 +160,13 @@ class Model:
                     messages.insert(system_idx, system_dict)
 
             return self.oai_chat(
-                model_name, messages, tools, stream, logprobs, response_format, **kwargs
+                cast(OpenAIModels, model_name), messages, tools, stream, logprobs, response_format, **kwargs
             )
         elif model_provider == ModelProvider.ANTHROPIC:
             if message_manager is not None:
                 system = message_manager.system
             return self.ant_chat(
-                model_name, messages, system, tools, stream, response_format, **kwargs
+                cast(AnthropicModels, model_name), messages, system, tools, stream, response_format, **kwargs
             )
         else:
             raise ValueError()
@@ -189,8 +190,8 @@ class Model:
     def oai_chat(
         self,
         model_name: OpenAIModels,
-        messages: Dict[str, Any],
-        tools: Optional[Dict[str, Any]] = None,
+        messages: List[Dict[str, Any]],
+        tools: Optional[List[Dict[str, Any]]] = None,
         stream: bool = False,
         logprobs: bool = False,
         response_format: Optional[Type[BaseModel]] = None,
@@ -220,14 +221,14 @@ class Model:
 
         self.get_tool_choice_arg(args, ModelProvider.OPENAI)
 
-        return OAIModelOutput(chat_fn(**args), stream, response_format)
+        return OAIModelOutput(chat_fn(**args), stream, response_format) # type: ignore
 
     def ant_chat(
         self,
         model_name: AnthropicModels,
-        messages: Dict[str, Any],
+        messages: List[Dict[str, Any]],
         system: Optional[str] = None,
-        tools: Optional[Dict[str, Any]] = None,
+        tools: Optional[List[Dict[str, Any]]] = None,
         stream: bool = False,
         response_format: Optional[Type[BaseModel]] = None,
         **kwargs: Any,
