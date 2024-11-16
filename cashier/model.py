@@ -283,7 +283,7 @@ class ModelOutput(ABC, Generic[ModelResponseChunkType]):
         self.output_obj = output_obj
         self.is_stream = is_stream
         self.response_format = response_format
-        self.parsed_msg = None
+        self.parsed_msg: Optional[BaseModel] = None
         self.msg_content: Optional[str] = None
         self.last_chunk: Optional[ModelResponseChunk] = None
         self.fn_calls: List[FunctionCall] = []
@@ -386,7 +386,7 @@ class ModelOutput(ABC, Generic[ModelResponseChunkType]):
         self.last_chunk = self.get_next_usable_chunk()
         function_name = None
         tool_call_id = None
-        function_args_json = None
+        function_args_json = ""
 
         for chunk in itertools.chain([self.last_chunk], self.output_obj):
             if self.has_function_call_id(chunk):
@@ -401,11 +401,11 @@ class ModelOutput(ABC, Generic[ModelResponseChunkType]):
 
                 function_name = self.get_fn_name_from_chunk(chunk)
                 tool_call_id = self.get_fn_call_id_from_chunk(chunk)
-                function_args_json = ""
             elif tool_call_id is not None and self.has_fn_args_json(chunk):
                 function_args_json += self.get_fn_args_json_from_chunk(chunk)
 
         if tool_call_id is not None:
+            assert function_name is not None
             fn_call = FunctionCall(
                 name=function_name,
                 id=tool_call_id,
@@ -433,16 +433,16 @@ class OAIModelOutput(ModelOutput[ChatCompletionChunk]):
     model_provider = ModelProvider.OPENAI
 
     def _get_tool_call(self, chunk: ChatCompletionChunk) -> ChoiceDeltaToolCall:
-        return chunk.choices[0].delta.tool_calls[0]
+        return chunk.choices[0].delta.tool_calls[0] # type: ignore
 
     def get_fn_call_id_from_chunk(self, chunk: ChatCompletionChunk) -> str:
-        return self._get_tool_call(chunk).id
+        return self._get_tool_call(chunk).id # type: ignore
 
     def get_fn_name_from_chunk(self, chunk: ChatCompletionChunk) -> str:
-        return self._get_tool_call(chunk).function.name
+        return self._get_tool_call(chunk).function.name # type: ignore
 
     def get_fn_args_json_from_chunk(self, chunk: ChatCompletionChunk) -> str:
-        return self._get_tool_call(chunk).function.arguments
+        return self._get_tool_call(chunk).function.arguments # type: ignore
 
     def _has_tool_call(self, chunk: ChatCompletionChunk) -> bool:
         return bool(chunk.choices[0].delta.tool_calls)
@@ -456,7 +456,7 @@ class OAIModelOutput(ModelOutput[ChatCompletionChunk]):
     def has_fn_args_json(self, chunk: ChatCompletionChunk) -> bool:
         return (
             self._has_tool_call(chunk)
-            and self._get_tool_call(chunk).function.arguments is not None
+            and self._get_tool_call(chunk).function.arguments is not None # type: ignore
         )
 
     def is_message_start_chunk(self, chunk: ChatCompletionChunk) -> bool:
@@ -466,7 +466,7 @@ class OAIModelOutput(ModelOutput[ChatCompletionChunk]):
         return chunk.choices[0].delta.content is not None
 
     def get_msg_from_chunk(self, chunk: ChatCompletionChunk) -> str:
-        return chunk.choices[0].delta.content
+        return chunk.choices[0].delta.content # type: ignore
 
     def is_final_chunk(self, chunk: ChatCompletionChunk) -> bool:
         return chunk.choices[0].finish_reason is not None
