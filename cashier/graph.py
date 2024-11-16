@@ -81,6 +81,17 @@ class NodeSchema:
             "get_state", "Function to get the current state, as defined in <state>", {}
         )
 
+
+    @overload
+    def create_node(  # noqa: E704
+        self,
+        input: Any,
+        last_msg: Literal[None] = None,
+        prev_node: Literal[None] = None,
+        edge_schema: Literal[None] = None,
+        direction: Literal[Direction.FWD] = Direction.FWD,
+    ) -> Node: ...
+
     @overload
     def create_node(  # noqa: E704
         self,
