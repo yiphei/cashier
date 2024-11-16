@@ -6,7 +6,7 @@ from abc import ABC, abstractmethod
 from bisect import bisect_left
 from collections import defaultdict
 from enum import StrEnum
-from typing import Any, ClassVar, Dict, List, Optional, Union
+from typing import Any, ClassVar, Dict, List, Optional, Set, Union
 
 from pydantic import (
     BaseModel,
@@ -61,8 +61,8 @@ class SystemTurn(ModelTurn):
     def build_oai_messages(self) -> List[Dict[str, Any]]:
         return [{"role": "system", "content": self.msg_content}]
 
-    def build_anthropic_messages(self) -> None:
-        return None
+    def build_anthropic_messages(self) -> List[Dict[str, Any]]:
+        return []
 
 
 class NodeSystemTurn(SystemTurn):
@@ -102,6 +102,7 @@ class AssistantTurn(ModelTurn):
             messages.append({"role": "assistant", "content": self.msg_content})
         if self.fn_calls:
             for fn_call in self.fn_calls:
+                assert self.fn_call_id_to_fn_output is not None
                 messages.append(
                     {
                         "role": "assistant",
@@ -171,6 +172,7 @@ class AssistantTurn(ModelTurn):
         if self.fn_calls:
             return_contents = []
             for fn_call in self.fn_calls:
+                assert self.fn_call_id_to_fn_output is not None
                 return_contents.append(
                     {
                         "content": json.dumps(
@@ -241,11 +243,11 @@ class MessageManager(ABC):
             self.node_conversation_dicts.clear()
 
     @abstractmethod
-    def parse_system_messages(self, msgs: List[Dict[str, Any]]):
+    def parse_system_messages(self, msgs: List[Dict[str, Any]])-> None:
         raise NotImplementedError
 
     @abstractmethod
-    def parse_assistant_messages(self, msgs: List[Dict[str, Any]]):
+    def parse_assistant_messages(self, msgs: List[Dict[str, Any]])-> None:
         raise NotImplementedError
 
     def add_system_turn(self, turn: ModelTurn) -> None:
@@ -399,7 +401,7 @@ class TurnContainer:
             mm = self.model_provider_to_message_manager_cls[provider]()
             self.model_provider_to_message_manager[provider] = mm
 
-        self.turns = []
+        self.turns: List[ModelTurn] = []
 
     def add_system_turn(self, msg_content: str) -> None:
         turn = SystemTurn(msg_content=msg_content)
@@ -503,13 +505,13 @@ class MessageList(list):
     def __init__(self, *args: Any, model_provider: ModelProvider):
         super().__init__(*args)
         self.uri_to_list_idx: Dict[str, int] = {}
-        self.list_idx_to_uris = defaultdict(set)
-        self.list_idxs = []
-        self.list_idx_to_track_idx = {}
+        self.list_idx_to_uris: Dict[int, Set[str]] = defaultdict(set)
+        self.list_idxs: List[int] = []
+        self.list_idx_to_track_idx: Dict[int, int] = {}
 
         self.model_provider = model_provider
-        self.item_type_to_uris = defaultdict(list)
-        self.uri_to_item_type = {}
+        self.item_type_to_uris: Dict[MessageList.ItemType, List[str]] = defaultdict(list)
+        self.uri_to_item_type: Dict[str, MessageList.ItemType] = {}
         self.item_type_to_count = {k: 0 for k in self.item_type_to_uri_prefix.keys()}
 
     def get_tool_id_from_tool_output_uri(self, uri: str) -> str:
