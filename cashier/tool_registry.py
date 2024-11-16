@@ -13,6 +13,7 @@ from pydantic import Field, create_model
 from pydantic.fields import FieldInfo
 
 from cashier.model_util import ModelProvider
+from openai.types.chat.chat_completion_tool_param import ChatCompletionToolParam
 
 
 # got this from: https://stackoverflow.com/questions/28237955/same-name-for-classmethod-and-instancemethod
@@ -96,7 +97,7 @@ class ToolRegistry:
     GLOBAL_FN_NAME_TO_FN: Dict[str, Callable] = {}
     GLOBAL_OPENAI_TOOLS_RETURN_DESCRIPTION: Dict[str, Dict] = {}
 
-    def __init_subclass__(cls):
+    def __init_subclass__(cls)-> None:
         super().__init_subclass__()
         for base in cls.__bases__:
             for key, value in base.__dict__.items():
@@ -179,7 +180,7 @@ class ToolRegistry:
         else:
             return list(self.model_provider_to_tool_def[model_provider].values())
 
-    def add_tool_def_w_oai_def(self, tool_name: str, oai_tool_def: Dict) -> None:
+    def add_tool_def_w_oai_def(self, tool_name: str, oai_tool_def: ChatCompletionToolParam) -> None:
         self.openai_tool_name_to_tool_def[tool_name] = oai_tool_def
         self.anthropic_tool_name_to_tool_def[tool_name] = (
             get_anthropic_tool_def_from_oai(oai_tool_def)
@@ -274,7 +275,7 @@ class ToolRegistry:
         return decorator_fn
 
 
-def remove_default(schema: Dict) -> None:
+def remove_default(schema: ChatCompletionToolParam) -> None:
     found_key = False
     for key, value in schema.items():
         if key == "default":
