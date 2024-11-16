@@ -178,11 +178,11 @@ class Node:
                 FwdStateInit if direction == Direction.FWD else BwdStateInit
             )
 
-            if state_init_val == state_init_enum_cls.RESET: # type: ignore
+            if state_init_val == state_init_enum_cls.RESET:  # type: ignore
                 return state_pydantic_model()
-            elif state_init_val == state_init_enum_cls.RESUME or ( # type: ignore
+            elif state_init_val == state_init_enum_cls.RESUME or (  # type: ignore
                 direction == Direction.FWD
-                and state_init_val == state_init_enum_cls.RESUME_IF_INPUT_UNCHANGED # type: ignore
+                and state_init_val == state_init_enum_cls.RESUME_IF_INPUT_UNCHANGED  # type: ignore
                 and input == prev_node.input
             ):
                 return prev_node.state.copy_resume()
