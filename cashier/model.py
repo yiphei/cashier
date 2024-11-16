@@ -431,6 +431,7 @@ class ModelOutput(ABC, Generic[ModelResponseChunkType]):
 
                 function_name = self.get_fn_name_from_chunk(chunk)
                 tool_call_id = self.get_fn_call_id_from_chunk(chunk)
+                function_args_json = ""
             elif tool_call_id is not None and self.has_fn_args_json(chunk):
                 function_args_json += self.get_fn_args_json_from_chunk(chunk)
 
