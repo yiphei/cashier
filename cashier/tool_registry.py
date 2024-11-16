@@ -3,7 +3,6 @@ from __future__ import annotations
 import copy
 import inspect
 import re
-from collections import defaultdict
 from functools import wraps
 from inspect import Signature
 from types import FunctionType
@@ -53,7 +52,9 @@ def get_field_map_from_docstring(
             parts = line.split(":", 1)
             if len(parts) == 2:
                 arg_name, arg_description = parts
-                field_name_to_field_info[arg_name.strip()] = Field(description=arg_description.strip())
+                field_name_to_field_info[arg_name.strip()] = Field(
+                    description=arg_description.strip()
+                )
 
     for param_name, param in func_signature.parameters.items():
         if param_name in field_name_to_field_info:
@@ -66,7 +67,10 @@ def get_field_map_from_docstring(
 
     assert field_name_to_field_info.keys() == field_name_to_field_type_annotation.keys()
 
-    return {k: (field_name_to_field_type_annotation[k], field_name_to_field_info[k] ) for k in field_name_to_field_type_annotation.keys()}
+    return {
+        k: (field_name_to_field_type_annotation[k], field_name_to_field_info[k])
+        for k in field_name_to_field_type_annotation.keys()
+    }
 
 
 def get_description_from_docstring(docstring: str) -> str:
