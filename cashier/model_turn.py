@@ -693,9 +693,9 @@ class MessageList(list):
             self.track_idx(item_type, uri=uri)
 
     @overload
-    def insert( # noqa: E704
-        self, __index: SupportsIndex, __object: Any, /
-    ) -> None: ...  
+    def insert(  # noqa: E704
+        self, __index: SupportsIndex, __object: Any, / # noqa: W504
+    ) -> None: ...
 
     @overload
     def insert(  # noqa: E704
