@@ -9,7 +9,7 @@ class CallableMeta(type):
     def __call__(cls, strict_kwargs_check: bool = True, **kwargs: Any) -> str:
         instance = super().__call__(**kwargs)
         if not strict_kwargs_check:
-            kwargs = {k: v for k, v in kwargs.items() if k in cls.kwargs}
+            kwargs = {k: v for k, v in kwargs.items() if k in cls.prompt_kwargs}
 
         return (
             instance.f_string_prompt.format(**kwargs)
@@ -21,7 +21,7 @@ class CallableMeta(type):
 class BasePrompt(metaclass=CallableMeta):
     f_string_prompt: Optional[str] = None
     response_format: Optional[Type[BaseModel]] = None
-    kwargs: Optional[Set[str]] = None
+    prompt_kwargs: Optional[Set[str]] = None
 
     def __init__(self, **kwargs: Any):
         pass
@@ -43,7 +43,7 @@ class BasePrompt(metaclass=CallableMeta):
                 f"Class {cls.__name__} should not override both f_string_prompt and dynamic_prompt"
             )
 
-        cls.kwargs = (
+        cls.prompt_kwargs = (
             BasePrompt.extract_fstring_args(cls.f_string_prompt)
             if has_fstring
             else BasePrompt.extract_dynamic_args(cls.dynamic_prompt)
