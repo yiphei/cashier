@@ -382,7 +382,7 @@ class Graph(BaseModel):
     edge_schema_id_to_edges: Dict[int, List[Edge]] = Field(
         default_factory=lambda: defaultdict(list)
     )
-    from_node_schema_id_to_last_edge_schema_id: Dict[int, str] = Field(
+    from_node_schema_id_to_last_edge_schema_id: Dict[int, int] = Field(
         default_factory=lambda: defaultdict(lambda: None)
     )
     edge_schema_id_to_from_node: Dict[int, Node] = Field(
