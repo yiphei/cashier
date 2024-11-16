@@ -52,7 +52,7 @@ def is_on_topic(
     )
     is_on_topic = chat_completion.get_message_prop("output")
     if model_provider == ModelProvider.OPENAI:
-        prob = chat_completion.get_prob(-2)
+        prob = chat_completion.get_prob(-2) # type: ignore
         logger.debug(f"IS_ON_TOPIC: {is_on_topic} with {prob}")
     else:
         logger.debug(f"IS_ON_TOPIC: {is_on_topic}")
@@ -99,7 +99,7 @@ def should_skip_node_schema(
     agent_id = chat_completion.get_message_prop("agent_id")
     actual_agent_id = agent_id if agent_id != current_node_schema.id else None
     if model_provider == ModelProvider.OPENAI:
-        prob = chat_completion.get_prob(-2)
+        prob = chat_completion.get_prob(-2) # type: ignore
         logger.debug(
             f"{'SKIP_AGENT_ID' if not is_wait else 'WAIT_AGENT_ID'}: {actual_agent_id or 'current_id'} with {prob}"
         )
