@@ -171,7 +171,7 @@ class Model:
             return self.oai_chat(
                 cast(OpenAIModels, model_name),
                 messages,
-                tools,
+                tools, # type: ignore
                 stream,
                 logprobs,
                 response_format,
@@ -184,7 +184,7 @@ class Model:
                 cast(AnthropicModels, model_name),
                 messages,
                 system,
-                tools,
+                tools, # type: ignore
                 stream,
                 response_format,
                 **kwargs,
