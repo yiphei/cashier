@@ -694,7 +694,7 @@ class MessageList(list):
 
     @overload
     def insert(  # noqa: E704
-        self, __index: SupportsIndex, __object: Any, / # noqa: W504
+        self, __index: SupportsIndex, __object: Any, /  # noqa: W504
     ) -> None: ...
 
     @overload
