@@ -6,7 +6,18 @@ from abc import ABC, abstractmethod
 from bisect import bisect_left
 from collections import defaultdict
 from enum import StrEnum
-from typing import Any, ClassVar, Dict, Iterable, List, Optional, Set, SupportsIndex, Union, overload
+from typing import (
+    Any,
+    ClassVar,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Set,
+    SupportsIndex,
+    Union,
+    overload,
+)
 
 from pydantic import (
     BaseModel,
@@ -682,11 +693,16 @@ class MessageList(list):
             self.track_idx(item_type, uri=uri)
 
     @overload
-    def insert(self, __index: SupportsIndex, __object: Any, /) -> None: ...
+    def insert(self, __index: SupportsIndex, __object: Any, /) -> None: ... # noqa: E704
 
     @overload
-    def insert(self, idx: int, item: Any, item_type: Optional[ItemType] = None, 
-               uri: Optional[str] = None) -> None: ...
+    def insert( # noqa: E704
+        self,
+        idx: int,
+        item: Any,
+        item_type: Optional[ItemType] = None,
+        uri: Optional[str] = None,
+    ) -> None: ...
 
     def insert(
         self,
@@ -701,12 +717,18 @@ class MessageList(list):
             self.track_idx(item_type, idx, uri, is_insert=True)
 
     @overload
-    def extend(self, __iterable: Iterable[Any], /) -> None: ...
+    def extend(self, __iterable: Iterable[Any], /) -> None: ... # noqa: E704
 
     @overload
-    def extend(self, items: List[Any], item_type: Optional[ItemType] = None) -> None: ...
+    def extend( # noqa: E704
+        self, items: List[Any], item_type: Optional[ItemType] = None
+    ) -> None: ...
 
-    def extend(self, items: Union[List[Any], Iterable[Any]], item_type: Optional[ItemType] = None) -> None:
+    def extend(
+        self,
+        items: Union[List[Any], Iterable[Any]],
+        item_type: Optional[ItemType] = None,
+    ) -> None:
         curr_len = len(self) - 1
         super().extend(items)
         if items and item_type is not None:
@@ -752,10 +774,10 @@ class MessageList(list):
                     self.remove_by_uri(uri)
 
     @overload
-    def __getitem__(self, index: SupportsIndex, /) -> Any: ...
+    def __getitem__(self, index: SupportsIndex, /) -> Any: ... # noqa: E704
 
     @overload
-    def __getitem__(self, index: slice, /) -> 'MessageList': ...
+    def __getitem__(self, index: slice, /) -> "MessageList": ... # noqa: E704
 
     def __getitem__(self, index: Union[SupportsIndex, slice]) -> Any:
         if isinstance(index, slice):

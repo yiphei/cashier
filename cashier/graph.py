@@ -19,13 +19,13 @@ from typing import (
     overload,
 )
 
+from openai.types.chat.chat_completion_tool_param import ChatCompletionToolParam
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from cashier.function_call_context import StateUpdateError
 from cashier.model_turn import ModelTurn
 from cashier.prompts.node_system import NodeSystemPrompt
 from cashier.tool_registry import ToolRegistry
-from openai.types.chat.chat_completion_tool_param import ChatCompletionToolParam
 
 
 class Direction(StrEnum):
@@ -42,7 +42,9 @@ class NodeSchema:
         node_system_prompt: Type[NodeSystemPrompt],
         input_pydantic_model: Optional[Type[BaseModel]],
         state_pydantic_model: Type[BaseStateModel],
-        tool_registry_or_tool_defs: Optional[Union[ToolRegistry, List[ChatCompletionToolParam]]] = None,
+        tool_registry_or_tool_defs: Optional[
+            Union[ToolRegistry, List[ChatCompletionToolParam]]
+        ] = None,
         first_turn: Optional[ModelTurn] = None,
         tool_names: Optional[List[str]] = None,
     ):
@@ -335,9 +337,9 @@ class BaseStateModel(BaseModel):
         # Iterate through fields and reset those marked as resettable
         for field_name, field_info in self.model_fields.items():
             # Check if field has the resettable marker in its metadata
-            if field_info.json_schema_extra and field_info.json_schema_extra.get( # type: ignore
+            if field_info.json_schema_extra and field_info.json_schema_extra.get(
                 "resettable"
-            ):  
+            ):
                 new_data[field_name] = field_info.default
 
         return self.__class__(**new_data)
