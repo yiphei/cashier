@@ -15,7 +15,7 @@ supabase: Optional[Client] = None
 def create_db_client() -> None:
     global supabase
     supabase = create_supabase_client(
-        os.environ.get("SUPABASE_URL"), os.environ.get("SUPABASE_KEY") # type: ignore
+        os.environ.get("SUPABASE_URL"), os.environ.get("SUPABASE_KEY")  # type: ignore
     )
 
 

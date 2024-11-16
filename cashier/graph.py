@@ -23,7 +23,6 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from cashier.function_call_context import StateUpdateError
 from cashier.model_turn import ModelTurn
-from cashier.prompts.base_prompt import BasePrompt
 from cashier.prompts.node_system import NodeSystemPrompt
 from cashier.tool_registry import ToolRegistry
 
@@ -398,12 +397,12 @@ class Graph(BaseModel):
         self.edge_schema_id_to_from_node[edge_schema_id] = from_node
 
     @overload
-    def get_edge_by_edge_schema_id(
+    def get_edge_by_edge_schema_id( # noqa: E704
         self, edge_schema_id: int, idx: int = -1, raise_if_none: Literal[True] = True
     ) -> Edge: ...
 
     @overload
-    def get_edge_by_edge_schema_id(
+    def get_edge_by_edge_schema_id( # noqa: E704
         self, edge_schema_id: int, idx: int = -1, raise_if_none: Literal[False] = False
     ) -> Optional[Edge]: ...
 
@@ -416,7 +415,7 @@ class Graph(BaseModel):
             else None
         )
         if edge is None and raise_if_none:
-            raise ValueError()     
+            raise ValueError()
         return edge
 
     def get_last_edge_schema_by_from_node_schema_id(
