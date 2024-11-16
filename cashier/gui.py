@@ -29,7 +29,7 @@ class MessageDisplay:
     def display_assistant_message(
         cls, message_or_stream: Union[str, Iterator[str]]
     ) -> None:
-        if isinstance(message_or_stream, GeneratorType):
+        if isinstance(message_or_stream, Iterator):
             cls.print_msg(role="assistant", msg=None, end="")
             full_msg = ""
             for msg_chunk in message_or_stream:

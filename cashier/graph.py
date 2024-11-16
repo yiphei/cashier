@@ -434,7 +434,7 @@ class Graph(BaseModel):
     def get_prev_node(
         self, edge_schema: Optional[EdgeSchema], direction: Direction
     ) -> Optional[Node]:
-        if edge_schema and self.get_edge_by_edge_schema_id(edge_schema.id) is not None:
+        if edge_schema and self.get_edge_by_edge_schema_id(edge_schema.id, raise_if_none=False) is not None:
             from_node, to_node = self.get_edge_by_edge_schema_id(edge_schema.id)
             return to_node if direction == Direction.FWD else from_node
         else:
@@ -464,7 +464,7 @@ class Graph(BaseModel):
         edge_schemas = deque(start_edge_schemas)
         while edge_schemas:
             edge_schema = edge_schemas.popleft()
-            if self.get_edge_by_edge_schema_id(edge_schema.id) is not None:
+            if self.get_edge_by_edge_schema_id(edge_schema.id, raise_if_none=False) is not None:
                 from_node, to_node = self.get_edge_by_edge_schema_id(edge_schema.id)
                 if from_node.schema == start_node.schema:
                     from_node = start_node
@@ -498,7 +498,7 @@ class Graph(BaseModel):
         next_edge_schema = start_edge_schema
         edge_schema = start_edge_schema
         input = start_input
-        while self.get_edge_by_edge_schema_id(next_edge_schema.id) is not None:
+        while self.get_edge_by_edge_schema_id(next_edge_schema.id, raise_if_none=False) is not None:
             from_node, to_node = self.get_edge_by_edge_schema_id(next_edge_schema.id)
             if from_node.schema == curr_node.schema:
                 from_node = curr_node
