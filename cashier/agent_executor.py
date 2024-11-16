@@ -27,7 +27,7 @@ def is_on_topic(
     last_customer_msg = TM.get_user_message(content_only=True)
 
     prompt = OffTopicPrompt(
-        background_prompt=current_node_schema.node_system_prompt.BACKGROUND_PROMPT(),
+        background_prompt=current_node_schema.node_system_prompt.BACKGROUND_PROMPT(), # type: ignore
         node_prompt=current_node_schema.node_prompt,
         state_json_schema=current_node_schema.state_pydantic_model.model_json_schema(),
         tool_defs=json.dumps(
