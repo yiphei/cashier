@@ -171,7 +171,7 @@ class ToolRegistry:
         self,
         tool_names: Optional[List[str]] = None,
         model_provider: ModelProvider = ModelProvider.OPENAI,
-    ) -> List[Dict]:
+    ) -> List[Union[ChatCompletionToolParam, Dict]]:
         if tool_names:
             return [
                 self.model_provider_to_tool_def[model_provider][tool_name]
