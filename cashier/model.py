@@ -433,16 +433,16 @@ class OAIModelOutput(ModelOutput[ChatCompletionChunk]):
     model_provider = ModelProvider.OPENAI
 
     def _get_tool_call(self, chunk: ChatCompletionChunk) -> ChoiceDeltaToolCall:
-        return chunk.choices[0].delta.tool_calls[0] # type: ignore
+        return chunk.choices[0].delta.tool_calls[0]  # type: ignore
 
     def get_fn_call_id_from_chunk(self, chunk: ChatCompletionChunk) -> str:
-        return self._get_tool_call(chunk).id # type: ignore
+        return self._get_tool_call(chunk).id  # type: ignore
 
     def get_fn_name_from_chunk(self, chunk: ChatCompletionChunk) -> str:
-        return self._get_tool_call(chunk).function.name # type: ignore
+        return self._get_tool_call(chunk).function.name  # type: ignore
 
     def get_fn_args_json_from_chunk(self, chunk: ChatCompletionChunk) -> str:
-        return self._get_tool_call(chunk).function.arguments # type: ignore
+        return self._get_tool_call(chunk).function.arguments  # type: ignore
 
     def _has_tool_call(self, chunk: ChatCompletionChunk) -> bool:
         return bool(chunk.choices[0].delta.tool_calls)
@@ -456,7 +456,7 @@ class OAIModelOutput(ModelOutput[ChatCompletionChunk]):
     def has_fn_args_json(self, chunk: ChatCompletionChunk) -> bool:
         return (
             self._has_tool_call(chunk)
-            and self._get_tool_call(chunk).function.arguments is not None # type: ignore
+            and self._get_tool_call(chunk).function.arguments is not None  # type: ignore
         )
 
     def is_message_start_chunk(self, chunk: ChatCompletionChunk) -> bool:
@@ -466,7 +466,7 @@ class OAIModelOutput(ModelOutput[ChatCompletionChunk]):
         return chunk.choices[0].delta.content is not None
 
     def get_msg_from_chunk(self, chunk: ChatCompletionChunk) -> str:
-        return chunk.choices[0].delta.content # type: ignore
+        return chunk.choices[0].delta.content  # type: ignore
 
     def is_final_chunk(self, chunk: ChatCompletionChunk) -> bool:
         return chunk.choices[0].finish_reason is not None
