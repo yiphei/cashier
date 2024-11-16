@@ -23,7 +23,10 @@ class class_or_instance_method(classmethod):
         return descr_get(instance, type_)
 
 
-def get_return_description_from_docstring(docstring: str) -> str:
+def get_return_description_from_docstring(docstring: Optional[str]) -> Optional[str]:
+    if docstring is None:
+        return None
+
     return_description = ""
     returns_pattern = re.compile(r"Returns:\n(.*)", re.DOTALL)
     returns_match = returns_pattern.search(docstring)
@@ -189,7 +192,7 @@ class ToolRegistry:
         )
 
     @classmethod
-    def _add_tool_def_w_oai_def_cls(cls, tool_name: str, oai_tool_def: Dict) -> None:
+    def _add_tool_def_w_oai_def_cls(cls, tool_name: str, oai_tool_def: ChatCompletionToolParam) -> None:
         cls.GLOBAL_OPENAI_TOOL_NAME_TO_TOOL_DEF[tool_name] = oai_tool_def
         cls.GLOBAL_ANTHROPIC_TOOL_NAME_TO_TOOL_DEF[tool_name] = (
             get_anthropic_tool_def_from_oai(oai_tool_def)
@@ -259,7 +262,7 @@ class ToolRegistry:
             oai_tools_return_map_attr[func.__name__] = actual_return_json_schema
 
             @wraps(func)
-            def wrapper(*args, **kwargs) -> Any:
+            def wrapper(*args: Any, **kwargs: Any) -> Any:
                 bound_args = fn_signature.bind(*args, **kwargs)
                 bound_args.apply_defaults()
 
