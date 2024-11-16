@@ -51,7 +51,6 @@ AnthropicModelAliases = Literal[
 ]
 
 ModelName = Union[OpenAIModels, AnthropicModelAliases]
-ModelResponseChunk = Union[ChatCompletionChunk, RawMessageStreamEvent]
 
 ModelResponseChunkType = TypeVar(
     "ModelResponseChunkType", ChatCompletionChunk, RawMessageStreamEvent
@@ -312,7 +311,7 @@ class ModelOutput(ABC, Generic[ModelResponseChunkType]):
         self.response_format = response_format
         self.parsed_msg: Optional[BaseModel] = None
         self.msg_content: Optional[str] = None
-        self.last_chunk: Optional[ModelResponseChunk] = None
+        self.last_chunk: Optional[ModelResponseChunkType] = None
         self.fn_calls: List[FunctionCall] = []
         self.fn_call_ids: Set[str] = set()
 
