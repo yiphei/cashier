@@ -394,7 +394,7 @@ class TurnContainer:
             ModelProvider.ANTHROPIC,
         ],
     ):
-        self.model_provider_to_message_manager = {}
+        self.model_provider_to_message_manager: Dict[ModelProvider, MessageManager] = {}
         for provider in model_providers:
             mm = self.model_provider_to_message_manager_cls[provider]()
             self.model_provider_to_message_manager[provider] = mm
