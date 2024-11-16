@@ -23,10 +23,7 @@ class class_or_instance_method(classmethod):
         return descr_get(instance, type_)
 
 
-def get_return_description_from_docstring(docstring: Optional[str]) -> Optional[str]:
-    if docstring is None:
-        return None
-
+def get_return_description_from_docstring(docstring: str) -> str:
     return_description = ""
     returns_pattern = re.compile(r"Returns:\n(.*)", re.DOTALL)
     returns_match = returns_pattern.search(docstring)
@@ -214,6 +211,7 @@ class ToolRegistry:
 
         def decorator_fn(func: Callable):
             docstring = inspect.getdoc(func)
+            assert docstring is not None
             fn_signature = inspect.signature(func)
 
             # Generate function args schemas
