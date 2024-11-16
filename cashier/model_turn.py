@@ -690,12 +690,13 @@ class MessageList(list):
 
     def insert(
         self,
-        idx: int,
+        idx: SupportsIndex,
         item: Any,
         item_type: Optional[ItemType] = None,
         uri: Optional[str] = None,
     ) -> None:
         super().insert(idx, item)
+        assert isinstance(idx, int)
         if item_type is not None:
             self.track_idx(item_type, idx, uri, is_insert=True)
 
