@@ -385,8 +385,8 @@ class Graph(BaseModel):
     from_node_schema_id_to_last_edge_schema_id: Dict[int, str] = Field(
         default_factory=lambda: defaultdict(lambda: None)
     )
-    edge_schema_id_to_from_node: Dict[int, None] = Field(
-        default_factory=lambda: defaultdict(lambda: None)
+    edge_schema_id_to_from_node: Dict[int, Node] = Field(
+        default_factory=dict
     )
 
     def add_fwd_edge(self, from_node: Node, to_node: Node, edge_schema_id: int) -> None:
