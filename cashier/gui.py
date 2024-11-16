@@ -1,5 +1,4 @@
 import sys
-from types import GeneratorType
 from typing import Iterator, Optional, Union
 
 from colorama import Fore, Style

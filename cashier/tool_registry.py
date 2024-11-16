@@ -6,7 +6,16 @@ import re
 from functools import wraps
 from inspect import Signature
 from types import FunctionType
-from typing import Any, Callable, Dict, List, Optional, Tuple, TypedDict, Union, cast, Literal
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Tuple,
+    Union,
+    cast,
+)
 
 from openai import pydantic_function_tool
 from openai.types.chat.chat_completion_tool_param import ChatCompletionToolParam
@@ -175,12 +184,12 @@ class ToolRegistry:
         model_provider: ModelProvider = ModelProvider.OPENAI,
     ) -> Union[List[ChatCompletionToolParam], List[Dict]]:
         if tool_names:
-            return [ # type: ignore
+            return [  # type: ignore
                 self.model_provider_to_tool_def[model_provider][tool_name]
                 for tool_name in tool_names
             ]
         else:
-            return list(self.model_provider_to_tool_def[model_provider].values()) # type: ignore
+            return list(self.model_provider_to_tool_def[model_provider].values())  # type: ignore
 
     def add_tool_def_w_oai_def(
         self, tool_name: str, oai_tool_def: ChatCompletionToolParam

@@ -81,7 +81,6 @@ class NodeSchema:
             "get_state", "Function to get the current state, as defined in <state>", {}
         )
 
-
     @overload
     def create_node(  # noqa: E704
         self,
@@ -446,7 +445,11 @@ class Graph(BaseModel):
     def get_prev_node(
         self, edge_schema: Optional[EdgeSchema], direction: Direction
     ) -> Optional[Node]:
-        if edge_schema and self.get_edge_by_edge_schema_id(edge_schema.id, raise_if_none=False) is not None:
+        if (
+            edge_schema
+            and self.get_edge_by_edge_schema_id(edge_schema.id, raise_if_none=False)
+            is not None
+        ):
             from_node, to_node = self.get_edge_by_edge_schema_id(edge_schema.id)
             return to_node if direction == Direction.FWD else from_node
         else:
@@ -476,7 +479,10 @@ class Graph(BaseModel):
         edge_schemas = deque(start_edge_schemas)
         while edge_schemas:
             edge_schema = edge_schemas.popleft()
-            if self.get_edge_by_edge_schema_id(edge_schema.id, raise_if_none=False) is not None:
+            if (
+                self.get_edge_by_edge_schema_id(edge_schema.id, raise_if_none=False)
+                is not None
+            ):
                 from_node, to_node = self.get_edge_by_edge_schema_id(edge_schema.id)
                 if from_node.schema == start_node.schema:
                     from_node = start_node
@@ -510,7 +516,10 @@ class Graph(BaseModel):
         next_edge_schema = start_edge_schema
         edge_schema = start_edge_schema
         input = start_input
-        while self.get_edge_by_edge_schema_id(next_edge_schema.id, raise_if_none=False) is not None:
+        while (
+            self.get_edge_by_edge_schema_id(next_edge_schema.id, raise_if_none=False)
+            is not None
+        ):
             from_node, to_node = self.get_edge_by_edge_schema_id(next_edge_schema.id)
             if from_node.schema == curr_node.schema:
                 from_node = curr_node
@@ -567,10 +576,10 @@ class Graph(BaseModel):
                 while from_node.schema != curr_node.schema:
                     prev_edge_schema = from_node.in_edge_schema
                     from_node, to_node = self.get_edge_by_edge_schema_id(
-                        prev_edge_schema.id # type: ignore
+                        prev_edge_schema.id  # type: ignore
                     )
 
-                self.add_fwd_edge(curr_node, to_node, prev_edge_schema.id) # type: ignore
+                self.add_fwd_edge(curr_node, to_node, prev_edge_schema.id)  # type: ignore
 
             self.add_fwd_edge(immediate_from_node, new_node, edge_schema.id)
         elif direction == Direction.BWD:

@@ -45,7 +45,7 @@ class NodeSchemaSelectionPrompt(BasePrompt):
             )
 
         prompt += (
-            "All agents share the following background:\n" # type: ignore
+            "All agents share the following background:\n"  # type: ignore
             "<background>\n"
             f"{all_node_schemas[0].node_system_prompt.BACKGROUND_PROMPT()}\n"
             "</background>\n\n"

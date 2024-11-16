@@ -30,7 +30,7 @@ def get_user_input(use_audio_input: bool, openai_client: Any) -> str:
     return text_input
 
 
-def run_chat(args: Namespace, model: Model, elevenlabs_client: Any)-> None:
+def run_chat(args: Namespace, model: Model, elevenlabs_client: Any) -> None:
     model_provider = Model.get_model_provider(args.model)
     AE = AgentExecutor(
         model,

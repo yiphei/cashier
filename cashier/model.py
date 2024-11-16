@@ -26,8 +26,8 @@ from openai.types.chat.chat_completion_chunk import (
     ChatCompletionChunk,
     ChoiceDeltaToolCall,
 )
-from pydantic import BaseModel
 from openai.types.chat.chat_completion_tool_param import ChatCompletionToolParam
+from pydantic import BaseModel
 
 from cashier.model_turn import AnthropicMessageManager, MessageList, TurnContainer
 from cashier.model_util import FunctionCall, ModelProvider
@@ -67,7 +67,9 @@ class Model:
         "claude-3-5-sonnet-20241022": ModelProvider.ANTHROPIC,
         "claude-3-5-haiku-20241022": ModelProvider.ANTHROPIC,
     }
-    alias_to_model_name: Dict[ModelName, Union[OpenAIModels, AnthropicModels]] = {"claude-3.5": "claude-3-5-sonnet-latest"}
+    alias_to_model_name: Dict[ModelName, Union[OpenAIModels, AnthropicModels]] = {
+        "claude-3.5": "claude-3-5-sonnet-latest"
+    }
 
     def __init__(self) -> None:
         self.oai_client = OpenAI()
@@ -173,7 +175,7 @@ class Model:
             return self.oai_chat(
                 cast(OpenAIModels, model_name),
                 messages,
-                tools, # type: ignore
+                tools,  # type: ignore
                 stream,
                 logprobs,
                 response_format,
@@ -187,7 +189,7 @@ class Model:
                 cast(AnthropicModels, model_name),
                 messages,
                 system,
-                tools, # type: ignore
+                tools,  # type: ignore
                 stream,
                 response_format,
                 **kwargs,
@@ -326,7 +328,7 @@ class ModelOutput(ABC, Generic[ModelResponseChunkType]):
     @abstractmethod
     def get_fn_calls(self) -> Iterator[FunctionCall]:
         raise NotImplementedError
-    
+
     @abstractmethod
     def get_message_prop(self, prop_name: str) -> Any:
         raise NotImplementedError

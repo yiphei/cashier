@@ -9,7 +9,7 @@ class CallableMeta(type):
     def __call__(cls, strict_kwargs_check: bool = True, **kwargs: Any) -> str:
         instance = super().__call__(**kwargs)
         if not strict_kwargs_check:
-            kwargs = {k: v for k, v in kwargs.items() if k in cls.prompt_kwargs} # type: ignore
+            kwargs = {k: v for k, v in kwargs.items() if k in cls.prompt_kwargs}  # type: ignore
 
         return (
             instance.f_string_prompt.format(**kwargs)
@@ -44,7 +44,7 @@ class BasePrompt(metaclass=CallableMeta):
             )
 
         cls.prompt_kwargs = (
-            BasePrompt.extract_fstring_args(cls.f_string_prompt) # type: ignore
+            BasePrompt.extract_fstring_args(cls.f_string_prompt)  # type: ignore
             if has_fstring
             else BasePrompt.extract_dynamic_args(cls.dynamic_prompt)
         )
