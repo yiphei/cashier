@@ -6,16 +6,7 @@ import re
 from functools import wraps
 from inspect import Signature
 from types import FunctionType
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    List,
-    Optional,
-    Tuple,
-    Union,
-    cast,
-)
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union, cast
 
 from openai import pydantic_function_tool
 from openai.types.chat.chat_completion_tool_param import ChatCompletionToolParam
