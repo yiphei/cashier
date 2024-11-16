@@ -83,7 +83,7 @@ class Model:
         tool_registry: Optional[ToolRegistry] = None,
         stream: bool = False,
         logprobs: bool = False,
-        response_format: Optional[BaseModel] = None,
+        response_format: Optional[Type[BaseModel]] = None,
         **kwargs: Any,
     ) -> ModelOutput: ...
 
@@ -99,7 +99,7 @@ class Model:
         tool_registry: Optional[ToolRegistry] = None,
         stream: bool = False,
         logprobs: bool = False,
-        response_format: Optional[BaseModel] = None,
+        response_format: Optional[Type[BaseModel]] = None,
         **kwargs: Any,
     ) -> ModelOutput: ...
 
@@ -115,7 +115,7 @@ class Model:
         tool_registry: Optional[ToolRegistry] = None,
         stream: bool = False,
         logprobs: bool = False,
-        response_format: Optional[BaseModel] = None,
+        response_format: Optional[Type[BaseModel]] = None,
         **kwargs: Any,
     ) -> ModelOutput: ...
 
@@ -130,7 +130,7 @@ class Model:
         tool_registry: Optional[ToolRegistry] = None,
         stream: bool = False,
         logprobs: bool = False,
-        response_format: Optional[BaseModel] = None,
+        response_format: Optional[Type[BaseModel]] = None,
         **kwargs: Any,
     ) -> ModelOutput:
         if model_name in self.alias_to_model_name:
@@ -193,7 +193,7 @@ class Model:
         tools: Optional[Dict[str, Any]] = None,
         stream: bool = False,
         logprobs: bool = False,
-        response_format: Optional[BaseModel] = None,
+        response_format: Optional[Type[BaseModel]] = None,
         **kwargs: Any,
     ) -> OAIModelOutput:
         chat_fn = (
@@ -229,7 +229,7 @@ class Model:
         system: Optional[str] = None,
         tools: Optional[Dict[str, Any]] = None,
         stream: bool = False,
-        response_format: Optional[BaseModel] = None,
+        response_format: Optional[Type[BaseModel]] = None,
         **kwargs: Any,
     ) -> AnthropicModelOutput:
         tool_choice = None
