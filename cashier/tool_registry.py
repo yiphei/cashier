@@ -11,6 +11,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from openai import pydantic_function_tool
 from pydantic import Field, create_model
+from pydantic.fields import FieldInfo
 
 from cashier.model_util import ModelProvider
 
@@ -33,8 +34,9 @@ def get_return_description_from_docstring(docstring: str) -> str:
 
 def get_field_map_from_docstring(
     docstring: str, func_signature: Signature
-) -> Dict[str, Tuple[Any, Any]]:
-    field_name_to_field = defaultdict(lambda: [None, Field()])
+) -> Dict[str, Tuple[Any, FieldInfo]]:
+    field_name_to_field_info: Dict[str, FieldInfo] = {}
+    field_name_to_field_type_annotation: Dict[str, Any] = {}
 
     # Simplified regex pattern that captures everything between "Args:" and the first empty line
     args_regex_pattern = re.compile(r"Args:\n((?:(?!\n\s*\n).)*)", re.DOTALL)
@@ -51,20 +53,20 @@ def get_field_map_from_docstring(
             parts = line.split(":", 1)
             if len(parts) == 2:
                 arg_name, arg_description = parts
-                field_name_to_field[arg_name.strip()][
-                    1
-                ].description = arg_description.strip()
+                field_name_to_field_info[arg_name.strip()] = Field(description=arg_description.strip())
 
     for param_name, param in func_signature.parameters.items():
-        if param_name in field_name_to_field:
+        if param_name in field_name_to_field_info:
             # Update type annotations if available
             if param.annotation == inspect.Parameter.empty:
                 raise Exception("Type annotation is required for all parameters")
-            field_name_to_field[param_name][0] = param.annotation
+            field_name_to_field_type_annotation[param_name] = param.annotation
         else:
             raise Exception(f"Parameter {param_name} is not found in the docstring")
 
-    return {k: tuple(v) for k, v in field_name_to_field.items()}
+    assert field_name_to_field_info.keys() == field_name_to_field_type_annotation.keys()
+
+    return {k: (field_name_to_field_type_annotation[k], field_name_to_field_info[k] ) for k in field_name_to_field_type_annotation.keys()}
 
 
 def get_description_from_docstring(docstring: str) -> str:
