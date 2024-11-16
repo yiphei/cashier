@@ -6,7 +6,7 @@ import re
 from functools import wraps
 from inspect import Signature
 from types import FunctionType
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 from openai import pydantic_function_tool
 from openai.types.chat.chat_completion_tool_param import ChatCompletionToolParam
@@ -82,7 +82,7 @@ def get_description_from_docstring(docstring: str) -> str:
     return description
 
 
-def get_anthropic_tool_def_from_oai(oai_tool_def: Dict) -> Dict:
+def get_anthropic_tool_def_from_oai(oai_tool_def: ChatCompletionToolParam) -> Dict:
     anthropic_tool_def_body = copy.deepcopy(oai_tool_def["function"]["parameters"])
     return {
         "name": oai_tool_def["function"]["name"],
@@ -92,7 +92,7 @@ def get_anthropic_tool_def_from_oai(oai_tool_def: Dict) -> Dict:
 
 
 class ToolRegistry:
-    GLOBAL_OPENAI_TOOL_NAME_TO_TOOL_DEF: Dict[str, Dict] = {}
+    GLOBAL_OPENAI_TOOL_NAME_TO_TOOL_DEF: Dict[str, ChatCompletionToolParam] = {}
     GLOBAL_ANTHROPIC_TOOL_NAME_TO_TOOL_DEF: Dict[str, Dict] = {}
     GLOBAL_FN_NAME_TO_FN: Dict[str, Callable] = {}
     GLOBAL_OPENAI_TOOLS_RETURN_DESCRIPTION: Dict[str, Dict] = {}
@@ -106,7 +106,7 @@ class ToolRegistry:
                 ):
                     setattr(cls, key, copy.deepcopy(value))
 
-    def __init__(self, oai_tool_defs: Optional[List[Dict]] = None):
+    def __init__(self, oai_tool_defs: Optional[List[ChatCompletionToolParam]] = None):
         self.openai_tool_name_to_tool_def = copy.copy(
             self.GLOBAL_OPENAI_TOOL_NAME_TO_TOOL_DEF
         )
@@ -117,7 +117,7 @@ class ToolRegistry:
         self.openai_tools_return_description = copy.copy(
             self.GLOBAL_OPENAI_TOOLS_RETURN_DESCRIPTION
         )
-        self.model_provider_to_tool_def = {
+        self.model_provider_to_tool_def: Dict[ModelProvider, Union[Dict[str, ChatCompletionToolParam], Dict[str, Dict]]] = {
             ModelProvider.OPENAI: self.openai_tool_name_to_tool_def,
             ModelProvider.ANTHROPIC: self.anthropic_tool_name_to_tool_def,
         }
@@ -209,7 +209,7 @@ class ToolRegistry:
             fn_name_to_fn_attr = self_or_cls.fn_name_to_fn
             oai_tools_return_map_attr = self_or_cls.openai_tools_return_description
 
-        def decorator_fn(func: Callable):
+        def decorator_fn(func: Callable)-> Callable:
             docstring = inspect.getdoc(func)
             assert docstring is not None
             fn_signature = inspect.signature(func)
