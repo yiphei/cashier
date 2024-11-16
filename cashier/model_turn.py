@@ -6,7 +6,7 @@ from abc import ABC, abstractmethod
 from bisect import bisect_left
 from collections import defaultdict
 from enum import StrEnum
-from typing import Any, ClassVar, Dict, List, Optional, Set, SupportsIndex, Union, overload
+from typing import Any, ClassVar, Dict, Iterable, List, Optional, Set, SupportsIndex, Union, overload
 
 from pydantic import (
     BaseModel,
@@ -700,7 +700,13 @@ class MessageList(list):
         if item_type is not None:
             self.track_idx(item_type, idx, uri, is_insert=True)
 
-    def extend(self, items: List[Any], item_type: Optional[ItemType] = None) -> None:
+    @overload
+    def extend(self, __iterable: Iterable[Any], /) -> None: ...
+
+    @overload
+    def extend(self, items: List[Any], item_type: Optional[ItemType] = None) -> None: ...
+
+    def extend(self, items: Union[List[Any], Iterable[Any]], item_type: Optional[ItemType] = None) -> None:
         curr_len = len(self) - 1
         super().extend(items)
         if items and item_type is not None:
