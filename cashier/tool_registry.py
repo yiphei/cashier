@@ -117,7 +117,9 @@ class ToolRegistry:
         self.openai_tools_return_description = copy.copy(
             self.GLOBAL_OPENAI_TOOLS_RETURN_DESCRIPTION
         )
-        self.model_provider_to_tool_def: Dict[ModelProvider, Union[Dict[str, ChatCompletionToolParam], Dict[str, Dict]]] = {
+        self.model_provider_to_tool_def: Dict[
+            ModelProvider, Union[Dict[str, ChatCompletionToolParam], Dict[str, Dict]]
+        ] = {
             ModelProvider.OPENAI: self.openai_tool_name_to_tool_def,
             ModelProvider.ANTHROPIC: self.anthropic_tool_name_to_tool_def,
         }
@@ -189,13 +191,15 @@ class ToolRegistry:
         )
 
     @classmethod
-    def _add_tool_def_w_oai_def_cls(cls, tool_name: str, oai_tool_def: ChatCompletionToolParam) -> None:
+    def _add_tool_def_w_oai_def_cls(
+        cls, tool_name: str, oai_tool_def: ChatCompletionToolParam
+    ) -> None:
         cls.GLOBAL_OPENAI_TOOL_NAME_TO_TOOL_DEF[tool_name] = oai_tool_def
         cls.GLOBAL_ANTHROPIC_TOOL_NAME_TO_TOOL_DEF[tool_name] = (
             get_anthropic_tool_def_from_oai(oai_tool_def)
         )
 
-    @class_or_instance_method # type: ignore
+    @class_or_instance_method  # type: ignore
     def model_tool_decorator(
         self_or_cls, tool_instructions: Optional[str] = None
     ) -> Callable:
@@ -209,7 +213,7 @@ class ToolRegistry:
             fn_name_to_fn_attr = self_or_cls.fn_name_to_fn
             oai_tools_return_map_attr = self_or_cls.openai_tools_return_description
 
-        def decorator_fn(func: Callable)-> Callable:
+        def decorator_fn(func: Callable) -> Callable:
             docstring = inspect.getdoc(func)
             assert docstring is not None
             fn_signature = inspect.signature(func)
@@ -222,10 +226,10 @@ class ToolRegistry:
                 description += " " + tool_instructions.strip()
 
             field_map = get_field_map_from_docstring(docstring, fn_signature)
-            fn_signature_pydantic_model = create_model( # type: ignore
+            fn_signature_pydantic_model = create_model(  # type: ignore
                 func.__name__ + "_parameters", **field_map
             )
-            func.pydantic_model = fn_signature_pydantic_model # type: ignore
+            func.pydantic_model = fn_signature_pydantic_model  # type: ignore
             oai_tool_def = pydantic_function_tool(
                 fn_signature_pydantic_model, name=func.__name__, description=description
             )
@@ -264,7 +268,7 @@ class ToolRegistry:
                 bound_args = fn_signature.bind(*args, **kwargs)
                 bound_args.apply_defaults()
 
-                pydantic_obj = func.pydantic_model(**bound_args.arguments) # type: ignore
+                pydantic_obj = func.pydantic_model(**bound_args.arguments)  # type: ignore
                 for field_name in pydantic_obj.model_fields.keys():
                     bound_args.arguments[field_name] = getattr(pydantic_obj, field_name)
 
