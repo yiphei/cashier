@@ -397,14 +397,27 @@ class Graph(BaseModel):
         )
         self.edge_schema_id_to_from_node[edge_schema_id] = from_node
 
+    @overload
     def get_edge_by_edge_schema_id(
-        self, edge_schema_id: int, idx: int = -1
+        self, edge_schema_id: int, idx: int = -1, raise_if_none: Literal[True] = True
+    ) -> Edge: ...
+
+    @overload
+    def get_edge_by_edge_schema_id(
+        self, edge_schema_id: int, idx: int = -1, raise_if_none: Literal[False] = False
+    ) -> Optional[Edge]: ...
+
+    def get_edge_by_edge_schema_id(
+        self, edge_schema_id: int, idx: int = -1, raise_if_none: bool = True
     ) -> Optional[Edge]:
-        return (
+        edge = (
             self.edge_schema_id_to_edges[edge_schema_id][idx]
             if len(self.edge_schema_id_to_edges[edge_schema_id]) >= abs(idx)
             else None
         )
+        if edge is None and raise_if_none:
+            raise ValueError()     
+        return edge
 
     def get_last_edge_schema_by_from_node_schema_id(
         self, node_schema_id: int
