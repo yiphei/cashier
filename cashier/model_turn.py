@@ -751,7 +751,13 @@ class MessageList(list):
                 for uri in uris:
                     self.remove_by_uri(uri)
 
-    def __getitem__(self, index: Union[int, slice]) -> Any:
+    @overload
+    def __getitem__(self, index: SupportsIndex, /) -> Any: ...
+
+    @overload
+    def __getitem__(self, index: slice, /) -> 'MessageList': ...
+
+    def __getitem__(self, index: Union[SupportsIndex, slice]) -> Any:
         if isinstance(index, slice):
             if index.step:
                 raise ValueError()
