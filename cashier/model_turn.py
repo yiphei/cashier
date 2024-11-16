@@ -95,7 +95,7 @@ class AssistantTurn(ModelTurn):
         return self
 
     def build_oai_messages(self) -> List[Dict[str, Any]]:
-        messages = []
+        messages: List[Dict[str, Any]] = []
         if self.msg_content and not (
             self.model_provider == ModelProvider.ANTHROPIC and self.fn_calls
         ):
@@ -147,7 +147,8 @@ class AssistantTurn(ModelTurn):
         return messages
 
     def build_anthropic_messages(self) -> List[Dict[str, Any]]:
-        contents = []
+        contents: List[Dict[str, Any]] = []
+        assistant_msg = None
         messages = []
         if self.msg_content and not (
             self.model_provider == ModelProvider.ANTHROPIC and self.fn_calls
@@ -165,10 +166,9 @@ class AssistantTurn(ModelTurn):
                 )
 
         if not self.fn_calls and self.msg_content:
-            contents = contents[0]
-            contents = contents["text"]
+            assistant_msg = contents[0]["text"]
 
-        messages.append({"role": "assistant", "content": contents})
+        messages.append({"role": "assistant", "content": assistant_msg or contents})
 
         if self.fn_calls:
             return_contents = []
@@ -602,7 +602,7 @@ class MessageList(list):
         item_type: ItemType,
         start_list_idx: int,
         end_list_idx: Optional[int] = None,
-        uris: Optional[List[str]] = None,
+        uris: Optional[List[Optional[str]]] = None,
     ) -> None:
         if end_list_idx is None:
             end_list_idx = len(self) - 1
