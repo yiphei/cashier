@@ -29,7 +29,7 @@ from openai.types.chat.chat_completion_chunk import (
 from pydantic import BaseModel
 from openai.types.chat.chat_completion_tool_param import ChatCompletionToolParam
 
-from cashier.model_turn import TurnContainer
+from cashier.model_turn import MessageList, TurnContainer
 from cashier.model_util import FunctionCall, ModelProvider
 from cashier.tool_registry import ToolRegistry
 
@@ -86,7 +86,7 @@ class Model:
         *,
         model_name: OpenAIModels,
         turn_container: Literal[None] = None,
-        message_dicts: List[Dict[str, Any]],
+        message_dicts: Union[List[Dict[str, Any]], MessageList],
         system: Optional[str] = None,
         system_idx: int = -1,
         tool_registry: Optional[ToolRegistry] = None,
@@ -102,7 +102,7 @@ class Model:
         *,
         model_name: AnthropicModelAliases,
         turn_container: Literal[None] = None,
-        message_dicts: List[Dict[str, Any]],
+        message_dicts: Union[List[Dict[str, Any]], MessageList],
         system: Optional[str] = None,
         system_idx: Literal[None] = None,
         tool_registry: Optional[ToolRegistry] = None,
@@ -133,7 +133,7 @@ class Model:
         *,
         model_name: ModelName,
         turn_container: Optional[TurnContainer] = None,
-        message_dicts: Optional[List[Dict[str, Any]]] = None,
+        message_dicts: Optional[Union[List[Dict[str, Any]], MessageList]] = None,
         system: Optional[str] = None,
         system_idx: Optional[int] = -1,
         tool_registry: Optional[ToolRegistry] = None,
@@ -150,13 +150,15 @@ class Model:
         if tool_registry is not None:
             tools = tool_registry.get_tool_defs(model_provider=model_provider)
 
+        messages: Union[MessageList, List]
         message_manager = None
         if turn_container is not None:
             message_manager = turn_container.model_provider_to_message_manager[
                 model_provider
             ]
             messages = message_manager.message_dicts
-        elif message_dicts is not None:
+        else:
+            assert message_dicts is not None
             messages = message_dicts
 
         if model_provider == ModelProvider.OPENAI:
@@ -211,7 +213,7 @@ class Model:
     def oai_chat(
         self,
         model_name: OpenAIModels,
-        messages: List[Dict[str, Any]],
+        messages: Union[List[Dict[str, Any]], MessageList],
         tools: Optional[List[ChatCompletionToolParam]] = None,
         stream: bool = False,
         logprobs: bool = False,
@@ -247,7 +249,7 @@ class Model:
     def ant_chat(
         self,
         model_name: AnthropicModels,
-        messages: List[Dict[str, Any]],
+        messages: Union[List[Dict[str, Any]], MessageList],
         system: Optional[str] = None,
         tools: Optional[List[Dict[str, Any]]] = None,
         stream: bool = False,
