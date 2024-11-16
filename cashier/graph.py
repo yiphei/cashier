@@ -397,12 +397,12 @@ class Graph(BaseModel):
         self.edge_schema_id_to_from_node[edge_schema_id] = from_node
 
     @overload
-    def get_edge_by_edge_schema_id( # noqa: E704
+    def get_edge_by_edge_schema_id(  # noqa: E704
         self, edge_schema_id: int, idx: int = -1, raise_if_none: Literal[True] = True
     ) -> Edge: ...
 
     @overload
-    def get_edge_by_edge_schema_id( # noqa: E704
+    def get_edge_by_edge_schema_id(  # noqa: E704
         self, edge_schema_id: int, idx: int = -1, raise_if_none: Literal[False] = False
     ) -> Optional[Edge]: ...
 
