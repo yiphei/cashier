@@ -16,7 +16,7 @@ class NodeSystemPrompt(BasePrompt):
         GeneralGuidelinePrompt,
     ]
 
-    def dynamic_prompt( # type: ignore
+    def dynamic_prompt(  # type: ignore
         self,
         node_prompt: str,
         input: Any,
@@ -27,7 +27,7 @@ class NodeSystemPrompt(BasePrompt):
         fn_kwargs = locals()
         fn_kwargs.pop("self")
         NODE_PROMPT = (
-            self.BACKGROUND_PROMPT() + "\n\n" # type: ignore
+            self.BACKGROUND_PROMPT() + "\n\n"  # type: ignore
             "This instructions section describes what the conversation is supposed to be about and what you are expected to do\n"
             "<instructions>\n"
             f"{node_prompt}\n"
@@ -68,7 +68,7 @@ class NodeSystemPrompt(BasePrompt):
             "<guidelines>\n"
         )
         for guideline in self.GUIDELINE_PROMPTS:
-            GUIDELINES += guideline(strict_kwargs_check=False, **fn_kwargs) # type: ignore
+            GUIDELINES += guideline(strict_kwargs_check=False, **fn_kwargs)  # type: ignore
 
         GUIDELINES += "</guidelines>"
 

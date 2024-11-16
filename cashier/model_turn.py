@@ -243,11 +243,11 @@ class MessageManager(ABC):
             self.node_conversation_dicts.clear()
 
     @abstractmethod
-    def parse_system_messages(self, msgs: List[Dict[str, Any]])-> None:
+    def parse_system_messages(self, msgs: List[Dict[str, Any]]) -> None:
         raise NotImplementedError
 
     @abstractmethod
-    def parse_assistant_messages(self, msgs: List[Dict[str, Any]])-> None:
+    def parse_assistant_messages(self, msgs: List[Dict[str, Any]]) -> None:
         raise NotImplementedError
 
     def add_system_turn(self, turn: ModelTurn) -> None:
@@ -510,7 +510,9 @@ class MessageList(list):
         self.list_idx_to_track_idx: Dict[int, int] = {}
 
         self.model_provider = model_provider
-        self.item_type_to_uris: Dict[MessageList.ItemType, List[str]] = defaultdict(list)
+        self.item_type_to_uris: Dict[MessageList.ItemType, List[str]] = defaultdict(
+            list
+        )
         self.uri_to_item_type: Dict[str, MessageList.ItemType] = {}
         self.item_type_to_count = {k: 0 for k in self.item_type_to_uri_prefix.keys()}
 

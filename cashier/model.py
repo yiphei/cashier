@@ -160,13 +160,25 @@ class Model:
                     messages.insert(system_idx, system_dict)
 
             return self.oai_chat(
-                cast(OpenAIModels, model_name), messages, tools, stream, logprobs, response_format, **kwargs
+                cast(OpenAIModels, model_name),
+                messages,
+                tools,
+                stream,
+                logprobs,
+                response_format,
+                **kwargs,
             )
         elif model_provider == ModelProvider.ANTHROPIC:
             if message_manager is not None:
                 system = message_manager.system
             return self.ant_chat(
-                cast(AnthropicModels, model_name), messages, system, tools, stream, response_format, **kwargs
+                cast(AnthropicModels, model_name),
+                messages,
+                system,
+                tools,
+                stream,
+                response_format,
+                **kwargs,
             )
         else:
             raise ValueError()
@@ -221,7 +233,7 @@ class Model:
 
         self.get_tool_choice_arg(args, ModelProvider.OPENAI)
 
-        return OAIModelOutput(chat_fn(**args), stream, response_format) # type: ignore
+        return OAIModelOutput(chat_fn(**args), stream, response_format)  # type: ignore
 
     def ant_chat(
         self,
