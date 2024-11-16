@@ -3,10 +3,10 @@ from cashier.prompts.base_prompt import BasePrompt
 
 class StateGuidelinePrompt(BasePrompt):
 
-    def dynamic_prompt(
+    def dynamic_prompt(  # type: ignore
         self,
-        last_msg,
-    ):
+        last_msg: str,
+    ) -> str:
         return (
             "<state_guidelines>\n"
             "- Among the tools provided, there are functions for getting and updating the state defined in <state>. "

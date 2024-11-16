@@ -1,10 +1,10 @@
 import sys
-from types import GeneratorType
+from typing import Iterator, Optional, Union
 
 from colorama import Fore, Style
 
 
-def remove_previous_line():
+def remove_previous_line() -> None:
     erase_sequence = "\033[A" + "\033[2K"
     # Erase the entire line "You: {text_input}"
     sys.stdout.write(erase_sequence)
@@ -25,8 +25,10 @@ class MessageDisplay:
     }
 
     @classmethod
-    def display_assistant_message(cls, message_or_stream):
-        if isinstance(message_or_stream, GeneratorType):
+    def display_assistant_message(
+        cls, message_or_stream: Union[str, Iterator[str]]
+    ) -> None:
+        if isinstance(message_or_stream, Iterator):
             cls.print_msg(role="assistant", msg=None, end="")
             full_msg = ""
             for msg_chunk in message_or_stream:
@@ -40,11 +42,17 @@ class MessageDisplay:
             cls.print_msg("assistant", message_or_stream)
 
     @classmethod
-    def get_role_prefix(cls, role):
+    def get_role_prefix(cls, role: str) -> str:
         return f"{Style.BRIGHT}{cls.API_ROLE_TO_PREFIX[role]}: {Style.NORMAL}"
 
     @classmethod
-    def print_msg(cls, role, msg, add_role_prefix=True, end="\n\n"):
+    def print_msg(
+        cls,
+        role: str,
+        msg: Optional[str],
+        add_role_prefix: bool = True,
+        end: str = "\n\n",
+    ) -> None:
         formatted_msg = f"{cls.API_ROLE_TO_COLOR[role]}"
         if add_role_prefix:
             formatted_msg += f"{cls.get_role_prefix(role)}"

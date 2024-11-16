@@ -1,24 +1,29 @@
+from __future__ import annotations
+
 import copy
 import inspect
 import re
-from collections import defaultdict
 from functools import wraps
+from inspect import Signature
 from types import FunctionType
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union, cast
 
 from openai import pydantic_function_tool
+from openai.types.chat.chat_completion_tool_param import ChatCompletionToolParam
 from pydantic import Field, create_model
+from pydantic.fields import FieldInfo
 
 from cashier.model_util import ModelProvider
 
 
 # got this from: https://stackoverflow.com/questions/28237955/same-name-for-classmethod-and-instancemethod
 class class_or_instance_method(classmethod):
-    def __get__(self, instance, type_):
+    def __get__(self, instance: Any, type_: Any) -> Any:  # type: ignore
         descr_get = super().__get__ if instance is None else self.__func__.__get__
         return descr_get(instance, type_)
 
 
-def get_return_description_from_docstring(docstring):
+def get_return_description_from_docstring(docstring: str) -> str:
     return_description = ""
     returns_pattern = re.compile(r"Returns:\n(.*)", re.DOTALL)
     returns_match = returns_pattern.search(docstring)
@@ -27,8 +32,11 @@ def get_return_description_from_docstring(docstring):
     return return_description
 
 
-def get_field_map_from_docstring(docstring, func_signature):
-    field_name_to_field = defaultdict(lambda: [None, Field()])
+def get_field_map_from_docstring(
+    docstring: str, func_signature: Signature
+) -> Dict[str, Tuple[Any, FieldInfo]]:
+    field_name_to_field_info: Dict[str, FieldInfo] = {}
+    field_name_to_field_type_annotation: Dict[str, Any] = {}
 
     # Simplified regex pattern that captures everything between "Args:" and the first empty line
     args_regex_pattern = re.compile(r"Args:\n((?:(?!\n\s*\n).)*)", re.DOTALL)
@@ -45,23 +53,28 @@ def get_field_map_from_docstring(docstring, func_signature):
             parts = line.split(":", 1)
             if len(parts) == 2:
                 arg_name, arg_description = parts
-                field_name_to_field[arg_name.strip()][
-                    1
-                ].description = arg_description.strip()
+                field_name_to_field_info[arg_name.strip()] = Field(
+                    description=arg_description.strip()
+                )
 
     for param_name, param in func_signature.parameters.items():
-        if param_name in field_name_to_field:
+        if param_name in field_name_to_field_info:
             # Update type annotations if available
             if param.annotation == inspect.Parameter.empty:
                 raise Exception("Type annotation is required for all parameters")
-            field_name_to_field[param_name][0] = param.annotation
+            field_name_to_field_type_annotation[param_name] = param.annotation
         else:
             raise Exception(f"Parameter {param_name} is not found in the docstring")
 
-    return {k: tuple(v) for k, v in field_name_to_field.items()}
+    assert field_name_to_field_info.keys() == field_name_to_field_type_annotation.keys()
+
+    return {
+        k: (field_name_to_field_type_annotation[k], field_name_to_field_info[k])
+        for k in field_name_to_field_type_annotation.keys()
+    }
 
 
-def get_description_from_docstring(docstring):
+def get_description_from_docstring(docstring: str) -> str:
     if "Args:" in docstring:
         description = docstring.split("Args:")[0].strip()
     else:
@@ -69,7 +82,7 @@ def get_description_from_docstring(docstring):
     return description
 
 
-def get_anthropic_tool_def_from_oai(oai_tool_def):
+def get_anthropic_tool_def_from_oai(oai_tool_def: ChatCompletionToolParam) -> Dict:
     anthropic_tool_def_body = copy.deepcopy(oai_tool_def["function"]["parameters"])
     return {
         "name": oai_tool_def["function"]["name"],
@@ -79,12 +92,12 @@ def get_anthropic_tool_def_from_oai(oai_tool_def):
 
 
 class ToolRegistry:
-    GLOBAL_OPENAI_TOOL_NAME_TO_TOOL_DEF = {}
-    GLOBAL_ANTHROPIC_TOOL_NAME_TO_TOOL_DEF = {}
-    GLOBAL_FN_NAME_TO_FN = {}
-    GLOBAL_OPENAI_TOOLS_RETURN_DESCRIPTION = {}
+    GLOBAL_OPENAI_TOOL_NAME_TO_TOOL_DEF: Dict[str, ChatCompletionToolParam] = {}
+    GLOBAL_ANTHROPIC_TOOL_NAME_TO_TOOL_DEF: Dict[str, Dict] = {}
+    GLOBAL_FN_NAME_TO_FN: Dict[str, Callable] = {}
+    GLOBAL_OPENAI_TOOLS_RETURN_DESCRIPTION: Dict[str, Dict] = {}
 
-    def __init_subclass__(cls):
+    def __init_subclass__(cls) -> None:
         super().__init_subclass__()
         for base in cls.__bases__:
             for key, value in base.__dict__.items():
@@ -93,7 +106,7 @@ class ToolRegistry:
                 ):
                     setattr(cls, key, copy.deepcopy(value))
 
-    def __init__(self, oai_tool_defs=None):
+    def __init__(self, oai_tool_defs: Optional[List[ChatCompletionToolParam]] = None):
         self.openai_tool_name_to_tool_def = copy.copy(
             self.GLOBAL_OPENAI_TOOL_NAME_TO_TOOL_DEF
         )
@@ -104,7 +117,9 @@ class ToolRegistry:
         self.openai_tools_return_description = copy.copy(
             self.GLOBAL_OPENAI_TOOLS_RETURN_DESCRIPTION
         )
-        self.model_provider_to_tool_def = {
+        self.model_provider_to_tool_def: Dict[
+            ModelProvider, Union[Dict[str, ChatCompletionToolParam], Dict[str, Dict]]
+        ] = {
             ModelProvider.OPENAI: self.openai_tool_name_to_tool_def,
             ModelProvider.ANTHROPIC: self.anthropic_tool_name_to_tool_def,
         }
@@ -114,11 +129,13 @@ class ToolRegistry:
                 self.add_tool_def_w_oai_def(tool_name, tool_def)
 
     @property
-    def tool_names(self):
+    def tool_names(self) -> List[str]:
         return list(self.openai_tool_name_to_tool_def.keys())
 
     @classmethod
-    def create_from_tool_registry(cls, tool_registry, tool_names=None):
+    def create_from_tool_registry(
+        cls, tool_registry: ToolRegistry, tool_names: Optional[List[str]] = None
+    ) -> ToolRegistry:
         if tool_names is None:
             return copy.deepcopy(tool_registry)
         else:
@@ -142,40 +159,50 @@ class ToolRegistry:
 
             return new_tool_registry
 
-    def add_tool_def(self, tool_name, description, field_args):
+    def add_tool_def(self, tool_name: str, description: str, field_args: Any) -> None:
         fn_pydantic_model = create_model(tool_name, **field_args)
         fn_json_schema = pydantic_function_tool(
             fn_pydantic_model,
             name=tool_name,
             description=description,
         )
-        remove_default(fn_json_schema)
+        remove_default(cast(dict, fn_json_schema))
         self.add_tool_def_w_oai_def(tool_name, fn_json_schema)
 
-    def get_tool_defs(self, tool_names=None, model_provider=ModelProvider.OPENAI):
+    def get_tool_defs(
+        self,
+        tool_names: Optional[List[str]] = None,
+        model_provider: ModelProvider = ModelProvider.OPENAI,
+    ) -> Union[List[ChatCompletionToolParam], List[Dict]]:
         if tool_names:
-            return [
+            return [  # type: ignore
                 self.model_provider_to_tool_def[model_provider][tool_name]
                 for tool_name in tool_names
             ]
         else:
-            return list(self.model_provider_to_tool_def[model_provider].values())
+            return list(self.model_provider_to_tool_def[model_provider].values())  # type: ignore
 
-    def add_tool_def_w_oai_def(self, tool_name, oai_tool_def):
+    def add_tool_def_w_oai_def(
+        self, tool_name: str, oai_tool_def: ChatCompletionToolParam
+    ) -> None:
         self.openai_tool_name_to_tool_def[tool_name] = oai_tool_def
         self.anthropic_tool_name_to_tool_def[tool_name] = (
             get_anthropic_tool_def_from_oai(oai_tool_def)
         )
 
     @classmethod
-    def _add_tool_def_w_oai_def_cls(cls, tool_name, oai_tool_def):
+    def _add_tool_def_w_oai_def_cls(
+        cls, tool_name: str, oai_tool_def: ChatCompletionToolParam
+    ) -> None:
         cls.GLOBAL_OPENAI_TOOL_NAME_TO_TOOL_DEF[tool_name] = oai_tool_def
         cls.GLOBAL_ANTHROPIC_TOOL_NAME_TO_TOOL_DEF[tool_name] = (
             get_anthropic_tool_def_from_oai(oai_tool_def)
         )
 
-    @class_or_instance_method
-    def model_tool_decorator(self_or_cls, tool_instructions=None):
+    @class_or_instance_method  # type: ignore
+    def model_tool_decorator(
+        self_or_cls, tool_instructions: Optional[str] = None
+    ) -> Callable:
         is_class = isinstance(self_or_cls, type)
         if is_class:
             fn_name_to_fn_attr = self_or_cls.GLOBAL_FN_NAME_TO_FN
@@ -186,8 +213,9 @@ class ToolRegistry:
             fn_name_to_fn_attr = self_or_cls.fn_name_to_fn
             oai_tools_return_map_attr = self_or_cls.openai_tools_return_description
 
-        def decorator_fn(func):
+        def decorator_fn(func: Callable) -> Callable:
             docstring = inspect.getdoc(func)
+            assert docstring is not None
             fn_signature = inspect.signature(func)
 
             # Generate function args schemas
@@ -198,10 +226,10 @@ class ToolRegistry:
                 description += " " + tool_instructions.strip()
 
             field_map = get_field_map_from_docstring(docstring, fn_signature)
-            fn_signature_pydantic_model = create_model(
+            fn_signature_pydantic_model = create_model(  # type: ignore
                 func.__name__ + "_parameters", **field_map
             )
-            func.pydantic_model = fn_signature_pydantic_model
+            func.pydantic_model = fn_signature_pydantic_model  # type: ignore
             oai_tool_def = pydantic_function_tool(
                 fn_signature_pydantic_model, name=func.__name__, description=description
             )
@@ -236,11 +264,11 @@ class ToolRegistry:
             oai_tools_return_map_attr[func.__name__] = actual_return_json_schema
 
             @wraps(func)
-            def wrapper(*args, **kwargs):
+            def wrapper(*args: Any, **kwargs: Any) -> Any:
                 bound_args = fn_signature.bind(*args, **kwargs)
                 bound_args.apply_defaults()
 
-                pydantic_obj = func.pydantic_model(**bound_args.arguments)
+                pydantic_obj = func.pydantic_model(**bound_args.arguments)  # type: ignore
                 for field_name in pydantic_obj.model_fields.keys():
                     bound_args.arguments[field_name] = getattr(pydantic_obj, field_name)
 
@@ -254,7 +282,7 @@ class ToolRegistry:
         return decorator_fn
 
 
-def remove_default(schema):
+def remove_default(schema: Dict) -> None:
     found_key = False
     for key, value in schema.items():
         if key == "default":

@@ -1,12 +1,15 @@
 import inspect
 from string import Formatter
+from typing import Any, Callable, Optional, Set, Type
+
+from pydantic import BaseModel
 
 
 class CallableMeta(type):
-    def __call__(cls, strict_kwargs_check=True, **kwargs):
+    def __call__(cls, strict_kwargs_check: bool = True, **kwargs: Any) -> str:
         instance = super().__call__(**kwargs)
         if not strict_kwargs_check:
-            kwargs = {k: v for k, v in kwargs.items() if k in cls.kwargs}
+            kwargs = {k: v for k, v in kwargs.items() if k in cls.prompt_kwargs}  # type: ignore
 
         return (
             instance.f_string_prompt.format(**kwargs)
@@ -16,17 +19,17 @@ class CallableMeta(type):
 
 
 class BasePrompt(metaclass=CallableMeta):
-    f_string_prompt = None
-    response_format = None
-    kwargs = None
+    f_string_prompt: Optional[str] = None
+    response_format: Optional[Type[BaseModel]] = None
+    prompt_kwargs: Optional[Set[str]] = None
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any):
         pass
 
-    def dynamic_prompt(self, **kwargs):
+    def dynamic_prompt(self, **kwargs: Any) -> Optional[str]:
         return None
 
-    def __init_subclass__(cls, **kwargs):
+    def __init_subclass__(cls, **kwargs: Any):
         super().__init_subclass__(**kwargs)
         has_fstring = cls.f_string_prompt is not None
         has_dynamic = cls.dynamic_prompt != BasePrompt.dynamic_prompt
@@ -40,14 +43,14 @@ class BasePrompt(metaclass=CallableMeta):
                 f"Class {cls.__name__} should not override both f_string_prompt and dynamic_prompt"
             )
 
-        cls.kwargs = (
-            BasePrompt.extract_fstring_args(cls.f_string_prompt)
+        cls.prompt_kwargs = (
+            BasePrompt.extract_fstring_args(cls.f_string_prompt)  # type: ignore
             if has_fstring
             else BasePrompt.extract_dynamic_args(cls.dynamic_prompt)
         )
 
     @staticmethod
-    def extract_fstring_args(f_string):
+    def extract_fstring_args(f_string: str) -> Set[str]:
         """
         Extract argument names from an f-string format using string.Formatter.
 
@@ -68,7 +71,7 @@ class BasePrompt(metaclass=CallableMeta):
         return fields
 
     @staticmethod
-    def extract_dynamic_args(dynamic_func):
+    def extract_dynamic_args(dynamic_func: Callable) -> Set[str]:
         """
         Extract argument names from a dynamic_prompt method using inspection.
 

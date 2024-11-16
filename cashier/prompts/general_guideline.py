@@ -3,10 +3,10 @@ from cashier.prompts.base_prompt import BasePrompt
 
 class GeneralGuidelinePrompt(BasePrompt):
 
-    def dynamic_prompt(
+    def dynamic_prompt(  # type: ignore
         self,
-        last_msg,
-    ):
+        last_msg: str,
+    ) -> str:
         return (
             "<general_guidelines>\n"
             "- think step-by-step before you respond.\n"

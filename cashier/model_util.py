@@ -1,11 +1,13 @@
+from __future__ import annotations
+
 import json
 import random
 import string
 from collections import defaultdict
 from enum import StrEnum
-from typing import Dict, Optional
+from typing import Any, Dict, Optional, cast
 
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, Field, model_validator
 
 from cashier.function_call_context import ToolExceptionWrapper
 
@@ -17,7 +19,7 @@ class ModelProvider(StrEnum):
 
 
 class CustomJSONEncoder(json.JSONEncoder):
-    def default(self, obj):
+    def default(self, obj: Any) -> Any:
         if isinstance(obj, BaseModel):
             return obj.model_dump()
         elif isinstance(obj, (defaultdict, dict)):
@@ -31,7 +33,7 @@ class CustomJSONEncoder(json.JSONEncoder):
         return super().default(obj)
 
 
-def generate_random_string(length):
+def generate_random_string(length: int) -> str:
     """
     Generate a random string of specified length using alphanumeric characters
     (both uppercase and lowercase).
@@ -59,28 +61,35 @@ MODEL_PROVIDER_TO_TOOL_CALL_ID_PREFIX = {
 class FunctionCall(BaseModel):
     name: str
     id: str
-    args_json: Optional[str] = None
-    args: Optional[Dict] = None
+    # when using model_dump, must add by_alias=True to get the alias names
+    input_args_json: Optional[str] = Field(default=None, alias="args_json")
+    input_args: Optional[Dict] = Field(default=None, alias="args")
 
     @model_validator(mode="after")
-    def check_function_args(self):
-        if self.args_json is None and self.args is None:
+    def check_function_args(self) -> FunctionCall:
+        if self.input_args_json is None and self.input_args is None:
             raise ValueError("One of [args_json, args] must be provided")
 
-        if self.args_json is not None and self.args is None:
-            if self.args_json:
-                self.args = json.loads(self.args_json)
+        if self.input_args_json is not None and self.input_args is None:
+            if self.input_args_json:
+                self.input_args = json.loads(self.input_args_json)
             else:
                 # This case always happens when claude models call inexistent functions.
                 # We still want to construct the function call and let it error downstream.
-                self.args = {}
-                self.args_json = "{}"
-        if self.args is not None and self.args_json is None:
-            self.args_json = json.dumps(self.args)
+                self.input_args = {}
+                self.input_args_json = "{}"
+        if self.input_args is not None and self.input_args_json is None:
+            self.input_args_json = json.dumps(self.input_args)
         return self
 
     @classmethod
-    def create_fake_fn_call(cls, model_provider, name, args_json=None, args=None):
+    def create_fake_fn_call(
+        cls,
+        model_provider: ModelProvider,
+        name: str,
+        args_json: Optional[str] = None,
+        args: Optional[Dict] = None,
+    ) -> FunctionCall:
         id_prefix = MODEL_PROVIDER_TO_TOOL_CALL_ID_PREFIX[model_provider]
         fake_id = id_prefix + generate_random_string(24)
 
@@ -90,3 +99,13 @@ class FunctionCall(BaseModel):
             args_json=args_json,
             args=args,
         )
+
+    # the following is to pass mypy checks
+
+    @property
+    def args_json(self) -> str:
+        return cast(str, self.input_args_json)
+
+    @property
+    def args(self) -> Dict:
+        return cast(Dict, self.input_args)

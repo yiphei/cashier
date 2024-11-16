@@ -1,6 +1,8 @@
 import argparse
 import os
+from argparse import Namespace
 from distutils.util import strtobool
+from typing import Any
 
 from dotenv import load_dotenv  # Add this import
 from elevenlabs import ElevenLabs
@@ -17,7 +19,7 @@ from cashier.tool_registries.cashier_tool_registry import create_db_client
 load_dotenv()
 
 
-def get_user_input(use_audio_input, openai_client):
+def get_user_input(use_audio_input: bool, openai_client: Any) -> str:
     if use_audio_input:
         audio_input = get_audio_input()
         text_input = get_text_from_speech(audio_input, openai_client)
@@ -28,7 +30,7 @@ def get_user_input(use_audio_input, openai_client):
     return text_input
 
 
-def run_chat(args, model, elevenlabs_client):
+def run_chat(args: Namespace, model: Model, elevenlabs_client: Any) -> None:
     model_provider = Model.get_model_provider(args.model)
     AE = AgentExecutor(
         model,

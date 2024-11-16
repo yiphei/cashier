@@ -1,3 +1,5 @@
+from typing import Any, Dict, Optional, Type
+
 from cashier.prompts.base_prompt import BasePrompt
 from cashier.prompts.general_guideline import GeneralGuidelinePrompt
 from cashier.prompts.response_guideline import ResponseGuidelinePrompt
@@ -6,7 +8,7 @@ from cashier.prompts.tool_guideline import ToolGuidelinePrompt
 
 
 class NodeSystemPrompt(BasePrompt):
-    BACKGROUND_PROMPT = None
+    BACKGROUND_PROMPT: Optional[Type[BasePrompt]] = None
     GUIDELINE_PROMPTS = [
         ResponseGuidelinePrompt,
         StateGuidelinePrompt,
@@ -14,18 +16,18 @@ class NodeSystemPrompt(BasePrompt):
         GeneralGuidelinePrompt,
     ]
 
-    def dynamic_prompt(
+    def dynamic_prompt(  # type: ignore
         self,
-        node_prompt,
-        input,
-        node_input_json_schema,
-        state_json_schema,
-        last_msg,
-    ):
+        node_prompt: str,
+        input: Any,
+        node_input_json_schema: Dict,
+        state_json_schema: Dict,
+        last_msg: str,
+    ) -> str:
         fn_kwargs = locals()
         fn_kwargs.pop("self")
         NODE_PROMPT = (
-            self.BACKGROUND_PROMPT() + "\n\n"
+            self.BACKGROUND_PROMPT() + "\n\n"  # type: ignore
             "This instructions section describes what the conversation is supposed to be about and what you are expected to do\n"
             "<instructions>\n"
             f"{node_prompt}\n"
@@ -66,7 +68,7 @@ class NodeSystemPrompt(BasePrompt):
             "<guidelines>\n"
         )
         for guideline in self.GUIDELINE_PROMPTS:
-            GUIDELINES += guideline(strict_kwargs_check=False, **fn_kwargs)
+            GUIDELINES += guideline(strict_kwargs_check=False, **fn_kwargs)  # type: ignore
 
         GUIDELINES += "</guidelines>"
 

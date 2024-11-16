@@ -1,10 +1,23 @@
+from __future__ import annotations
+
 import copy
 import json
 from abc import ABC, abstractmethod
 from bisect import bisect_left
 from collections import defaultdict
 from enum import StrEnum
-from typing import Any, ClassVar, Dict, List, Optional
+from typing import (
+    Any,
+    ClassVar,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Set,
+    SupportsIndex,
+    Union,
+    overload,
+)
 
 from pydantic import (
     BaseModel,
@@ -27,38 +40,40 @@ class ModelTurn(BaseModel, ABC):
 
     @field_validator("msg_content")
     @classmethod
-    def strip_whitespace(cls, value):
+    def strip_whitespace(cls, value: str) -> str:
         return value.strip() if cls.should_strip_msg_content and value else value
 
     @abstractmethod
-    def build_oai_messages(self):
+    def build_oai_messages(self) -> List[Dict[str, Any]]:
         raise NotImplementedError
 
     @abstractmethod
-    def build_anthropic_messages(self):
+    def build_anthropic_messages(self) -> List[Dict[str, Any]]:
         raise NotImplementedError
 
-    def build_messages(self, model_provider):
+    def build_messages(self, model_provider: ModelProvider) -> List[Dict[str, Any]]:
         if model_provider == ModelProvider.OPENAI:
             return self.build_oai_messages()
         elif model_provider == ModelProvider.ANTHROPIC:
             return self.build_anthropic_messages()
+        else:
+            raise TypeError
 
 
 class UserTurn(ModelTurn):
-    def build_oai_messages(self):
+    def build_oai_messages(self) -> List[Dict[str, Any]]:
         return [{"role": "user", "content": self.msg_content}]
 
-    def build_anthropic_messages(self):
+    def build_anthropic_messages(self) -> List[Dict[str, Any]]:
         return self.build_oai_messages()
 
 
 class SystemTurn(ModelTurn):
-    def build_oai_messages(self):
+    def build_oai_messages(self) -> List[Dict[str, Any]]:
         return [{"role": "system", "content": self.msg_content}]
 
-    def build_anthropic_messages(self):
-        return None
+    def build_anthropic_messages(self) -> List[Dict[str, Any]]:
+        return []
 
 
 class NodeSystemTurn(SystemTurn):
@@ -75,7 +90,7 @@ class AssistantTurn(ModelTurn):
     fn_call_id_to_fn_output: Optional[Dict[str, Any]] = Field(default_factory=dict)
 
     @model_validator(mode="after")
-    def check_function_args(self):
+    def check_function_args(self) -> AssistantTurn:
         if (
             self.fn_calls
             and self.fn_call_id_to_fn_output
@@ -90,14 +105,16 @@ class AssistantTurn(ModelTurn):
 
         return self
 
-    def build_oai_messages(self):
-        messages = []
+    def build_oai_messages(self) -> List[Dict[str, Any]]:
+        messages: List[Dict[str, Any]] = []
         if self.msg_content and not (
             self.model_provider == ModelProvider.ANTHROPIC and self.fn_calls
         ):
             messages.append({"role": "assistant", "content": self.msg_content})
         if self.fn_calls:
             for fn_call in self.fn_calls:
+                assert self.fn_call_id_to_fn_output is not None
+                assert self.tool_registry is not None
                 messages.append(
                     {
                         "role": "assistant",
@@ -140,8 +157,9 @@ class AssistantTurn(ModelTurn):
 
         return messages
 
-    def build_anthropic_messages(self):
-        contents = []
+    def build_anthropic_messages(self) -> List[Dict[str, Any]]:
+        contents: List[Dict[str, Any]] = []
+        assistant_msg = None
         messages = []
         if self.msg_content and not (
             self.model_provider == ModelProvider.ANTHROPIC and self.fn_calls
@@ -159,14 +177,14 @@ class AssistantTurn(ModelTurn):
                 )
 
         if not self.fn_calls and self.msg_content:
-            contents = contents[0]
-            contents = contents["text"]
+            assistant_msg = contents[0]["text"]
 
-        messages.append({"role": "assistant", "content": contents})
+        messages.append({"role": "assistant", "content": assistant_msg or contents})
 
         if self.fn_calls:
             return_contents = []
             for fn_call in self.fn_calls:
+                assert self.fn_call_id_to_fn_output is not None
                 return_contents.append(
                     {
                         "content": json.dumps(
@@ -188,19 +206,23 @@ class AssistantTurn(ModelTurn):
 
 
 class MessageManager(ABC):
-    model_provider = None
 
-    def __init__(self):
+    @property
+    @abstractmethod
+    def model_provider(self) -> ModelProvider:
+        raise NotImplementedError
+
+    def __init__(self) -> None:
         self.message_dicts = MessageList(model_provider=self.model_provider)
         self.conversation_dicts = MessageList(model_provider=self.model_provider)
         self.node_conversation_dicts = MessageList(model_provider=self.model_provider)
 
-    def __init_subclass__(cls, **kwargs):
+    def __init_subclass__(cls, **kwargs: Any):
         super().__init_subclass__(**kwargs)
         if cls.model_provider is None:
             raise TypeError(f"{cls.__name__} must define 'model_provider'")
 
-    def add_user_turn(self, turn):
+    def add_user_turn(self, turn: ModelTurn) -> None:
         user_msgs = turn.build_messages(self.model_provider)
         self.message_dicts.extend(user_msgs, MessageList.ItemType.USER)
         self.conversation_dicts.extend(user_msgs, MessageList.ItemType.USER)
@@ -208,11 +230,11 @@ class MessageManager(ABC):
 
     def add_node_turn(
         self,
-        turn,
-        remove_prev_fn_return_schema=None,
-        remove_prev_tool_calls=False,
-        is_skip=False,
-    ):
+        turn: ModelTurn,
+        remove_prev_fn_return_schema: Optional[bool] = None,
+        remove_prev_tool_calls: bool = False,
+        is_skip: bool = False,
+    ) -> None:
         if remove_prev_tool_calls:
             assert remove_prev_fn_return_schema is not False
 
@@ -233,17 +255,17 @@ class MessageManager(ABC):
             self.node_conversation_dicts.clear()
 
     @abstractmethod
-    def parse_system_messages(self, msgs):
+    def parse_system_messages(self, msgs: List[Dict[str, Any]]) -> None:
         raise NotImplementedError
 
     @abstractmethod
-    def parse_assistant_messages(self, msgs):
+    def parse_assistant_messages(self, msgs: List[Dict[str, Any]]) -> None:
         raise NotImplementedError
 
-    def add_system_turn(self, turn):
+    def add_system_turn(self, turn: ModelTurn) -> None:
         self.parse_system_messages(turn.build_messages(self.model_provider))
 
-    def add_assistant_turn(self, turn):
+    def add_assistant_turn(self, turn: AssistantTurn) -> None:
         # TODO: maybe move this logic to AssistantTurn
         if turn.msg_content and (
             turn.model_provider != ModelProvider.ANTHROPIC
@@ -263,16 +285,16 @@ class MessageManager(ABC):
 class OAIMessageManager(MessageManager):
     model_provider = ModelProvider.OPENAI
 
-    def parse_system_messages(self, msgs):
+    def parse_system_messages(self, msgs: List[Dict[str, Any]]) -> None:
         self.message_dicts.extend(msgs)
 
     def add_node_turn(
         self,
-        turn,
-        remove_prev_fn_return_schema=None,
-        remove_prev_tool_calls=False,
-        is_skip=False,
-    ):
+        turn: ModelTurn,
+        remove_prev_fn_return_schema: Optional[bool] = None,
+        remove_prev_tool_calls: bool = False,
+        is_skip: bool = False,
+    ) -> None:
         super().add_node_turn(
             turn, remove_prev_fn_return_schema, remove_prev_tool_calls, is_skip
         )
@@ -285,7 +307,7 @@ class OAIMessageManager(MessageManager):
         else:
             self.message_dicts.append(msg, MessageList.ItemType.NODE)
 
-    def parse_assistant_messages(self, msgs):
+    def parse_assistant_messages(self, msgs: List[Dict[str, Any]]) -> None:
         curr_fn_name = None
         for message in msgs:
             if message.get("tool_calls", None) is not None:
@@ -314,20 +336,20 @@ class OAIMessageManager(MessageManager):
 class AnthropicMessageManager(MessageManager):
     model_provider = ModelProvider.ANTHROPIC
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.system = None
 
-    def parse_system_messages(self, msgs):
-        return
+    def parse_system_messages(self, msgs: List[Dict[str, Any]]) -> None:
+        return None
 
     def add_node_turn(
         self,
-        turn,
-        remove_prev_fn_return_schema=None,
-        remove_prev_tool_calls=False,
-        is_skip=False,
-    ):
+        turn: ModelTurn,
+        remove_prev_fn_return_schema: Optional[bool] = None,
+        remove_prev_tool_calls: bool = False,
+        is_skip: bool = False,
+    ) -> None:
         super().add_node_turn(
             turn, remove_prev_fn_return_schema, remove_prev_tool_calls, is_skip
         )
@@ -340,7 +362,7 @@ class AnthropicMessageManager(MessageManager):
         else:
             self.message_dicts.track_idx(MessageList.ItemType.NODE)
 
-    def parse_assistant_messages(self, messages):
+    def parse_assistant_messages(self, messages: List[Dict[str, Any]]) -> None:
         if len(messages) == 2:
             [message_1, message_2] = messages
         else:
@@ -379,15 +401,21 @@ class TurnContainer:
         ModelProvider.ANTHROPIC: AnthropicMessageManager,
     }
 
-    def __init__(self, model_providers=[ModelProvider.OPENAI, ModelProvider.ANTHROPIC]):
-        self.model_provider_to_message_manager = {}
+    def __init__(
+        self,
+        model_providers: List[ModelProvider] = [
+            ModelProvider.OPENAI,
+            ModelProvider.ANTHROPIC,
+        ],
+    ):
+        self.model_provider_to_message_manager: Dict[ModelProvider, MessageManager] = {}
         for provider in model_providers:
             mm = self.model_provider_to_message_manager_cls[provider]()
             self.model_provider_to_message_manager[provider] = mm
 
-        self.turns = []
+        self.turns: List[ModelTurn] = []
 
-    def add_system_turn(self, msg_content):
+    def add_system_turn(self, msg_content: str) -> None:
         turn = SystemTurn(msg_content=msg_content)
         self.turns.append(turn)
         for mm in self.model_provider_to_message_manager.values():
@@ -395,11 +423,11 @@ class TurnContainer:
 
     def add_node_turn(
         self,
-        node,
-        remove_prev_tool_fn_return=None,
-        remove_prev_tool_calls=False,
-        is_skip=False,
-    ):
+        node: Any,  # TODO: fix this
+        remove_prev_tool_fn_return: Optional[bool] = None,
+        remove_prev_tool_calls: bool = False,
+        is_skip: bool = False,
+    ) -> None:
         turn = NodeSystemTurn(node_id=node.id, msg_content=node.prompt)
         self.turns.append(turn)
         for mm in self.model_provider_to_message_manager.values():
@@ -407,7 +435,7 @@ class TurnContainer:
                 turn, remove_prev_tool_fn_return, remove_prev_tool_calls, is_skip
             )
 
-    def add_user_turn(self, msg_content):
+    def add_user_turn(self, msg_content: str) -> None:
         turn = UserTurn(msg_content=msg_content)
         self.turns.append(turn)
         for mm in self.model_provider_to_message_manager.values():
@@ -415,12 +443,12 @@ class TurnContainer:
 
     def add_assistant_turn(
         self,
-        msg_content,
-        model_provider,
-        tool_registry,
-        fn_calls=None,
-        fn_id_to_outputs=None,
-    ):
+        msg_content: Optional[str],
+        model_provider: ModelProvider,
+        tool_registry: ToolRegistry,
+        fn_calls: Optional[List[FunctionCall]] = None,
+        fn_id_to_outputs: Optional[Dict[str, Any]] = None,
+    ) -> None:
         turn = AssistantTurn(
             msg_content=msg_content,
             tool_registry=tool_registry,
@@ -430,14 +458,18 @@ class TurnContainer:
         )
         self.add_assistant_direct_turn(turn)
 
-    def add_assistant_direct_turn(self, turn):
+    def add_assistant_direct_turn(self, turn: AssistantTurn) -> None:
         self.turns.append(turn)
         for mm in self.model_provider_to_message_manager.values():
             mm.add_assistant_turn(turn)
 
     def get_message(
-        self, item_type, idx=-1, model_provider=ModelProvider.OPENAI, content_only=False
-    ):
+        self,
+        item_type: MessageList.ItemType,
+        idx: int = -1,
+        model_provider: ModelProvider = ModelProvider.OPENAI,
+        content_only: bool = False,
+    ) -> Optional[str]:
         mm = self.model_provider_to_message_manager[model_provider]
         msg = mm.message_dicts.get_item_type_by_idx(item_type, idx)
         if content_only and msg:
@@ -446,15 +478,21 @@ class TurnContainer:
             return None
 
     def get_user_message(
-        self, idx=-1, model_provider=ModelProvider.OPENAI, content_only=False
-    ):
+        self,
+        idx: int = -1,
+        model_provider: ModelProvider = ModelProvider.OPENAI,
+        content_only: bool = False,
+    ) -> Optional[str]:
         return self.get_message(
             MessageList.ItemType.USER, idx, model_provider, content_only
         )
 
     def get_asst_message(
-        self, idx=-1, model_provider=ModelProvider.OPENAI, content_only=False
-    ):
+        self,
+        idx: int = -1,
+        model_provider: ModelProvider = ModelProvider.OPENAI,
+        content_only: bool = False,
+    ) -> Optional[str]:
         return self.get_message(
             MessageList.ItemType.ASSISTANT, idx, model_provider, content_only
         )
@@ -476,28 +514,30 @@ class MessageList(list):
         ItemType.ASSISTANT: "asst_",
     }
 
-    def __init__(self, *args, model_provider):
+    def __init__(self, *args: Any, model_provider: ModelProvider):
         super().__init__(*args)
-        self.uri_to_list_idx = {}
-        self.list_idx_to_uris = defaultdict(set)
-        self.list_idxs = []
-        self.list_idx_to_track_idx = {}
+        self.uri_to_list_idx: Dict[str, int] = {}
+        self.list_idx_to_uris: Dict[int, Set[str]] = defaultdict(set)
+        self.list_idxs: List[int] = []
+        self.list_idx_to_track_idx: Dict[int, int] = {}
 
         self.model_provider = model_provider
-        self.item_type_to_uris = defaultdict(list)
-        self.uri_to_item_type = {}
+        self.item_type_to_uris: Dict[MessageList.ItemType, List[str]] = defaultdict(
+            list
+        )
+        self.uri_to_item_type: Dict[str, MessageList.ItemType] = {}
         self.item_type_to_count = {k: 0 for k in self.item_type_to_uri_prefix.keys()}
 
-    def get_tool_id_from_tool_output_uri(self, uri):
+    def get_tool_id_from_tool_output_uri(self, uri: str) -> str:
         return uri[
             len(self.item_type_to_uri_prefix[MessageList.ItemType.TOOL_OUTPUT]) :
         ]
 
     @classmethod
-    def get_tool_output_uri_from_tool_id(cls, tool_id):
+    def get_tool_output_uri_from_tool_id(cls, tool_id: str) -> str:
         return cls.item_type_to_uri_prefix[MessageList.ItemType.TOOL_OUTPUT] + tool_id
 
-    def pop_track_idx_ant(self, uri):
+    def pop_track_idx_ant(self, uri: str) -> None:
         track_idx = self.get_track_idx_from_uri(uri)
         item_type = self.uri_to_item_type[uri]
         message = self[track_idx]
@@ -534,7 +574,13 @@ class MessageList(list):
         else:
             self._remove_by_uri(uri, True)
 
-    def track_idx(self, item_type, list_idx=None, uri=None, is_insert=False):
+    def track_idx(
+        self,
+        item_type: ItemType,
+        list_idx: Optional[int] = None,
+        uri: Optional[str] = None,
+        is_insert: bool = False,
+    ) -> None:
         if uri is None:
             self.item_type_to_count[item_type] += 1
             uri = self.item_type_to_uri_prefix[item_type] + str(
@@ -562,7 +608,13 @@ class MessageList(list):
 
         self.list_idx_to_uris[list_idx].add(uri)
 
-    def track_idxs(self, item_type, start_list_idx, end_list_idx=None, uris=None):
+    def track_idxs(
+        self,
+        item_type: ItemType,
+        start_list_idx: int,
+        end_list_idx: Optional[int] = None,
+        uris: Optional[List[Optional[str]]] = None,
+    ) -> None:
         if end_list_idx is None:
             end_list_idx = len(self) - 1
         if uris is None:
@@ -572,10 +624,12 @@ class MessageList(list):
         for i, uri in zip(range(start_list_idx, end_list_idx + 1), uris):
             self.track_idx(item_type, i, uri)
 
-    def get_track_idx_from_uri(self, uri):
+    def get_track_idx_from_uri(self, uri: str) -> int:
         return self.uri_to_list_idx[uri]
 
-    def get_track_idx_for_item_type(self, item_type, idx=-1):
+    def get_track_idx_for_item_type(
+        self, item_type: ItemType, idx: int = -1
+    ) -> Optional[int]:
         order_validation = abs(idx) if idx < 0 else idx + 1
         target_uri = (
             self.item_type_to_uris[item_type][idx]
@@ -585,14 +639,14 @@ class MessageList(list):
         )
         return self.uri_to_list_idx[target_uri] if target_uri else None
 
-    def get_item_type_by_idx(self, item_type, idx):
+    def get_item_type_by_idx(self, item_type: ItemType, idx: int) -> Any:
         track_idx = self.get_track_idx_for_item_type(item_type, idx)
         if track_idx:
             return self[track_idx]
         else:
             return None
 
-    def shift_track_idxs(self, start_track_idx, shift_direction):
+    def shift_track_idxs(self, start_track_idx: int, shift_direction: int) -> None:
         for i in range(start_track_idx, len(self.list_idxs)):
             curr_list_idx = self.list_idxs[i]
             self.list_idx_to_track_idx.pop(curr_list_idx)
@@ -606,7 +660,7 @@ class MessageList(list):
             self.list_idx_to_uris.pop(curr_list_idx)
             self.list_idx_to_uris[self.list_idxs[i]] = curr_uris
 
-    def pop_track_idx(self, uri, shift_idxs=True):
+    def pop_track_idx(self, uri: str, shift_idxs: bool = True) -> Optional[int]:
         popped_list_idx = self.uri_to_list_idx.pop(uri)
         all_uris = self.list_idx_to_uris[popped_list_idx]
 
@@ -631,23 +685,58 @@ class MessageList(list):
         else:
             return None
 
-    def append(self, item, item_type=None, uri=None):
+    def append(
+        self, item: Any, item_type: Optional[ItemType] = None, uri: Optional[str] = None
+    ) -> None:
         super().append(item)
         if item_type is not None:
             self.track_idx(item_type, uri=uri)
 
-    def insert(self, idx, item, item_type=None, uri=None):
+    @overload
+    def insert(  # noqa: E704
+        self, __index: SupportsIndex, __object: Any, /  # noqa: W504
+    ) -> None: ...
+
+    @overload
+    def insert(  # noqa: E704
+        self,
+        idx: int,
+        item: Any,
+        item_type: Optional[ItemType] = None,
+        uri: Optional[str] = None,
+    ) -> None: ...
+
+    def insert(
+        self,
+        idx: SupportsIndex,
+        item: Any,
+        item_type: Optional[ItemType] = None,
+        uri: Optional[str] = None,
+    ) -> None:
         super().insert(idx, item)
+        assert isinstance(idx, int)
         if item_type is not None:
             self.track_idx(item_type, idx, uri, is_insert=True)
 
-    def extend(self, items, item_type=None):
+    @overload
+    def extend(self, __iterable: Iterable[Any], /) -> None: ...  # noqa: E704
+
+    @overload
+    def extend(  # noqa: E704
+        self, items: List[Any], item_type: Optional[ItemType] = None
+    ) -> None: ...
+
+    def extend(
+        self,
+        items: Union[List[Any], Iterable[Any]],
+        item_type: Optional[ItemType] = None,
+    ) -> None:
         curr_len = len(self) - 1
         super().extend(items)
         if items and item_type is not None:
             self.track_idxs(item_type, curr_len + 1)
 
-    def _remove_by_uri(self, uri, raise_on_unpopped_idx=False):
+    def _remove_by_uri(self, uri: str, raise_on_unpopped_idx: bool = False) -> None:
         popped_idx = self.pop_track_idx(uri)
         if popped_idx is not None:
             del self[popped_idx]
@@ -655,7 +744,7 @@ class MessageList(list):
             if raise_on_unpopped_idx:
                 raise ValueError
 
-    def remove_by_uri(self, uri, raise_if_not_found=True):
+    def remove_by_uri(self, uri: str, raise_if_not_found: bool = True) -> None:
         if uri not in self.uri_to_item_type:
             if raise_if_not_found:
                 raise ValueError()
@@ -673,7 +762,9 @@ class MessageList(list):
         else:
             self.pop_track_idx_ant(uri)
 
-    def clear(self, item_type_or_types=None):
+    def clear(
+        self, item_type_or_types: Optional[Union[ItemType, List[ItemType]]] = None
+    ) -> None:
         if item_type_or_types is None:
             super().clear()
         else:
@@ -684,7 +775,13 @@ class MessageList(list):
                 for uri in uris:
                     self.remove_by_uri(uri)
 
-    def __getitem__(self, index):
+    @overload
+    def __getitem__(self, index: SupportsIndex, /) -> Any: ...  # noqa: E704
+
+    @overload
+    def __getitem__(self, index: slice, /) -> "MessageList": ...  # noqa: E704
+
+    def __getitem__(self, index: Union[SupportsIndex, slice]) -> Any:
         if isinstance(index, slice):
             if index.step:
                 raise ValueError()
