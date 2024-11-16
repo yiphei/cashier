@@ -29,7 +29,7 @@ from openai.types.chat.chat_completion_chunk import (
 from pydantic import BaseModel
 from openai.types.chat.chat_completion_tool_param import ChatCompletionToolParam
 
-from cashier.model_turn import MessageList, TurnContainer
+from cashier.model_turn import AnthropicMessageManager, MessageList, TurnContainer
 from cashier.model_util import FunctionCall, ModelProvider
 from cashier.tool_registry import ToolRegistry
 
@@ -181,6 +181,7 @@ class Model:
             )
         elif model_provider == ModelProvider.ANTHROPIC:
             if message_manager is not None:
+                assert isinstance(message_manager, AnthropicMessageManager)
                 system = message_manager.system
             return self.ant_chat(
                 cast(AnthropicModels, model_name),
