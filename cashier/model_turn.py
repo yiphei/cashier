@@ -210,7 +210,7 @@ class MessageManager(ABC):
     @property
     @abstractmethod
     def model_provider(self) -> ModelProvider:
-        pass
+        raise NotImplementedError
 
     def __init__(self) -> None:
         self.message_dicts = MessageList(model_provider=self.model_provider)

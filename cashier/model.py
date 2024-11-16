@@ -33,16 +33,16 @@ from cashier.model_turn import AnthropicMessageManager, MessageList, TurnContain
 from cashier.model_util import FunctionCall, ModelProvider
 from cashier.tool_registry import ToolRegistry
 
-OpenAIModels = Literal["gpt-4o-mini", "gpt-4o"]
+OpenAIModel = Literal["gpt-4o-mini", "gpt-4o"]
 
-AnthropicModels = Literal[
+AnthropicModel = Literal[
     "claude-3-5-sonnet-latest",
     "claude-3-5-haiku-latest",
     "claude-3-5-sonnet-20241022",
     "claude-3-5-haiku-20241022",
 ]
 
-AnthropicModelAliases = Literal[
+AnthropicModelAlias = Literal[
     "claude-3.5",
     "claude-3-5-sonnet-latest",
     "claude-3-5-haiku-latest",
@@ -50,7 +50,7 @@ AnthropicModelAliases = Literal[
     "claude-3-5-haiku-20241022",
 ]
 
-ModelName = Union[OpenAIModels, AnthropicModelAliases]
+ModelName = Union[OpenAIModel, AnthropicModelAlias]
 
 ModelResponseChunkType = TypeVar(
     "ModelResponseChunkType", ChatCompletionChunk, RawMessageStreamEvent
@@ -66,7 +66,7 @@ class Model:
         "claude-3-5-sonnet-20241022": ModelProvider.ANTHROPIC,
         "claude-3-5-haiku-20241022": ModelProvider.ANTHROPIC,
     }
-    alias_to_model_name: Dict[ModelName, Union[OpenAIModels, AnthropicModels]] = {
+    alias_to_model_name: Dict[ModelName, Union[OpenAIModel, AnthropicModel]] = {
         "claude-3.5": "claude-3-5-sonnet-latest"
     }
 
@@ -85,7 +85,7 @@ class Model:
     def chat(  # noqa: E704
         self,
         *,
-        model_name: OpenAIModels,
+        model_name: OpenAIModel,
         turn_container: Literal[None] = None,
         message_dicts: Union[List[Dict[str, Any]], MessageList],
         system: Optional[str] = None,
@@ -101,7 +101,7 @@ class Model:
     def chat(  # noqa: E704
         self,
         *,
-        model_name: AnthropicModelAliases,
+        model_name: AnthropicModelAlias,
         turn_container: Literal[None] = None,
         message_dicts: Union[List[Dict[str, Any]], MessageList],
         system: Optional[str] = None,
@@ -172,7 +172,7 @@ class Model:
                     messages.insert(system_idx, system_dict)
 
             return self.oai_chat(
-                cast(OpenAIModels, model_name),
+                cast(OpenAIModel, model_name),
                 messages,
                 tools,  # type: ignore
                 stream,
@@ -185,7 +185,7 @@ class Model:
                 assert isinstance(message_manager, AnthropicMessageManager)
                 system = message_manager.system
             return self.ant_chat(
-                cast(AnthropicModels, model_name),
+                cast(AnthropicModel, model_name),
                 messages,
                 system,
                 tools,  # type: ignore
@@ -214,7 +214,7 @@ class Model:
 
     def oai_chat(
         self,
-        model_name: OpenAIModels,
+        model_name: OpenAIModel,
         messages: Union[List[Dict[str, Any]], MessageList],
         tools: Optional[List[ChatCompletionToolParam]] = None,
         stream: bool = False,
@@ -250,7 +250,7 @@ class Model:
 
     def ant_chat(
         self,
-        model_name: AnthropicModels,
+        model_name: AnthropicModel,
         messages: Union[List[Dict[str, Any]], MessageList],
         system: Optional[str] = None,
         tools: Optional[List[Dict[str, Any]]] = None,
