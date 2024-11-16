@@ -162,6 +162,7 @@ class Model:
         if model_provider == ModelProvider.OPENAI:
             if system is not None:
                 system_dict = {"role": "system", "content": system}
+                assert system_idx is not None
                 if system_idx == -1:
                     messages.append(system_dict)
                 else:
