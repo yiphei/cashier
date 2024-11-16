@@ -27,6 +27,7 @@ from openai.types.chat.chat_completion_chunk import (
     ChoiceDeltaToolCall,
 )
 from pydantic import BaseModel
+from openai.types.chat.chat_completion_tool_param import ChatCompletionToolParam
 
 from cashier.model_turn import TurnContainer
 from cashier.model_util import FunctionCall, ModelProvider
@@ -35,6 +36,13 @@ from cashier.tool_registry import ToolRegistry
 OpenAIModels = Literal["gpt-4o-mini", "gpt-4o"]
 
 AnthropicModels = Literal[
+    "claude-3-5-sonnet-latest",
+    "claude-3-5-haiku-latest",
+    "claude-3-5-sonnet-20241022",
+    "claude-3-5-haiku-20241022",
+]
+
+AnthropicModelAliases = Literal[
     "claude-3.5",
     "claude-3-5-sonnet-latest",
     "claude-3-5-haiku-latest",
@@ -42,7 +50,7 @@ AnthropicModels = Literal[
     "claude-3-5-haiku-20241022",
 ]
 
-ModelName = Union[OpenAIModels, AnthropicModels]
+ModelName = Union[OpenAIModels, AnthropicModelAliases]
 ModelResponseChunk = Union[ChatCompletionChunk, RawMessageStreamEvent]
 
 ModelResponseChunkType = TypeVar(
@@ -59,14 +67,14 @@ class Model:
         "claude-3-5-sonnet-20241022": ModelProvider.ANTHROPIC,
         "claude-3-5-haiku-20241022": ModelProvider.ANTHROPIC,
     }
-    alias_to_model_name = {"claude-3.5": "claude-3-5-sonnet-latest"}
+    alias_to_model_name: Dict[ModelName, Union[OpenAIModels, AnthropicModels]] = {"claude-3.5": "claude-3-5-sonnet-latest"}
 
     def __init__(self) -> None:
         self.oai_client = OpenAI()
         self.anthropic_client = anthropic.Anthropic()
 
     @classmethod
-    def get_model_provider(cls, model_name: str) -> ModelProvider:
+    def get_model_provider(cls, model_name: ModelName) -> ModelProvider:
         if model_name in cls.alias_to_model_name:
             model_name = cls.alias_to_model_name[model_name]
 
@@ -92,7 +100,7 @@ class Model:
     def chat(  # noqa: E704
         self,
         *,
-        model_name: AnthropicModels,
+        model_name: AnthropicModelAliases,
         turn_container: Literal[None] = None,
         message_dicts: List[Dict[str, Any]],
         system: Optional[str] = None,
@@ -203,7 +211,7 @@ class Model:
         self,
         model_name: OpenAIModels,
         messages: List[Dict[str, Any]],
-        tools: Optional[List[Dict[str, Any]]] = None,
+        tools: Optional[List[ChatCompletionToolParam]] = None,
         stream: bool = False,
         logprobs: bool = False,
         response_format: Optional[Type[BaseModel]] = None,
