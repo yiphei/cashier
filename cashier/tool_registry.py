@@ -6,7 +6,7 @@ import re
 from functools import wraps
 from inspect import Signature
 from types import FunctionType
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union, cast
 
 from openai import pydantic_function_tool
 from openai.types.chat.chat_completion_tool_param import ChatCompletionToolParam
@@ -164,7 +164,7 @@ class ToolRegistry:
             name=tool_name,
             description=description,
         )
-        remove_default(fn_json_schema)
+        remove_default(cast(dict, fn_json_schema))
         self.add_tool_def_w_oai_def(tool_name, fn_json_schema)
 
     def get_tool_defs(
@@ -195,7 +195,7 @@ class ToolRegistry:
             get_anthropic_tool_def_from_oai(oai_tool_def)
         )
 
-    @class_or_instance_method
+    @class_or_instance_method # type: ignore
     def model_tool_decorator(
         self_or_cls, tool_instructions: Optional[str] = None
     ) -> Callable:
@@ -222,10 +222,10 @@ class ToolRegistry:
                 description += " " + tool_instructions.strip()
 
             field_map = get_field_map_from_docstring(docstring, fn_signature)
-            fn_signature_pydantic_model = create_model(
+            fn_signature_pydantic_model = create_model( # type: ignore
                 func.__name__ + "_parameters", **field_map
             )
-            func.pydantic_model = fn_signature_pydantic_model
+            func.pydantic_model = fn_signature_pydantic_model # type: ignore
             oai_tool_def = pydantic_function_tool(
                 fn_signature_pydantic_model, name=func.__name__, description=description
             )
@@ -264,7 +264,7 @@ class ToolRegistry:
                 bound_args = fn_signature.bind(*args, **kwargs)
                 bound_args.apply_defaults()
 
-                pydantic_obj = func.pydantic_model(**bound_args.arguments)
+                pydantic_obj = func.pydantic_model(**bound_args.arguments) # type: ignore
                 for field_name in pydantic_obj.model_fields.keys():
                     bound_args.arguments[field_name] = getattr(pydantic_obj, field_name)
 
@@ -278,7 +278,7 @@ class ToolRegistry:
         return decorator_fn
 
 
-def remove_default(schema: ChatCompletionToolParam) -> None:
+def remove_default(schema: Dict) -> None:
     found_key = False
     for key, value in schema.items():
         if key == "default":
