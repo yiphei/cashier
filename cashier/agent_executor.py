@@ -9,7 +9,7 @@ from cashier.function_call_context import FunctionCallContext, InexistentFunctio
 from cashier.graph import Direction, EdgeSchema, Graph, GraphSchema, Node, NodeSchema
 from cashier.gui import MessageDisplay
 from cashier.logger import logger
-from cashier.model import Model, ModelOutput
+from cashier.model import Model, ModelName, ModelOutput
 from cashier.model_turn import AssistantTurn, TurnContainer
 from cashier.model_util import CustomJSONEncoder, FunctionCall, ModelProvider
 from cashier.prompts.node_schema_selection import NodeSchemaSelectionPrompt
@@ -19,7 +19,7 @@ from cashier.prompts.off_topic import OffTopicPrompt
 def is_on_topic(
     model: Model, TM: TurnContainer, current_node_schema: NodeSchema
 ) -> bool:
-    model_name = "claude-3.5"
+    model_name: ModelName = "claude-3.5"
     model_provider = Model.get_model_provider(model_name)
     node_conv_msgs = copy.deepcopy(
         TM.model_provider_to_message_manager[model_provider].node_conversation_dicts
@@ -70,7 +70,7 @@ def should_skip_node_schema(
     if len(all_node_schemas) == 1:
         return None
 
-    model_name = "claude-3.5"
+    model_name: ModelName = "claude-3.5"
     model_provider = Model.get_model_provider(model_name)
     node_conv_msgs = copy.deepcopy(
         TM.model_provider_to_message_manager[model_provider].node_conversation_dicts

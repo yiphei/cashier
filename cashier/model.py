@@ -326,6 +326,10 @@ class ModelOutput(ABC, Generic[ModelResponseChunkType]):
     @abstractmethod
     def get_fn_calls(self) -> Iterator[FunctionCall]:
         raise NotImplementedError
+    
+    @abstractmethod
+    def get_message_prop(self, prop_name: str) -> Any:
+        raise NotImplementedError
 
     def get_or_stream_message(self) -> Union[str, None, Iterator[str]]:
         if self.is_stream:
