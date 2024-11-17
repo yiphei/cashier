@@ -361,7 +361,8 @@ class TestAgent:
                     args=args,
                 )
             )
-            fn_call_id_to_fn_output = {fn_calls[0].id: f"{fn_name}'s output"}
+            output = None if fn_name.startswith("update_state") else f"{fn_name}'s output" 
+            fn_call_id_to_fn_output = {fn_calls[0].id: output}
 
         return fn_calls, fn_call_id_to_fn_output
 
@@ -370,16 +371,22 @@ class TestAgent:
     )
     @pytest.mark.parametrize("remove_prev_tool_calls", [True, False])
     @pytest.mark.parametrize("is_stream", [True, False])
+    @pytest.mark.parametrize("fn_names", [["get_menu_item_from_name"], ["get_state"], 
+                                          ['update_state_order'], 
+                                        #   ['get_state', 'update_state_order'], 
+                                        #   ['get_state', 'get_menu_item_from_name', 'update_state_order']
+                                          ])
     def test_add_assistant_turn_tool_calls(
         self,
         model_provider,
         remove_prev_tool_calls,
         is_stream,
+        fn_names,
         agent_executor,
     ):
         self.add_user_turn(agent_executor, "hello", model_provider, True)
         fn_calls, fn_call_id_to_fn_output = self.create_fake_fn_calls(
-            model_provider, ["get_menu_item_from_name"]
+            model_provider, fn_names
         )
         self.add_assistant_turn(
             agent_executor,
