@@ -49,7 +49,7 @@ class TestAgent:
 
             TC.turns.append(turn)
         return TC
-    
+
     def create_mock_model_completion(
         self,
         model_provider,
@@ -83,7 +83,7 @@ class TestAgent:
             if model_provider == ModelProvider.OPENAI:
                 model_completion.get_prob = Mock(return_value=prob)
         return model_completion
-    
+
     def create_fake_fn_calls(self, model_provider, fn_names):
         fn_calls = []
         fn_call_id_to_fn_output = {}
