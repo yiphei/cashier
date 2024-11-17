@@ -48,10 +48,17 @@ class TestAgent:
 
             TC.turns.append(turn)
         return TC
-    
-    def add_user_turn(self, agent_executor, message, model_provider, is_on_topic, fwd_skip_node_schema_id=None):
+
+    def add_user_turn(
+        self,
+        agent_executor,
+        message,
+        model_provider,
+        is_on_topic,
+        fwd_skip_node_schema_id=None,
+    ):
         model_chat_side_effects = []
-        
+
         is_on_topic_model_completion = Mock(
             spec=(
                 OAIModelOutput
@@ -61,7 +68,7 @@ class TestAgent:
         )
         is_on_topic_model_completion.get_message_prop.return_value = is_on_topic
         if model_provider == ModelProvider.OPENAI:
-            is_on_topic_model_completion.get_prob.return_value = 0.5    
+            is_on_topic_model_completion.get_prob.return_value = 0.5
         model_chat_side_effects.append(is_on_topic_model_completion)
 
         if not is_on_topic:
@@ -72,7 +79,9 @@ class TestAgent:
                     else AnthropicModelOutput
                 )
             )
-            is_wait_model_completion.get_message_prop.return_value = fwd_skip_node_schema_id
+            is_wait_model_completion.get_message_prop.return_value = (
+                fwd_skip_node_schema_id
+            )
             if model_provider == ModelProvider.OPENAI:
                 is_wait_model_completion.get_prob.return_value = 0.5
 
@@ -80,7 +89,6 @@ class TestAgent:
 
         self.model.chat.side_effect = model_chat_side_effects
         agent_executor.add_user_turn(message)
-
 
     @pytest.fixture
     def agent_executor(self, model_provider, remove_prev_tool_calls):
@@ -207,7 +215,7 @@ class TestAgent:
             [FIRST_TURN, SECOND_TURN, THIRD_TURN, FOURTH_TURN], remove_prev_tool_calls
         )
 
-        diff= DeepDiff(
+        diff = DeepDiff(
             agent_executor.get_model_completion_kwargs(),
             {
                 "turn_container": TC,
