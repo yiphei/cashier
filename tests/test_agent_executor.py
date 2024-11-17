@@ -66,7 +66,7 @@ class TestAgent:
     @pytest.mark.parametrize("remove_prev_tool_calls", [True, False])
     def test_initial_node(self, remove_prev_tool_calls, agent_executor):
         start_node_schema = cashier_graph_schema.start_node_schema
-        FIRST_NODE = NodeSystemTurn(
+        FIRST_TURN = NodeSystemTurn(
             msg_content=start_node_schema.node_system_prompt(
                 node_prompt=cashier_graph_schema.start_node_schema.node_prompt,
                 input=None,
@@ -76,10 +76,10 @@ class TestAgent:
             ),
             node_id=1,
         )
-        SECOND_NODE = cashier_graph_schema.start_node_schema.first_turn
+        SECOND_TURN = cashier_graph_schema.start_node_schema.first_turn
 
         TC = self.create_turn_container(
-            [FIRST_NODE, SECOND_NODE], remove_prev_tool_calls
+            [FIRST_TURN, SECOND_TURN], remove_prev_tool_calls
         )
         assert not DeepDiff(
             agent_executor.get_model_completion_kwargs(),
