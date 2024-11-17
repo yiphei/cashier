@@ -49,6 +49,61 @@ class TestAgent:
 
             TC.turns.append(turn)
         return TC
+    
+    def create_mock_model_completion(
+        self,
+        model_provider,
+        message=None,
+        is_stream=False,
+        message_prop=None,
+        prob=None,
+        fn_calls=None,
+    ):
+        model_completion_class = (
+            OAIModelOutput
+            if model_provider == ModelProvider.OPENAI
+            else AnthropicModelOutput
+        )
+        fn_calls = fn_calls or []
+
+        model_completion = model_completion_class(output_obj=None, is_stream=is_stream)
+        model_completion.msg_content = message
+        model_completion.get_message = Mock(return_value=message)
+        if message is not None:
+            model_completion.stream_message = Mock(
+                return_value=iter(message.split(" "))
+            )
+        else:
+            model_completion.stream_message = Mock(return_value=None)
+        model_completion.get_fn_calls = Mock(return_value=iter(fn_calls))
+        model_completion.stream_fn_calls = Mock(return_value=iter(fn_calls))
+        model_completion.fn_calls = fn_calls
+        if message_prop is not None:
+            model_completion.get_message_prop = Mock(return_value=message_prop)
+            if model_provider == ModelProvider.OPENAI:
+                model_completion.get_prob = Mock(return_value=prob)
+        return model_completion
+    
+    def create_fake_fn_calls(self, model_provider, fn_names):
+        fn_calls = []
+        fn_call_id_to_fn_output = {}
+        for fn_name in fn_names:
+            args = {"arg_1": "arg_1_val"}
+            if fn_name == "get_state":
+                args = {}
+
+            fn_call = FunctionCall.create_fake_fn_call(
+                model_provider,
+                fn_name,
+                args=args,
+            )
+            fn_calls.append(fn_call)
+            output = (
+                None if fn_name.startswith("update_state") else f"{fn_name}'s output"
+            )
+            fn_call_id_to_fn_output[fn_call.id] = output
+
+        return fn_calls, fn_call_id_to_fn_output
 
     def add_user_turn(
         self,
@@ -272,40 +327,6 @@ class TestAgent:
             },
         )
 
-    def create_mock_model_completion(
-        self,
-        model_provider,
-        message=None,
-        is_stream=False,
-        message_prop=None,
-        prob=None,
-        fn_calls=None,
-    ):
-        model_completion_class = (
-            OAIModelOutput
-            if model_provider == ModelProvider.OPENAI
-            else AnthropicModelOutput
-        )
-        fn_calls = fn_calls or []
-
-        model_completion = model_completion_class(output_obj=None, is_stream=is_stream)
-        model_completion.msg_content = message
-        model_completion.get_message = Mock(return_value=message)
-        if message is not None:
-            model_completion.stream_message = Mock(
-                return_value=iter(message.split(" "))
-            )
-        else:
-            model_completion.stream_message = Mock(return_value=None)
-        model_completion.get_fn_calls = Mock(return_value=iter(fn_calls))
-        model_completion.stream_fn_calls = Mock(return_value=iter(fn_calls))
-        model_completion.fn_calls = fn_calls
-        if message_prop is not None:
-            model_completion.get_message_prop = Mock(return_value=message_prop)
-            if model_provider == ModelProvider.OPENAI:
-                model_completion.get_prob = Mock(return_value=prob)
-        return model_completion
-
     @pytest.mark.parametrize(
         "model_provider", [ModelProvider.OPENAI, ModelProvider.ANTHROPIC]
     )
@@ -354,27 +375,6 @@ class TestAgent:
                 "force_tool_choice": None,
             },
         )
-
-    def create_fake_fn_calls(self, model_provider, fn_names):
-        fn_calls = []
-        fn_call_id_to_fn_output = {}
-        for fn_name in fn_names:
-            args = {"arg_1": "arg_1_val"}
-            if fn_name == "get_state":
-                args = {}
-
-            fn_call = FunctionCall.create_fake_fn_call(
-                model_provider,
-                fn_name,
-                args=args,
-            )
-            fn_calls.append(fn_call)
-            output = (
-                None if fn_name.startswith("update_state") else f"{fn_name}'s output"
-            )
-            fn_call_id_to_fn_output[fn_call.id] = output
-
-        return fn_calls, fn_call_id_to_fn_output
 
     @pytest.mark.parametrize(
         "model_provider", [ModelProvider.OPENAI, ModelProvider.ANTHROPIC]
