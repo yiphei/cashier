@@ -9,8 +9,9 @@ from cashier.graph import Node
 from cashier.graph_data.cashier import cashier_graph_schema
 from cashier.model import AnthropicModelOutput, Model, OAIModelOutput
 from cashier.model_turn import AssistantTurn, NodeSystemTurn, UserTurn
-from cashier.model_util import ModelProvider
+from cashier.model_util import FunctionCall, ModelProvider
 from cashier.turn_container import TurnContainer
+import random
 
 
 class TestAgent:
@@ -128,6 +129,81 @@ class TestAgent:
         TC = self.create_turn_container(
             [FIRST_TURN, SECOND_TURN, THIRD_TURN], remove_prev_tool_calls
         )
+        assert not DeepDiff(
+            agent_executor.get_model_completion_kwargs(),
+            {
+                "turn_container": TC,
+                "tool_registry": start_node_schema.tool_registry,
+                "force_tool_choice": None,
+            },
+        )
+
+
+    @pytest.mark.parametrize(
+        "model_provider", [ModelProvider.ANTHROPIC, ModelProvider.OPENAI]
+    )
+    @pytest.mark.parametrize("remove_prev_tool_calls", [True, False])
+    @patch("cashier.model_util.generate_random_string")
+    def test_add_user_turn_handle_wait(
+        self,generate_random_string_patch,  model_provider, remove_prev_tool_calls, agent_executor
+    ):
+        # random.seed(42)
+        generate_random_string_patch.return_value = "call_123"
+        is_on_topic_model_completion = Mock(
+            spec=(
+                OAIModelOutput
+                if model_provider == ModelProvider.OPENAI
+                else AnthropicModelOutput
+            )
+        )
+        is_on_topic_model_completion.get_message_prop.return_value = False
+        if model_provider == ModelProvider.OPENAI:
+            is_on_topic_model_completion.get_prob.return_value = 0.5
+        
+
+        is_wait_model_completion = Mock(
+        spec=(
+            OAIModelOutput
+            if model_provider == ModelProvider.OPENAI
+            else AnthropicModelOutput
+        )
+        )
+        is_wait_model_completion.get_message_prop.return_value = 2
+        if model_provider == ModelProvider.OPENAI:
+            is_wait_model_completion.get_prob.return_value = 0.5
+        
+        self.model.chat.side_effect = [is_on_topic_model_completion, is_wait_model_completion]
+
+        agent_executor.add_user_turn("hello")
+
+        start_node_schema = cashier_graph_schema.start_node_schema
+        FIRST_TURN = NodeSystemTurn(
+            msg_content=start_node_schema.node_system_prompt(
+                node_prompt=cashier_graph_schema.start_node_schema.node_prompt,
+                input=None,
+                node_input_json_schema=None,
+                state_json_schema=start_node_schema.state_pydantic_model.model_json_schema(),
+                last_msg=None,
+            ),
+            node_id=1,
+        )
+        SECOND_TURN = cashier_graph_schema.start_node_schema.first_turn
+        THIRD_TURN = UserTurn(msg_content="hello")
+
+        fake_fn_call = FunctionCall.create_fake_fn_call(
+            model_provider,
+            "think",
+            args={
+                "thought": "At least part of the customer request/question is off-topic for the current conversation and will actually be addressed later. According to the policies, I must tell the customer that 1) their off-topic request/question will be addressed later and 2) we must finish the current business before we can get to it. I must refuse to engage with the off-topic request/question in any way."
+            },
+        )
+
+        FOURTH_TURN = AssistantTurn(msg_content=None, model_provider=model_provider, tool_registry=start_node_schema.tool_registry, fn_calls=[fake_fn_call], fn_call_id_to_fn_output= {fake_fn_call.id: None})
+
+        TC = self.create_turn_container(
+            [FIRST_TURN, SECOND_TURN, THIRD_TURN, FOURTH_TURN], remove_prev_tool_calls
+        )
+
         assert not DeepDiff(
             agent_executor.get_model_completion_kwargs(),
             {

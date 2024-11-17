@@ -70,7 +70,6 @@ def should_skip_node_schema(
 ) -> Optional[int]:
     if len(all_node_schemas) == 1:
         return None
-
     model_name: ModelName = "claude-3.5"
     model_provider = Model.get_model_provider(model_name)
     node_conv_msgs = copy.deepcopy(
