@@ -59,11 +59,15 @@ class TestAgent:
     ):
         model_chat_side_effects = []
 
-        is_on_topic_model_completion = self.create_mock_model_completion(model_provider, None, False, is_on_topic, 0.5)
+        is_on_topic_model_completion = self.create_mock_model_completion(
+            model_provider, None, False, is_on_topic, 0.5
+        )
         model_chat_side_effects.append(is_on_topic_model_completion)
 
         if not is_on_topic:
-            is_wait_model_completion = self.create_mock_model_completion(model_provider, None, False, fwd_skip_node_schema_id, 0.5)
+            is_wait_model_completion = self.create_mock_model_completion(
+                model_provider, None, False, fwd_skip_node_schema_id, 0.5
+            )
             model_chat_side_effects.append(is_wait_model_completion)
 
         self.model.chat.side_effect = model_chat_side_effects
@@ -204,13 +208,20 @@ class TestAgent:
         )
         assert not diff
 
-    def create_mock_model_completion(self, model_provider, message=None,is_stream=False, message_prop=None, prob = None):
+    def create_mock_model_completion(
+        self,
+        model_provider,
+        message=None,
+        is_stream=False,
+        message_prop=None,
+        prob=None,
+    ):
         model_completion_class = (
             OAIModelOutput
             if model_provider == ModelProvider.OPENAI
             else AnthropicModelOutput
         )
-        message= message or ""
+        message = message or ""
 
         model_completion = model_completion_class(output_obj=None, is_stream=is_stream)
         model_completion.msg_content = message
