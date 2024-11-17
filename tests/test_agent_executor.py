@@ -1,5 +1,6 @@
+from collections import defaultdict
 from io import StringIO
-from unittest.mock import Mock, patch
+from unittest.mock import Mock, patch, call
 
 import pytest
 from deepdiff import DeepDiff
@@ -105,8 +106,12 @@ class TestAgent:
             agent_executor.curr_node.update_state = Mock(return_value=None)
 
         tool_registry = agent_executor.curr_node.schema.tool_registry
-
+        
         fn_calls = fn_calls or []
+        expected_calls_map = defaultdict(list)
+        for fn_call in fn_calls:
+            expected_calls_map[fn_call.name].append(call(**fn_call.args))
+
         with patch.dict(
             tool_registry.fn_name_to_fn,
             {
@@ -117,7 +122,12 @@ class TestAgent:
 
             agent_executor.add_assistant_turn(model_completion)
 
+            visited_fn_call_ids = set()
             for fn_call in fn_calls:
+                if fn_call.id in visited_fn_call_ids:
+                    continue
+                visited_fn_call_ids.add(fn_call.id)
+
                 patched_fn = None
                 if fn_call == get_state_fn_call:
                     patched_fn = agent_executor.curr_node.get_state
@@ -126,8 +136,7 @@ class TestAgent:
                 else:
                     patched_fn = patched_fn_name_to_fn[fn_call.name]
 
-                patched_fn.assert_called_once_with(**fn_call.args)
-                assert fn_call_id_to_fn_output[fn_call.id] == patched_fn(**fn_call.args)
+                patched_fn.assert_has_calls(expected_calls_map[fn_call.name])
 
     @pytest.fixture
     def agent_executor(self, model_provider, remove_prev_tool_calls):
@@ -378,8 +387,10 @@ class TestAgent:
             ["get_menu_item_from_name"],
             ["get_state"],
             ["update_state_order"],
+            ["get_menu_item_from_name", "get_menu_item_from_name"],
             ["get_state", "update_state_order"],
             ["get_state", "get_menu_item_from_name", "update_state_order"],
+            ["get_state", "get_menu_item_from_name", "update_state_order", "get_menu_item_from_name"],
         ],
     )
     def test_add_assistant_turn_tool_calls(
