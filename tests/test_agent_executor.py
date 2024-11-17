@@ -6,6 +6,7 @@ import pytest
 from deepdiff import DeepDiff
 
 from cashier.agent_executor import AgentExecutor
+from cashier.function_call_context import InexistentFunctionError, ToolExceptionWrapper
 from cashier.graph import Node
 from cashier.graph_data.cashier import cashier_graph_schema
 from cashier.model import AnthropicModelOutput, Model, OAIModelOutput
@@ -84,7 +85,7 @@ class TestAgent:
                 model_completion.get_prob = Mock(return_value=prob)
         return model_completion
 
-    def create_fake_fn_calls(self, model_provider, fn_names):
+    def create_fake_fn_calls(self, model_provider, fn_names, tool_registry):
         fn_calls = []
         fn_call_id_to_fn_output = {}
         for fn_name in fn_names:
@@ -98,10 +99,13 @@ class TestAgent:
                 args=args,
             )
             fn_calls.append(fn_call)
-            output = (
-                None if fn_name.startswith("update_state") else f"{fn_name}'s output"
-            )
-            fn_call_id_to_fn_output[fn_call.id] = output
+            if fn_name in tool_registry.tool_names:
+                output = (
+                    None if fn_name.startswith("update_state") else f"{fn_name}'s output"
+                )
+                fn_call_id_to_fn_output[fn_call.id] = output
+            else:
+                fn_call_id_to_fn_output[fn_call.id] = ToolExceptionWrapper(InexistentFunctionError(fn_name))
 
         return fn_calls, fn_call_id_to_fn_output
 
@@ -191,7 +195,10 @@ class TestAgent:
                 else:
                     patched_fn = patched_fn_name_to_fn[fn_call.name]
 
-                patched_fn.assert_has_calls(expected_calls_map[fn_call.name])
+                if fn_call.name not in tool_registry.tool_names:
+                    patched_fn.assert_not_called()
+                else:
+                    patched_fn.assert_has_calls(expected_calls_map[fn_call.name])
 
     @pytest.fixture
     def agent_executor(self, model_provider, remove_prev_tool_calls):
@@ -387,8 +394,10 @@ class TestAgent:
             ["get_menu_item_from_name"],
             ["get_state"],
             ["update_state_order"],
+            ["inexistent_fn"],
             ["get_menu_item_from_name", "get_menu_item_from_name"],
             ["get_state", "update_state_order"],
+            ["get_state", "update_state_order", "inexistent_fn"],
             ["get_state", "get_menu_item_from_name", "update_state_order"],
             [
                 "get_state",
@@ -408,7 +417,7 @@ class TestAgent:
     ):
         self.add_user_turn(agent_executor, "hello", model_provider, True)
         fn_calls, fn_call_id_to_fn_output = self.create_fake_fn_calls(
-            model_provider, fn_names
+            model_provider, fn_names, agent_executor.curr_node.schema.tool_registry
         )
         self.add_assistant_turn(
             agent_executor,
