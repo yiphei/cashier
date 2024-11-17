@@ -85,11 +85,21 @@ class TestAgent:
         model_completion = self.create_mock_model_completion(
             model_provider, message, is_stream, fn_calls=fn_calls
         )
-        get_state_fn_call = next((fn_call for fn_call in fn_calls if fn_call.name == "get_state"), None) if fn_calls else None
-        update_state_fn_calls = [fn_call for fn_call in fn_calls if fn_call.name.startswith("update_state")] if fn_calls else []
-        
+        get_state_fn_call = (
+            next((fn_call for fn_call in fn_calls if fn_call.name == "get_state"), None)
+            if fn_calls
+            else None
+        )
+        update_state_fn_calls = (
+            [fn_call for fn_call in fn_calls if fn_call.name.startswith("update_state")]
+            if fn_calls
+            else []
+        )
+
         if get_state_fn_call is not None:
-            agent_executor.curr_node.get_state = Mock(return_value=fn_call_id_to_fn_output[get_state_fn_call.id])
+            agent_executor.curr_node.get_state = Mock(
+                return_value=fn_call_id_to_fn_output[get_state_fn_call.id]
+            )
 
         if update_state_fn_calls:
             agent_executor.curr_node.update_state = Mock(return_value=None)
@@ -114,11 +124,9 @@ class TestAgent:
                 elif fn_call in update_state_fn_calls:
                     patched_fn = agent_executor.curr_node.update_state
                 else:
-                    patched_fn = patched_fn_name_to_fn[fn_call.name]    
+                    patched_fn = patched_fn_name_to_fn[fn_call.name]
 
-                patched_fn.assert_called_once_with(
-                    **fn_call.args
-                )
+                patched_fn.assert_called_once_with(**fn_call.args)
                 assert fn_call_id_to_fn_output[fn_call.id] == patched_fn(**fn_call.args)
 
     @pytest.fixture
