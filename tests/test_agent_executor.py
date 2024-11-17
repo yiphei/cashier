@@ -90,7 +90,6 @@ class TestAgent:
             },
         )
 
-
     @pytest.mark.parametrize(
         "model_provider", [ModelProvider.ANTHROPIC, ModelProvider.OPENAI]
     )
