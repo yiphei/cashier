@@ -346,6 +346,25 @@ class TestAgent:
             },
         )
 
+    def create_fake_fn_calls(self, model_provider, fn_names):
+        fn_calls = []
+        fn_call_id_to_fn_output = {}
+        for fn_name in fn_names:
+            args = {"arg_1": "arg_1_val"}
+            if fn_name == "get_state":
+                args = {}
+
+            fn_calls.append(
+                FunctionCall.create_fake_fn_call(
+                    model_provider,
+                    fn_name,
+                    args=args,
+                )
+            )
+            fn_call_id_to_fn_output = {fn_calls[0].id: f"{fn_name}'s output"}
+
+        return fn_calls, fn_call_id_to_fn_output
+
     @pytest.mark.parametrize(
         "model_provider", [ModelProvider.OPENAI, ModelProvider.ANTHROPIC]
     )
@@ -359,14 +378,9 @@ class TestAgent:
         agent_executor,
     ):
         self.add_user_turn(agent_executor, "hello", model_provider, True)
-        fn_calls = [
-            FunctionCall.create_fake_fn_call(
-                model_provider,
-                "get_menu_item_from_name",
-                args={"menu_item_name": "pecan latte"},
-            )
-        ]
-        fn_call_id_to_fn_output = {fn_calls[0].id: "some output"}
+        fn_calls, fn_call_id_to_fn_output = self.create_fake_fn_calls(
+            model_provider, ["get_menu_item_from_name"]
+        )
         self.add_assistant_turn(
             agent_executor,
             model_provider,
