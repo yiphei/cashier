@@ -198,7 +198,6 @@ class TestAgent:
             [FIRST_TURN, SECOND_TURN, THIRD_TURN, FOURTH_TURN], remove_prev_tool_calls
         )
 
-
         assert not DeepDiff(
             agent_executor.get_model_completion_kwargs(),
             {
