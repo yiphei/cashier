@@ -73,23 +73,38 @@ class TestAgent:
         self.model.chat.side_effect = model_chat_side_effects
         agent_executor.add_user_turn(message)
 
-    def add_assistant_turn(self, agent_executor, model_provider, message, is_stream, fn_calls=None, fn_call_id_to_fn_output=None):
+    def add_assistant_turn(
+        self,
+        agent_executor,
+        model_provider,
+        message,
+        is_stream,
+        fn_calls=None,
+        fn_call_id_to_fn_output=None,
+    ):
         model_completion = self.create_mock_model_completion(
             model_provider, message, is_stream, fn_calls=fn_calls
         )
         tool_registry = cashier_graph_schema.start_node_schema.tool_registry
 
         fn_calls = fn_calls or {}
-        with patch.dict(tool_registry.fn_name_to_fn, {
-            fn_call.name: Mock(return_value=fn_call_id_to_fn_output[fn_call.id]) 
-            for fn_call in fn_calls
-        }) as patched_fn_name_to_fn:
+        with patch.dict(
+            tool_registry.fn_name_to_fn,
+            {
+                fn_call.name: Mock(return_value=fn_call_id_to_fn_output[fn_call.id])
+                for fn_call in fn_calls
+            },
+        ) as patched_fn_name_to_fn:
 
             agent_executor.add_assistant_turn(model_completion)
 
             for fn_call in fn_calls:
-                patched_fn_name_to_fn[fn_call.name].assert_called_once_with(**fn_call.args)
-                assert fn_call_id_to_fn_output[fn_call.id] == patched_fn_name_to_fn[fn_call.name](**fn_call.args)
+                patched_fn_name_to_fn[fn_call.name].assert_called_once_with(
+                    **fn_call.args
+                )
+                assert fn_call_id_to_fn_output[fn_call.id] == patched_fn_name_to_fn[
+                    fn_call.name
+                ](**fn_call.args)
 
     @pytest.fixture
     def agent_executor(self, model_provider, remove_prev_tool_calls):
@@ -232,7 +247,7 @@ class TestAgent:
         is_stream=False,
         message_prop=None,
         prob=None,
-        fn_calls=None
+        fn_calls=None,
     ):
         model_completion_class = (
             OAIModelOutput
@@ -245,7 +260,9 @@ class TestAgent:
         model_completion.msg_content = message
         model_completion.get_message = Mock(return_value=message)
         if message is not None:
-            model_completion.stream_message = Mock(return_value=iter(message.split(" ")))
+            model_completion.stream_message = Mock(
+                return_value=iter(message.split(" "))
+            )
         else:
             model_completion.stream_message = Mock(return_value=None)
         model_completion.get_fn_calls = Mock(return_value=iter(fn_calls))
@@ -306,8 +323,6 @@ class TestAgent:
             },
         )
 
-
-
     @pytest.mark.parametrize(
         "model_provider", [ModelProvider.OPENAI, ModelProvider.ANTHROPIC]
     )
@@ -322,10 +337,21 @@ class TestAgent:
     ):
         self.add_user_turn(agent_executor, "hello", model_provider, True)
         fn_calls = [
-            FunctionCall.create_fake_fn_call(model_provider, 'get_menu_item_from_name', args={"menu_item_name": "pecan latte"})
+            FunctionCall.create_fake_fn_call(
+                model_provider,
+                "get_menu_item_from_name",
+                args={"menu_item_name": "pecan latte"},
+            )
         ]
         fn_call_id_to_fn_output = {fn_calls[0].id: "some output"}
-        self.add_assistant_turn(agent_executor, model_provider, None, is_stream, fn_calls, fn_call_id_to_fn_output)
+        self.add_assistant_turn(
+            agent_executor,
+            model_provider,
+            None,
+            is_stream,
+            fn_calls,
+            fn_call_id_to_fn_output,
+        )
 
         start_node_schema = cashier_graph_schema.start_node_schema
         FIRST_TURN = NodeSystemTurn(
