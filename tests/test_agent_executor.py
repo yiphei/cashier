@@ -7,7 +7,7 @@ from deepdiff import DeepDiff
 from cashier.agent_executor import AgentExecutor
 from cashier.graph import Node
 from cashier.graph_data.cashier import cashier_graph_schema
-from cashier.model import Model
+from cashier.model import AnthropicModelOutput, Model, ModelOutput, OAIModelOutput
 from cashier.model_turn import AssistantTurn, NodeSystemTurn, UserTurn
 from cashier.model_util import ModelProvider
 from cashier.turn_container import TurnContainer
@@ -94,11 +94,16 @@ class TestAgent:
         "model_provider", [ModelProvider.ANTHROPIC, ModelProvider.OPENAI]
     )
     @pytest.mark.parametrize("remove_prev_tool_calls", [True, False])
-    def test_add_user_turn(self, remove_prev_tool_calls, agent_executor):
-        start_node_schema = cashier_graph_schema.start_node_schema
+    def test_add_user_turn(self, model_provider, remove_prev_tool_calls, agent_executor):
+        is_on_topic_model_completion = Mock(spec=OAIModelOutput if model_provider == ModelProvider.OPENAI else AnthropicModelOutput)
+        is_on_topic_model_completion.get_message_prop.return_value = True
+        if model_provider == ModelProvider.OPENAI:
+            is_on_topic_model_completion.get_prob.return_value = 0.5
+        self.model.chat.return_value = is_on_topic_model_completion
 
         agent_executor.add_user_turn("hello")
 
+        start_node_schema = cashier_graph_schema.start_node_schema
         FIRST_TURN = NodeSystemTurn(
             msg_content=start_node_schema.node_system_prompt(
                 node_prompt=cashier_graph_schema.start_node_schema.node_prompt,
