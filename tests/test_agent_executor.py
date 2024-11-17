@@ -85,7 +85,7 @@ class TestAgent:
         model_completion = self.create_mock_model_completion(
             model_provider, message, is_stream, fn_calls=fn_calls
         )
-        tool_registry = cashier_graph_schema.start_node_schema.tool_registry
+        tool_registry = agent_executor.curr_node.schema.tool_registry
 
         fn_calls = fn_calls or {}
         with patch.dict(
