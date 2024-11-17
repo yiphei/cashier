@@ -48,6 +48,39 @@ class TestAgent:
 
             TC.turns.append(turn)
         return TC
+    
+    def add_user_turn(self, agent_executor, message, model_provider, is_on_topic, fwd_skip_node_schema_id=None):
+        model_chat_side_effects = []
+        
+        is_on_topic_model_completion = Mock(
+            spec=(
+                OAIModelOutput
+                if model_provider == ModelProvider.OPENAI
+                else AnthropicModelOutput
+            )
+        )
+        is_on_topic_model_completion.get_message_prop.return_value = is_on_topic
+        if model_provider == ModelProvider.OPENAI:
+            is_on_topic_model_completion.get_prob.return_value = 0.5    
+        model_chat_side_effects.append(is_on_topic_model_completion)
+
+        if not is_on_topic:
+            is_wait_model_completion = Mock(
+                spec=(
+                    OAIModelOutput
+                    if model_provider == ModelProvider.OPENAI
+                    else AnthropicModelOutput
+                )
+            )
+            is_wait_model_completion.get_message_prop.return_value = fwd_skip_node_schema_id
+            if model_provider == ModelProvider.OPENAI:
+                is_wait_model_completion.get_prob.return_value = 0.5
+
+            model_chat_side_effects.append(is_wait_model_completion)
+
+        self.model.chat.side_effect = model_chat_side_effects
+        agent_executor.add_user_turn(message)
+
 
     @pytest.fixture
     def agent_executor(self, model_provider, remove_prev_tool_calls):
@@ -97,19 +130,7 @@ class TestAgent:
     def test_add_user_turn(
         self, model_provider, remove_prev_tool_calls, agent_executor
     ):
-        is_on_topic_model_completion = Mock(
-            spec=(
-                OAIModelOutput
-                if model_provider == ModelProvider.OPENAI
-                else AnthropicModelOutput
-            )
-        )
-        is_on_topic_model_completion.get_message_prop.return_value = True
-        if model_provider == ModelProvider.OPENAI:
-            is_on_topic_model_completion.get_prob.return_value = 0.5
-        self.model.chat.return_value = is_on_topic_model_completion
-
-        agent_executor.add_user_turn("hello")
+        self.add_user_turn(agent_executor, "hello", model_provider, True)
 
         start_node_schema = cashier_graph_schema.start_node_schema
         FIRST_TURN = NodeSystemTurn(
@@ -150,34 +171,7 @@ class TestAgent:
         agent_executor,
     ):
         generate_random_string_patch.return_value = "call_123"
-        is_on_topic_model_completion = Mock(
-            spec=(
-                OAIModelOutput
-                if model_provider == ModelProvider.OPENAI
-                else AnthropicModelOutput
-            )
-        )
-        is_on_topic_model_completion.get_message_prop.return_value = False
-        if model_provider == ModelProvider.OPENAI:
-            is_on_topic_model_completion.get_prob.return_value = 0.5
-
-        is_wait_model_completion = Mock(
-            spec=(
-                OAIModelOutput
-                if model_provider == ModelProvider.OPENAI
-                else AnthropicModelOutput
-            )
-        )
-        is_wait_model_completion.get_message_prop.return_value = 2
-        if model_provider == ModelProvider.OPENAI:
-            is_wait_model_completion.get_prob.return_value = 0.5
-
-        self.model.chat.side_effect = [
-            is_on_topic_model_completion,
-            is_wait_model_completion,
-        ]
-
-        agent_executor.add_user_turn("hello")
+        self.add_user_turn(agent_executor, "hello", model_provider, False, 2)
 
         start_node_schema = cashier_graph_schema.start_node_schema
         FIRST_TURN = NodeSystemTurn(
@@ -213,7 +207,7 @@ class TestAgent:
             [FIRST_TURN, SECOND_TURN, THIRD_TURN, FOURTH_TURN], remove_prev_tool_calls
         )
 
-        assert not DeepDiff(
+        diff= DeepDiff(
             agent_executor.get_model_completion_kwargs(),
             {
                 "turn_container": TC,
@@ -221,6 +215,7 @@ class TestAgent:
                 "force_tool_choice": None,
             },
         )
+        assert not diff
 
     def create_mock_model_completion(self, model_provider, is_stream, message):
         model_completion_class = (
@@ -249,20 +244,7 @@ class TestAgent:
         is_stream,
         agent_executor,
     ):
-        is_on_topic_model_completion = Mock(
-            spec=(
-                OAIModelOutput
-                if model_provider == ModelProvider.OPENAI
-                else AnthropicModelOutput
-            )
-        )
-        is_on_topic_model_completion.get_message_prop.return_value = True
-        if model_provider == ModelProvider.OPENAI:
-            is_on_topic_model_completion.get_prob.return_value = 0.5
-
-        self.model.chat.return_value = is_on_topic_model_completion
-
-        agent_executor.add_user_turn("hello")
+        self.add_user_turn(agent_executor, "hello", model_provider, True)
 
         model_completion = self.create_mock_model_completion(
             model_provider, is_stream, "hello back"
