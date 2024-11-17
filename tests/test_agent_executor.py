@@ -92,9 +92,7 @@ class TestAgent:
             agent_executor.curr_node.get_state = Mock(return_value=fn_call_id_to_fn_output[get_state_fn_call.id])
 
         if update_state_fn_calls:
-            agent_executor.curr_node.update_state = Mock(side_effect=[fn_call_id_to_fn_output[fn_call.id]
-                                                                      for fn_call in fn_calls
-                                                                      ])
+            agent_executor.curr_node.update_state = Mock(return_value=None)
 
         tool_registry = agent_executor.curr_node.schema.tool_registry
 
