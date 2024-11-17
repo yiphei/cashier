@@ -73,6 +73,24 @@ class TestAgent:
         self.model.chat.side_effect = model_chat_side_effects
         agent_executor.add_user_turn(message)
 
+    def add_assistant_turn(self, agent_executor, model_provider, message, is_stream, fn_calls=None, fn_call_id_to_fn_output=None):
+        model_completion = self.create_mock_model_completion(
+            model_provider, message, is_stream, fn_calls=fn_calls
+        )
+        tool_registry = cashier_graph_schema.start_node_schema.tool_registry
+
+        fn_calls = fn_calls or {}
+        with patch.dict(tool_registry.fn_name_to_fn, {
+            fn_call.name: Mock(return_value=fn_call_id_to_fn_output[fn_call.id]) 
+            for fn_call in fn_calls
+        }) as patched_fn_name_to_fn:
+
+            agent_executor.add_assistant_turn(model_completion)
+
+            for fn_call in fn_calls:
+                patched_fn_name_to_fn[fn_call.name].assert_called_once_with(**fn_call.args)
+                assert fn_call_id_to_fn_output[fn_call.id] == patched_fn_name_to_fn[fn_call.name](**fn_call.args)
+
     @pytest.fixture
     def agent_executor(self, model_provider, remove_prev_tool_calls):
         return AgentExecutor(
@@ -214,20 +232,25 @@ class TestAgent:
         is_stream=False,
         message_prop=None,
         prob=None,
+        fn_calls=None
     ):
         model_completion_class = (
             OAIModelOutput
             if model_provider == ModelProvider.OPENAI
             else AnthropicModelOutput
         )
-        message = message or ""
+        fn_calls = fn_calls or []
 
         model_completion = model_completion_class(output_obj=None, is_stream=is_stream)
         model_completion.msg_content = message
         model_completion.get_message = Mock(return_value=message)
-        model_completion.stream_message = Mock(return_value=iter(message.split(" ")))
-        model_completion.get_fn_calls = Mock(return_value=[])
-        model_completion.stream_fn_calls = Mock(return_value=iter([]))
+        if message is not None:
+            model_completion.stream_message = Mock(return_value=iter(message.split(" ")))
+        else:
+            model_completion.stream_message = Mock(return_value=None)
+        model_completion.get_fn_calls = Mock(return_value=iter(fn_calls))
+        model_completion.stream_fn_calls = Mock(return_value=iter(fn_calls))
+        model_completion.fn_calls = fn_calls
         if message_prop is not None:
             model_completion.get_message_prop = Mock(return_value=message_prop)
             if model_provider == ModelProvider.OPENAI:
@@ -247,12 +270,7 @@ class TestAgent:
         agent_executor,
     ):
         self.add_user_turn(agent_executor, "hello", model_provider, True)
-
-        model_completion = self.create_mock_model_completion(
-            model_provider, "hello back", is_stream
-        )
-
-        agent_executor.add_assistant_turn(model_completion)
+        self.add_assistant_turn(agent_executor, model_provider, "hello back", is_stream)
 
         start_node_schema = cashier_graph_schema.start_node_schema
         FIRST_TURN = NodeSystemTurn(
@@ -273,6 +291,61 @@ class TestAgent:
             tool_registry=start_node_schema.tool_registry,
             fn_calls=[],
             fn_call_id_to_fn_output={},
+        )
+
+        TC = self.create_turn_container(
+            [FIRST_TURN, SECOND_TURN, THIRD_TURN, FOURTH_TURN], remove_prev_tool_calls
+        )
+
+        assert not DeepDiff(
+            agent_executor.get_model_completion_kwargs(),
+            {
+                "turn_container": TC,
+                "tool_registry": start_node_schema.tool_registry,
+                "force_tool_choice": None,
+            },
+        )
+
+
+
+    @pytest.mark.parametrize(
+        "model_provider", [ModelProvider.OPENAI, ModelProvider.ANTHROPIC]
+    )
+    @pytest.mark.parametrize("remove_prev_tool_calls", [True, False])
+    @pytest.mark.parametrize("is_stream", [True, False])
+    def test_add_assistant_turn_tool_calls(
+        self,
+        model_provider,
+        remove_prev_tool_calls,
+        is_stream,
+        agent_executor,
+    ):
+        self.add_user_turn(agent_executor, "hello", model_provider, True)
+        fn_calls = [
+            FunctionCall.create_fake_fn_call(model_provider, 'get_menu_item_from_name', args={"menu_item_name": "pecan latte"})
+        ]
+        fn_call_id_to_fn_output = {fn_calls[0].id: "some output"}
+        self.add_assistant_turn(agent_executor, model_provider, None, is_stream, fn_calls, fn_call_id_to_fn_output)
+
+        start_node_schema = cashier_graph_schema.start_node_schema
+        FIRST_TURN = NodeSystemTurn(
+            msg_content=start_node_schema.node_system_prompt(
+                node_prompt=cashier_graph_schema.start_node_schema.node_prompt,
+                input=None,
+                node_input_json_schema=None,
+                state_json_schema=start_node_schema.state_pydantic_model.model_json_schema(),
+                last_msg=None,
+            ),
+            node_id=1,
+        )
+        SECOND_TURN = cashier_graph_schema.start_node_schema.first_turn
+        THIRD_TURN = UserTurn(msg_content="hello")
+        FOURTH_TURN = AssistantTurn(
+            msg_content=None,
+            model_provider=model_provider,
+            tool_registry=start_node_schema.tool_registry,
+            fn_calls=fn_calls,
+            fn_call_id_to_fn_output=fn_call_id_to_fn_output,
         )
 
         TC = self.create_turn_container(
