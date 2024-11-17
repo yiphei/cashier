@@ -1,4 +1,3 @@
-import random
 from io import StringIO
 from unittest.mock import Mock, patch
 
@@ -150,7 +149,6 @@ class TestAgent:
         remove_prev_tool_calls,
         agent_executor,
     ):
-        # random.seed(42)
         generate_random_string_patch.return_value = "call_123"
         is_on_topic_model_completion = Mock(
             spec=(
