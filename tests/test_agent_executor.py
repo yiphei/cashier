@@ -198,7 +198,8 @@ class TestAgent:
             [FIRST_TURN, SECOND_TURN, THIRD_TURN, FOURTH_TURN], remove_prev_tool_calls
         )
 
-        diff = DeepDiff(
+
+        assert not DeepDiff(
             agent_executor.get_model_completion_kwargs(),
             {
                 "turn_container": TC,
@@ -206,7 +207,6 @@ class TestAgent:
                 "force_tool_choice": None,
             },
         )
-        assert not diff
 
     def create_mock_model_completion(
         self,
