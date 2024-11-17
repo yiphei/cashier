@@ -355,13 +355,11 @@ class TestAgent:
                 args = {}
 
             fn_call = FunctionCall.create_fake_fn_call(
-                    model_provider,
-                    fn_name,
-                    args=args,
-                )
-            fn_calls.append(
-                fn_call
+                model_provider,
+                fn_name,
+                args=args,
             )
+            fn_calls.append(fn_call)
             output = (
                 None if fn_name.startswith("update_state") else f"{fn_name}'s output"
             )
@@ -380,8 +378,8 @@ class TestAgent:
             ["get_menu_item_from_name"],
             ["get_state"],
             ["update_state_order"],
-              ['get_state', 'update_state_order'],
-              ['get_state', 'get_menu_item_from_name', 'update_state_order']
+            ["get_state", "update_state_order"],
+            ["get_state", "get_menu_item_from_name", "update_state_order"],
         ],
     )
     def test_add_assistant_turn_tool_calls(
