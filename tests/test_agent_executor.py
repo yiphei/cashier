@@ -1,6 +1,6 @@
 from collections import defaultdict
 from io import StringIO
-from unittest.mock import Mock, patch, call
+from unittest.mock import Mock, call, patch
 
 import pytest
 from deepdiff import DeepDiff
@@ -106,7 +106,7 @@ class TestAgent:
             agent_executor.curr_node.update_state = Mock(return_value=None)
 
         tool_registry = agent_executor.curr_node.schema.tool_registry
-        
+
         fn_calls = fn_calls or []
         expected_calls_map = defaultdict(list)
         for fn_call in fn_calls:
@@ -390,7 +390,12 @@ class TestAgent:
             ["get_menu_item_from_name", "get_menu_item_from_name"],
             ["get_state", "update_state_order"],
             ["get_state", "get_menu_item_from_name", "update_state_order"],
-            ["get_state", "get_menu_item_from_name", "update_state_order", "get_menu_item_from_name"],
+            [
+                "get_state",
+                "get_menu_item_from_name",
+                "update_state_order",
+                "get_menu_item_from_name",
+            ],
         ],
     )
     def test_add_assistant_turn_tool_calls(
