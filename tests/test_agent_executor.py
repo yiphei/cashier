@@ -1,3 +1,4 @@
+import random
 from io import StringIO
 from unittest.mock import Mock, patch
 
@@ -11,7 +12,6 @@ from cashier.model import AnthropicModelOutput, Model, OAIModelOutput
 from cashier.model_turn import AssistantTurn, NodeSystemTurn, UserTurn
 from cashier.model_util import FunctionCall, ModelProvider
 from cashier.turn_container import TurnContainer
-import random
 
 
 class TestAgent:
@@ -138,14 +138,17 @@ class TestAgent:
             },
         )
 
-
     @pytest.mark.parametrize(
         "model_provider", [ModelProvider.ANTHROPIC, ModelProvider.OPENAI]
     )
     @pytest.mark.parametrize("remove_prev_tool_calls", [True, False])
     @patch("cashier.model_util.generate_random_string")
     def test_add_user_turn_handle_wait(
-        self,generate_random_string_patch,  model_provider, remove_prev_tool_calls, agent_executor
+        self,
+        generate_random_string_patch,
+        model_provider,
+        remove_prev_tool_calls,
+        agent_executor,
     ):
         # random.seed(42)
         generate_random_string_patch.return_value = "call_123"
@@ -159,20 +162,22 @@ class TestAgent:
         is_on_topic_model_completion.get_message_prop.return_value = False
         if model_provider == ModelProvider.OPENAI:
             is_on_topic_model_completion.get_prob.return_value = 0.5
-        
 
         is_wait_model_completion = Mock(
-        spec=(
-            OAIModelOutput
-            if model_provider == ModelProvider.OPENAI
-            else AnthropicModelOutput
-        )
+            spec=(
+                OAIModelOutput
+                if model_provider == ModelProvider.OPENAI
+                else AnthropicModelOutput
+            )
         )
         is_wait_model_completion.get_message_prop.return_value = 2
         if model_provider == ModelProvider.OPENAI:
             is_wait_model_completion.get_prob.return_value = 0.5
-        
-        self.model.chat.side_effect = [is_on_topic_model_completion, is_wait_model_completion]
+
+        self.model.chat.side_effect = [
+            is_on_topic_model_completion,
+            is_wait_model_completion,
+        ]
 
         agent_executor.add_user_turn("hello")
 
@@ -198,7 +203,13 @@ class TestAgent:
             },
         )
 
-        FOURTH_TURN = AssistantTurn(msg_content=None, model_provider=model_provider, tool_registry=start_node_schema.tool_registry, fn_calls=[fake_fn_call], fn_call_id_to_fn_output= {fake_fn_call.id: None})
+        FOURTH_TURN = AssistantTurn(
+            msg_content=None,
+            model_provider=model_provider,
+            tool_registry=start_node_schema.tool_registry,
+            fn_calls=[fake_fn_call],
+            fn_call_id_to_fn_output={fake_fn_call.id: None},
+        )
 
         TC = self.create_turn_container(
             [FIRST_TURN, SECOND_TURN, THIRD_TURN, FOURTH_TURN], remove_prev_tool_calls
