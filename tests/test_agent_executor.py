@@ -59,32 +59,11 @@ class TestAgent:
     ):
         model_chat_side_effects = []
 
-        is_on_topic_model_completion = Mock(
-            spec=(
-                OAIModelOutput
-                if model_provider == ModelProvider.OPENAI
-                else AnthropicModelOutput
-            )
-        )
-        is_on_topic_model_completion.get_message_prop.return_value = is_on_topic
-        if model_provider == ModelProvider.OPENAI:
-            is_on_topic_model_completion.get_prob.return_value = 0.5
+        is_on_topic_model_completion = self.create_mock_model_completion(model_provider, None, False, is_on_topic, 0.5)
         model_chat_side_effects.append(is_on_topic_model_completion)
 
         if not is_on_topic:
-            is_wait_model_completion = Mock(
-                spec=(
-                    OAIModelOutput
-                    if model_provider == ModelProvider.OPENAI
-                    else AnthropicModelOutput
-                )
-            )
-            is_wait_model_completion.get_message_prop.return_value = (
-                fwd_skip_node_schema_id
-            )
-            if model_provider == ModelProvider.OPENAI:
-                is_wait_model_completion.get_prob.return_value = 0.5
-
+            is_wait_model_completion = self.create_mock_model_completion(model_provider, None, False, fwd_skip_node_schema_id, 0.5)
             model_chat_side_effects.append(is_wait_model_completion)
 
         self.model.chat.side_effect = model_chat_side_effects
@@ -225,12 +204,13 @@ class TestAgent:
         )
         assert not diff
 
-    def create_mock_model_completion(self, model_provider, is_stream, message):
+    def create_mock_model_completion(self, model_provider, message=None,is_stream=False, message_prop=None, prob = None):
         model_completion_class = (
             OAIModelOutput
             if model_provider == ModelProvider.OPENAI
             else AnthropicModelOutput
         )
+        message= message or ""
 
         model_completion = model_completion_class(output_obj=None, is_stream=is_stream)
         model_completion.msg_content = message
@@ -238,6 +218,10 @@ class TestAgent:
         model_completion.stream_message = Mock(return_value=iter(message.split(" ")))
         model_completion.get_fn_calls = Mock(return_value=[])
         model_completion.stream_fn_calls = Mock(return_value=iter([]))
+        if message_prop is not None:
+            model_completion.get_message_prop = Mock(return_value=message_prop)
+            if model_provider == ModelProvider.OPENAI:
+                model_completion.get_prob = Mock(return_value=prob)
         return model_completion
 
     @pytest.mark.parametrize(
@@ -255,7 +239,7 @@ class TestAgent:
         self.add_user_turn(agent_executor, "hello", model_provider, True)
 
         model_completion = self.create_mock_model_completion(
-            model_provider, is_stream, "hello back"
+            model_provider, "hello back", is_stream
         )
 
         agent_executor.add_assistant_turn(model_completion)
