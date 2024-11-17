@@ -101,11 +101,15 @@ class TestAgent:
             fn_calls.append(fn_call)
             if fn_name in tool_registry.tool_names:
                 output = (
-                    None if fn_name.startswith("update_state") else f"{fn_name}'s output"
+                    None
+                    if fn_name.startswith("update_state")
+                    else f"{fn_name}'s output"
                 )
                 fn_call_id_to_fn_output[fn_call.id] = output
             else:
-                fn_call_id_to_fn_output[fn_call.id] = ToolExceptionWrapper(InexistentFunctionError(fn_name))
+                fn_call_id_to_fn_output[fn_call.id] = ToolExceptionWrapper(
+                    InexistentFunctionError(fn_name)
+                )
 
         return fn_calls, fn_call_id_to_fn_output
 
