@@ -85,9 +85,20 @@ class TestAgent:
         model_completion = self.create_mock_model_completion(
             model_provider, message, is_stream, fn_calls=fn_calls
         )
+        get_state_fn_call = next((fn_call for fn_call in fn_calls if fn_call.name == "get_state"), None) if fn_calls else None
+        update_state_fn_calls = [fn_call for fn_call in fn_calls if fn_call.name.startswith("update_state")] if fn_calls else []
+        
+        if get_state_fn_call is not None:
+            agent_executor.curr_node.get_state = Mock(return_value=fn_call_id_to_fn_output[get_state_fn_call.id])
+
+        if update_state_fn_calls:
+            agent_executor.curr_node.update_state = Mock(side_effect=[fn_call_id_to_fn_output[fn_call.id]
+                                                                      for fn_call in fn_calls
+                                                                      ])
+
         tool_registry = agent_executor.curr_node.schema.tool_registry
 
-        fn_calls = fn_calls or {}
+        fn_calls = fn_calls or []
         with patch.dict(
             tool_registry.fn_name_to_fn,
             {
@@ -99,12 +110,18 @@ class TestAgent:
             agent_executor.add_assistant_turn(model_completion)
 
             for fn_call in fn_calls:
-                patched_fn_name_to_fn[fn_call.name].assert_called_once_with(
+                patched_fn = None
+                if fn_call == get_state_fn_call:
+                    patched_fn = agent_executor.curr_node.get_state
+                elif fn_call in update_state_fn_calls:
+                    patched_fn = agent_executor.curr_node.update_state
+                else:
+                    patched_fn = patched_fn_name_to_fn[fn_call.name]    
+
+                patched_fn.assert_called_once_with(
                     **fn_call.args
                 )
-                assert fn_call_id_to_fn_output[fn_call.id] == patched_fn_name_to_fn[
-                    fn_call.name
-                ](**fn_call.args)
+                assert fn_call_id_to_fn_output[fn_call.id] == patched_fn(**fn_call.args)
 
     @pytest.fixture
     def agent_executor(self, model_provider, remove_prev_tool_calls):
