@@ -2,6 +2,7 @@ from io import StringIO
 from unittest.mock import Mock, patch
 
 import pytest
+from deepdiff import DeepDiff
 
 from cashier.agent_executor import AgentExecutor
 from cashier.graph import Node
@@ -10,7 +11,6 @@ from cashier.model import Model
 from cashier.model_turn import AssistantTurn, NodeSystemTurn, UserTurn
 from cashier.model_util import ModelProvider
 from cashier.turn_container import TurnContainer
-from deepdiff import DeepDiff
 
 
 class TestAgent:
@@ -33,7 +33,8 @@ class TestAgent:
             kwargs = {"turn": turn}
             if isinstance(turn, NodeSystemTurn):
                 add_fn = "add_node_turn"
-                kwargs = { **kwargs,
+                kwargs = {
+                    **kwargs,
                     "remove_prev_tool_calls": remove_prev_tool_calls,
                     "is_skip": False,
                 }
@@ -77,9 +78,14 @@ class TestAgent:
         )
         SECOND_NODE = cashier_graph_schema.start_node_schema.first_turn
 
-        TC = self.create_turn_container([FIRST_NODE, SECOND_NODE], remove_prev_tool_calls)
-        assert not DeepDiff(agent_executor.get_model_completion_kwargs(), {
-        "turn_container": TC,
-            "tool_registry": start_node_schema.tool_registry,
-            "force_tool_choice": None,
-        })
+        TC = self.create_turn_container(
+            [FIRST_NODE, SECOND_NODE], remove_prev_tool_calls
+        )
+        assert not DeepDiff(
+            agent_executor.get_model_completion_kwargs(),
+            {
+                "turn_container": TC,
+                "tool_registry": start_node_schema.tool_registry,
+                "force_tool_choice": None,
+            },
+        )
