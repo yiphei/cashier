@@ -223,18 +223,19 @@ class TestAgent:
         )
 
     def create_mock_model_completion(self, model_provider, is_stream, message):
-        model_completion_class = (OAIModelOutput
-                if model_provider == ModelProvider.OPENAI
-                else AnthropicModelOutput)
-        
-        model_completion = model_completion_class(output_obj=None,is_stream=is_stream)
+        model_completion_class = (
+            OAIModelOutput
+            if model_provider == ModelProvider.OPENAI
+            else AnthropicModelOutput
+        )
+
+        model_completion = model_completion_class(output_obj=None, is_stream=is_stream)
         model_completion.msg_content = message
         model_completion.get_message = Mock(return_value=message)
         model_completion.stream_message = Mock(return_value=iter(message.split(" ")))
         model_completion.get_fn_calls = Mock(return_value=[])
         model_completion.stream_fn_calls = Mock(return_value=iter([]))
         return model_completion
-
 
     @pytest.mark.parametrize(
         "model_provider", [ModelProvider.OPENAI, ModelProvider.ANTHROPIC]
@@ -261,7 +262,9 @@ class TestAgent:
 
         agent_executor.add_user_turn("hello")
 
-        model_completion = self.create_mock_model_completion(model_provider, False, "hello back")
+        model_completion = self.create_mock_model_completion(
+            model_provider, False, "hello back"
+        )
 
         agent_executor.add_assistant_turn(model_completion)
 
@@ -278,7 +281,13 @@ class TestAgent:
         )
         SECOND_TURN = cashier_graph_schema.start_node_schema.first_turn
         THIRD_TURN = UserTurn(msg_content="hello")
-        FOURTH_TURN = AssistantTurn(msg_content="hello back", model_provider=model_provider, tool_registry=start_node_schema.tool_registry, fn_calls=[], fn_call_id_to_fn_output={})
+        FOURTH_TURN = AssistantTurn(
+            msg_content="hello back",
+            model_provider=model_provider,
+            tool_registry=start_node_schema.tool_registry,
+            fn_calls=[],
+            fn_call_id_to_fn_output={},
+        )
 
         TC = self.create_turn_container(
             [FIRST_TURN, SECOND_TURN, THIRD_TURN, FOURTH_TURN], remove_prev_tool_calls
