@@ -241,10 +241,12 @@ class TestAgent:
         "model_provider", [ModelProvider.OPENAI, ModelProvider.ANTHROPIC]
     )
     @pytest.mark.parametrize("remove_prev_tool_calls", [True, False])
+    @pytest.mark.parametrize("is_stream", [True, False])
     def test_add_assistant_turn(
         self,
         model_provider,
         remove_prev_tool_calls,
+        is_stream,
         agent_executor,
     ):
         is_on_topic_model_completion = Mock(
@@ -263,7 +265,7 @@ class TestAgent:
         agent_executor.add_user_turn("hello")
 
         model_completion = self.create_mock_model_completion(
-            model_provider, False, "hello back"
+            model_provider, is_stream, "hello back"
         )
 
         agent_executor.add_assistant_turn(model_completion)
