@@ -89,3 +89,38 @@ class TestAgent:
                 "force_tool_choice": None,
             },
         )
+
+
+    @pytest.mark.parametrize(
+        "model_provider", [ModelProvider.ANTHROPIC, ModelProvider.OPENAI]
+    )
+    @pytest.mark.parametrize("remove_prev_tool_calls", [True, False])
+    def test_add_user_turn(self, remove_prev_tool_calls, agent_executor):
+        start_node_schema = cashier_graph_schema.start_node_schema
+
+        agent_executor.add_user_turn("hello")
+
+        FIRST_TURN = NodeSystemTurn(
+            msg_content=start_node_schema.node_system_prompt(
+                node_prompt=cashier_graph_schema.start_node_schema.node_prompt,
+                input=None,
+                node_input_json_schema=None,
+                state_json_schema=start_node_schema.state_pydantic_model.model_json_schema(),
+                last_msg=None,
+            ),
+            node_id=1,
+        )
+        SECOND_TURN = cashier_graph_schema.start_node_schema.first_turn
+        THIRD_TURN = UserTurn(msg_content="hello")
+
+        TC = self.create_turn_container(
+            [FIRST_TURN, SECOND_TURN, THIRD_TURN], remove_prev_tool_calls
+        )
+        assert not DeepDiff(
+            agent_executor.get_model_completion_kwargs(),
+            {
+                "turn_container": TC,
+                "tool_registry": start_node_schema.tool_registry,
+                "force_tool_choice": None,
+            },
+        )
