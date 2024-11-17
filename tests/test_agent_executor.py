@@ -24,16 +24,6 @@ class TestAgent:
         self.stdout_patcher.stop()
         self.model.reset_mock()
 
-    def _init_agent_executor(self, remove_prev_tool_calls, model_provider):
-        return AgentExecutor(
-            model=self.model,
-            elevenlabs_client=None,
-            graph_schema=cashier_graph_schema,
-            audio_output=False,
-            remove_prev_tool_calls=remove_prev_tool_calls,
-            model_provider=model_provider,
-        )
-
     @pytest.fixture
     def agent_executor(self, model_provider, remove_prev_tool_calls):
         return AgentExecutor(
