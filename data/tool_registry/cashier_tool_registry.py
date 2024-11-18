@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field
 from supabase import Client
 from supabase import create_client as create_supabase_client
 
-from cashier.tool_registries.general import GeneralToolRegistry
+from cashier.tool.general import GeneralToolRegistry
 
 supabase: Optional[Client] = None
 
