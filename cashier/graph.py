@@ -25,7 +25,7 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 from cashier.function_call_context import StateUpdateError
 from cashier.model.model_turn import ModelTurn
 from cashier.prompts.node_system import NodeSystemPrompt
-from cashier.tool_registry import ToolRegistry
+from cashier.tool.tool_registry import ToolRegistry
 
 
 class Direction(StrEnum):

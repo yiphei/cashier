@@ -13,7 +13,7 @@ from cashier.model.model_turn import (
     UserTurn,
 )
 from cashier.model.model_util import FunctionCall, ModelProvider
-from cashier.tool_registry import ToolRegistry
+from cashier.tool.tool_registry import ToolRegistry
 
 
 class TurnContainer:

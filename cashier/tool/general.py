@@ -1,4 +1,4 @@
-from cashier.tool_registry import ToolRegistry
+from cashier.tool.tool_registry import ToolRegistry
 
 
 class GeneralToolRegistry(ToolRegistry):
