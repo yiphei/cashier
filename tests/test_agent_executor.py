@@ -85,13 +85,26 @@ class TestAgent:
                 model_completion.get_prob = Mock(return_value=prob)
         return model_completion
 
-    def create_fake_fn_calls(self, model_provider, fn_names, tool_registry):
+    def create_fake_fn_calls(self, model_provider, fn_names, node):
         fn_calls = []
+        tool_registry = node.schema.tool_registry
         fn_call_id_to_fn_output = {}
         for fn_name in fn_names:
             args = {"arg_1": "arg_1_val"}
             if fn_name == "get_state":
                 args = {}
+            elif fn_name.startswith("update_state"):
+                field_name = fn_name.removeprefix("update_state_")
+                model_fields = node.schema.state_pydantic_model.model_fields
+                field_info = model_fields[field_name]
+                
+                # Get default value or call default_factory if it exists
+                default_value = (
+                    field_info.default_factory()
+                    if field_info.default_factory is not None
+                    else field_info.default
+                )
+                args = {field_name: default_value}
 
             fn_call = FunctionCall.create_fake_fn_call(
                 model_provider,
@@ -100,11 +113,13 @@ class TestAgent:
             )
             fn_calls.append(fn_call)
             if fn_name in tool_registry.tool_names:
-                output = (
-                    None
-                    if fn_name.startswith("update_state")
-                    else f"{fn_name}'s output"
-                )
+                if fn_name.startswith("update_state"):
+                    output = None
+                elif fn_name == "get_state":
+                    output = node.state
+                else:
+                    output = f"{fn_name}'s output"
+
                 fn_call_id_to_fn_output[fn_call.id] = output
             else:
                 fn_call_id_to_fn_output[fn_call.id] = ToolExceptionWrapper(
@@ -162,11 +177,11 @@ class TestAgent:
 
         if get_state_fn_call is not None:
             agent_executor.curr_node.get_state = Mock(
-                return_value=fn_call_id_to_fn_output[get_state_fn_call.id]
+                wraps = agent_executor.curr_node.get_state
             )
 
         if update_state_fn_calls:
-            agent_executor.curr_node.update_state = Mock(return_value=None)
+            agent_executor.curr_node.update_state = Mock(wraps=agent_executor.curr_node.update_state)
 
         tool_registry = agent_executor.curr_node.schema.tool_registry
 
@@ -421,7 +436,7 @@ class TestAgent:
     ):
         self.add_user_turn(agent_executor, "hello", model_provider, True)
         fn_calls, fn_call_id_to_fn_output = self.create_fake_fn_calls(
-            model_provider, fn_names, agent_executor.curr_node.schema.tool_registry
+            model_provider, fn_names, agent_executor.curr_node
         )
         self.add_assistant_turn(
             agent_executor,
