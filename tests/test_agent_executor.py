@@ -194,20 +194,24 @@ class TestAgent:
                 for fn_call in fn_calls
             },
         ) as patched_fn_name_to_fn, ExitStack() as stack:
-            
+
             if get_state_fn_call is not None:
-                stack.enter_context(patch.object(
-                    agent_executor.curr_node,
-                    'get_state',
-                    wraps=agent_executor.curr_node.get_state
-                ))
+                stack.enter_context(
+                    patch.object(
+                        agent_executor.curr_node,
+                        "get_state",
+                        wraps=agent_executor.curr_node.get_state,
+                    )
+                )
 
             if update_state_fn_calls:
-                stack.enter_context(patch.object(
-                    agent_executor.curr_node,
-                    'update_state',
-                    wraps=agent_executor.curr_node.update_state
-                ))
+                stack.enter_context(
+                    patch.object(
+                        agent_executor.curr_node,
+                        "update_state",
+                        wraps=agent_executor.curr_node.update_state,
+                    )
+                )
 
             agent_executor.add_assistant_turn(model_completion)
 
