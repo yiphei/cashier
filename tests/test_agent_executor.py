@@ -41,7 +41,7 @@ class TestAgent:
         self.stdout_patcher.stop()
         self.model.reset_mock()
 
-    def new_create_turn_container(self, turn_args_list):
+    def create_turn_container(self, turn_args_list):
         TC = TurnContainer()
         for turn_args in turn_args_list:
             add_fn = None
@@ -291,7 +291,7 @@ class TestAgent:
 
         SECOND_TURN = cashier_graph_schema.start_node_schema.first_turn
 
-        TC = self.new_create_turn_container([FIRST_TURN, SECOND_TURN])
+        TC = self.create_turn_container([FIRST_TURN, SECOND_TURN])
         assert not DeepDiff(
             agent_executor.get_model_completion_kwargs(),
             {
@@ -328,7 +328,7 @@ class TestAgent:
         SECOND_TURN = cashier_graph_schema.start_node_schema.first_turn
         THIRD_TURN = UserTurn(msg_content="hello")
 
-        TC = self.new_create_turn_container([FIRST_TURN, SECOND_TURN, THIRD_TURN])
+        TC = self.create_turn_container([FIRST_TURN, SECOND_TURN, THIRD_TURN])
         assert not DeepDiff(
             agent_executor.get_model_completion_kwargs(),
             {
@@ -386,7 +386,7 @@ class TestAgent:
             fn_call_id_to_fn_output={fake_fn_call.id: None},
         )
 
-        TC = self.new_create_turn_container(
+        TC = self.create_turn_container(
             [FIRST_TURN, SECOND_TURN, THIRD_TURN, FOURTH_TURN]
         )
 
@@ -438,7 +438,7 @@ class TestAgent:
             fn_call_id_to_fn_output={},
         )
 
-        TC = self.new_create_turn_container(
+        TC = self.create_turn_container(
             [FIRST_TURN, SECOND_TURN, THIRD_TURN, FOURTH_TURN]
         )
 
@@ -520,7 +520,7 @@ class TestAgent:
             fn_call_id_to_fn_output=fn_call_id_to_fn_output,
         )
 
-        TC = self.new_create_turn_container(
+        TC = self.create_turn_container(
             [FIRST_TURN, SECOND_TURN, THIRD_TURN, FOURTH_TURN]
         )
 
@@ -608,7 +608,7 @@ class TestAgent:
             fn_call_id_to_fn_output=fn_call_id_to_fn_output,
         )
 
-        TC = self.new_create_turn_container([FIRST_TURN, SECOND_TURN, THIRD_TURN])
+        TC = self.create_turn_container([FIRST_TURN, SECOND_TURN, THIRD_TURN])
 
         assert not DeepDiff(
             agent_executor.get_model_completion_kwargs(),
@@ -740,7 +740,7 @@ class TestAgent:
             kwargs={"remove_prev_tool_calls": remove_prev_tool_calls},
         )
 
-        TC = self.new_create_turn_container(
+        TC = self.create_turn_container(
             [
                 FIRST_TURN,
                 SECOND_TURN,
@@ -939,7 +939,7 @@ class TestAgent:
             },
         )
 
-        TC = self.new_create_turn_container(
+        TC = self.create_turn_container(
             [
                 FIRST_TURN,
                 SECOND_TURN,
