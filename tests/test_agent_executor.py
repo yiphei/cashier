@@ -758,9 +758,6 @@ class TestAgent:
             },
         )
 
-
-
-
     def test_forward_node_skip(
         self,
         model_provider,
@@ -956,7 +953,6 @@ class TestAgent:
             },
         )
 
-
         TC = self.create_turn_container(
             [
                 *start_turns,
@@ -976,10 +972,10 @@ class TestAgent:
                 t11,
                 t12,
                 node_turn_4,
-                t13
+                t13,
             ],
         )
-        
+
         assert not DeepDiff(
             agent_executor.get_model_completion_kwargs(),
             {
