@@ -284,10 +284,10 @@ class TestAgent:
     @pytest.fixture(params=[True, False])
     def is_stream(cls, request):
         return request.param
-    
 
     @classmethod
-    @pytest.fixture(params=[
+    @pytest.fixture(
+        params=[
             ["get_menu_item_from_name"],
             ["get_state"],
             ["update_state_order"],
@@ -302,7 +302,8 @@ class TestAgent:
                 "update_state_order",
                 "get_menu_item_from_name",
             ],
-    ])
+        ]
+    )
     def fn_names(cls, request):
         return request.param
 
