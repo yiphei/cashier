@@ -336,7 +336,9 @@ class TestAgent:
     def fn_names(cls, request):
         return request.param
 
-    def test_graph_initialization(self, remove_prev_tool_calls, agent_executor, start_turns):
+    def test_graph_initialization(
+        self, remove_prev_tool_calls, agent_executor, start_turns
+    ):
         TC = self.create_turn_container(start_turns)
         assert not DeepDiff(
             agent_executor.get_model_completion_kwargs(),
@@ -371,7 +373,9 @@ class TestAgent:
         start_turns,
     ):
         generate_random_string_patch.return_value = "call_123"
-        user_turn = self.add_user_turn(agent_executor, "hello", model_provider, False, 2)
+        user_turn = self.add_user_turn(
+            agent_executor, "hello", model_provider, False, 2
+        )
 
         fake_fn_call = FunctionCall.create_fake_fn_call(
             model_provider,
@@ -409,7 +413,9 @@ class TestAgent:
         start_turns,
     ):
         user_turn = self.add_user_turn(agent_executor, "hello", model_provider, True)
-        assistant_turn = self.add_assistant_turn(agent_executor, model_provider, "hello back", is_stream)
+        assistant_turn = self.add_assistant_turn(
+            agent_executor, model_provider, "hello back", is_stream
+        )
 
         TC = self.create_turn_container([*start_turns, user_turn, assistant_turn])
 
@@ -431,11 +437,11 @@ class TestAgent:
         agent_executor,
         start_turns,
     ):
-        user_turn =self.add_user_turn(agent_executor, "hello", model_provider, True)
+        user_turn = self.add_user_turn(agent_executor, "hello", model_provider, True)
         fn_calls, fn_call_id_to_fn_output = self.create_fake_fn_calls(
             model_provider, fn_names, agent_executor.curr_node
         )
-        assistant_turn =self.add_assistant_turn(
+        assistant_turn = self.add_assistant_turn(
             agent_executor,
             model_provider,
             None,
@@ -503,7 +509,7 @@ class TestAgent:
             )
         )
 
-        assistant_turn =self.add_assistant_turn(
+        assistant_turn = self.add_assistant_turn(
             agent_executor,
             model_provider,
             None,
@@ -536,7 +542,7 @@ class TestAgent:
         fn_calls, fn_call_id_to_fn_output = self.create_fake_fn_calls(
             model_provider, fn_names, agent_executor.curr_node
         )
-        t2=self.add_assistant_turn(
+        t2 = self.add_assistant_turn(
             agent_executor,
             model_provider,
             None,
@@ -544,7 +550,9 @@ class TestAgent:
             fn_calls,
             fn_call_id_to_fn_output,
         )
-        t3=self.add_user_turn(agent_executor, "i want pecan latte", model_provider, True)
+        t3 = self.add_user_turn(
+            agent_executor, "i want pecan latte", model_provider, True
+        )
 
         order = Order(
             item_orders=[ItemOrder(name="pecan latte", size=CupSize.VENTI, options=[])]
@@ -631,7 +639,9 @@ class TestAgent:
             fn_calls,
             fn_call_id_to_fn_output,
         )
-        t3=self.add_user_turn(agent_executor, "i want pecan latte", model_provider, True)
+        t3 = self.add_user_turn(
+            agent_executor, "i want pecan latte", model_provider, True
+        )
 
         order = Order(
             item_orders=[ItemOrder(name="pecan latte", size=CupSize.VENTI, options=[])]
@@ -650,7 +660,7 @@ class TestAgent:
         second_fn_call_id_to_fn_output = {
             fn_call.id: None for fn_call in second_fn_calls
         }
-        t4=self.add_assistant_turn(
+        t4 = self.add_assistant_turn(
             agent_executor,
             model_provider,
             None,
@@ -658,7 +668,7 @@ class TestAgent:
             second_fn_calls,
             second_fn_call_id_to_fn_output,
         )
-        t5=self.add_assistant_turn(
+        t5 = self.add_assistant_turn(
             agent_executor,
             model_provider,
             "can you confirm the order?",
@@ -674,7 +684,7 @@ class TestAgent:
                 args={},
             )
             generate_random_string_patch.return_value = get_state_fn_call
-            t6 =self.add_user_turn(
+            t6 = self.add_user_turn(
                 agent_executor,
                 "i want to change order",
                 model_provider,
