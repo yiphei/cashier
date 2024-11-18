@@ -641,15 +641,15 @@ class TestAgent:
             name="update_state_has_finished_ordering",
             args={"has_finished_ordering": True},
         )
-        last_fn_calls = [fn_call_1, fn_call_2]
-        last_fn_call_id_to_fn_output = {fn_call.id: None for fn_call in last_fn_calls}
+        second_fn_calls = [fn_call_1, fn_call_2]
+        second_fn_call_id_to_fn_output = {fn_call.id: None for fn_call in second_fn_calls}
         self.add_assistant_turn(
             agent_executor,
             model_provider,
             None,
             is_stream,
-            last_fn_calls,
-            last_fn_call_id_to_fn_output,
+            second_fn_calls,
+            second_fn_call_id_to_fn_output,
         )
 
         start_node_schema = cashier_graph_schema.start_node_schema
@@ -677,8 +677,8 @@ class TestAgent:
             msg_content=None,
             model_provider=model_provider,
             tool_registry=start_node_schema.tool_registry,
-            fn_calls=last_fn_calls,
-            fn_call_id_to_fn_output=last_fn_call_id_to_fn_output,
+            fn_calls=second_fn_calls,
+            fn_call_id_to_fn_output=second_fn_call_id_to_fn_output,
         )
 
         next_node_schema = cashier_graph_schema.from_node_schema_id_to_edge_schema[
