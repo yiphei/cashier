@@ -9,7 +9,7 @@ from typing import Any, Dict, Optional, cast
 
 from pydantic import BaseModel, Field, model_validator
 
-from cashier.function_call_context import ToolExceptionWrapper
+from cashier.tool.function_call_context import ToolExceptionWrapper
 
 
 class ModelProvider(StrEnum):

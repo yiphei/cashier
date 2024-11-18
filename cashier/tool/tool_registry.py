@@ -13,7 +13,7 @@ from openai.types.chat.chat_completion_tool_param import ChatCompletionToolParam
 from pydantic import Field, create_model
 from pydantic.fields import FieldInfo
 
-from cashier.model_util import ModelProvider
+from cashier.model.model_util import ModelProvider
 
 
 # got this from: https://stackoverflow.com/questions/28237955/same-name-for-classmethod-and-instancemethod

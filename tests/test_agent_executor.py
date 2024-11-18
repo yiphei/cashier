@@ -9,18 +9,18 @@ from deepdiff import DeepDiff
 from pydantic import BaseModel, Field
 
 from cashier.agent_executor import AgentExecutor
-from cashier.function_call_context import (
+from cashier.graph import Node
+from cashier.model.model_client import AnthropicModelOutput, Model, OAIModelOutput
+from cashier.model.model_turn import AssistantTurn, ModelTurn, NodeSystemTurn, UserTurn
+from cashier.model.model_util import FunctionCall, ModelProvider
+from cashier.tool.function_call_context import (
     InexistentFunctionError,
     StateUpdateError,
     ToolExceptionWrapper,
 )
-from cashier.graph import Node
-from cashier.graph_data.cashier import cashier_graph_schema
-from cashier.model import AnthropicModelOutput, Model, OAIModelOutput
-from cashier.model_turn import AssistantTurn, ModelTurn, NodeSystemTurn, UserTurn
-from cashier.model_util import FunctionCall, ModelProvider
-from cashier.tool_registries.cashier_tool_registry import CupSize, ItemOrder, Order
 from cashier.turn_container import TurnContainer
+from data.graph.cashier import cashier_graph_schema
+from data.tool_registry.cashier_tool_registry import CupSize, ItemOrder, Order
 
 
 class TurnArgs(BaseModel):
@@ -342,7 +342,7 @@ class TestAgent:
         "model_provider", [ModelProvider.ANTHROPIC, ModelProvider.OPENAI]
     )
     @pytest.mark.parametrize("remove_prev_tool_calls", [True, False])
-    @patch("cashier.model_util.generate_random_string")
+    @patch("cashier.model.model_util.generate_random_string")
     def test_add_user_turn_handle_wait(
         self,
         generate_random_string_patch,
@@ -842,7 +842,7 @@ class TestAgent:
         )
 
         with patch(
-            "cashier.model_util.FunctionCall.create_fake_fn_call"
+            "cashier.model.model_util.FunctionCall.create_fake_fn_call"
         ) as generate_random_string_patch:
             get_state_fn_call = FunctionCall(
                 name="get_state",
