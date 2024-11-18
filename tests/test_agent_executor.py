@@ -642,7 +642,9 @@ class TestAgent:
             args={"has_finished_ordering": True},
         )
         second_fn_calls = [fn_call_1, fn_call_2]
-        second_fn_call_id_to_fn_output = {fn_call.id: None for fn_call in second_fn_calls}
+        second_fn_call_id_to_fn_output = {
+            fn_call.id: None for fn_call in second_fn_calls
+        }
         self.add_assistant_turn(
             agent_executor,
             model_provider,
