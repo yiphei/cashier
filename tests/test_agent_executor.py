@@ -284,6 +284,27 @@ class TestAgent:
     @pytest.fixture(params=[True, False])
     def is_stream(cls, request):
         return request.param
+    
+
+    @classmethod
+    @pytest.fixture(params=[
+            ["get_menu_item_from_name"],
+            ["get_state"],
+            ["update_state_order"],
+            ["inexistent_fn"],
+            ["get_menu_item_from_name", "get_menu_item_from_name"],
+            ["get_state", "update_state_order"],
+            ["get_state", "update_state_order", "inexistent_fn"],
+            ["get_state", "get_menu_item_from_name", "update_state_order"],
+            [
+                "get_state",
+                "get_menu_item_from_name",
+                "update_state_order",
+                "get_menu_item_from_name",
+            ],
+    ])
+    def fn_names(cls, request):
+        return request.param
 
     def test_initial_node(self, remove_prev_tool_calls, agent_executor):
         FIRST_TURN = TurnArgs(
@@ -445,25 +466,6 @@ class TestAgent:
             },
         )
 
-    @pytest.mark.parametrize(
-        "fn_names",
-        [
-            ["get_menu_item_from_name"],
-            ["get_state"],
-            ["update_state_order"],
-            ["inexistent_fn"],
-            ["get_menu_item_from_name", "get_menu_item_from_name"],
-            ["get_state", "update_state_order"],
-            ["get_state", "update_state_order", "inexistent_fn"],
-            ["get_state", "get_menu_item_from_name", "update_state_order"],
-            [
-                "get_state",
-                "get_menu_item_from_name",
-                "update_state_order",
-                "get_menu_item_from_name",
-            ],
-        ],
-    )
     def test_add_assistant_turn_tool_calls(
         self,
         model_provider,
@@ -601,36 +603,17 @@ class TestAgent:
             },
         )
 
-    @pytest.mark.parametrize(
-        "first_fn_names",
-        [
-            ["get_menu_item_from_name"],
-            ["get_state"],
-            ["update_state_order"],
-            ["inexistent_fn"],
-            ["get_menu_item_from_name", "get_menu_item_from_name"],
-            ["get_state", "update_state_order"],
-            ["get_state", "update_state_order", "inexistent_fn"],
-            ["get_state", "get_menu_item_from_name", "update_state_order"],
-            [
-                "get_state",
-                "get_menu_item_from_name",
-                "update_state_order",
-                "get_menu_item_from_name",
-            ],
-        ],
-    )
     def test_node_transition(
         self,
         model_provider,
         remove_prev_tool_calls,
         is_stream,
-        first_fn_names,
+        fn_names,
         agent_executor,
     ):
         self.add_user_turn(agent_executor, "hello", model_provider, True)
         fn_calls, fn_call_id_to_fn_output = self.create_fake_fn_calls(
-            model_provider, first_fn_names, agent_executor.curr_node
+            model_provider, fn_names, agent_executor.curr_node
         )
         self.add_assistant_turn(
             agent_executor,
@@ -737,37 +720,18 @@ class TestAgent:
             },
         )
 
-    @pytest.mark.parametrize(
-        "first_fn_names",
-        [
-            ["get_menu_item_from_name"],
-            ["get_state"],
-            ["update_state_order"],
-            ["inexistent_fn"],
-            ["get_menu_item_from_name", "get_menu_item_from_name"],
-            ["get_state", "update_state_order"],
-            ["get_state", "update_state_order", "inexistent_fn"],
-            ["get_state", "get_menu_item_from_name", "update_state_order"],
-            [
-                "get_state",
-                "get_menu_item_from_name",
-                "update_state_order",
-                "get_menu_item_from_name",
-            ],
-        ],
-    )
     def test_backward_node_transition(
         self,
         model_provider,
         remove_prev_tool_calls,
         is_stream,
-        first_fn_names,
+        fn_names,
         agent_executor,
     ):
 
         self.add_user_turn(agent_executor, "hello", model_provider, True)
         fn_calls, fn_call_id_to_fn_output = self.create_fake_fn_calls(
-            model_provider, first_fn_names, agent_executor.curr_node
+            model_provider, fn_names, agent_executor.curr_node
         )
         self.add_assistant_turn(
             agent_executor,
