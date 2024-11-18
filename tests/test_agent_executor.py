@@ -182,6 +182,8 @@ class TestAgent:
         self.model.chat.side_effect = model_chat_side_effects
         agent_executor.add_user_turn(message)
 
+        return UserTurn(msg_content=message)
+
     def add_assistant_turn(
         self,
         agent_executor,
@@ -258,6 +260,14 @@ class TestAgent:
                     patched_fn.assert_not_called()
                 else:
                     patched_fn.assert_has_calls(expected_calls_map[fn_call.name])
+
+        return AssistantTurn(
+            msg_content=message,
+            model_provider=model_provider,
+            tool_registry=tool_registry,
+            fn_calls=fn_calls,
+            fn_call_id_to_fn_output=fn_call_id_to_fn_output or {},
+        )
 
     @pytest.fixture
     def agent_executor(self, model_provider, remove_prev_tool_calls):
@@ -340,11 +350,8 @@ class TestAgent:
     def test_add_user_turn(
         self, model_provider, remove_prev_tool_calls, agent_executor, start_turns
     ):
-        self.add_user_turn(agent_executor, "hello", model_provider, True)
-
-        THIRD_TURN = UserTurn(msg_content="hello")
-
-        TC = self.create_turn_container([*start_turns, THIRD_TURN])
+        user_turn = self.add_user_turn(agent_executor, "hello", model_provider, True)
+        TC = self.create_turn_container([*start_turns, user_turn])
         assert not DeepDiff(
             agent_executor.get_model_completion_kwargs(),
             {
@@ -364,9 +371,7 @@ class TestAgent:
         start_turns,
     ):
         generate_random_string_patch.return_value = "call_123"
-        self.add_user_turn(agent_executor, "hello", model_provider, False, 2)
-
-        THIRD_TURN = UserTurn(msg_content="hello")
+        user_turn = self.add_user_turn(agent_executor, "hello", model_provider, False, 2)
 
         fake_fn_call = FunctionCall.create_fake_fn_call(
             model_provider,
@@ -376,7 +381,7 @@ class TestAgent:
             },
         )
 
-        FOURTH_TURN = AssistantTurn(
+        assistant_turn = AssistantTurn(
             msg_content=None,
             model_provider=model_provider,
             tool_registry=self.start_node_schema.tool_registry,
@@ -384,7 +389,7 @@ class TestAgent:
             fn_call_id_to_fn_output={fake_fn_call.id: None},
         )
 
-        TC = self.create_turn_container([*start_turns, THIRD_TURN, FOURTH_TURN])
+        TC = self.create_turn_container([*start_turns, user_turn, assistant_turn])
 
         assert not DeepDiff(
             agent_executor.get_model_completion_kwargs(),
@@ -403,19 +408,10 @@ class TestAgent:
         agent_executor,
         start_turns,
     ):
-        self.add_user_turn(agent_executor, "hello", model_provider, True)
-        self.add_assistant_turn(agent_executor, model_provider, "hello back", is_stream)
+        user_turn = self.add_user_turn(agent_executor, "hello", model_provider, True)
+        assistant_turn = self.add_assistant_turn(agent_executor, model_provider, "hello back", is_stream)
 
-        THIRD_TURN = UserTurn(msg_content="hello")
-        FOURTH_TURN = AssistantTurn(
-            msg_content="hello back",
-            model_provider=model_provider,
-            tool_registry=self.start_node_schema.tool_registry,
-            fn_calls=[],
-            fn_call_id_to_fn_output={},
-        )
-
-        TC = self.create_turn_container([*start_turns, THIRD_TURN, FOURTH_TURN])
+        TC = self.create_turn_container([*start_turns, user_turn, assistant_turn])
 
         assert not DeepDiff(
             agent_executor.get_model_completion_kwargs(),
@@ -435,11 +431,11 @@ class TestAgent:
         agent_executor,
         start_turns,
     ):
-        self.add_user_turn(agent_executor, "hello", model_provider, True)
+        user_turn =self.add_user_turn(agent_executor, "hello", model_provider, True)
         fn_calls, fn_call_id_to_fn_output = self.create_fake_fn_calls(
             model_provider, fn_names, agent_executor.curr_node
         )
-        self.add_assistant_turn(
+        assistant_turn =self.add_assistant_turn(
             agent_executor,
             model_provider,
             None,
@@ -448,16 +444,16 @@ class TestAgent:
             fn_call_id_to_fn_output,
         )
 
-        THIRD_TURN = UserTurn(msg_content="hello")
-        FOURTH_TURN = AssistantTurn(
-            msg_content=None,
-            model_provider=model_provider,
-            tool_registry=self.start_node_schema.tool_registry,
-            fn_calls=fn_calls,
-            fn_call_id_to_fn_output=fn_call_id_to_fn_output,
-        )
+        # THIRD_TURN = UserTurn(msg_content="hello")
+        # FOURTH_TURN = AssistantTurn(
+        #     msg_content=None,
+        #     model_provider=model_provider,
+        #     tool_registry=self.start_node_schema.tool_registry,
+        #     fn_calls=fn_calls,
+        #     fn_call_id_to_fn_output=fn_call_id_to_fn_output,
+        # )
 
-        TC = self.create_turn_container([*start_turns, THIRD_TURN, FOURTH_TURN])
+        TC = self.create_turn_container([*start_turns, user_turn, assistant_turn])
 
         assert not DeepDiff(
             agent_executor.get_model_completion_kwargs(),
@@ -507,7 +503,7 @@ class TestAgent:
             )
         )
 
-        self.add_assistant_turn(
+        assistant_turn =self.add_assistant_turn(
             agent_executor,
             model_provider,
             None,
@@ -516,15 +512,7 @@ class TestAgent:
             fn_call_id_to_fn_output,
         )
 
-        THIRD_TURN = AssistantTurn(
-            msg_content=None,
-            model_provider=model_provider,
-            tool_registry=self.start_node_schema.tool_registry,
-            fn_calls=fn_calls,
-            fn_call_id_to_fn_output=fn_call_id_to_fn_output,
-        )
-
-        TC = self.create_turn_container([*start_turns, THIRD_TURN])
+        TC = self.create_turn_container([*start_turns, assistant_turn])
 
         assert not DeepDiff(
             agent_executor.get_model_completion_kwargs(),
@@ -544,11 +532,11 @@ class TestAgent:
         agent_executor,
         start_turns,
     ):
-        self.add_user_turn(agent_executor, "hello", model_provider, True)
+        t1 = self.add_user_turn(agent_executor, "hello", model_provider, True)
         fn_calls, fn_call_id_to_fn_output = self.create_fake_fn_calls(
             model_provider, fn_names, agent_executor.curr_node
         )
-        self.add_assistant_turn(
+        t2=self.add_assistant_turn(
             agent_executor,
             model_provider,
             None,
@@ -556,7 +544,7 @@ class TestAgent:
             fn_calls,
             fn_call_id_to_fn_output,
         )
-        self.add_user_turn(agent_executor, "i want pecan latte", model_provider, True)
+        t3=self.add_user_turn(agent_executor, "i want pecan latte", model_provider, True)
 
         order = Order(
             item_orders=[ItemOrder(name="pecan latte", size=CupSize.VENTI, options=[])]
@@ -575,30 +563,13 @@ class TestAgent:
         second_fn_call_id_to_fn_output = {
             fn_call.id: None for fn_call in second_fn_calls
         }
-        self.add_assistant_turn(
+        t4 = self.add_assistant_turn(
             agent_executor,
             model_provider,
             None,
             is_stream,
             second_fn_calls,
             second_fn_call_id_to_fn_output,
-        )
-
-        THIRD_TURN = UserTurn(msg_content="hello")
-        FOURTH_TURN = AssistantTurn(
-            msg_content=None,
-            model_provider=model_provider,
-            tool_registry=self.start_node_schema.tool_registry,
-            fn_calls=fn_calls,
-            fn_call_id_to_fn_output=fn_call_id_to_fn_output,
-        )
-        FIFTH_TURN = UserTurn(msg_content="i want pecan latte")
-        SIXTH_TURN = AssistantTurn(
-            msg_content=None,
-            model_provider=model_provider,
-            tool_registry=self.start_node_schema.tool_registry,
-            fn_calls=second_fn_calls,
-            fn_call_id_to_fn_output=second_fn_call_id_to_fn_output,
         )
 
         next_node_schema = cashier_graph_schema.from_node_schema_id_to_edge_schema[
@@ -621,10 +592,10 @@ class TestAgent:
         TC = self.create_turn_container(
             [
                 *start_turns,
-                THIRD_TURN,
-                FOURTH_TURN,
-                FIFTH_TURN,
-                SIXTH_TURN,
+                t1,
+                t2,
+                t3,
+                t4,
                 SEVENTH_TURN,
             ]
         )
@@ -648,11 +619,11 @@ class TestAgent:
         start_turns,
     ):
 
-        self.add_user_turn(agent_executor, "hello", model_provider, True)
+        t1 = self.add_user_turn(agent_executor, "hello", model_provider, True)
         fn_calls, fn_call_id_to_fn_output = self.create_fake_fn_calls(
             model_provider, fn_names, agent_executor.curr_node
         )
-        self.add_assistant_turn(
+        t2 = self.add_assistant_turn(
             agent_executor,
             model_provider,
             None,
@@ -660,7 +631,7 @@ class TestAgent:
             fn_calls,
             fn_call_id_to_fn_output,
         )
-        self.add_user_turn(agent_executor, "i want pecan latte", model_provider, True)
+        t3=self.add_user_turn(agent_executor, "i want pecan latte", model_provider, True)
 
         order = Order(
             item_orders=[ItemOrder(name="pecan latte", size=CupSize.VENTI, options=[])]
@@ -679,7 +650,7 @@ class TestAgent:
         second_fn_call_id_to_fn_output = {
             fn_call.id: None for fn_call in second_fn_calls
         }
-        self.add_assistant_turn(
+        t4=self.add_assistant_turn(
             agent_executor,
             model_provider,
             None,
@@ -687,7 +658,7 @@ class TestAgent:
             second_fn_calls,
             second_fn_call_id_to_fn_output,
         )
-        self.add_assistant_turn(
+        t5=self.add_assistant_turn(
             agent_executor,
             model_provider,
             "can you confirm the order?",
@@ -703,30 +674,13 @@ class TestAgent:
                 args={},
             )
             generate_random_string_patch.return_value = get_state_fn_call
-            self.add_user_turn(
+            t6 =self.add_user_turn(
                 agent_executor,
                 "i want to change order",
                 model_provider,
                 False,
                 bwd_skip_node_schema_id=self.start_node_schema.id,
             )
-
-        THIRD_TURN = UserTurn(msg_content="hello")
-        FOURTH_TURN = AssistantTurn(
-            msg_content=None,
-            model_provider=model_provider,
-            tool_registry=self.start_node_schema.tool_registry,
-            fn_calls=fn_calls,
-            fn_call_id_to_fn_output=fn_call_id_to_fn_output,
-        )
-        FIFTH_TURN = UserTurn(msg_content="i want pecan latte")
-        SIXTH_TURN = AssistantTurn(
-            msg_content=None,
-            model_provider=model_provider,
-            tool_registry=self.start_node_schema.tool_registry,
-            fn_calls=second_fn_calls,
-            fn_call_id_to_fn_output=second_fn_call_id_to_fn_output,
-        )
 
         next_node_schema = cashier_graph_schema.from_node_schema_id_to_edge_schema[
             self.start_node_schema.id
@@ -744,16 +698,7 @@ class TestAgent:
             ),
             kwargs={"remove_prev_tool_calls": remove_prev_tool_calls},
         )
-        EIGHTH_TURN = AssistantTurn(
-            msg_content="can you confirm the order?",
-            model_provider=model_provider,
-            tool_registry=next_node_schema.tool_registry,
-            fn_calls=[],
-            fn_call_id_to_fn_output={},
-        )
-        NINTH_TURN = UserTurn(
-            msg_content="i want to change order",
-        )
+
         TENTH_TURN = TurnArgs(
             turn=NodeSystemTurn(
                 msg_content=self.start_node_schema.node_system_prompt(
@@ -781,13 +726,13 @@ class TestAgent:
         TC = self.create_turn_container(
             [
                 *start_turns,
-                THIRD_TURN,
-                FOURTH_TURN,
-                FIFTH_TURN,
-                SIXTH_TURN,
+                t1,
+                t2,
+                t3,
+                t4,
                 SEVENTH_TURN,
-                EIGHTH_TURN,
-                NINTH_TURN,
+                t5,
+                t6,
                 TENTH_TURN,
                 ELEVENTH_TURN,
             ],
