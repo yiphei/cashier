@@ -81,7 +81,7 @@ class NodeSystemTurn(SystemTurn):
 
 
 class AssistantTurn(ModelTurn):
-    model_config = ConfigDict(arbitrary_types_allowed=True)
+    model_config = ConfigDict(arbitrary_types_allowed=True, protected_namespaces=())
 
     model_provider: ModelProvider
     tool_registry: Optional[ToolRegistry] = None
