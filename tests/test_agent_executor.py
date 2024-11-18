@@ -6,7 +6,7 @@ import pytest
 from deepdiff import DeepDiff
 
 from cashier.agent_executor import AgentExecutor
-from cashier.function_call_context import InexistentFunctionError, ToolExceptionWrapper
+from cashier.function_call_context import InexistentFunctionError, StateUpdateError, ToolExceptionWrapper
 from cashier.graph import Node
 from cashier.graph_data.cashier import cashier_graph_schema
 from cashier.model import AnthropicModelOutput, Model, OAIModelOutput
@@ -472,6 +472,65 @@ class TestAgent:
 
         TC = self.create_turn_container(
             [FIRST_TURN, SECOND_TURN, THIRD_TURN, FOURTH_TURN], remove_prev_tool_calls
+        )
+
+        assert not DeepDiff(
+            agent_executor.get_model_completion_kwargs(),
+            {
+                "turn_container": TC,
+                "tool_registry": start_node_schema.tool_registry,
+                "force_tool_choice": None,
+            },
+        )
+
+
+    @pytest.mark.parametrize(
+        "model_provider", [ModelProvider.OPENAI, ModelProvider.ANTHROPIC]
+    )
+    @pytest.mark.parametrize("remove_prev_tool_calls", [True, False])
+    @pytest.mark.parametrize("is_stream", [True, False])
+    def test_add_assistant_state_update_before_user_turn(
+        self,
+        model_provider,
+        remove_prev_tool_calls,
+        is_stream,
+        agent_executor,
+    ):
+        fn_call = FunctionCall.create_fake_fn_call(model_provider, name="update_state_order", args={"order": None})
+        fn_calls = [fn_call]
+        fn_call_id_to_fn_output = {fn_call.id: ToolExceptionWrapper(StateUpdateError("cannot update any state field until you get the first customer message in the current conversation. Remember, the current conversation starts after <cutoff_msg>"))}
+
+        self.add_assistant_turn(
+            agent_executor,
+            model_provider,
+            None,
+            is_stream,
+            fn_calls,
+            fn_call_id_to_fn_output,
+        )
+
+        start_node_schema = cashier_graph_schema.start_node_schema
+        FIRST_TURN = NodeSystemTurn(
+            msg_content=start_node_schema.node_system_prompt(
+                node_prompt=cashier_graph_schema.start_node_schema.node_prompt,
+                input=None,
+                node_input_json_schema=None,
+                state_json_schema=start_node_schema.state_pydantic_model.model_json_schema(),
+                last_msg=None,
+            ),
+            node_id=1,
+        )
+        SECOND_TURN = cashier_graph_schema.start_node_schema.first_turn
+        THIRD_TURN = AssistantTurn(
+            msg_content=None,
+            model_provider=model_provider,
+            tool_registry=start_node_schema.tool_registry,
+            fn_calls=fn_calls,
+            fn_call_id_to_fn_output=fn_call_id_to_fn_output,
+        )
+
+        TC = self.create_turn_container(
+            [FIRST_TURN, SECOND_TURN, THIRD_TURN], remove_prev_tool_calls
         )
 
         assert not DeepDiff(
