@@ -97,7 +97,7 @@ class TestAgent:
                 field_name = fn_name.removeprefix("update_state_")
                 model_fields = node.schema.state_pydantic_model.model_fields
                 field_info = model_fields[field_name]
-                
+
                 # Get default value or call default_factory if it exists
                 default_value = (
                     field_info.default_factory()
@@ -177,11 +177,13 @@ class TestAgent:
 
         if get_state_fn_call is not None:
             agent_executor.curr_node.get_state = Mock(
-                wraps = agent_executor.curr_node.get_state
+                wraps=agent_executor.curr_node.get_state
             )
 
         if update_state_fn_calls:
-            agent_executor.curr_node.update_state = Mock(wraps=agent_executor.curr_node.update_state)
+            agent_executor.curr_node.update_state = Mock(
+                wraps=agent_executor.curr_node.update_state
+            )
 
         tool_registry = agent_executor.curr_node.schema.tool_registry
 
