@@ -588,7 +588,7 @@ class TestAgent:
     @pytest.mark.parametrize("remove_prev_tool_calls", [True, False])
     @pytest.mark.parametrize("is_stream", [True, False])
     @pytest.mark.parametrize(
-        "fn_names",
+        "first_fn_names",
         [
             ["get_menu_item_from_name"],
             ["get_state"],
@@ -611,12 +611,12 @@ class TestAgent:
         model_provider,
         remove_prev_tool_calls,
         is_stream,
-        fn_names,
+        first_fn_names,
         agent_executor,
     ):
         self.add_user_turn(agent_executor, "hello", model_provider, True)
         fn_calls, fn_call_id_to_fn_output = self.create_fake_fn_calls(
-            model_provider, fn_names, agent_executor.curr_node
+            model_provider, first_fn_names, agent_executor.curr_node
         )
         self.add_assistant_turn(
             agent_executor,
