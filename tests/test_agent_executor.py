@@ -17,8 +17,7 @@ from cashier.graph_data.cashier import cashier_graph_schema
 from cashier.model import AnthropicModelOutput, Model, OAIModelOutput
 from cashier.model_turn import AssistantTurn, NodeSystemTurn, UserTurn
 from cashier.model_util import FunctionCall, ModelProvider
-from cashier.tool_registries.cashier_tool_registry import CupSize, Order
-from cashier.tool_registries.cashier_tool_registry import ItemOrder
+from cashier.tool_registries.cashier_tool_registry import CupSize, ItemOrder, Order
 from cashier.turn_container import TurnContainer
 
 
@@ -583,8 +582,6 @@ class TestAgent:
             },
         )
 
-
-
     @pytest.mark.parametrize(
         "model_provider", [ModelProvider.OPENAI, ModelProvider.ANTHROPIC]
     )
@@ -631,12 +628,18 @@ class TestAgent:
         )
         self.add_user_turn(agent_executor, "i want pecan latte", model_provider, True)
 
-        order = Order(item_orders=[ItemOrder(name="pecan latte", size=CupSize.VENTI, options=[])])
+        order = Order(
+            item_orders=[ItemOrder(name="pecan latte", size=CupSize.VENTI, options=[])]
+        )
         fn_call_1 = FunctionCall.create_fake_fn_call(
-            model_provider, name="update_state_order", args={"order": order.model_dump()}
+            model_provider,
+            name="update_state_order",
+            args={"order": order.model_dump()},
         )
         fn_call_2 = FunctionCall.create_fake_fn_call(
-            model_provider, name="update_state_has_finished_ordering", args={"has_finished_ordering": True}
+            model_provider,
+            name="update_state_has_finished_ordering",
+            args={"has_finished_ordering": True},
         )
         last_fn_calls = [fn_call_1, fn_call_2]
         last_fn_call_id_to_fn_output = {fn_call.id: None for fn_call in last_fn_calls}
@@ -648,7 +651,6 @@ class TestAgent:
             last_fn_calls,
             last_fn_call_id_to_fn_output,
         )
-
 
         start_node_schema = cashier_graph_schema.start_node_schema
         FIRST_TURN = NodeSystemTurn(
@@ -679,7 +681,9 @@ class TestAgent:
             fn_call_id_to_fn_output=last_fn_call_id_to_fn_output,
         )
 
-        next_node_schema = cashier_graph_schema.from_node_schema_id_to_edge_schema[start_node_schema.id][0].to_node_schema
+        next_node_schema = cashier_graph_schema.from_node_schema_id_to_edge_schema[
+            start_node_schema.id
+        ][0].to_node_schema
         SEVENTH_TURN = NodeSystemTurn(
             msg_content=next_node_schema.node_system_prompt(
                 node_prompt=next_node_schema.node_prompt,
@@ -692,7 +696,16 @@ class TestAgent:
         )
 
         TC = self.create_turn_container(
-            [FIRST_TURN, SECOND_TURN, THIRD_TURN, FOURTH_TURN, FIFTH_TURN, SIXTH_TURN, SEVENTH_TURN], remove_prev_tool_calls
+            [
+                FIRST_TURN,
+                SECOND_TURN,
+                THIRD_TURN,
+                FOURTH_TURN,
+                FIFTH_TURN,
+                SIXTH_TURN,
+                SEVENTH_TURN,
+            ],
+            remove_prev_tool_calls,
         )
 
         assert not DeepDiff(
