@@ -269,11 +269,21 @@ class TestAgent:
             remove_prev_tool_calls=remove_prev_tool_calls,
             model_provider=model_provider,
         )
+    @classmethod
+    @pytest.fixture(params=[ModelProvider.OPENAI, ModelProvider.ANTHROPIC])
+    def model_provider(cls, request):
+        return request.param
 
-    @pytest.mark.parametrize(
-        "model_provider", [ModelProvider.ANTHROPIC, ModelProvider.OPENAI]
-    )
-    @pytest.mark.parametrize("remove_prev_tool_calls", [True, False])
+    @classmethod
+    @pytest.fixture(params=[True, False])
+    def remove_prev_tool_calls(cls, request):
+        return request.param
+
+    @classmethod
+    @pytest.fixture(params=[True, False])
+    def is_stream(cls, request):
+        return request.param
+
     def test_initial_node(self, remove_prev_tool_calls, agent_executor):
         FIRST_TURN = TurnArgs(
             turn=NodeSystemTurn(
@@ -301,10 +311,6 @@ class TestAgent:
             },
         )
 
-    @pytest.mark.parametrize(
-        "model_provider", [ModelProvider.ANTHROPIC, ModelProvider.OPENAI]
-    )
-    @pytest.mark.parametrize("remove_prev_tool_calls", [True, False])
     def test_add_user_turn(
         self, model_provider, remove_prev_tool_calls, agent_executor
     ):
@@ -336,10 +342,6 @@ class TestAgent:
             },
         )
 
-    @pytest.mark.parametrize(
-        "model_provider", [ModelProvider.ANTHROPIC, ModelProvider.OPENAI]
-    )
-    @pytest.mark.parametrize("remove_prev_tool_calls", [True, False])
     @patch("cashier.model.model_util.generate_random_string")
     def test_add_user_turn_handle_wait(
         self,
@@ -396,11 +398,6 @@ class TestAgent:
             },
         )
 
-    @pytest.mark.parametrize(
-        "model_provider", [ModelProvider.OPENAI, ModelProvider.ANTHROPIC]
-    )
-    @pytest.mark.parametrize("remove_prev_tool_calls", [True, False])
-    @pytest.mark.parametrize("is_stream", [True, False])
     def test_add_assistant_turn(
         self,
         model_provider,
@@ -447,11 +444,6 @@ class TestAgent:
             },
         )
 
-    @pytest.mark.parametrize(
-        "model_provider", [ModelProvider.OPENAI, ModelProvider.ANTHROPIC]
-    )
-    @pytest.mark.parametrize("remove_prev_tool_calls", [True, False])
-    @pytest.mark.parametrize("is_stream", [True, False])
     @pytest.mark.parametrize(
         "fn_names",
         [
@@ -528,11 +520,6 @@ class TestAgent:
             },
         )
 
-    @pytest.mark.parametrize(
-        "model_provider", [ModelProvider.OPENAI, ModelProvider.ANTHROPIC]
-    )
-    @pytest.mark.parametrize("remove_prev_tool_calls", [True, False])
-    @pytest.mark.parametrize("is_stream", [True, False])
     @pytest.mark.parametrize(
         "other_fn_names",
         [
@@ -613,11 +600,6 @@ class TestAgent:
             },
         )
 
-    @pytest.mark.parametrize(
-        "model_provider", [ModelProvider.OPENAI, ModelProvider.ANTHROPIC]
-    )
-    @pytest.mark.parametrize("remove_prev_tool_calls", [True, False])
-    @pytest.mark.parametrize("is_stream", [True, False])
     @pytest.mark.parametrize(
         "first_fn_names",
         [
@@ -754,11 +736,6 @@ class TestAgent:
             },
         )
 
-    @pytest.mark.parametrize(
-        "model_provider", [ModelProvider.OPENAI, ModelProvider.ANTHROPIC]
-    )
-    @pytest.mark.parametrize("remove_prev_tool_calls", [True, False])
-    @pytest.mark.parametrize("is_stream", [True, False])
     @pytest.mark.parametrize(
         "first_fn_names",
         [
