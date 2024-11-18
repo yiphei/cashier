@@ -17,6 +17,8 @@ from cashier.graph_data.cashier import cashier_graph_schema
 from cashier.model import AnthropicModelOutput, Model, OAIModelOutput
 from cashier.model_turn import AssistantTurn, NodeSystemTurn, UserTurn
 from cashier.model_util import FunctionCall, ModelProvider
+from cashier.tool_registries.cashier_tool_registry import CupSize, Order
+from cashier.tool_registries.cashier_tool_registry import ItemOrder
 from cashier.turn_container import TurnContainer
 
 
@@ -194,7 +196,7 @@ class TestAgent:
                 for fn_call in fn_calls
             },
         ) as patched_fn_name_to_fn, ExitStack() as stack:
-
+            curr_node = agent_executor.curr_node
             if get_state_fn_call is not None:
                 stack.enter_context(
                     patch.object(
@@ -223,9 +225,9 @@ class TestAgent:
 
                 patched_fn = None
                 if fn_call == get_state_fn_call:
-                    patched_fn = agent_executor.curr_node.get_state
+                    patched_fn = curr_node.get_state
                 elif fn_call in update_state_fn_calls:
-                    patched_fn = agent_executor.curr_node.update_state
+                    patched_fn = curr_node.update_state
                 else:
                     patched_fn = patched_fn_name_to_fn[fn_call.name]
 
@@ -577,6 +579,127 @@ class TestAgent:
             {
                 "turn_container": TC,
                 "tool_registry": start_node_schema.tool_registry,
+                "force_tool_choice": None,
+            },
+        )
+
+
+
+    @pytest.mark.parametrize(
+        "model_provider", [ModelProvider.OPENAI, ModelProvider.ANTHROPIC]
+    )
+    @pytest.mark.parametrize("remove_prev_tool_calls", [True, False])
+    @pytest.mark.parametrize("is_stream", [True, False])
+    @pytest.mark.parametrize(
+        "fn_names",
+        [
+            ["get_menu_item_from_name"],
+            ["get_state"],
+            ["update_state_order"],
+            ["inexistent_fn"],
+            ["get_menu_item_from_name", "get_menu_item_from_name"],
+            ["get_state", "update_state_order"],
+            ["get_state", "update_state_order", "inexistent_fn"],
+            ["get_state", "get_menu_item_from_name", "update_state_order"],
+            [
+                "get_state",
+                "get_menu_item_from_name",
+                "update_state_order",
+                "get_menu_item_from_name",
+            ],
+        ],
+    )
+    def test_node_transition(
+        self,
+        model_provider,
+        remove_prev_tool_calls,
+        is_stream,
+        fn_names,
+        agent_executor,
+    ):
+        self.add_user_turn(agent_executor, "hello", model_provider, True)
+        fn_calls, fn_call_id_to_fn_output = self.create_fake_fn_calls(
+            model_provider, fn_names, agent_executor.curr_node
+        )
+        self.add_assistant_turn(
+            agent_executor,
+            model_provider,
+            None,
+            is_stream,
+            fn_calls,
+            fn_call_id_to_fn_output,
+        )
+        self.add_user_turn(agent_executor, "i want pecan latte", model_provider, True)
+
+        order = Order(item_orders=[ItemOrder(name="pecan latte", size=CupSize.VENTI, options=[])])
+        fn_call_1 = FunctionCall.create_fake_fn_call(
+            model_provider, name="update_state_order", args={"order": order.model_dump()}
+        )
+        fn_call_2 = FunctionCall.create_fake_fn_call(
+            model_provider, name="update_state_has_finished_ordering", args={"has_finished_ordering": True}
+        )
+        last_fn_calls = [fn_call_1, fn_call_2]
+        last_fn_call_id_to_fn_output = {fn_call.id: None for fn_call in last_fn_calls}
+        self.add_assistant_turn(
+            agent_executor,
+            model_provider,
+            None,
+            is_stream,
+            last_fn_calls,
+            last_fn_call_id_to_fn_output,
+        )
+
+
+        start_node_schema = cashier_graph_schema.start_node_schema
+        FIRST_TURN = NodeSystemTurn(
+            msg_content=start_node_schema.node_system_prompt(
+                node_prompt=cashier_graph_schema.start_node_schema.node_prompt,
+                input=None,
+                node_input_json_schema=None,
+                state_json_schema=start_node_schema.state_pydantic_model.model_json_schema(),
+                last_msg=None,
+            ),
+            node_id=1,
+        )
+        SECOND_TURN = cashier_graph_schema.start_node_schema.first_turn
+        THIRD_TURN = UserTurn(msg_content="hello")
+        FOURTH_TURN = AssistantTurn(
+            msg_content=None,
+            model_provider=model_provider,
+            tool_registry=start_node_schema.tool_registry,
+            fn_calls=fn_calls,
+            fn_call_id_to_fn_output=fn_call_id_to_fn_output,
+        )
+        FIFTH_TURN = UserTurn(msg_content="i want pecan latte")
+        SIXTH_TURN = AssistantTurn(
+            msg_content=None,
+            model_provider=model_provider,
+            tool_registry=start_node_schema.tool_registry,
+            fn_calls=last_fn_calls,
+            fn_call_id_to_fn_output=last_fn_call_id_to_fn_output,
+        )
+
+        next_node_schema = cashier_graph_schema.from_node_schema_id_to_edge_schema[start_node_schema.id][0].to_node_schema
+        SEVENTH_TURN = NodeSystemTurn(
+            msg_content=next_node_schema.node_system_prompt(
+                node_prompt=next_node_schema.node_prompt,
+                input=order.model_dump_json(),
+                node_input_json_schema=next_node_schema.input_pydantic_model.model_json_schema(),
+                state_json_schema=next_node_schema.state_pydantic_model.model_json_schema(),
+                last_msg="i want pecan latte",
+            ),
+            node_id=next_node_schema.id,
+        )
+
+        TC = self.create_turn_container(
+            [FIRST_TURN, SECOND_TURN, THIRD_TURN, FOURTH_TURN, FIFTH_TURN, SIXTH_TURN, SEVENTH_TURN], remove_prev_tool_calls
+        )
+
+        assert not DeepDiff(
+            agent_executor.get_model_completion_kwargs(),
+            {
+                "turn_container": TC,
+                "tool_registry": next_node_schema.tool_registry,
                 "force_tool_choice": None,
             },
         )
