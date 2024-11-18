@@ -366,10 +366,42 @@ class TestAgent:
     )
     def fn_names(cls, request):
         return request.param
+    
+    def build_user_turn_messages(self, user_turn, model_provider):
+        return [{"role": "user", "content": user_turn.msg_content}]
+    
+    def build_assistant_turn_messages(self, assistant_turn, model_provider):
+        return [{"role": "assistant", "content": assistant_turn.msg_content}]
+    
+    def build_node_turn_messages(self, assistant_turn, model_provider):
+        return [{"role": "system", "content": assistant_turn.msg_content}] if model_provider != ModelProvider.ANTHROPIC else []
+    
+    def build_messages_from_turn(self, turn, model_provider):
+        if isinstance(turn, UserTurn):
+            return self.build_user_turn_messages(turn, model_provider)
+        elif isinstance(turn, AssistantTurn):
+            return self.build_assistant_turn_messages(turn, model_provider)
+        elif isinstance(turn, NodeSystemTurn):
+            return self.build_node_turn_messages(turn, model_provider)
+        else:
+            raise ValueError(f"Unknown turn type: {type(turn)}")
+
+    
+    def get_messages_from_turns(self, turns, model_provider):
+        messages = []
+        for turn in turns:
+            target_turn = turn
+            if isinstance(turn, TurnArgs):
+                target_turn = turn.turn
+            messages.extend(self.build_messages_from_turn(target_turn, model_provider))
+        return messages
 
     def test_graph_initialization(
         self, remove_prev_tool_calls, agent_executor, start_turns
     ):
+        messages = self.get_messages_from_turns(start_turns, agent_executor.model_provider)
+        assert not DeepDiff(messages, list(agent_executor.TC.model_provider_to_message_manager[agent_executor.model_provider].message_dicts))
+
         TC = self.create_turn_container(start_turns)
         assert not DeepDiff(
             agent_executor.get_model_completion_kwargs(),
@@ -383,7 +415,12 @@ class TestAgent:
     def test_add_user_turn(
         self, model_provider, remove_prev_tool_calls, agent_executor, start_turns
     ):
+        messages = self.get_messages_from_turns(start_turns, model_provider)
         user_turn = self.add_user_turn(agent_executor, "hello", model_provider, True)
+        messages.extend(self.build_messages_from_turn(user_turn, model_provider))
+
+        assert not DeepDiff(messages, list(agent_executor.TC.model_provider_to_message_manager[agent_executor.model_provider].message_dicts))
+
         TC = self.create_turn_container([*start_turns, user_turn])
         assert not DeepDiff(
             agent_executor.get_model_completion_kwargs(),
