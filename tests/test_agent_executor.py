@@ -1,5 +1,5 @@
-from collections import defaultdict
-from contextlib import ExitStack
+from collections import defaultdict, deque
+from contextlib import ExitStack, contextmanager
 from io import StringIO
 from typing import Any, Dict
 from unittest.mock import Mock, call, patch
@@ -12,7 +12,12 @@ from cashier.agent_executor import AgentExecutor
 from cashier.graph import Node
 from cashier.model.model_client import AnthropicModelOutput, Model, OAIModelOutput
 from cashier.model.model_turn import AssistantTurn, ModelTurn, NodeSystemTurn, UserTurn
-from cashier.model.model_util import FunctionCall, ModelProvider
+from cashier.model.model_util import (
+    MODEL_PROVIDER_TO_TOOL_CALL_ID_PREFIX,
+    FunctionCall,
+    ModelProvider,
+    generate_random_string,
+)
 from cashier.tool.function_call_context import (
     InexistentFunctionError,
     StateUpdateError,
@@ -35,11 +40,29 @@ class TestAgent:
         self.stdout_patcher = patch("sys.stdout", new_callable=StringIO)
         self.stdout_patcher.start()
         Node._counter = 0
+        self.start_node_schema = cashier_graph_schema.start_node_schema
+        self.rand_tool_ids = deque()
 
         yield
 
+        self.rand_tool_ids.clear()
         self.stdout_patcher.stop()
         self.model.reset_mock()
+
+    @contextmanager
+    def generate_random_string_context(self):
+        original_generate_random_string = generate_random_string
+
+        def capture_fn_call(*args, **kwargs):
+            output = original_generate_random_string(*args, **kwargs)
+            self.rand_tool_ids.append(output)
+            return output
+
+        with patch(
+            "cashier.model.model_util.generate_random_string",
+            side_effect=capture_fn_call,
+        ):
+            yield
 
     def create_turn_container(self, turn_args_list):
         TC = TurnContainer()
@@ -149,6 +172,7 @@ class TestAgent:
         model_provider,
         is_on_topic,
         fwd_skip_node_schema_id=None,
+        include_fwd_skip_node_schema_id=True,
         bwd_skip_node_schema_id=None,
     ):
         model_chat_side_effects = []
@@ -159,14 +183,15 @@ class TestAgent:
         model_chat_side_effects.append(is_on_topic_model_completion)
 
         if not is_on_topic:
-            is_wait_model_completion = self.create_mock_model_completion(
-                model_provider,
-                None,
-                False,
-                fwd_skip_node_schema_id or agent_executor.curr_node.schema.id,
-                0.5,
-            )
-            model_chat_side_effects.append(is_wait_model_completion)
+            if include_fwd_skip_node_schema_id:
+                is_wait_model_completion = self.create_mock_model_completion(
+                    model_provider,
+                    None,
+                    False,
+                    fwd_skip_node_schema_id or agent_executor.curr_node.schema.id,
+                    0.5,
+                )
+                model_chat_side_effects.append(is_wait_model_completion)
 
             if fwd_skip_node_schema_id is None:
                 bwd_skip_model_completion = self.create_mock_model_completion(
@@ -179,7 +204,10 @@ class TestAgent:
                 model_chat_side_effects.append(bwd_skip_model_completion)
 
         self.model.chat.side_effect = model_chat_side_effects
-        agent_executor.add_user_turn(message)
+        with self.generate_random_string_context():
+            agent_executor.add_user_turn(message)
+
+        return UserTurn(msg_content=message)
 
     def add_assistant_turn(
         self,
@@ -189,7 +217,13 @@ class TestAgent:
         is_stream,
         fn_calls=None,
         fn_call_id_to_fn_output=None,
+        tool_names=None,
     ):
+        if tool_names is not None:
+            fn_calls, fn_call_id_to_fn_output = self.create_fake_fn_calls(
+                model_provider, tool_names, agent_executor.curr_node
+            )
+
         model_completion = self.create_mock_model_completion(
             model_provider, message, is_stream, fn_calls=fn_calls
         )
@@ -258,6 +292,14 @@ class TestAgent:
                 else:
                     patched_fn.assert_has_calls(expected_calls_map[fn_call.name])
 
+        return AssistantTurn(
+            msg_content=message,
+            model_provider=model_provider,
+            tool_registry=tool_registry,
+            fn_calls=fn_calls,
+            fn_call_id_to_fn_output=fn_call_id_to_fn_output or {},
+        )
+
     @pytest.fixture
     def agent_executor(self, model_provider, remove_prev_tool_calls):
         return AgentExecutor(
@@ -269,196 +311,43 @@ class TestAgent:
             model_provider=model_provider,
         )
 
-    @pytest.mark.parametrize(
-        "model_provider", [ModelProvider.ANTHROPIC, ModelProvider.OPENAI]
-    )
-    @pytest.mark.parametrize("remove_prev_tool_calls", [True, False])
-    def test_initial_node(self, remove_prev_tool_calls, agent_executor):
-        start_node_schema = cashier_graph_schema.start_node_schema
-        FIRST_TURN = TurnArgs(
-            turn=NodeSystemTurn(
-                msg_content=start_node_schema.node_system_prompt(
-                    node_prompt=cashier_graph_schema.start_node_schema.node_prompt,
-                    input=None,
-                    node_input_json_schema=None,
-                    state_json_schema=start_node_schema.state_pydantic_model.model_json_schema(),
-                    last_msg=None,
+    @pytest.fixture
+    def start_turns(self, remove_prev_tool_calls):
+        return [
+            TurnArgs(
+                turn=NodeSystemTurn(
+                    msg_content=self.start_node_schema.node_system_prompt(
+                        node_prompt=cashier_graph_schema.start_node_schema.node_prompt,
+                        input=None,
+                        node_input_json_schema=None,
+                        state_json_schema=self.start_node_schema.state_pydantic_model.model_json_schema(),
+                        last_msg=None,
+                    ),
+                    node_id=1,
                 ),
-                node_id=1,
+                kwargs={"remove_prev_tool_calls": remove_prev_tool_calls},
             ),
-            kwargs={"remove_prev_tool_calls": remove_prev_tool_calls},
-        )
+            cashier_graph_schema.start_node_schema.first_turn,
+        ]
 
-        SECOND_TURN = cashier_graph_schema.start_node_schema.first_turn
+    @classmethod
+    @pytest.fixture(params=[ModelProvider.OPENAI, ModelProvider.ANTHROPIC])
+    def model_provider(cls, request):
+        return request.param
 
-        TC = self.create_turn_container([FIRST_TURN, SECOND_TURN])
-        assert not DeepDiff(
-            agent_executor.get_model_completion_kwargs(),
-            {
-                "turn_container": TC,
-                "tool_registry": start_node_schema.tool_registry,
-                "force_tool_choice": None,
-            },
-        )
+    @classmethod
+    @pytest.fixture(params=[True, False])
+    def remove_prev_tool_calls(cls, request):
+        return request.param
 
-    @pytest.mark.parametrize(
-        "model_provider", [ModelProvider.ANTHROPIC, ModelProvider.OPENAI]
-    )
-    @pytest.mark.parametrize("remove_prev_tool_calls", [True, False])
-    def test_add_user_turn(
-        self, model_provider, remove_prev_tool_calls, agent_executor
-    ):
-        self.add_user_turn(agent_executor, "hello", model_provider, True)
+    @classmethod
+    @pytest.fixture(params=[True, False])
+    def is_stream(cls, request):
+        return request.param
 
-        start_node_schema = cashier_graph_schema.start_node_schema
-
-        FIRST_TURN = TurnArgs(
-            turn=NodeSystemTurn(
-                msg_content=start_node_schema.node_system_prompt(
-                    node_prompt=cashier_graph_schema.start_node_schema.node_prompt,
-                    input=None,
-                    node_input_json_schema=None,
-                    state_json_schema=start_node_schema.state_pydantic_model.model_json_schema(),
-                    last_msg=None,
-                ),
-                node_id=1,
-            ),
-            kwargs={"remove_prev_tool_calls": remove_prev_tool_calls},
-        )
-        SECOND_TURN = cashier_graph_schema.start_node_schema.first_turn
-        THIRD_TURN = UserTurn(msg_content="hello")
-
-        TC = self.create_turn_container([FIRST_TURN, SECOND_TURN, THIRD_TURN])
-        assert not DeepDiff(
-            agent_executor.get_model_completion_kwargs(),
-            {
-                "turn_container": TC,
-                "tool_registry": start_node_schema.tool_registry,
-                "force_tool_choice": None,
-            },
-        )
-
-    @pytest.mark.parametrize(
-        "model_provider", [ModelProvider.ANTHROPIC, ModelProvider.OPENAI]
-    )
-    @pytest.mark.parametrize("remove_prev_tool_calls", [True, False])
-    @patch("cashier.model.model_util.generate_random_string")
-    def test_add_user_turn_handle_wait(
-        self,
-        generate_random_string_patch,
-        model_provider,
-        remove_prev_tool_calls,
-        agent_executor,
-    ):
-        generate_random_string_patch.return_value = "call_123"
-        self.add_user_turn(agent_executor, "hello", model_provider, False, 2)
-
-        start_node_schema = cashier_graph_schema.start_node_schema
-        FIRST_TURN = TurnArgs(
-            turn=NodeSystemTurn(
-                msg_content=start_node_schema.node_system_prompt(
-                    node_prompt=cashier_graph_schema.start_node_schema.node_prompt,
-                    input=None,
-                    node_input_json_schema=None,
-                    state_json_schema=start_node_schema.state_pydantic_model.model_json_schema(),
-                    last_msg=None,
-                ),
-                node_id=1,
-            ),
-            kwargs={"remove_prev_tool_calls": remove_prev_tool_calls},
-        )
-        SECOND_TURN = cashier_graph_schema.start_node_schema.first_turn
-        THIRD_TURN = UserTurn(msg_content="hello")
-
-        fake_fn_call = FunctionCall.create_fake_fn_call(
-            model_provider,
-            "think",
-            args={
-                "thought": "At least part of the customer request/question is off-topic for the current conversation and will actually be addressed later. According to the policies, I must tell the customer that 1) their off-topic request/question will be addressed later and 2) we must finish the current business before we can get to it. I must refuse to engage with the off-topic request/question in any way."
-            },
-        )
-
-        FOURTH_TURN = AssistantTurn(
-            msg_content=None,
-            model_provider=model_provider,
-            tool_registry=start_node_schema.tool_registry,
-            fn_calls=[fake_fn_call],
-            fn_call_id_to_fn_output={fake_fn_call.id: None},
-        )
-
-        TC = self.create_turn_container(
-            [FIRST_TURN, SECOND_TURN, THIRD_TURN, FOURTH_TURN]
-        )
-
-        assert not DeepDiff(
-            agent_executor.get_model_completion_kwargs(),
-            {
-                "turn_container": TC,
-                "tool_registry": start_node_schema.tool_registry,
-                "force_tool_choice": None,
-            },
-        )
-
-    @pytest.mark.parametrize(
-        "model_provider", [ModelProvider.OPENAI, ModelProvider.ANTHROPIC]
-    )
-    @pytest.mark.parametrize("remove_prev_tool_calls", [True, False])
-    @pytest.mark.parametrize("is_stream", [True, False])
-    def test_add_assistant_turn(
-        self,
-        model_provider,
-        remove_prev_tool_calls,
-        is_stream,
-        agent_executor,
-    ):
-        self.add_user_turn(agent_executor, "hello", model_provider, True)
-        self.add_assistant_turn(agent_executor, model_provider, "hello back", is_stream)
-
-        start_node_schema = cashier_graph_schema.start_node_schema
-        FIRST_TURN = TurnArgs(
-            turn=NodeSystemTurn(
-                msg_content=start_node_schema.node_system_prompt(
-                    node_prompt=cashier_graph_schema.start_node_schema.node_prompt,
-                    input=None,
-                    node_input_json_schema=None,
-                    state_json_schema=start_node_schema.state_pydantic_model.model_json_schema(),
-                    last_msg=None,
-                ),
-                node_id=1,
-            ),
-            kwargs={"remove_prev_tool_calls": remove_prev_tool_calls},
-        )
-        SECOND_TURN = cashier_graph_schema.start_node_schema.first_turn
-        THIRD_TURN = UserTurn(msg_content="hello")
-        FOURTH_TURN = AssistantTurn(
-            msg_content="hello back",
-            model_provider=model_provider,
-            tool_registry=start_node_schema.tool_registry,
-            fn_calls=[],
-            fn_call_id_to_fn_output={},
-        )
-
-        TC = self.create_turn_container(
-            [FIRST_TURN, SECOND_TURN, THIRD_TURN, FOURTH_TURN]
-        )
-
-        assert not DeepDiff(
-            agent_executor.get_model_completion_kwargs(),
-            {
-                "turn_container": TC,
-                "tool_registry": start_node_schema.tool_registry,
-                "force_tool_choice": None,
-            },
-        )
-
-    @pytest.mark.parametrize(
-        "model_provider", [ModelProvider.OPENAI, ModelProvider.ANTHROPIC]
-    )
-    @pytest.mark.parametrize("remove_prev_tool_calls", [True, False])
-    @pytest.mark.parametrize("is_stream", [True, False])
-    @pytest.mark.parametrize(
-        "fn_names",
-        [
+    @classmethod
+    @pytest.fixture(
+        params=[
             ["get_menu_item_from_name"],
             ["get_state"],
             ["update_state_order"],
@@ -473,71 +362,126 @@ class TestAgent:
                 "update_state_order",
                 "get_menu_item_from_name",
             ],
-        ],
+        ]
     )
-    def test_add_assistant_turn_tool_calls(
+    def fn_names(cls, request):
+        return request.param
+
+    def test_graph_initialization(
+        self, remove_prev_tool_calls, agent_executor, start_turns
+    ):
+        TC = self.create_turn_container(start_turns)
+        assert not DeepDiff(
+            agent_executor.get_model_completion_kwargs(),
+            {
+                "turn_container": TC,
+                "tool_registry": self.start_node_schema.tool_registry,
+                "force_tool_choice": None,
+            },
+        )
+
+    def test_add_user_turn(
+        self, model_provider, remove_prev_tool_calls, agent_executor, start_turns
+    ):
+        user_turn = self.add_user_turn(agent_executor, "hello", model_provider, True)
+        TC = self.create_turn_container([*start_turns, user_turn])
+        assert not DeepDiff(
+            agent_executor.get_model_completion_kwargs(),
+            {
+                "turn_container": TC,
+                "tool_registry": self.start_node_schema.tool_registry,
+                "force_tool_choice": None,
+            },
+        )
+
+    def test_add_user_turn_with_wait(
+        self,
+        model_provider,
+        remove_prev_tool_calls,
+        agent_executor,
+        start_turns,
+    ):
+        user_turn = self.add_user_turn(
+            agent_executor, "hello", model_provider, False, 2
+        )
+
+        fake_fn_call = FunctionCall(
+            id=MODEL_PROVIDER_TO_TOOL_CALL_ID_PREFIX[model_provider]
+            + self.rand_tool_ids.popleft(),
+            name="think",
+            args={
+                "thought": "At least part of the customer request/question is off-topic for the current conversation and will actually be addressed later. According to the policies, I must tell the customer that 1) their off-topic request/question will be addressed later and 2) we must finish the current business before we can get to it. I must refuse to engage with the off-topic request/question in any way."
+            },
+        )
+
+        assistant_turn = AssistantTurn(
+            msg_content=None,
+            model_provider=model_provider,
+            tool_registry=self.start_node_schema.tool_registry,
+            fn_calls=[fake_fn_call],
+            fn_call_id_to_fn_output={fake_fn_call.id: None},
+        )
+
+        TC = self.create_turn_container([*start_turns, user_turn, assistant_turn])
+
+        assert not DeepDiff(
+            agent_executor.get_model_completion_kwargs(),
+            {
+                "turn_container": TC,
+                "tool_registry": self.start_node_schema.tool_registry,
+                "force_tool_choice": None,
+            },
+        )
+
+    def test_add_assistant_turn(
+        self,
+        model_provider,
+        remove_prev_tool_calls,
+        is_stream,
+        agent_executor,
+        start_turns,
+    ):
+        user_turn = self.add_user_turn(agent_executor, "hello", model_provider, True)
+        assistant_turn = self.add_assistant_turn(
+            agent_executor, model_provider, "hello back", is_stream
+        )
+
+        TC = self.create_turn_container([*start_turns, user_turn, assistant_turn])
+
+        assert not DeepDiff(
+            agent_executor.get_model_completion_kwargs(),
+            {
+                "turn_container": TC,
+                "tool_registry": self.start_node_schema.tool_registry,
+                "force_tool_choice": None,
+            },
+        )
+
+    def test_add_assistant_turn_with_tool_calls(
         self,
         model_provider,
         remove_prev_tool_calls,
         is_stream,
         fn_names,
         agent_executor,
+        start_turns,
     ):
-        self.add_user_turn(agent_executor, "hello", model_provider, True)
-        fn_calls, fn_call_id_to_fn_output = self.create_fake_fn_calls(
-            model_provider, fn_names, agent_executor.curr_node
-        )
-        self.add_assistant_turn(
-            agent_executor,
-            model_provider,
-            None,
-            is_stream,
-            fn_calls,
-            fn_call_id_to_fn_output,
+        user_turn = self.add_user_turn(agent_executor, "hello", model_provider, True)
+        assistant_turn = self.add_assistant_turn(
+            agent_executor, model_provider, None, is_stream, tool_names=fn_names
         )
 
-        start_node_schema = cashier_graph_schema.start_node_schema
-        FIRST_TURN = TurnArgs(
-            turn=NodeSystemTurn(
-                msg_content=start_node_schema.node_system_prompt(
-                    node_prompt=cashier_graph_schema.start_node_schema.node_prompt,
-                    input=None,
-                    node_input_json_schema=None,
-                    state_json_schema=start_node_schema.state_pydantic_model.model_json_schema(),
-                    last_msg=None,
-                ),
-                node_id=1,
-            ),
-            kwargs={"remove_prev_tool_calls": remove_prev_tool_calls},
-        )
-        SECOND_TURN = cashier_graph_schema.start_node_schema.first_turn
-        THIRD_TURN = UserTurn(msg_content="hello")
-        FOURTH_TURN = AssistantTurn(
-            msg_content=None,
-            model_provider=model_provider,
-            tool_registry=start_node_schema.tool_registry,
-            fn_calls=fn_calls,
-            fn_call_id_to_fn_output=fn_call_id_to_fn_output,
-        )
-
-        TC = self.create_turn_container(
-            [FIRST_TURN, SECOND_TURN, THIRD_TURN, FOURTH_TURN]
-        )
+        TC = self.create_turn_container([*start_turns, user_turn, assistant_turn])
 
         assert not DeepDiff(
             agent_executor.get_model_completion_kwargs(),
             {
                 "turn_container": TC,
-                "tool_registry": start_node_schema.tool_registry,
+                "tool_registry": self.start_node_schema.tool_registry,
                 "force_tool_choice": None,
             },
         )
 
-    @pytest.mark.parametrize(
-        "model_provider", [ModelProvider.OPENAI, ModelProvider.ANTHROPIC]
-    )
-    @pytest.mark.parametrize("remove_prev_tool_calls", [True, False])
-    @pytest.mark.parametrize("is_stream", [True, False])
     @pytest.mark.parametrize(
         "other_fn_names",
         [
@@ -555,13 +499,14 @@ class TestAgent:
             ],
         ],
     )
-    def test_add_assistant_state_update_before_user_turn(
+    def test_state_update_before_user_turn(
         self,
         model_provider,
         remove_prev_tool_calls,
         is_stream,
         other_fn_names,
         agent_executor,
+        start_turns,
     ):
         fn_calls, fn_call_id_to_fn_output = self.create_fake_fn_calls(
             model_provider, other_fn_names, agent_executor.curr_node
@@ -576,7 +521,7 @@ class TestAgent:
             )
         )
 
-        self.add_assistant_turn(
+        assistant_turn = self.add_assistant_turn(
             agent_executor,
             model_provider,
             None,
@@ -585,85 +530,37 @@ class TestAgent:
             fn_call_id_to_fn_output,
         )
 
-        start_node_schema = cashier_graph_schema.start_node_schema
-        FIRST_TURN = TurnArgs(
-            turn=NodeSystemTurn(
-                msg_content=start_node_schema.node_system_prompt(
-                    node_prompt=cashier_graph_schema.start_node_schema.node_prompt,
-                    input=None,
-                    node_input_json_schema=None,
-                    state_json_schema=start_node_schema.state_pydantic_model.model_json_schema(),
-                    last_msg=None,
-                ),
-                node_id=1,
-            ),
-            kwargs={"remove_prev_tool_calls": remove_prev_tool_calls},
-        )
-        SECOND_TURN = cashier_graph_schema.start_node_schema.first_turn
-        THIRD_TURN = AssistantTurn(
-            msg_content=None,
-            model_provider=model_provider,
-            tool_registry=start_node_schema.tool_registry,
-            fn_calls=fn_calls,
-            fn_call_id_to_fn_output=fn_call_id_to_fn_output,
-        )
-
-        TC = self.create_turn_container([FIRST_TURN, SECOND_TURN, THIRD_TURN])
+        TC = self.create_turn_container([*start_turns, assistant_turn])
 
         assert not DeepDiff(
             agent_executor.get_model_completion_kwargs(),
             {
                 "turn_container": TC,
-                "tool_registry": start_node_schema.tool_registry,
+                "tool_registry": self.start_node_schema.tool_registry,
                 "force_tool_choice": None,
             },
         )
 
-    @pytest.mark.parametrize(
-        "model_provider", [ModelProvider.OPENAI, ModelProvider.ANTHROPIC]
-    )
-    @pytest.mark.parametrize("remove_prev_tool_calls", [True, False])
-    @pytest.mark.parametrize("is_stream", [True, False])
-    @pytest.mark.parametrize(
-        "first_fn_names",
-        [
-            ["get_menu_item_from_name"],
-            ["get_state"],
-            ["update_state_order"],
-            ["inexistent_fn"],
-            ["get_menu_item_from_name", "get_menu_item_from_name"],
-            ["get_state", "update_state_order"],
-            ["get_state", "update_state_order", "inexistent_fn"],
-            ["get_state", "get_menu_item_from_name", "update_state_order"],
-            [
-                "get_state",
-                "get_menu_item_from_name",
-                "update_state_order",
-                "get_menu_item_from_name",
-            ],
-        ],
-    )
     def test_node_transition(
         self,
         model_provider,
         remove_prev_tool_calls,
         is_stream,
-        first_fn_names,
+        fn_names,
         agent_executor,
+        start_turns,
     ):
-        self.add_user_turn(agent_executor, "hello", model_provider, True)
-        fn_calls, fn_call_id_to_fn_output = self.create_fake_fn_calls(
-            model_provider, first_fn_names, agent_executor.curr_node
-        )
-        self.add_assistant_turn(
+        t1 = self.add_user_turn(agent_executor, "hello", model_provider, True)
+        t2 = self.add_assistant_turn(
             agent_executor,
             model_provider,
             None,
             is_stream,
-            fn_calls,
-            fn_call_id_to_fn_output,
+            tool_names=fn_names,
         )
-        self.add_user_turn(agent_executor, "i want pecan latte", model_provider, True)
+        t3 = self.add_user_turn(
+            agent_executor, "i want pecan latte", model_provider, True
+        )
 
         order = Order(
             item_orders=[ItemOrder(name="pecan latte", size=CupSize.VENTI, options=[])]
@@ -682,7 +579,7 @@ class TestAgent:
         second_fn_call_id_to_fn_output = {
             fn_call.id: None for fn_call in second_fn_calls
         }
-        self.add_assistant_turn(
+        t4 = self.add_assistant_turn(
             agent_executor,
             model_provider,
             None,
@@ -691,42 +588,10 @@ class TestAgent:
             second_fn_call_id_to_fn_output,
         )
 
-        start_node_schema = cashier_graph_schema.start_node_schema
-        FIRST_TURN = TurnArgs(
-            turn=NodeSystemTurn(
-                msg_content=start_node_schema.node_system_prompt(
-                    node_prompt=cashier_graph_schema.start_node_schema.node_prompt,
-                    input=None,
-                    node_input_json_schema=None,
-                    state_json_schema=start_node_schema.state_pydantic_model.model_json_schema(),
-                    last_msg=None,
-                ),
-                node_id=1,
-            ),
-            kwargs={"remove_prev_tool_calls": remove_prev_tool_calls},
-        )
-        SECOND_TURN = cashier_graph_schema.start_node_schema.first_turn
-        THIRD_TURN = UserTurn(msg_content="hello")
-        FOURTH_TURN = AssistantTurn(
-            msg_content=None,
-            model_provider=model_provider,
-            tool_registry=start_node_schema.tool_registry,
-            fn_calls=fn_calls,
-            fn_call_id_to_fn_output=fn_call_id_to_fn_output,
-        )
-        FIFTH_TURN = UserTurn(msg_content="i want pecan latte")
-        SIXTH_TURN = AssistantTurn(
-            msg_content=None,
-            model_provider=model_provider,
-            tool_registry=start_node_schema.tool_registry,
-            fn_calls=second_fn_calls,
-            fn_call_id_to_fn_output=second_fn_call_id_to_fn_output,
-        )
-
         next_node_schema = cashier_graph_schema.from_node_schema_id_to_edge_schema[
-            start_node_schema.id
+            self.start_node_schema.id
         ][0].to_node_schema
-        SEVENTH_TURN = TurnArgs(
+        node_turn = TurnArgs(
             turn=NodeSystemTurn(
                 msg_content=next_node_schema.node_system_prompt(
                     node_prompt=next_node_schema.node_prompt,
@@ -735,20 +600,19 @@ class TestAgent:
                     state_json_schema=next_node_schema.state_pydantic_model.model_json_schema(),
                     last_msg="i want pecan latte",
                 ),
-                node_id=next_node_schema.id,
+                node_id=2,
             ),
             kwargs={"remove_prev_tool_calls": remove_prev_tool_calls},
         )
 
         TC = self.create_turn_container(
             [
-                FIRST_TURN,
-                SECOND_TURN,
-                THIRD_TURN,
-                FOURTH_TURN,
-                FIFTH_TURN,
-                SIXTH_TURN,
-                SEVENTH_TURN,
+                *start_turns,
+                t1,
+                t2,
+                t3,
+                t4,
+                node_turn,
             ]
         )
 
@@ -761,53 +625,27 @@ class TestAgent:
             },
         )
 
-    @pytest.mark.parametrize(
-        "model_provider", [ModelProvider.OPENAI, ModelProvider.ANTHROPIC]
-    )
-    @pytest.mark.parametrize("remove_prev_tool_calls", [True, False])
-    @pytest.mark.parametrize("is_stream", [True, False])
-    @pytest.mark.parametrize(
-        "first_fn_names",
-        [
-            ["get_menu_item_from_name"],
-            ["get_state"],
-            ["update_state_order"],
-            ["inexistent_fn"],
-            ["get_menu_item_from_name", "get_menu_item_from_name"],
-            ["get_state", "update_state_order"],
-            ["get_state", "update_state_order", "inexistent_fn"],
-            ["get_state", "get_menu_item_from_name", "update_state_order"],
-            [
-                "get_state",
-                "get_menu_item_from_name",
-                "update_state_order",
-                "get_menu_item_from_name",
-            ],
-        ],
-    )
-    def test_backward_node_transition(
+    def test_backward_node_skip(
         self,
         model_provider,
         remove_prev_tool_calls,
         is_stream,
-        first_fn_names,
+        fn_names,
         agent_executor,
+        start_turns,
     ):
-        start_node_schema = cashier_graph_schema.start_node_schema
 
-        self.add_user_turn(agent_executor, "hello", model_provider, True)
-        fn_calls, fn_call_id_to_fn_output = self.create_fake_fn_calls(
-            model_provider, first_fn_names, agent_executor.curr_node
-        )
-        self.add_assistant_turn(
+        t1 = self.add_user_turn(agent_executor, "hello", model_provider, True)
+        t2 = self.add_assistant_turn(
             agent_executor,
             model_provider,
             None,
             is_stream,
-            fn_calls,
-            fn_call_id_to_fn_output,
+            tool_names=fn_names,
         )
-        self.add_user_turn(agent_executor, "i want pecan latte", model_provider, True)
+        t3 = self.add_user_turn(
+            agent_executor, "i want pecan latte", model_provider, True
+        )
 
         order = Order(
             item_orders=[ItemOrder(name="pecan latte", size=CupSize.VENTI, options=[])]
@@ -826,7 +664,7 @@ class TestAgent:
         second_fn_call_id_to_fn_output = {
             fn_call.id: None for fn_call in second_fn_calls
         }
-        self.add_assistant_turn(
+        t4 = self.add_assistant_turn(
             agent_executor,
             model_provider,
             None,
@@ -834,65 +672,25 @@ class TestAgent:
             second_fn_calls,
             second_fn_call_id_to_fn_output,
         )
-        self.add_assistant_turn(
+        t5 = self.add_assistant_turn(
             agent_executor,
             model_provider,
             "can you confirm the order?",
             is_stream,
         )
 
-        with patch(
-            "cashier.model.model_util.FunctionCall.create_fake_fn_call"
-        ) as generate_random_string_patch:
-            get_state_fn_call = FunctionCall(
-                name="get_state",
-                id="call_123",
-                args={},
-            )
-            generate_random_string_patch.return_value = get_state_fn_call
-            self.add_user_turn(
-                agent_executor,
-                "i want to change order",
-                model_provider,
-                False,
-                bwd_skip_node_schema_id=start_node_schema.id,
-            )
-
-        FIRST_TURN = TurnArgs(
-            turn=NodeSystemTurn(
-                msg_content=start_node_schema.node_system_prompt(
-                    node_prompt=cashier_graph_schema.start_node_schema.node_prompt,
-                    input=None,
-                    node_input_json_schema=None,
-                    state_json_schema=start_node_schema.state_pydantic_model.model_json_schema(),
-                    last_msg=None,
-                ),
-                node_id=1,
-            ),
-            kwargs={"remove_prev_tool_calls": remove_prev_tool_calls},
-        )
-        SECOND_TURN = cashier_graph_schema.start_node_schema.first_turn
-        THIRD_TURN = UserTurn(msg_content="hello")
-        FOURTH_TURN = AssistantTurn(
-            msg_content=None,
-            model_provider=model_provider,
-            tool_registry=start_node_schema.tool_registry,
-            fn_calls=fn_calls,
-            fn_call_id_to_fn_output=fn_call_id_to_fn_output,
-        )
-        FIFTH_TURN = UserTurn(msg_content="i want pecan latte")
-        SIXTH_TURN = AssistantTurn(
-            msg_content=None,
-            model_provider=model_provider,
-            tool_registry=start_node_schema.tool_registry,
-            fn_calls=second_fn_calls,
-            fn_call_id_to_fn_output=second_fn_call_id_to_fn_output,
+        t6 = self.add_user_turn(
+            agent_executor,
+            "i want to change order",
+            model_provider,
+            False,
+            bwd_skip_node_schema_id=self.start_node_schema.id,
         )
 
         next_node_schema = cashier_graph_schema.from_node_schema_id_to_edge_schema[
-            start_node_schema.id
+            self.start_node_schema.id
         ][0].to_node_schema
-        SEVENTH_TURN = TurnArgs(
+        node_turn_1 = TurnArgs(
             turn=NodeSystemTurn(
                 msg_content=next_node_schema.node_system_prompt(
                     node_prompt=next_node_schema.node_prompt,
@@ -901,27 +699,18 @@ class TestAgent:
                     state_json_schema=next_node_schema.state_pydantic_model.model_json_schema(),
                     last_msg="i want pecan latte",
                 ),
-                node_id=next_node_schema.id,
+                node_id=2,
             ),
             kwargs={"remove_prev_tool_calls": remove_prev_tool_calls},
         )
-        EIGHTH_TURN = AssistantTurn(
-            msg_content="can you confirm the order?",
-            model_provider=model_provider,
-            tool_registry=next_node_schema.tool_registry,
-            fn_calls=[],
-            fn_call_id_to_fn_output={},
-        )
-        NINTH_TURN = UserTurn(
-            msg_content="i want to change order",
-        )
-        TENTH_TURN = TurnArgs(
+
+        node_turn_2 = TurnArgs(
             turn=NodeSystemTurn(
-                msg_content=start_node_schema.node_system_prompt(
+                msg_content=self.start_node_schema.node_system_prompt(
                     node_prompt=cashier_graph_schema.start_node_schema.node_prompt,
                     input=None,
                     node_input_json_schema=None,
-                    state_json_schema=start_node_schema.state_pydantic_model.model_json_schema(),
+                    state_json_schema=self.start_node_schema.state_pydantic_model.model_json_schema(),
                     last_msg="can you confirm the order?",
                 ),
                 node_id=3,
@@ -929,10 +718,16 @@ class TestAgent:
             kwargs={"remove_prev_tool_calls": remove_prev_tool_calls, "is_skip": True},
         )
 
-        ELEVENTH_TURN = AssistantTurn(
+        get_state_fn_call = FunctionCall(
+            id=MODEL_PROVIDER_TO_TOOL_CALL_ID_PREFIX[model_provider]
+            + self.rand_tool_ids.popleft(),
+            name="get_state",
+            args={},
+        )
+        t7 = AssistantTurn(
             msg_content=None,
             model_provider=model_provider,
-            tool_registry=start_node_schema.tool_registry,
+            tool_registry=self.start_node_schema.tool_registry,
             fn_calls=[get_state_fn_call],
             fn_call_id_to_fn_output={
                 get_state_fn_call.id: agent_executor.curr_node.state
@@ -941,17 +736,16 @@ class TestAgent:
 
         TC = self.create_turn_container(
             [
-                FIRST_TURN,
-                SECOND_TURN,
-                THIRD_TURN,
-                FOURTH_TURN,
-                FIFTH_TURN,
-                SIXTH_TURN,
-                SEVENTH_TURN,
-                EIGHTH_TURN,
-                NINTH_TURN,
-                TENTH_TURN,
-                ELEVENTH_TURN,
+                *start_turns,
+                t1,
+                t2,
+                t3,
+                t4,
+                node_turn_1,
+                t5,
+                t6,
+                node_turn_2,
+                t7,
             ],
         )
 
@@ -959,7 +753,234 @@ class TestAgent:
             agent_executor.get_model_completion_kwargs(),
             {
                 "turn_container": TC,
-                "tool_registry": start_node_schema.tool_registry,
+                "tool_registry": self.start_node_schema.tool_registry,
+                "force_tool_choice": None,
+            },
+        )
+
+    def test_forward_node_skip(
+        self,
+        model_provider,
+        remove_prev_tool_calls,
+        is_stream,
+        fn_names,
+        agent_executor,
+        start_turns,
+    ):
+
+        t1 = self.add_user_turn(agent_executor, "hello", model_provider, True)
+        t2 = self.add_assistant_turn(
+            agent_executor,
+            model_provider,
+            None,
+            is_stream,
+            tool_names=fn_names,
+        )
+        t3 = self.add_user_turn(
+            agent_executor, "i want pecan latte", model_provider, True
+        )
+
+        order = Order(
+            item_orders=[ItemOrder(name="pecan latte", size=CupSize.VENTI, options=[])]
+        )
+        fn_call_1 = FunctionCall.create_fake_fn_call(
+            model_provider,
+            name="update_state_order",
+            args={"order": order.model_dump()},
+        )
+        fn_call_2 = FunctionCall.create_fake_fn_call(
+            model_provider,
+            name="update_state_has_finished_ordering",
+            args={"has_finished_ordering": True},
+        )
+        second_fn_calls = [fn_call_1, fn_call_2]
+        second_fn_call_id_to_fn_output = {
+            fn_call.id: None for fn_call in second_fn_calls
+        }
+        t4 = self.add_assistant_turn(
+            agent_executor,
+            model_provider,
+            None,
+            is_stream,
+            second_fn_calls,
+            second_fn_call_id_to_fn_output,
+        )
+        next_node_schema = cashier_graph_schema.from_node_schema_id_to_edge_schema[
+            self.start_node_schema.id
+        ][0].to_node_schema
+        node_turn_1 = TurnArgs(
+            turn=NodeSystemTurn(
+                msg_content=next_node_schema.node_system_prompt(
+                    node_prompt=next_node_schema.node_prompt,
+                    input=order.model_dump_json(),
+                    node_input_json_schema=next_node_schema.input_pydantic_model.model_json_schema(),
+                    state_json_schema=next_node_schema.state_pydantic_model.model_json_schema(),
+                    last_msg="i want pecan latte",
+                ),
+                node_id=2,
+            ),
+            kwargs={"remove_prev_tool_calls": remove_prev_tool_calls},
+        )
+        t5 = self.add_assistant_turn(
+            agent_executor,
+            model_provider,
+            "can you confirm the order?",
+            is_stream,
+        )
+
+        t6 = self.add_user_turn(
+            agent_executor,
+            "i confirm",
+            model_provider,
+            True,
+        )
+
+        fn_call_1 = FunctionCall.create_fake_fn_call(
+            model_provider,
+            name="update_state_has_confirmed_order",
+            args={"has_confirmed_order": True},
+        )
+        third_fn_calls = [fn_call_1]
+        third_fn_calls_fn_call_id_to_fn_output = {
+            fn_call.id: None for fn_call in third_fn_calls
+        }
+        t7 = self.add_assistant_turn(
+            agent_executor,
+            model_provider,
+            None,
+            is_stream,
+            third_fn_calls,
+            third_fn_calls_fn_call_id_to_fn_output,
+        )
+
+        next_next_node_schema = cashier_graph_schema.from_node_schema_id_to_edge_schema[
+            next_node_schema.id
+        ][0].to_node_schema
+        node_turn_2 = TurnArgs(
+            turn=NodeSystemTurn(
+                msg_content=next_next_node_schema.node_system_prompt(
+                    node_prompt=next_next_node_schema.node_prompt,
+                    input=None,
+                    node_input_json_schema=None,
+                    state_json_schema=next_next_node_schema.state_pydantic_model.model_json_schema(),
+                    last_msg="i confirm",
+                ),
+                node_id=3,
+            ),
+            kwargs={"remove_prev_tool_calls": remove_prev_tool_calls},
+        )
+        t8 = self.add_assistant_turn(
+            agent_executor,
+            model_provider,
+            "thanks for confirming",
+            is_stream,
+        )
+        t9 = self.add_user_turn(
+            agent_executor,
+            "actually, i want to change my order",
+            model_provider,
+            False,
+            bwd_skip_node_schema_id=self.start_node_schema.id,
+            include_fwd_skip_node_schema_id=False,
+        )
+        node_turn_3 = TurnArgs(
+            turn=NodeSystemTurn(
+                msg_content=self.start_node_schema.node_system_prompt(
+                    node_prompt=cashier_graph_schema.start_node_schema.node_prompt,
+                    input=None,
+                    node_input_json_schema=None,
+                    state_json_schema=self.start_node_schema.state_pydantic_model.model_json_schema(),
+                    last_msg="thanks for confirming",
+                ),
+                node_id=4,
+            ),
+            kwargs={"remove_prev_tool_calls": remove_prev_tool_calls, "is_skip": True},
+        )
+        get_state_fn_call = FunctionCall(
+            id=MODEL_PROVIDER_TO_TOOL_CALL_ID_PREFIX[model_provider]
+            + self.rand_tool_ids.popleft(),
+            name="get_state",
+            args={},
+        )
+        t10 = AssistantTurn(
+            msg_content=None,
+            model_provider=model_provider,
+            tool_registry=self.start_node_schema.tool_registry,
+            fn_calls=[get_state_fn_call],
+            fn_call_id_to_fn_output={
+                get_state_fn_call.id: agent_executor.curr_node.state
+            },
+        )
+        t11 = self.add_assistant_turn(
+            agent_executor,
+            model_provider,
+            "what do you want to change?",
+            is_stream,
+        )
+        t12 = self.add_user_turn(
+            agent_executor,
+            "nvm, nothing",
+            model_provider,
+            False,
+            bwd_skip_node_schema_id=2,
+        )
+        node_turn_4 = TurnArgs(
+            turn=NodeSystemTurn(
+                msg_content=next_node_schema.node_system_prompt(
+                    node_prompt=next_node_schema.node_prompt,
+                    input=order.model_dump_json(),
+                    node_input_json_schema=next_node_schema.input_pydantic_model.model_json_schema(),
+                    state_json_schema=next_node_schema.state_pydantic_model.model_json_schema(),
+                    last_msg="what do you want to change?",
+                ),
+                node_id=5,
+            ),
+            kwargs={"remove_prev_tool_calls": remove_prev_tool_calls, "is_skip": True},
+        )
+        get_state_fn_call = FunctionCall(
+            id=MODEL_PROVIDER_TO_TOOL_CALL_ID_PREFIX[model_provider]
+            + self.rand_tool_ids.popleft(),
+            name="get_state",
+            args={},
+        )
+        t13 = AssistantTurn(
+            msg_content=None,
+            model_provider=model_provider,
+            tool_registry=next_node_schema.tool_registry,
+            fn_calls=[get_state_fn_call],
+            fn_call_id_to_fn_output={
+                get_state_fn_call.id: agent_executor.curr_node.state
+            },
+        )
+
+        TC = self.create_turn_container(
+            [
+                *start_turns,
+                t1,
+                t2,
+                t3,
+                t4,
+                node_turn_1,
+                t5,
+                t6,
+                t7,
+                node_turn_2,
+                t8,
+                t9,
+                node_turn_3,
+                t10,
+                t11,
+                t12,
+                node_turn_4,
+                t13,
+            ],
+        )
+
+        assert not DeepDiff(
+            agent_executor.get_model_completion_kwargs(),
+            {
+                "turn_container": TC,
+                "tool_registry": next_node_schema.tool_registry,
                 "force_tool_choice": None,
             },
         )
