@@ -269,6 +269,25 @@ class TestAgent:
             remove_prev_tool_calls=remove_prev_tool_calls,
             model_provider=model_provider,
         )
+    
+    @pytest.fixture
+    def start_turns(self, remove_prev_tool_calls):
+        return [
+         TurnArgs(
+            turn=NodeSystemTurn(
+                msg_content=self.start_node_schema.node_system_prompt(
+                    node_prompt=cashier_graph_schema.start_node_schema.node_prompt,
+                    input=None,
+                    node_input_json_schema=None,
+                    state_json_schema=self.start_node_schema.state_pydantic_model.model_json_schema(),
+                    last_msg=None,
+                ),
+                node_id=1,
+            ),
+            kwargs={"remove_prev_tool_calls": remove_prev_tool_calls},
+         ),
+         cashier_graph_schema.start_node_schema.first_turn
+        ]
 
     @classmethod
     @pytest.fixture(params=[ModelProvider.OPENAI, ModelProvider.ANTHROPIC])
@@ -307,24 +326,8 @@ class TestAgent:
     def fn_names(cls, request):
         return request.param
 
-    def test_initial_node(self, remove_prev_tool_calls, agent_executor):
-        FIRST_TURN = TurnArgs(
-            turn=NodeSystemTurn(
-                msg_content=self.start_node_schema.node_system_prompt(
-                    node_prompt=cashier_graph_schema.start_node_schema.node_prompt,
-                    input=None,
-                    node_input_json_schema=None,
-                    state_json_schema=self.start_node_schema.state_pydantic_model.model_json_schema(),
-                    last_msg=None,
-                ),
-                node_id=agent_executor.curr_node.id,
-            ),
-            kwargs={"remove_prev_tool_calls": remove_prev_tool_calls},
-        )
-
-        SECOND_TURN = cashier_graph_schema.start_node_schema.first_turn
-
-        TC = self.create_turn_container([FIRST_TURN, SECOND_TURN])
+    def test_initial_node(self, remove_prev_tool_calls, agent_executor, start_turns):
+        TC = self.create_turn_container(start_turns)
         assert not DeepDiff(
             agent_executor.get_model_completion_kwargs(),
             {
@@ -335,27 +338,13 @@ class TestAgent:
         )
 
     def test_add_user_turn(
-        self, model_provider, remove_prev_tool_calls, agent_executor
+        self, model_provider, remove_prev_tool_calls, agent_executor, start_turns
     ):
         self.add_user_turn(agent_executor, "hello", model_provider, True)
 
-        FIRST_TURN = TurnArgs(
-            turn=NodeSystemTurn(
-                msg_content=self.start_node_schema.node_system_prompt(
-                    node_prompt=cashier_graph_schema.start_node_schema.node_prompt,
-                    input=None,
-                    node_input_json_schema=None,
-                    state_json_schema=self.start_node_schema.state_pydantic_model.model_json_schema(),
-                    last_msg=None,
-                ),
-                node_id=agent_executor.curr_node.id,
-            ),
-            kwargs={"remove_prev_tool_calls": remove_prev_tool_calls},
-        )
-        SECOND_TURN = cashier_graph_schema.start_node_schema.first_turn
         THIRD_TURN = UserTurn(msg_content="hello")
 
-        TC = self.create_turn_container([FIRST_TURN, SECOND_TURN, THIRD_TURN])
+        TC = self.create_turn_container([*start_turns, THIRD_TURN])
         assert not DeepDiff(
             agent_executor.get_model_completion_kwargs(),
             {
@@ -372,24 +361,11 @@ class TestAgent:
         model_provider,
         remove_prev_tool_calls,
         agent_executor,
+        start_turns
     ):
         generate_random_string_patch.return_value = "call_123"
         self.add_user_turn(agent_executor, "hello", model_provider, False, 2)
 
-        FIRST_TURN = TurnArgs(
-            turn=NodeSystemTurn(
-                msg_content=self.start_node_schema.node_system_prompt(
-                    node_prompt=cashier_graph_schema.start_node_schema.node_prompt,
-                    input=None,
-                    node_input_json_schema=None,
-                    state_json_schema=self.start_node_schema.state_pydantic_model.model_json_schema(),
-                    last_msg=None,
-                ),
-                node_id=agent_executor.curr_node.id,
-            ),
-            kwargs={"remove_prev_tool_calls": remove_prev_tool_calls},
-        )
-        SECOND_TURN = cashier_graph_schema.start_node_schema.first_turn
         THIRD_TURN = UserTurn(msg_content="hello")
 
         fake_fn_call = FunctionCall.create_fake_fn_call(
@@ -409,7 +385,7 @@ class TestAgent:
         )
 
         TC = self.create_turn_container(
-            [FIRST_TURN, SECOND_TURN, THIRD_TURN, FOURTH_TURN]
+            [*start_turns, THIRD_TURN, FOURTH_TURN]
         )
 
         assert not DeepDiff(
@@ -427,24 +403,11 @@ class TestAgent:
         remove_prev_tool_calls,
         is_stream,
         agent_executor,
+        start_turns
     ):
         self.add_user_turn(agent_executor, "hello", model_provider, True)
         self.add_assistant_turn(agent_executor, model_provider, "hello back", is_stream)
 
-        FIRST_TURN = TurnArgs(
-            turn=NodeSystemTurn(
-                msg_content=self.start_node_schema.node_system_prompt(
-                    node_prompt=cashier_graph_schema.start_node_schema.node_prompt,
-                    input=None,
-                    node_input_json_schema=None,
-                    state_json_schema=self.start_node_schema.state_pydantic_model.model_json_schema(),
-                    last_msg=None,
-                ),
-                node_id=agent_executor.curr_node.id,
-            ),
-            kwargs={"remove_prev_tool_calls": remove_prev_tool_calls},
-        )
-        SECOND_TURN = cashier_graph_schema.start_node_schema.first_turn
         THIRD_TURN = UserTurn(msg_content="hello")
         FOURTH_TURN = AssistantTurn(
             msg_content="hello back",
@@ -455,7 +418,7 @@ class TestAgent:
         )
 
         TC = self.create_turn_container(
-            [FIRST_TURN, SECOND_TURN, THIRD_TURN, FOURTH_TURN]
+            [*start_turns, THIRD_TURN, FOURTH_TURN]
         )
 
         assert not DeepDiff(
@@ -474,6 +437,7 @@ class TestAgent:
         is_stream,
         fn_names,
         agent_executor,
+        start_turns,
     ):
         self.add_user_turn(agent_executor, "hello", model_provider, True)
         fn_calls, fn_call_id_to_fn_output = self.create_fake_fn_calls(
@@ -488,20 +452,6 @@ class TestAgent:
             fn_call_id_to_fn_output,
         )
 
-        FIRST_TURN = TurnArgs(
-            turn=NodeSystemTurn(
-                msg_content=self.start_node_schema.node_system_prompt(
-                    node_prompt=cashier_graph_schema.start_node_schema.node_prompt,
-                    input=None,
-                    node_input_json_schema=None,
-                    state_json_schema=self.start_node_schema.state_pydantic_model.model_json_schema(),
-                    last_msg=None,
-                ),
-                node_id=agent_executor.curr_node.id,
-            ),
-            kwargs={"remove_prev_tool_calls": remove_prev_tool_calls},
-        )
-        SECOND_TURN = cashier_graph_schema.start_node_schema.first_turn
         THIRD_TURN = UserTurn(msg_content="hello")
         FOURTH_TURN = AssistantTurn(
             msg_content=None,
@@ -512,7 +462,7 @@ class TestAgent:
         )
 
         TC = self.create_turn_container(
-            [FIRST_TURN, SECOND_TURN, THIRD_TURN, FOURTH_TURN]
+            [*start_turns, THIRD_TURN, FOURTH_TURN]
         )
 
         assert not DeepDiff(
@@ -548,6 +498,7 @@ class TestAgent:
         is_stream,
         other_fn_names,
         agent_executor,
+        start_turns,
     ):
         fn_calls, fn_call_id_to_fn_output = self.create_fake_fn_calls(
             model_provider, other_fn_names, agent_executor.curr_node
@@ -571,20 +522,6 @@ class TestAgent:
             fn_call_id_to_fn_output,
         )
 
-        FIRST_TURN = TurnArgs(
-            turn=NodeSystemTurn(
-                msg_content=self.start_node_schema.node_system_prompt(
-                    node_prompt=cashier_graph_schema.start_node_schema.node_prompt,
-                    input=None,
-                    node_input_json_schema=None,
-                    state_json_schema=self.start_node_schema.state_pydantic_model.model_json_schema(),
-                    last_msg=None,
-                ),
-                node_id=agent_executor.curr_node.id,
-            ),
-            kwargs={"remove_prev_tool_calls": remove_prev_tool_calls},
-        )
-        SECOND_TURN = cashier_graph_schema.start_node_schema.first_turn
         THIRD_TURN = AssistantTurn(
             msg_content=None,
             model_provider=model_provider,
@@ -593,7 +530,7 @@ class TestAgent:
             fn_call_id_to_fn_output=fn_call_id_to_fn_output,
         )
 
-        TC = self.create_turn_container([FIRST_TURN, SECOND_TURN, THIRD_TURN])
+        TC = self.create_turn_container([*start_turns, THIRD_TURN])
 
         assert not DeepDiff(
             agent_executor.get_model_completion_kwargs(),
@@ -611,6 +548,7 @@ class TestAgent:
         is_stream,
         fn_names,
         agent_executor,
+        start_turns
     ):
         self.add_user_turn(agent_executor, "hello", model_provider, True)
         fn_calls, fn_call_id_to_fn_output = self.create_fake_fn_calls(
@@ -652,20 +590,6 @@ class TestAgent:
             second_fn_call_id_to_fn_output,
         )
 
-        FIRST_TURN = TurnArgs(
-            turn=NodeSystemTurn(
-                msg_content=self.start_node_schema.node_system_prompt(
-                    node_prompt=cashier_graph_schema.start_node_schema.node_prompt,
-                    input=None,
-                    node_input_json_schema=None,
-                    state_json_schema=self.start_node_schema.state_pydantic_model.model_json_schema(),
-                    last_msg=None,
-                ),
-                node_id=1,
-            ),
-            kwargs={"remove_prev_tool_calls": remove_prev_tool_calls},
-        )
-        SECOND_TURN = cashier_graph_schema.start_node_schema.first_turn
         THIRD_TURN = UserTurn(msg_content="hello")
         FOURTH_TURN = AssistantTurn(
             msg_content=None,
@@ -702,8 +626,7 @@ class TestAgent:
 
         TC = self.create_turn_container(
             [
-                FIRST_TURN,
-                SECOND_TURN,
+                *start_turns,
                 THIRD_TURN,
                 FOURTH_TURN,
                 FIFTH_TURN,
@@ -728,6 +651,7 @@ class TestAgent:
         is_stream,
         fn_names,
         agent_executor,
+        start_turns
     ):
 
         self.add_user_turn(agent_executor, "hello", model_provider, True)
@@ -793,20 +717,6 @@ class TestAgent:
                 bwd_skip_node_schema_id=self.start_node_schema.id,
             )
 
-        FIRST_TURN = TurnArgs(
-            turn=NodeSystemTurn(
-                msg_content=self.start_node_schema.node_system_prompt(
-                    node_prompt=cashier_graph_schema.start_node_schema.node_prompt,
-                    input=None,
-                    node_input_json_schema=None,
-                    state_json_schema=self.start_node_schema.state_pydantic_model.model_json_schema(),
-                    last_msg=None,
-                ),
-                node_id=1,
-            ),
-            kwargs={"remove_prev_tool_calls": remove_prev_tool_calls},
-        )
-        SECOND_TURN = cashier_graph_schema.start_node_schema.first_turn
         THIRD_TURN = UserTurn(msg_content="hello")
         FOURTH_TURN = AssistantTurn(
             msg_content=None,
@@ -876,8 +786,7 @@ class TestAgent:
 
         TC = self.create_turn_container(
             [
-                FIRST_TURN,
-                SECOND_TURN,
+                *start_turns,
                 THIRD_TURN,
                 FOURTH_TURN,
                 FIFTH_TURN,
