@@ -4,7 +4,7 @@ from typing import List
 from pydantic import BaseModel
 
 from cashier.graph import NodeSchema
-from cashier.model_a.model_util import ModelProvider
+from cashier.model.model_util import ModelProvider
 from cashier.prompts.base_prompt import BasePrompt
 
 
