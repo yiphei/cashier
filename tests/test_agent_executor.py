@@ -1,4 +1,5 @@
 from collections import defaultdict
+from contextlib import ExitStack
 from io import StringIO
 from unittest.mock import Mock, call, patch
 
@@ -179,16 +180,6 @@ class TestAgent:
             else []
         )
 
-        if get_state_fn_call is not None:
-            agent_executor.curr_node.get_state = Mock(
-                wraps=agent_executor.curr_node.get_state
-            )
-
-        if update_state_fn_calls:
-            agent_executor.curr_node.update_state = Mock(
-                wraps=agent_executor.curr_node.update_state
-            )
-
         tool_registry = agent_executor.curr_node.schema.tool_registry
 
         fn_calls = fn_calls or []
@@ -202,7 +193,21 @@ class TestAgent:
                 fn_call.name: Mock(return_value=fn_call_id_to_fn_output[fn_call.id])
                 for fn_call in fn_calls
             },
-        ) as patched_fn_name_to_fn:
+        ) as patched_fn_name_to_fn, ExitStack() as stack:
+            
+            if get_state_fn_call is not None:
+                stack.enter_context(patch.object(
+                    agent_executor.curr_node,
+                    'get_state',
+                    wraps=agent_executor.curr_node.get_state
+                ))
+
+            if update_state_fn_calls:
+                stack.enter_context(patch.object(
+                    agent_executor.curr_node,
+                    'update_state',
+                    wraps=agent_executor.curr_node.update_state
+                ))
 
             agent_executor.add_assistant_turn(model_completion)
 
