@@ -202,7 +202,8 @@ class TestAgent:
                 model_chat_side_effects.append(bwd_skip_model_completion)
 
         self.model.chat.side_effect = model_chat_side_effects
-        agent_executor.add_user_turn(message)
+        with self.generate_random_string_context():
+            agent_executor.add_user_turn(message)
 
         return UserTurn(msg_content=message)
 
@@ -398,10 +399,9 @@ class TestAgent:
         agent_executor,
         start_turns,
     ):
-        with self.generate_random_string_context():
-            user_turn = self.add_user_turn(
-                agent_executor, "hello", model_provider, False, 2
-            )
+        user_turn = self.add_user_turn(
+            agent_executor, "hello", model_provider, False, 2
+        )
 
         fake_fn_call = FunctionCall(
             id=MODEL_PROVIDER_TO_TOOL_CALL_ID_PREFIX[model_provider]
@@ -677,14 +677,13 @@ class TestAgent:
             is_stream,
         )
 
-        with self.generate_random_string_context():
-            t6 = self.add_user_turn(
-                agent_executor,
-                "i want to change order",
-                model_provider,
-                False,
-                bwd_skip_node_schema_id=self.start_node_schema.id,
-            )
+        t6 = self.add_user_turn(
+            agent_executor,
+            "i want to change order",
+            model_provider,
+            False,
+            bwd_skip_node_schema_id=self.start_node_schema.id,
+        )
 
         next_node_schema = cashier_graph_schema.from_node_schema_id_to_edge_schema[
             self.start_node_schema.id
