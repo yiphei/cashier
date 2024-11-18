@@ -1,7 +1,7 @@
 from typing import Any, Dict, List, Optional
 
 from cashier.graph import Node
-from cashier.model_turn import (
+from cashier.model_a.model_turn import (
     AnthropicMessageManager,
     AssistantTurn,
     MessageList,
@@ -12,7 +12,7 @@ from cashier.model_turn import (
     SystemTurn,
     UserTurn,
 )
-from cashier.model_util import FunctionCall, ModelProvider
+from cashier.model_a.model_util import FunctionCall, ModelProvider
 from cashier.tool_registry import ToolRegistry
 
 

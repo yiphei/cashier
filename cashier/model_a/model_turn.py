@@ -29,7 +29,7 @@ from pydantic import (
 )
 
 from cashier.function_call_context import ToolExceptionWrapper
-from cashier.model_util import CustomJSONEncoder, FunctionCall, ModelProvider
+from cashier.model_a.model_util import CustomJSONEncoder, FunctionCall, ModelProvider
 from cashier.tool_registry import ToolRegistry
 
 

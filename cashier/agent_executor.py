@@ -9,9 +9,9 @@ from cashier.function_call_context import FunctionCallContext, InexistentFunctio
 from cashier.graph import Direction, EdgeSchema, Graph, GraphSchema, Node, NodeSchema
 from cashier.gui import MessageDisplay
 from cashier.logger import logger
-from cashier.model import Model, ModelName, ModelOutput
-from cashier.model_turn import AssistantTurn
-from cashier.model_util import CustomJSONEncoder, FunctionCall, ModelProvider
+from cashier.model_a.model import Model, ModelName, ModelOutput
+from cashier.model_a.model_turn import AssistantTurn
+from cashier.model_a.model_util import CustomJSONEncoder, FunctionCall, ModelProvider
 from cashier.prompts.node_schema_selection import NodeSchemaSelectionPrompt
 from cashier.prompts.off_topic import OffTopicPrompt
 from cashier.turn_container import TurnContainer
