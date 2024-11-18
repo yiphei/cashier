@@ -326,7 +326,7 @@ class TestAgent:
     def fn_names(cls, request):
         return request.param
 
-    def test_initial_node(self, remove_prev_tool_calls, agent_executor, start_turns):
+    def test_graph_initialization(self, remove_prev_tool_calls, agent_executor, start_turns):
         TC = self.create_turn_container(start_turns)
         assert not DeepDiff(
             agent_executor.get_model_completion_kwargs(),
@@ -355,7 +355,7 @@ class TestAgent:
         )
 
     @patch("cashier.model.model_util.generate_random_string")
-    def test_add_user_turn_handle_wait(
+    def test_add_user_turn_with_wait(
         self,
         generate_random_string_patch,
         model_provider,
@@ -426,7 +426,7 @@ class TestAgent:
             },
         )
 
-    def test_add_assistant_turn_tool_calls(
+    def test_add_assistant_turn_with_tool_calls(
         self,
         model_provider,
         remove_prev_tool_calls,
@@ -485,7 +485,7 @@ class TestAgent:
             ],
         ],
     )
-    def test_add_assistant_state_update_before_user_turn(
+    def test_state_update_before_user_turn(
         self,
         model_provider,
         remove_prev_tool_calls,
@@ -638,7 +638,7 @@ class TestAgent:
             },
         )
 
-    def test_backward_node_transition(
+    def test_backward_node_skip(
         self,
         model_provider,
         remove_prev_tool_calls,
