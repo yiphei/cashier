@@ -192,7 +192,13 @@ class TestAgent:
         is_stream,
         fn_calls=None,
         fn_call_id_to_fn_output=None,
+        tool_names=None,
     ):
+        if tool_names is not None:
+            fn_calls, fn_call_id_to_fn_output = self.create_fake_fn_calls(
+                        model_provider, tool_names, agent_executor.curr_node
+                    )
+
         model_completion = self.create_mock_model_completion(
             model_provider, message, is_stream, fn_calls=fn_calls
         )
@@ -438,16 +444,12 @@ class TestAgent:
         start_turns,
     ):
         user_turn = self.add_user_turn(agent_executor, "hello", model_provider, True)
-        fn_calls, fn_call_id_to_fn_output = self.create_fake_fn_calls(
-            model_provider, fn_names, agent_executor.curr_node
-        )
         assistant_turn = self.add_assistant_turn(
             agent_executor,
             model_provider,
             None,
             is_stream,
-            fn_calls,
-            fn_call_id_to_fn_output,
+            tool_names=fn_names
         )
 
         TC = self.create_turn_container([*start_turns, user_turn, assistant_turn])
@@ -530,16 +532,12 @@ class TestAgent:
         start_turns,
     ):
         t1 = self.add_user_turn(agent_executor, "hello", model_provider, True)
-        fn_calls, fn_call_id_to_fn_output = self.create_fake_fn_calls(
-            model_provider, fn_names, agent_executor.curr_node
-        )
         t2 = self.add_assistant_turn(
             agent_executor,
             model_provider,
             None,
             is_stream,
-            fn_calls,
-            fn_call_id_to_fn_output,
+            tool_names=fn_names,
         )
         t3 = self.add_user_turn(
             agent_executor, "i want pecan latte", model_provider, True
@@ -619,16 +617,12 @@ class TestAgent:
     ):
 
         t1 = self.add_user_turn(agent_executor, "hello", model_provider, True)
-        fn_calls, fn_call_id_to_fn_output = self.create_fake_fn_calls(
-            model_provider, fn_names, agent_executor.curr_node
-        )
         t2 = self.add_assistant_turn(
             agent_executor,
             model_provider,
             None,
             is_stream,
-            fn_calls,
-            fn_call_id_to_fn_output,
+            tool_names=fn_names,
         )
         t3 = self.add_user_turn(
             agent_executor, "i want pecan latte", model_provider, True
