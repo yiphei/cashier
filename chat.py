@@ -9,11 +9,11 @@ from elevenlabs import ElevenLabs
 
 from cashier.agent_executor import AgentExecutor
 from cashier.audio import get_audio_input, get_text_from_speech
-from cashier.graph_data.cashier import cashier_graph_schema
+from data.graph.cashier import cashier_graph_schema
 from cashier.gui import remove_previous_line
 from cashier.logger import logger
 from cashier.model import Model
-from cashier.tool_registries.cashier_tool_registry import create_db_client
+from data.tool_registry.cashier_tool_registry import create_db_client
 
 # Load environment variables from .env file
 load_dotenv()
