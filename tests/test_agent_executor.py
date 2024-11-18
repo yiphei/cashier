@@ -284,7 +284,7 @@ class TestAgent:
                     state_json_schema=self.start_node_schema.state_pydantic_model.model_json_schema(),
                     last_msg=None,
                 ),
-                node_id=1,
+                node_id=agent_executor.curr_node.id,
             ),
             kwargs={"remove_prev_tool_calls": remove_prev_tool_calls},
         )
@@ -319,7 +319,7 @@ class TestAgent:
                     state_json_schema=self.start_node_schema.state_pydantic_model.model_json_schema(),
                     last_msg=None,
                 ),
-                node_id=1,
+                node_id=agent_executor.curr_node.id,
             ),
             kwargs={"remove_prev_tool_calls": remove_prev_tool_calls},
         )
@@ -360,7 +360,7 @@ class TestAgent:
                     state_json_schema=self.start_node_schema.state_pydantic_model.model_json_schema(),
                     last_msg=None,
                 ),
-                node_id=1,
+                node_id=agent_executor.curr_node.id,
             ),
             kwargs={"remove_prev_tool_calls": remove_prev_tool_calls},
         )
@@ -420,7 +420,7 @@ class TestAgent:
                     state_json_schema=self.start_node_schema.state_pydantic_model.model_json_schema(),
                     last_msg=None,
                 ),
-                node_id=1,
+                node_id=agent_executor.curr_node.id,
             ),
             kwargs={"remove_prev_tool_calls": remove_prev_tool_calls},
         )
@@ -501,7 +501,7 @@ class TestAgent:
                     state_json_schema=self.start_node_schema.state_pydantic_model.model_json_schema(),
                     last_msg=None,
                 ),
-                node_id=1,
+                node_id=agent_executor.curr_node.id,
             ),
             kwargs={"remove_prev_tool_calls": remove_prev_tool_calls},
         )
@@ -589,7 +589,7 @@ class TestAgent:
                     state_json_schema=self.start_node_schema.state_pydantic_model.model_json_schema(),
                     last_msg=None,
                 ),
-                node_id=1,
+                node_id=agent_executor.curr_node.id,
             ),
             kwargs={"remove_prev_tool_calls": remove_prev_tool_calls},
         )
@@ -728,7 +728,7 @@ class TestAgent:
                     state_json_schema=next_node_schema.state_pydantic_model.model_json_schema(),
                     last_msg="i want pecan latte",
                 ),
-                node_id=next_node_schema.id,
+                node_id=2,
             ),
             kwargs={"remove_prev_tool_calls": remove_prev_tool_calls},
         )
@@ -893,7 +893,7 @@ class TestAgent:
                     state_json_schema=next_node_schema.state_pydantic_model.model_json_schema(),
                     last_msg="i want pecan latte",
                 ),
-                node_id=next_node_schema.id,
+                node_id=2,
             ),
             kwargs={"remove_prev_tool_calls": remove_prev_tool_calls},
         )
