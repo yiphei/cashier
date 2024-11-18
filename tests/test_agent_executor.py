@@ -269,24 +269,24 @@ class TestAgent:
             remove_prev_tool_calls=remove_prev_tool_calls,
             model_provider=model_provider,
         )
-    
+
     @pytest.fixture
     def start_turns(self, remove_prev_tool_calls):
         return [
-         TurnArgs(
-            turn=NodeSystemTurn(
-                msg_content=self.start_node_schema.node_system_prompt(
-                    node_prompt=cashier_graph_schema.start_node_schema.node_prompt,
-                    input=None,
-                    node_input_json_schema=None,
-                    state_json_schema=self.start_node_schema.state_pydantic_model.model_json_schema(),
-                    last_msg=None,
+            TurnArgs(
+                turn=NodeSystemTurn(
+                    msg_content=self.start_node_schema.node_system_prompt(
+                        node_prompt=cashier_graph_schema.start_node_schema.node_prompt,
+                        input=None,
+                        node_input_json_schema=None,
+                        state_json_schema=self.start_node_schema.state_pydantic_model.model_json_schema(),
+                        last_msg=None,
+                    ),
+                    node_id=1,
                 ),
-                node_id=1,
+                kwargs={"remove_prev_tool_calls": remove_prev_tool_calls},
             ),
-            kwargs={"remove_prev_tool_calls": remove_prev_tool_calls},
-         ),
-         cashier_graph_schema.start_node_schema.first_turn
+            cashier_graph_schema.start_node_schema.first_turn,
         ]
 
     @classmethod
@@ -361,7 +361,7 @@ class TestAgent:
         model_provider,
         remove_prev_tool_calls,
         agent_executor,
-        start_turns
+        start_turns,
     ):
         generate_random_string_patch.return_value = "call_123"
         self.add_user_turn(agent_executor, "hello", model_provider, False, 2)
@@ -384,9 +384,7 @@ class TestAgent:
             fn_call_id_to_fn_output={fake_fn_call.id: None},
         )
 
-        TC = self.create_turn_container(
-            [*start_turns, THIRD_TURN, FOURTH_TURN]
-        )
+        TC = self.create_turn_container([*start_turns, THIRD_TURN, FOURTH_TURN])
 
         assert not DeepDiff(
             agent_executor.get_model_completion_kwargs(),
@@ -403,7 +401,7 @@ class TestAgent:
         remove_prev_tool_calls,
         is_stream,
         agent_executor,
-        start_turns
+        start_turns,
     ):
         self.add_user_turn(agent_executor, "hello", model_provider, True)
         self.add_assistant_turn(agent_executor, model_provider, "hello back", is_stream)
@@ -417,9 +415,7 @@ class TestAgent:
             fn_call_id_to_fn_output={},
         )
 
-        TC = self.create_turn_container(
-            [*start_turns, THIRD_TURN, FOURTH_TURN]
-        )
+        TC = self.create_turn_container([*start_turns, THIRD_TURN, FOURTH_TURN])
 
         assert not DeepDiff(
             agent_executor.get_model_completion_kwargs(),
@@ -461,9 +457,7 @@ class TestAgent:
             fn_call_id_to_fn_output=fn_call_id_to_fn_output,
         )
 
-        TC = self.create_turn_container(
-            [*start_turns, THIRD_TURN, FOURTH_TURN]
-        )
+        TC = self.create_turn_container([*start_turns, THIRD_TURN, FOURTH_TURN])
 
         assert not DeepDiff(
             agent_executor.get_model_completion_kwargs(),
@@ -548,7 +542,7 @@ class TestAgent:
         is_stream,
         fn_names,
         agent_executor,
-        start_turns
+        start_turns,
     ):
         self.add_user_turn(agent_executor, "hello", model_provider, True)
         fn_calls, fn_call_id_to_fn_output = self.create_fake_fn_calls(
@@ -651,7 +645,7 @@ class TestAgent:
         is_stream,
         fn_names,
         agent_executor,
-        start_turns
+        start_turns,
     ):
 
         self.add_user_turn(agent_executor, "hello", model_provider, True)
