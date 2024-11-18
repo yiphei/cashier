@@ -786,7 +786,6 @@ class TestAgent:
         first_fn_names,
         agent_executor,
     ):
-        start_node_schema = cashier_graph_schema.start_node_schema
 
         self.add_user_turn(agent_executor, "hello", model_provider, True)
         fn_calls, fn_call_id_to_fn_output = self.create_fake_fn_calls(
@@ -848,16 +847,16 @@ class TestAgent:
                 "i want to change order",
                 model_provider,
                 False,
-                bwd_skip_node_schema_id=start_node_schema.id,
+                bwd_skip_node_schema_id=self.start_node_schema.id,
             )
 
         FIRST_TURN = TurnArgs(
             turn=NodeSystemTurn(
-                msg_content=start_node_schema.node_system_prompt(
+                msg_content=self.start_node_schema.node_system_prompt(
                     node_prompt=cashier_graph_schema.start_node_schema.node_prompt,
                     input=None,
                     node_input_json_schema=None,
-                    state_json_schema=start_node_schema.state_pydantic_model.model_json_schema(),
+                    state_json_schema=self.start_node_schema.state_pydantic_model.model_json_schema(),
                     last_msg=None,
                 ),
                 node_id=1,
@@ -869,7 +868,7 @@ class TestAgent:
         FOURTH_TURN = AssistantTurn(
             msg_content=None,
             model_provider=model_provider,
-            tool_registry=start_node_schema.tool_registry,
+            tool_registry=self.start_node_schema.tool_registry,
             fn_calls=fn_calls,
             fn_call_id_to_fn_output=fn_call_id_to_fn_output,
         )
@@ -877,13 +876,13 @@ class TestAgent:
         SIXTH_TURN = AssistantTurn(
             msg_content=None,
             model_provider=model_provider,
-            tool_registry=start_node_schema.tool_registry,
+            tool_registry=self.start_node_schema.tool_registry,
             fn_calls=second_fn_calls,
             fn_call_id_to_fn_output=second_fn_call_id_to_fn_output,
         )
 
         next_node_schema = cashier_graph_schema.from_node_schema_id_to_edge_schema[
-            start_node_schema.id
+            self.start_node_schema.id
         ][0].to_node_schema
         SEVENTH_TURN = TurnArgs(
             turn=NodeSystemTurn(
@@ -910,11 +909,11 @@ class TestAgent:
         )
         TENTH_TURN = TurnArgs(
             turn=NodeSystemTurn(
-                msg_content=start_node_schema.node_system_prompt(
+                msg_content=self.start_node_schema.node_system_prompt(
                     node_prompt=cashier_graph_schema.start_node_schema.node_prompt,
                     input=None,
                     node_input_json_schema=None,
-                    state_json_schema=start_node_schema.state_pydantic_model.model_json_schema(),
+                    state_json_schema=self.start_node_schema.state_pydantic_model.model_json_schema(),
                     last_msg="can you confirm the order?",
                 ),
                 node_id=3,
@@ -925,7 +924,7 @@ class TestAgent:
         ELEVENTH_TURN = AssistantTurn(
             msg_content=None,
             model_provider=model_provider,
-            tool_registry=start_node_schema.tool_registry,
+            tool_registry=self.start_node_schema.tool_registry,
             fn_calls=[get_state_fn_call],
             fn_call_id_to_fn_output={
                 get_state_fn_call.id: agent_executor.curr_node.state
@@ -952,7 +951,7 @@ class TestAgent:
             agent_executor.get_model_completion_kwargs(),
             {
                 "turn_container": TC,
-                "tool_registry": start_node_schema.tool_registry,
+                "tool_registry": self.start_node_schema.tool_registry,
                 "force_tool_choice": None,
             },
         )
