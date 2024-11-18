@@ -22,9 +22,9 @@ from typing import (
 from openai.types.chat.chat_completion_tool_param import ChatCompletionToolParam
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from cashier.tool.function_call_context import StateUpdateError
 from cashier.model.model_turn import ModelTurn
 from cashier.prompts.node_system import NodeSystemPrompt
+from cashier.tool.function_call_context import StateUpdateError
 from cashier.tool.tool_registry import ToolRegistry
 
 
