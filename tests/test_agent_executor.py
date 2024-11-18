@@ -525,10 +525,10 @@ class TestAgent:
         )
         fn_calls.append(fn_call)
         fn_call_id_to_fn_output[fn_call.id] = ToolExceptionWrapper(
-                StateUpdateError(
-                    "cannot update any state field until you get the first customer message in the current conversation. Remember, the current conversation starts after <cutoff_msg>"
-                )
+            StateUpdateError(
+                "cannot update any state field until you get the first customer message in the current conversation. Remember, the current conversation starts after <cutoff_msg>"
             )
+        )
 
         self.add_assistant_turn(
             agent_executor,
