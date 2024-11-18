@@ -450,15 +450,6 @@ class TestAgent:
             fn_call_id_to_fn_output,
         )
 
-        # THIRD_TURN = UserTurn(msg_content="hello")
-        # FOURTH_TURN = AssistantTurn(
-        #     msg_content=None,
-        #     model_provider=model_provider,
-        #     tool_registry=self.start_node_schema.tool_registry,
-        #     fn_calls=fn_calls,
-        #     fn_call_id_to_fn_output=fn_call_id_to_fn_output,
-        # )
-
         TC = self.create_turn_container([*start_turns, user_turn, assistant_turn])
 
         assert not DeepDiff(
