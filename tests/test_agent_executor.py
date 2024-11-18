@@ -269,6 +269,7 @@ class TestAgent:
             remove_prev_tool_calls=remove_prev_tool_calls,
             model_provider=model_provider,
         )
+
     @classmethod
     @pytest.fixture(params=[ModelProvider.OPENAI, ModelProvider.ANTHROPIC])
     def model_provider(cls, request):
