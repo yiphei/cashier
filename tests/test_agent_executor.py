@@ -19,6 +19,14 @@ from cashier.model_turn import AssistantTurn, NodeSystemTurn, UserTurn
 from cashier.model_util import FunctionCall, ModelProvider
 from cashier.tool_registries.cashier_tool_registry import CupSize, ItemOrder, Order
 from cashier.turn_container import TurnContainer
+from pydantic import BaseModel, Field
+from typing import Any, Dict
+from cashier.model_turn import ModelTurn
+
+
+class TurnArgs(BaseModel):
+    turn: ModelTurn
+    kwargs: Dict[str, Any] = Field(default_factory=dict)
 
 
 class TestAgent:
@@ -34,20 +42,19 @@ class TestAgent:
         self.stdout_patcher.stop()
         self.model.reset_mock()
 
-    def create_turn_container(self, turns, remove_prev_tool_calls, is_skip_third=False):
-        skip_count = 0
+    def new_create_turn_container(self, turn_args_list):
         TC = TurnContainer()
-        for turn in turns:
+        for turn_args in turn_args_list:
             add_fn = None
-            kwargs = {"turn": turn}
+            if isinstance(turn_args, TurnArgs):
+                turn = turn_args.turn
+                kwargs = {"turn": turn_args.turn, **turn_args.kwargs}
+            else:
+                turn = turn_args
+                kwargs = {"turn": turn_args}
+
             if isinstance(turn, NodeSystemTurn):
                 add_fn = "add_node_turn"
-                kwargs = {
-                    **kwargs,
-                    "remove_prev_tool_calls": remove_prev_tool_calls,
-                    "is_skip": True if skip_count == 2 and is_skip_third else False,
-                }
-                skip_count += 1
             elif isinstance(turn, AssistantTurn):
                 add_fn = "add_assistant_turn"
             elif isinstance(turn, UserTurn):
@@ -269,7 +276,8 @@ class TestAgent:
     @pytest.mark.parametrize("remove_prev_tool_calls", [True, False])
     def test_initial_node(self, remove_prev_tool_calls, agent_executor):
         start_node_schema = cashier_graph_schema.start_node_schema
-        FIRST_TURN = NodeSystemTurn(
+        FIRST_TURN = TurnArgs(turn=
+        NodeSystemTurn(
             msg_content=start_node_schema.node_system_prompt(
                 node_prompt=cashier_graph_schema.start_node_schema.node_prompt,
                 input=None,
@@ -278,11 +286,14 @@ class TestAgent:
                 last_msg=None,
             ),
             node_id=1,
+            ),
+            kwargs={"remove_prev_tool_calls": remove_prev_tool_calls},
         )
+
         SECOND_TURN = cashier_graph_schema.start_node_schema.first_turn
 
-        TC = self.create_turn_container(
-            [FIRST_TURN, SECOND_TURN], remove_prev_tool_calls
+        TC = self.new_create_turn_container(
+            [FIRST_TURN, SECOND_TURN]
         )
         assert not DeepDiff(
             agent_executor.get_model_completion_kwargs(),
@@ -303,7 +314,8 @@ class TestAgent:
         self.add_user_turn(agent_executor, "hello", model_provider, True)
 
         start_node_schema = cashier_graph_schema.start_node_schema
-        FIRST_TURN = NodeSystemTurn(
+        
+        FIRST_TURN = TurnArgs(turn= NodeSystemTurn(
             msg_content=start_node_schema.node_system_prompt(
                 node_prompt=cashier_graph_schema.start_node_schema.node_prompt,
                 input=None,
@@ -312,12 +324,12 @@ class TestAgent:
                 last_msg=None,
             ),
             node_id=1,
-        )
+        ), kwargs={"remove_prev_tool_calls": remove_prev_tool_calls})
         SECOND_TURN = cashier_graph_schema.start_node_schema.first_turn
         THIRD_TURN = UserTurn(msg_content="hello")
 
-        TC = self.create_turn_container(
-            [FIRST_TURN, SECOND_TURN, THIRD_TURN], remove_prev_tool_calls
+        TC = self.new_create_turn_container(
+            [FIRST_TURN, SECOND_TURN, THIRD_TURN]
         )
         assert not DeepDiff(
             agent_executor.get_model_completion_kwargs(),
@@ -344,7 +356,7 @@ class TestAgent:
         self.add_user_turn(agent_executor, "hello", model_provider, False, 2)
 
         start_node_schema = cashier_graph_schema.start_node_schema
-        FIRST_TURN = NodeSystemTurn(
+        FIRST_TURN = TurnArgs(turn= NodeSystemTurn(
             msg_content=start_node_schema.node_system_prompt(
                 node_prompt=cashier_graph_schema.start_node_schema.node_prompt,
                 input=None,
@@ -353,7 +365,7 @@ class TestAgent:
                 last_msg=None,
             ),
             node_id=1,
-        )
+        ), kwargs={"remove_prev_tool_calls": remove_prev_tool_calls})
         SECOND_TURN = cashier_graph_schema.start_node_schema.first_turn
         THIRD_TURN = UserTurn(msg_content="hello")
 
@@ -373,8 +385,8 @@ class TestAgent:
             fn_call_id_to_fn_output={fake_fn_call.id: None},
         )
 
-        TC = self.create_turn_container(
-            [FIRST_TURN, SECOND_TURN, THIRD_TURN, FOURTH_TURN], remove_prev_tool_calls
+        TC = self.new_create_turn_container(
+            [FIRST_TURN, SECOND_TURN, THIRD_TURN, FOURTH_TURN]
         )
 
         assert not DeepDiff(
@@ -402,7 +414,7 @@ class TestAgent:
         self.add_assistant_turn(agent_executor, model_provider, "hello back", is_stream)
 
         start_node_schema = cashier_graph_schema.start_node_schema
-        FIRST_TURN = NodeSystemTurn(
+        FIRST_TURN = TurnArgs(turn= NodeSystemTurn(
             msg_content=start_node_schema.node_system_prompt(
                 node_prompt=cashier_graph_schema.start_node_schema.node_prompt,
                 input=None,
@@ -411,7 +423,7 @@ class TestAgent:
                 last_msg=None,
             ),
             node_id=1,
-        )
+        ), kwargs={"remove_prev_tool_calls": remove_prev_tool_calls})
         SECOND_TURN = cashier_graph_schema.start_node_schema.first_turn
         THIRD_TURN = UserTurn(msg_content="hello")
         FOURTH_TURN = AssistantTurn(
@@ -422,8 +434,8 @@ class TestAgent:
             fn_call_id_to_fn_output={},
         )
 
-        TC = self.create_turn_container(
-            [FIRST_TURN, SECOND_TURN, THIRD_TURN, FOURTH_TURN], remove_prev_tool_calls
+        TC = self.new_create_turn_container(
+            [FIRST_TURN, SECOND_TURN, THIRD_TURN, FOURTH_TURN]
         )
 
         assert not DeepDiff(
@@ -481,7 +493,7 @@ class TestAgent:
         )
 
         start_node_schema = cashier_graph_schema.start_node_schema
-        FIRST_TURN = NodeSystemTurn(
+        FIRST_TURN = TurnArgs(turn= NodeSystemTurn(
             msg_content=start_node_schema.node_system_prompt(
                 node_prompt=cashier_graph_schema.start_node_schema.node_prompt,
                 input=None,
@@ -490,7 +502,7 @@ class TestAgent:
                 last_msg=None,
             ),
             node_id=1,
-        )
+        ), kwargs={"remove_prev_tool_calls": remove_prev_tool_calls})
         SECOND_TURN = cashier_graph_schema.start_node_schema.first_turn
         THIRD_TURN = UserTurn(msg_content="hello")
         FOURTH_TURN = AssistantTurn(
@@ -501,8 +513,8 @@ class TestAgent:
             fn_call_id_to_fn_output=fn_call_id_to_fn_output,
         )
 
-        TC = self.create_turn_container(
-            [FIRST_TURN, SECOND_TURN, THIRD_TURN, FOURTH_TURN], remove_prev_tool_calls
+        TC = self.new_create_turn_container(
+            [FIRST_TURN, SECOND_TURN, THIRD_TURN, FOURTH_TURN]
         )
 
         assert not DeepDiff(
@@ -567,7 +579,7 @@ class TestAgent:
         )
 
         start_node_schema = cashier_graph_schema.start_node_schema
-        FIRST_TURN = NodeSystemTurn(
+        FIRST_TURN = TurnArgs(turn= NodeSystemTurn(
             msg_content=start_node_schema.node_system_prompt(
                 node_prompt=cashier_graph_schema.start_node_schema.node_prompt,
                 input=None,
@@ -576,7 +588,7 @@ class TestAgent:
                 last_msg=None,
             ),
             node_id=1,
-        )
+        ), kwargs={"remove_prev_tool_calls": remove_prev_tool_calls})
         SECOND_TURN = cashier_graph_schema.start_node_schema.first_turn
         THIRD_TURN = AssistantTurn(
             msg_content=None,
@@ -586,8 +598,8 @@ class TestAgent:
             fn_call_id_to_fn_output=fn_call_id_to_fn_output,
         )
 
-        TC = self.create_turn_container(
-            [FIRST_TURN, SECOND_TURN, THIRD_TURN], remove_prev_tool_calls
+        TC = self.new_create_turn_container(
+            [FIRST_TURN, SECOND_TURN, THIRD_TURN]
         )
 
         assert not DeepDiff(
@@ -672,7 +684,7 @@ class TestAgent:
         )
 
         start_node_schema = cashier_graph_schema.start_node_schema
-        FIRST_TURN = NodeSystemTurn(
+        FIRST_TURN = TurnArgs(turn= NodeSystemTurn(
             msg_content=start_node_schema.node_system_prompt(
                 node_prompt=cashier_graph_schema.start_node_schema.node_prompt,
                 input=None,
@@ -681,7 +693,7 @@ class TestAgent:
                 last_msg=None,
             ),
             node_id=1,
-        )
+        ), kwargs={"remove_prev_tool_calls": remove_prev_tool_calls})
         SECOND_TURN = cashier_graph_schema.start_node_schema.first_turn
         THIRD_TURN = UserTurn(msg_content="hello")
         FOURTH_TURN = AssistantTurn(
@@ -703,7 +715,7 @@ class TestAgent:
         next_node_schema = cashier_graph_schema.from_node_schema_id_to_edge_schema[
             start_node_schema.id
         ][0].to_node_schema
-        SEVENTH_TURN = NodeSystemTurn(
+        SEVENTH_TURN = TurnArgs(turn= NodeSystemTurn(
             msg_content=next_node_schema.node_system_prompt(
                 node_prompt=next_node_schema.node_prompt,
                 input=order.model_dump_json(),
@@ -712,9 +724,9 @@ class TestAgent:
                 last_msg="i want pecan latte",
             ),
             node_id=next_node_schema.id,
-        )
+        ), kwargs={"remove_prev_tool_calls": remove_prev_tool_calls})
 
-        TC = self.create_turn_container(
+        TC = self.new_create_turn_container(
             [
                 FIRST_TURN,
                 SECOND_TURN,
@@ -723,9 +735,7 @@ class TestAgent:
                 FIFTH_TURN,
                 SIXTH_TURN,
                 SEVENTH_TURN,
-            ],
-            remove_prev_tool_calls,
-        )
+            ]        )
 
         assert not DeepDiff(
             agent_executor.get_model_completion_kwargs(),
@@ -833,7 +843,7 @@ class TestAgent:
                 bwd_skip_node_schema_id=start_node_schema.id,
             )
 
-        FIRST_TURN = NodeSystemTurn(
+        FIRST_TURN = TurnArgs(turn=NodeSystemTurn(
             msg_content=start_node_schema.node_system_prompt(
                 node_prompt=cashier_graph_schema.start_node_schema.node_prompt,
                 input=None,
@@ -842,7 +852,7 @@ class TestAgent:
                 last_msg=None,
             ),
             node_id=1,
-        )
+        ), kwargs={"remove_prev_tool_calls": remove_prev_tool_calls})
         SECOND_TURN = cashier_graph_schema.start_node_schema.first_turn
         THIRD_TURN = UserTurn(msg_content="hello")
         FOURTH_TURN = AssistantTurn(
@@ -864,7 +874,7 @@ class TestAgent:
         next_node_schema = cashier_graph_schema.from_node_schema_id_to_edge_schema[
             start_node_schema.id
         ][0].to_node_schema
-        SEVENTH_TURN = NodeSystemTurn(
+        SEVENTH_TURN = TurnArgs(turn= NodeSystemTurn(
             msg_content=next_node_schema.node_system_prompt(
                 node_prompt=next_node_schema.node_prompt,
                 input=order.model_dump_json(),
@@ -873,7 +883,7 @@ class TestAgent:
                 last_msg="i want pecan latte",
             ),
             node_id=next_node_schema.id,
-        )
+        ), kwargs={"remove_prev_tool_calls": remove_prev_tool_calls})
         EIGHTH_TURN = AssistantTurn(
             msg_content="can you confirm the order?",
             model_provider=model_provider,
@@ -884,7 +894,7 @@ class TestAgent:
         NINTH_TURN = UserTurn(
             msg_content="i want to change order",
         )
-        TENTH_TURN = NodeSystemTurn(
+        TENTH_TURN = TurnArgs(turn=NodeSystemTurn(
             msg_content=start_node_schema.node_system_prompt(
                 node_prompt=cashier_graph_schema.start_node_schema.node_prompt,
                 input=None,
@@ -893,7 +903,7 @@ class TestAgent:
                 last_msg="can you confirm the order?",
             ),
             node_id=3,
-        )
+        ), kwargs={"remove_prev_tool_calls": remove_prev_tool_calls, "is_skip": True})
 
         ELEVENTH_TURN = AssistantTurn(
             msg_content=None,
@@ -905,7 +915,7 @@ class TestAgent:
             },
         )
 
-        TC = self.create_turn_container(
+        TC = self.new_create_turn_container(
             [
                 FIRST_TURN,
                 SECOND_TURN,
@@ -919,8 +929,6 @@ class TestAgent:
                 TENTH_TURN,
                 ELEVENTH_TURN,
             ],
-            remove_prev_tool_calls,
-            is_skip_third=True,
         )
 
         assert not DeepDiff(
