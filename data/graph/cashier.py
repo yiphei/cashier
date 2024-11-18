@@ -5,8 +5,8 @@ from pydantic import Field
 from cashier.graph import BaseStateModel, EdgeSchema, GraphSchema, NodeSchema
 from cashier.model.model_turn import AssistantTurn
 from cashier.model.model_util import ModelProvider
-from data.prompt.cashier_background import CashierBackgroundPrompt
 from cashier.prompts.node_system import NodeSystemPrompt
+from data.prompt.cashier_background import CashierBackgroundPrompt
 from data.tool_registry.cashier_tool_registry import CASHIER_TOOL_REGISTRY, Order
 
 
