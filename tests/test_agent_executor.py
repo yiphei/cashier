@@ -47,7 +47,7 @@ class TestAgent:
                     "remove_prev_tool_calls": remove_prev_tool_calls,
                     "is_skip": True if skip_count == 2 and is_skip_third else False,
                 }
-                skip_count+= 1
+                skip_count += 1
             elif isinstance(turn, AssistantTurn):
                 add_fn = "add_assistant_turn"
             elif isinstance(turn, UserTurn):
@@ -143,7 +143,7 @@ class TestAgent:
         model_provider,
         is_on_topic,
         fwd_skip_node_schema_id=None,
-        bwd_skip_node_schema_id=None
+        bwd_skip_node_schema_id=None,
     ):
         model_chat_side_effects = []
 
@@ -154,13 +154,21 @@ class TestAgent:
 
         if not is_on_topic:
             is_wait_model_completion = self.create_mock_model_completion(
-                model_provider, None, False, fwd_skip_node_schema_id or agent_executor.curr_node.schema.id, 0.5
+                model_provider,
+                None,
+                False,
+                fwd_skip_node_schema_id or agent_executor.curr_node.schema.id,
+                0.5,
             )
             model_chat_side_effects.append(is_wait_model_completion)
 
             if fwd_skip_node_schema_id is None:
                 bwd_skip_model_completion = self.create_mock_model_completion(
-                    model_provider, None, False, bwd_skip_node_schema_id or agent_executor.curr_node.schema.id, 0.5
+                    model_provider,
+                    None,
+                    False,
+                    bwd_skip_node_schema_id or agent_executor.curr_node.schema.id,
+                    0.5,
                 )
                 model_chat_side_effects.append(bwd_skip_model_completion)
 
@@ -728,8 +736,6 @@ class TestAgent:
             },
         )
 
-
-
     @pytest.mark.parametrize(
         "model_provider", [ModelProvider.OPENAI, ModelProvider.ANTHROPIC]
     )
@@ -810,14 +816,22 @@ class TestAgent:
             is_stream,
         )
 
-        with patch("cashier.model_util.FunctionCall.create_fake_fn_call") as generate_random_string_patch:
+        with patch(
+            "cashier.model_util.FunctionCall.create_fake_fn_call"
+        ) as generate_random_string_patch:
             get_state_fn_call = FunctionCall(
                 name="get_state",
                 id="call_123",
                 args={},
             )
             generate_random_string_patch.return_value = get_state_fn_call
-            self.add_user_turn(agent_executor, "i want to change order", model_provider, False, bwd_skip_node_schema_id= start_node_schema.id)
+            self.add_user_turn(
+                agent_executor,
+                "i want to change order",
+                model_provider,
+                False,
+                bwd_skip_node_schema_id=start_node_schema.id,
+            )
 
         FIRST_TURN = NodeSystemTurn(
             msg_content=start_node_schema.node_system_prompt(
@@ -886,7 +900,9 @@ class TestAgent:
             model_provider=model_provider,
             tool_registry=start_node_schema.tool_registry,
             fn_calls=[get_state_fn_call],
-            fn_call_id_to_fn_output={get_state_fn_call.id: agent_executor.curr_node.state},
+            fn_call_id_to_fn_output={
+                get_state_fn_call.id: agent_executor.curr_node.state
+            },
         )
 
         TC = self.create_turn_container(
@@ -904,7 +920,7 @@ class TestAgent:
                 ELEVENTH_TURN,
             ],
             remove_prev_tool_calls,
-            is_skip_third=True
+            is_skip_third=True,
         )
 
         assert not DeepDiff(
