@@ -12,8 +12,12 @@ from cashier.agent_executor import AgentExecutor
 from cashier.graph import Node
 from cashier.model.model_client import AnthropicModelOutput, Model, OAIModelOutput
 from cashier.model.model_turn import AssistantTurn, ModelTurn, NodeSystemTurn, UserTurn
-from cashier.model.model_util import FunctionCall, ModelProvider
-from cashier.model.model_util import generate_random_string, MODEL_PROVIDER_TO_TOOL_CALL_ID_PREFIX
+from cashier.model.model_util import (
+    MODEL_PROVIDER_TO_TOOL_CALL_ID_PREFIX,
+    FunctionCall,
+    ModelProvider,
+    generate_random_string,
+)
 from cashier.tool.function_call_context import (
     InexistentFunctionError,
     StateUpdateError,
@@ -48,14 +52,15 @@ class TestAgent:
     @contextmanager
     def generate_random_string_context(self):
         original_generate_random_string = generate_random_string
+
         def capture_fn_call(*args, **kwargs):
             output = original_generate_random_string(*args, **kwargs)
             self.rand_tool_ids.append(output)
             return output
 
         with patch(
-            'cashier.model.model_util.generate_random_string',
-            side_effect=capture_fn_call
+            "cashier.model.model_util.generate_random_string",
+            side_effect=capture_fn_call,
         ):
             yield
 
@@ -399,7 +404,8 @@ class TestAgent:
             )
 
         fake_fn_call = FunctionCall(
-            id=MODEL_PROVIDER_TO_TOOL_CALL_ID_PREFIX[model_provider] + self.rand_tool_ids.popleft(),
+            id=MODEL_PROVIDER_TO_TOOL_CALL_ID_PREFIX[model_provider]
+            + self.rand_tool_ids.popleft(),
             name="think",
             args={
                 "thought": "At least part of the customer request/question is off-topic for the current conversation and will actually be addressed later. According to the policies, I must tell the customer that 1) their off-topic request/question will be addressed later and 2) we must finish the current business before we can get to it. I must refuse to engage with the off-topic request/question in any way."
@@ -712,7 +718,8 @@ class TestAgent:
         )
 
         get_state_fn_call = FunctionCall(
-            id= MODEL_PROVIDER_TO_TOOL_CALL_ID_PREFIX[model_provider] + self.rand_tool_ids.popleft(),
+            id=MODEL_PROVIDER_TO_TOOL_CALL_ID_PREFIX[model_provider]
+            + self.rand_tool_ids.popleft(),
             name="get_state",
             args={},
         )
