@@ -492,24 +492,43 @@ class TestAgent:
     )
     @pytest.mark.parametrize("remove_prev_tool_calls", [True, False])
     @pytest.mark.parametrize("is_stream", [True, False])
+    @pytest.mark.parametrize(
+        "other_fn_names",
+        [
+            [],
+            ["get_menu_item_from_name"],
+            ["get_state"],
+            ["inexistent_fn"],
+            ["get_menu_item_from_name", "get_menu_item_from_name"],
+            ["get_state", "inexistent_fn"],
+            ["get_state", "get_menu_item_from_name"],
+            [
+                "get_state",
+                "get_menu_item_from_name",
+                "get_menu_item_from_name",
+            ],
+        ],
+    )
     def test_add_assistant_state_update_before_user_turn(
         self,
         model_provider,
         remove_prev_tool_calls,
         is_stream,
+        other_fn_names,
         agent_executor,
     ):
+        fn_calls, fn_call_id_to_fn_output = self.create_fake_fn_calls(
+            model_provider, other_fn_names, agent_executor.curr_node
+        )
         fn_call = FunctionCall.create_fake_fn_call(
             model_provider, name="update_state_order", args={"order": None}
         )
-        fn_calls = [fn_call]
-        fn_call_id_to_fn_output = {
-            fn_call.id: ToolExceptionWrapper(
+        fn_calls.append(fn_call)
+        fn_call_id_to_fn_output[fn_call.id] = ToolExceptionWrapper(
                 StateUpdateError(
                     "cannot update any state field until you get the first customer message in the current conversation. Remember, the current conversation starts after <cutoff_msg>"
                 )
             )
-        }
 
         self.add_assistant_turn(
             agent_executor,
