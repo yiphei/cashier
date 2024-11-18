@@ -6,7 +6,11 @@ import pytest
 from deepdiff import DeepDiff
 
 from cashier.agent_executor import AgentExecutor
-from cashier.function_call_context import InexistentFunctionError, StateUpdateError, ToolExceptionWrapper
+from cashier.function_call_context import (
+    InexistentFunctionError,
+    StateUpdateError,
+    ToolExceptionWrapper,
+)
 from cashier.graph import Node
 from cashier.graph_data.cashier import cashier_graph_schema
 from cashier.model import AnthropicModelOutput, Model, OAIModelOutput
@@ -483,7 +487,6 @@ class TestAgent:
             },
         )
 
-
     @pytest.mark.parametrize(
         "model_provider", [ModelProvider.OPENAI, ModelProvider.ANTHROPIC]
     )
@@ -496,9 +499,17 @@ class TestAgent:
         is_stream,
         agent_executor,
     ):
-        fn_call = FunctionCall.create_fake_fn_call(model_provider, name="update_state_order", args={"order": None})
+        fn_call = FunctionCall.create_fake_fn_call(
+            model_provider, name="update_state_order", args={"order": None}
+        )
         fn_calls = [fn_call]
-        fn_call_id_to_fn_output = {fn_call.id: ToolExceptionWrapper(StateUpdateError("cannot update any state field until you get the first customer message in the current conversation. Remember, the current conversation starts after <cutoff_msg>"))}
+        fn_call_id_to_fn_output = {
+            fn_call.id: ToolExceptionWrapper(
+                StateUpdateError(
+                    "cannot update any state field until you get the first customer message in the current conversation. Remember, the current conversation starts after <cutoff_msg>"
+                )
+            )
+        }
 
         self.add_assistant_turn(
             agent_executor,
