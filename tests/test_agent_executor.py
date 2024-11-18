@@ -35,6 +35,7 @@ class TestAgent:
         self.stdout_patcher = patch("sys.stdout", new_callable=StringIO)
         self.stdout_patcher.start()
         Node._counter = 0
+        self.start_node_schema = cashier_graph_schema.start_node_schema
 
         yield
 
@@ -274,14 +275,13 @@ class TestAgent:
     )
     @pytest.mark.parametrize("remove_prev_tool_calls", [True, False])
     def test_initial_node(self, remove_prev_tool_calls, agent_executor):
-        start_node_schema = cashier_graph_schema.start_node_schema
         FIRST_TURN = TurnArgs(
             turn=NodeSystemTurn(
-                msg_content=start_node_schema.node_system_prompt(
+                msg_content=self.start_node_schema.node_system_prompt(
                     node_prompt=cashier_graph_schema.start_node_schema.node_prompt,
                     input=None,
                     node_input_json_schema=None,
-                    state_json_schema=start_node_schema.state_pydantic_model.model_json_schema(),
+                    state_json_schema=self.start_node_schema.state_pydantic_model.model_json_schema(),
                     last_msg=None,
                 ),
                 node_id=1,
@@ -296,7 +296,7 @@ class TestAgent:
             agent_executor.get_model_completion_kwargs(),
             {
                 "turn_container": TC,
-                "tool_registry": start_node_schema.tool_registry,
+                "tool_registry": self.start_node_schema.tool_registry,
                 "force_tool_choice": None,
             },
         )
