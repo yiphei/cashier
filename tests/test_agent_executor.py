@@ -172,6 +172,7 @@ class TestAgent:
         model_provider,
         is_on_topic,
         fwd_skip_node_schema_id=None,
+        include_fwd_skip_node_schema_id=True,
         bwd_skip_node_schema_id=None,
     ):
         model_chat_side_effects = []
@@ -182,14 +183,15 @@ class TestAgent:
         model_chat_side_effects.append(is_on_topic_model_completion)
 
         if not is_on_topic:
-            is_wait_model_completion = self.create_mock_model_completion(
-                model_provider,
-                None,
-                False,
-                fwd_skip_node_schema_id or agent_executor.curr_node.schema.id,
-                0.5,
-            )
-            model_chat_side_effects.append(is_wait_model_completion)
+            if include_fwd_skip_node_schema_id:
+                is_wait_model_completion = self.create_mock_model_completion(
+                    model_provider,
+                    None,
+                    False,
+                    fwd_skip_node_schema_id or agent_executor.curr_node.schema.id,
+                    0.5,
+                )
+                model_chat_side_effects.append(is_wait_model_completion)
 
             if fwd_skip_node_schema_id is None:
                 bwd_skip_model_completion = self.create_mock_model_completion(
@@ -752,6 +754,237 @@ class TestAgent:
             {
                 "turn_container": TC,
                 "tool_registry": self.start_node_schema.tool_registry,
+                "force_tool_choice": None,
+            },
+        )
+
+
+
+
+    def test_forward_node_skip(
+        self,
+        model_provider,
+        remove_prev_tool_calls,
+        is_stream,
+        fn_names,
+        agent_executor,
+        start_turns,
+    ):
+
+        t1 = self.add_user_turn(agent_executor, "hello", model_provider, True)
+        t2 = self.add_assistant_turn(
+            agent_executor,
+            model_provider,
+            None,
+            is_stream,
+            tool_names=fn_names,
+        )
+        t3 = self.add_user_turn(
+            agent_executor, "i want pecan latte", model_provider, True
+        )
+
+        order = Order(
+            item_orders=[ItemOrder(name="pecan latte", size=CupSize.VENTI, options=[])]
+        )
+        fn_call_1 = FunctionCall.create_fake_fn_call(
+            model_provider,
+            name="update_state_order",
+            args={"order": order.model_dump()},
+        )
+        fn_call_2 = FunctionCall.create_fake_fn_call(
+            model_provider,
+            name="update_state_has_finished_ordering",
+            args={"has_finished_ordering": True},
+        )
+        second_fn_calls = [fn_call_1, fn_call_2]
+        second_fn_call_id_to_fn_output = {
+            fn_call.id: None for fn_call in second_fn_calls
+        }
+        t4 = self.add_assistant_turn(
+            agent_executor,
+            model_provider,
+            None,
+            is_stream,
+            second_fn_calls,
+            second_fn_call_id_to_fn_output,
+        )
+        next_node_schema = cashier_graph_schema.from_node_schema_id_to_edge_schema[
+            self.start_node_schema.id
+        ][0].to_node_schema
+        node_turn_1 = TurnArgs(
+            turn=NodeSystemTurn(
+                msg_content=next_node_schema.node_system_prompt(
+                    node_prompt=next_node_schema.node_prompt,
+                    input=order.model_dump_json(),
+                    node_input_json_schema=next_node_schema.input_pydantic_model.model_json_schema(),
+                    state_json_schema=next_node_schema.state_pydantic_model.model_json_schema(),
+                    last_msg="i want pecan latte",
+                ),
+                node_id=2,
+            ),
+            kwargs={"remove_prev_tool_calls": remove_prev_tool_calls},
+        )
+        t5 = self.add_assistant_turn(
+            agent_executor,
+            model_provider,
+            "can you confirm the order?",
+            is_stream,
+        )
+
+        t6 = self.add_user_turn(
+            agent_executor,
+            "i confirm",
+            model_provider,
+            True,
+        )
+
+        fn_call_1 = FunctionCall.create_fake_fn_call(
+            model_provider,
+            name="update_state_has_confirmed_order",
+            args={"has_confirmed_order": True},
+        )
+        third_fn_calls = [fn_call_1]
+        third_fn_calls_fn_call_id_to_fn_output = {
+            fn_call.id: None for fn_call in third_fn_calls
+        }
+        t7 = self.add_assistant_turn(
+            agent_executor,
+            model_provider,
+            None,
+            is_stream,
+            third_fn_calls,
+            third_fn_calls_fn_call_id_to_fn_output,
+        )
+
+        next_next_node_schema = cashier_graph_schema.from_node_schema_id_to_edge_schema[
+            next_node_schema.id
+        ][0].to_node_schema
+        node_turn_2 = TurnArgs(
+            turn=NodeSystemTurn(
+                msg_content=next_next_node_schema.node_system_prompt(
+                    node_prompt=next_next_node_schema.node_prompt,
+                    input=None,
+                    node_input_json_schema=None,
+                    state_json_schema=next_next_node_schema.state_pydantic_model.model_json_schema(),
+                    last_msg="i confirm",
+                ),
+                node_id=3,
+            ),
+            kwargs={"remove_prev_tool_calls": remove_prev_tool_calls},
+        )
+        t8 = self.add_assistant_turn(
+            agent_executor,
+            model_provider,
+            "thanks for confirming",
+            is_stream,
+        )
+        t9 = self.add_user_turn(
+            agent_executor,
+            "actually, i want to change my order",
+            model_provider,
+            False,
+            bwd_skip_node_schema_id=self.start_node_schema.id,
+            include_fwd_skip_node_schema_id=False,
+        )
+        node_turn_3 = TurnArgs(
+            turn=NodeSystemTurn(
+                msg_content=self.start_node_schema.node_system_prompt(
+                    node_prompt=cashier_graph_schema.start_node_schema.node_prompt,
+                    input=None,
+                    node_input_json_schema=None,
+                    state_json_schema=self.start_node_schema.state_pydantic_model.model_json_schema(),
+                    last_msg="thanks for confirming",
+                ),
+                node_id=4,
+            ),
+            kwargs={"remove_prev_tool_calls": remove_prev_tool_calls, "is_skip": True},
+        )
+        get_state_fn_call = FunctionCall(
+            id=MODEL_PROVIDER_TO_TOOL_CALL_ID_PREFIX[model_provider]
+            + self.rand_tool_ids.popleft(),
+            name="get_state",
+            args={},
+        )
+        t10 = AssistantTurn(
+            msg_content=None,
+            model_provider=model_provider,
+            tool_registry=self.start_node_schema.tool_registry,
+            fn_calls=[get_state_fn_call],
+            fn_call_id_to_fn_output={
+                get_state_fn_call.id: agent_executor.curr_node.state
+            },
+        )
+        t11 = self.add_assistant_turn(
+            agent_executor,
+            model_provider,
+            "what do you want to change?",
+            is_stream,
+        )
+        t12 = self.add_user_turn(
+            agent_executor,
+            "nvm, nothing",
+            model_provider,
+            False,
+            bwd_skip_node_schema_id=2,
+        )
+        node_turn_4 = TurnArgs(
+            turn=NodeSystemTurn(
+                msg_content=next_node_schema.node_system_prompt(
+                    node_prompt=next_node_schema.node_prompt,
+                    input=order.model_dump_json(),
+                    node_input_json_schema=next_node_schema.input_pydantic_model.model_json_schema(),
+                    state_json_schema=next_node_schema.state_pydantic_model.model_json_schema(),
+                    last_msg="what do you want to change?",
+                ),
+                node_id=5,
+            ),
+            kwargs={"remove_prev_tool_calls": remove_prev_tool_calls, "is_skip": True},
+        )
+        get_state_fn_call = FunctionCall(
+            id=MODEL_PROVIDER_TO_TOOL_CALL_ID_PREFIX[model_provider]
+            + self.rand_tool_ids.popleft(),
+            name="get_state",
+            args={},
+        )
+        t13 = AssistantTurn(
+            msg_content=None,
+            model_provider=model_provider,
+            tool_registry=next_node_schema.tool_registry,
+            fn_calls=[get_state_fn_call],
+            fn_call_id_to_fn_output={
+                get_state_fn_call.id: agent_executor.curr_node.state
+            },
+        )
+
+
+        TC = self.create_turn_container(
+            [
+                *start_turns,
+                t1,
+                t2,
+                t3,
+                t4,
+                node_turn_1,
+                t5,
+                t6,
+                t7,
+                node_turn_2,
+                t8,
+                t9,
+                node_turn_3,
+                t10,
+                t11,
+                t12,
+                node_turn_4,
+                t13
+            ],
+        )
+        
+        assert not DeepDiff(
+            agent_executor.get_model_completion_kwargs(),
+            {
+                "turn_container": TC,
+                "tool_registry": next_node_schema.tool_registry,
                 "force_tool_choice": None,
             },
         )
