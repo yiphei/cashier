@@ -574,7 +574,7 @@ class TestAgent:
         next_node_schema = cashier_graph_schema.from_node_schema_id_to_edge_schema[
             self.start_node_schema.id
         ][0].to_node_schema
-        SEVENTH_TURN = TurnArgs(
+        node_turn = TurnArgs(
             turn=NodeSystemTurn(
                 msg_content=next_node_schema.node_system_prompt(
                     node_prompt=next_node_schema.node_prompt,
@@ -595,7 +595,7 @@ class TestAgent:
                 t2,
                 t3,
                 t4,
-                SEVENTH_TURN,
+                node_turn,
             ]
         )
 
@@ -686,7 +686,7 @@ class TestAgent:
         next_node_schema = cashier_graph_schema.from_node_schema_id_to_edge_schema[
             self.start_node_schema.id
         ][0].to_node_schema
-        SEVENTH_TURN = TurnArgs(
+        node_turn_1 = TurnArgs(
             turn=NodeSystemTurn(
                 msg_content=next_node_schema.node_system_prompt(
                     node_prompt=next_node_schema.node_prompt,
@@ -700,7 +700,7 @@ class TestAgent:
             kwargs={"remove_prev_tool_calls": remove_prev_tool_calls},
         )
 
-        TENTH_TURN = TurnArgs(
+        node_turn_2 = TurnArgs(
             turn=NodeSystemTurn(
                 msg_content=self.start_node_schema.node_system_prompt(
                     node_prompt=cashier_graph_schema.start_node_schema.node_prompt,
@@ -714,7 +714,7 @@ class TestAgent:
             kwargs={"remove_prev_tool_calls": remove_prev_tool_calls, "is_skip": True},
         )
 
-        ELEVENTH_TURN = AssistantTurn(
+        t7 = AssistantTurn(
             msg_content=None,
             model_provider=model_provider,
             tool_registry=self.start_node_schema.tool_registry,
@@ -731,11 +731,11 @@ class TestAgent:
                 t2,
                 t3,
                 t4,
-                SEVENTH_TURN,
+                node_turn_1,
                 t5,
                 t6,
-                TENTH_TURN,
-                ELEVENTH_TURN,
+                node_turn_2,
+                t7,
             ],
         )
 
