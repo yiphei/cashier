@@ -9,7 +9,7 @@ from deepdiff import DeepDiff
 from pydantic import BaseModel, Field
 
 from cashier.agent_executor import AgentExecutor
-from cashier.function_call_context import (
+from cashier.tool.function_call_context import (
     InexistentFunctionError,
     StateUpdateError,
     ToolExceptionWrapper,

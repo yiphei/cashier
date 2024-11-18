@@ -5,7 +5,7 @@ from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Union, cast
 from colorama import Style
 
 from cashier.audio import get_speech_from_text
-from cashier.function_call_context import FunctionCallContext, InexistentFunctionError
+from cashier.tool.function_call_context import FunctionCallContext, InexistentFunctionError
 from cashier.graph import Direction, EdgeSchema, Graph, GraphSchema, Node, NodeSchema
 from cashier.gui import MessageDisplay
 from cashier.logger import logger
