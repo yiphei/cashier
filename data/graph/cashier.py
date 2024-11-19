@@ -23,7 +23,7 @@ class TakeOrderState(BaseStateModel):
             " by asking questions like 'Anything else?'."
         ),
         default=False,
-        resettable=True,
+        json_schema_extra={"resettable": True},
     )
 
 
@@ -64,7 +64,7 @@ class ConfirmOrderState(BaseStateModel):
     has_confirmed_order: bool = Field(  # type: ignore
         description="whether the customer has confirmed their order",
         default=False,
-        resettable=True,
+        json_schema_extra={"resettable": True},
     )
 
 
@@ -92,7 +92,7 @@ class TerminalOrderState(BaseStateModel):
     has_said_goodbye: bool = Field(  # type: ignore
         description="whether the customer has said goodbye",
         default=False,
-        resettable=True,
+        json_schema_extra={"resettable": True},
     )
 
 
