@@ -89,7 +89,7 @@ class TestAgent:
             TC.turns.append(turn)
         return TC
 
-    def run_assetions(self, agent_executor, TC, tool_registry, model_provider):
+    def run_assertions(self, agent_executor, TC, tool_registry, model_provider):
         assert not DeepDiff(
             self.message_list,
             agent_executor.TC.model_provider_to_message_manager[
@@ -578,7 +578,7 @@ class TestAgent:
         self, remove_prev_tool_calls, agent_executor, start_turns
     ):
         TC = self.create_turn_container(start_turns)
-        self.run_assetions(
+        self.run_assertions(
             agent_executor,
             TC,
             self.start_node_schema.tool_registry,
@@ -591,7 +591,7 @@ class TestAgent:
         user_turn = self.add_user_turn(agent_executor, "hello", model_provider, True)
 
         TC = self.create_turn_container([*start_turns, user_turn])
-        self.run_assetions(
+        self.run_assertions(
             agent_executor, TC, self.start_node_schema.tool_registry, model_provider
         )
 
@@ -626,7 +626,7 @@ class TestAgent:
 
         TC = self.create_turn_container([*start_turns, user_turn, assistant_turn])
 
-        self.run_assetions(
+        self.run_assertions(
             agent_executor, TC, self.start_node_schema.tool_registry, model_provider
         )
 
@@ -646,7 +646,7 @@ class TestAgent:
 
         TC = self.create_turn_container([*start_turns, user_turn, assistant_turn])
 
-        self.run_assetions(
+        self.run_assertions(
             agent_executor, TC, self.start_node_schema.tool_registry, model_provider
         )
 
@@ -666,7 +666,7 @@ class TestAgent:
 
         TC = self.create_turn_container([*start_turns, user_turn, assistant_turn])
 
-        self.run_assetions(
+        self.run_assertions(
             agent_executor, TC, self.start_node_schema.tool_registry, model_provider
         )
 
@@ -720,7 +720,7 @@ class TestAgent:
 
         TC = self.create_turn_container([*start_turns, assistant_turn])
 
-        self.run_assetions(
+        self.run_assertions(
             agent_executor, TC, self.start_node_schema.tool_registry, model_provider
         )
 
@@ -804,7 +804,7 @@ class TestAgent:
             ]
         )
 
-        self.run_assetions(
+        self.run_assertions(
             agent_executor, TC, next_node_schema.tool_registry, model_provider
         )
 
@@ -944,7 +944,7 @@ class TestAgent:
             ],
         )
 
-        self.run_assetions(
+        self.run_assertions(
             agent_executor, TC, self.start_node_schema.tool_registry, model_provider
         )
 
@@ -1189,6 +1189,6 @@ class TestAgent:
             ],
         )
 
-        self.run_assetions(
+        self.run_assertions(
             agent_executor, TC, next_node_schema.tool_registry, model_provider
         )
