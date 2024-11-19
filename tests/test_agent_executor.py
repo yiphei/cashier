@@ -342,7 +342,7 @@ class TestAgent:
     def setup_start_message_list(
         self, start_turns, setup_message_dicts, model_provider
     ):
-        self.build_messages_from_turn(start_turns[0].turn, model_provider)
+        self.build_messages_from_turn(start_turns[0], model_provider)
         self.build_messages_from_turn(start_turns[1], model_provider)
 
     @pytest.fixture
@@ -509,6 +509,9 @@ class TestAgent:
         remove_prev_tool_calls=False,
         is_skip=False,
     ):
+        if isinstance(turn, TurnArgs):
+            turn = turn.turn
+
         if isinstance(turn, UserTurn):
             self.build_user_turn_messages(turn, model_provider)
         elif isinstance(turn, AssistantTurn):
@@ -738,7 +741,7 @@ class TestAgent:
             kwargs={"remove_prev_tool_calls": remove_prev_tool_calls},
         )
         self.build_messages_from_turn(
-            node_turn.turn,
+            node_turn,
             model_provider,
             remove_prev_tool_calls=remove_prev_tool_calls,
         )
@@ -822,7 +825,7 @@ class TestAgent:
             kwargs={"remove_prev_tool_calls": remove_prev_tool_calls},
         )
         self.build_messages_from_turn(
-            node_turn_1.turn,
+            node_turn_1,
             model_provider,
             remove_prev_tool_calls=remove_prev_tool_calls,
         )
@@ -856,7 +859,7 @@ class TestAgent:
             kwargs={"remove_prev_tool_calls": remove_prev_tool_calls, "is_skip": True},
         )
         self.build_messages_from_turn(
-            node_turn_2.turn,
+            node_turn_2,
             model_provider,
             remove_prev_tool_calls=remove_prev_tool_calls,
             is_skip=True,
@@ -961,7 +964,7 @@ class TestAgent:
             kwargs={"remove_prev_tool_calls": remove_prev_tool_calls},
         )
         self.build_messages_from_turn(
-            node_turn_1.turn,
+            node_turn_1,
             model_provider,
             remove_prev_tool_calls=remove_prev_tool_calls,
         )
@@ -1014,7 +1017,7 @@ class TestAgent:
             kwargs={"remove_prev_tool_calls": remove_prev_tool_calls},
         )
         self.build_messages_from_turn(
-            node_turn_2.turn,
+            node_turn_2,
             model_provider,
             remove_prev_tool_calls=remove_prev_tool_calls,
         )
@@ -1046,7 +1049,7 @@ class TestAgent:
             kwargs={"remove_prev_tool_calls": remove_prev_tool_calls, "is_skip": True},
         )
         self.build_messages_from_turn(
-            node_turn_3.turn,
+            node_turn_3,
             model_provider,
             remove_prev_tool_calls=remove_prev_tool_calls,
             is_skip=True,
@@ -1094,7 +1097,7 @@ class TestAgent:
             kwargs={"remove_prev_tool_calls": remove_prev_tool_calls, "is_skip": True},
         )
         self.build_messages_from_turn(
-            node_turn_4.turn,
+            node_turn_4,
             model_provider,
             remove_prev_tool_calls=remove_prev_tool_calls,
             is_skip=True,
