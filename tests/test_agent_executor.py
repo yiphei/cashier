@@ -208,7 +208,7 @@ class TestAgent:
         with self.generate_random_string_context():
             agent_executor.add_user_turn(message)
 
-        ut= UserTurn(msg_content=message)
+        ut = UserTurn(msg_content=message)
         # self.build_user_turn_messages(ut, model_provider)
         self.build_messages_from_turn(ut, model_provider)
         return ut
