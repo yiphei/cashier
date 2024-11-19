@@ -97,6 +97,18 @@ class TestAgent:
             ].message_dicts,
         )
         assert not DeepDiff(
+            self.conversation_list,
+            agent_executor.TC.model_provider_to_message_manager[
+                model_provider
+            ].conversation_dicts,
+        )
+        assert not DeepDiff(
+            self.node_conversation_list,
+            agent_executor.TC.model_provider_to_message_manager[
+                model_provider
+            ].node_conversation_dicts,
+        )
+        assert not DeepDiff(
             agent_executor.get_model_completion_kwargs(),
             {
                 "turn_container": TC,
@@ -335,8 +347,12 @@ class TestAgent:
     @pytest.fixture(autouse=True)
     def setup_message_dicts(self, model_provider):
         self.message_list = MessageList(model_provider=model_provider)
+        self.conversation_list = MessageList(model_provider=model_provider)
+        self.node_conversation_list = MessageList(model_provider=model_provider)
         yield
         self.message_list = None
+        self.conversation_list = None
+        self.node_conversation_list = None
 
     @pytest.fixture(autouse=True)
     def setup_start_message_list(
@@ -405,6 +421,8 @@ class TestAgent:
         self.message_list.extend(
             user_turn.build_messages(model_provider), MessageList.ItemType.USER
         )
+        self.conversation_list.extend(user_turn.build_messages(model_provider), MessageList.ItemType.USER)
+        self.node_conversation_list.extend(user_turn.build_messages(model_provider), MessageList.ItemType.USER)
 
     def build_assistant_turn_messages(self, assistant_turn, model_provider):
         messages = assistant_turn.build_messages(model_provider)
@@ -431,6 +449,8 @@ class TestAgent:
                     curr_fn_name = None
                 else:
                     self.message_list.append(message, MessageList.ItemType.ASSISTANT)
+                    self.conversation_list.append(message, MessageList.ItemType.ASSISTANT)
+                    self.node_conversation_list.append(message, MessageList.ItemType.ASSISTANT)
         else:
             if len(messages) == 2:
                 [message_1, message_2] = messages
@@ -452,6 +472,9 @@ class TestAgent:
 
             if not has_fn_calls:
                 self.message_list.track_idx(MessageList.ItemType.ASSISTANT)
+                ass_message = {"role": "assistant", "content": assistant_turn.msg_content}
+                self.conversation_list.append(ass_message, MessageList.ItemType.ASSISTANT)
+                self.node_conversation_list.append(ass_message, MessageList.ItemType.ASSISTANT)
 
             if message_2 is not None:
                 self.message_list.append(message_2)
@@ -482,6 +505,15 @@ class TestAgent:
                 [MessageList.ItemType.TOOL_CALL, MessageList.ItemType.TOOL_OUTPUT]
             )
 
+        if is_skip:
+            self.conversation_list.track_idx(
+                MessageList.ItemType.NODE, len(self.conversation_list) - 2
+            )
+            self.node_conversation_list = self.node_conversation_list[-1:]
+        else:
+            self.conversation_list.track_idx(MessageList.ItemType.NODE)
+            self.node_conversation_list.clear()
+
         if model_provider == ModelProvider.OPENAI:
             self.message_list.clear(MessageList.ItemType.NODE)
             [msg] = node_turn.build_oai_messages()
@@ -492,7 +524,7 @@ class TestAgent:
             else:
                 self.message_list.append(msg, MessageList.ItemType.NODE)
         else:
-            self.system = node_turn.msg_content
+            self.system = node_turn.msg_content # TODO: this is currently not used
 
             if is_skip:
                 self.message_list.track_idx(
