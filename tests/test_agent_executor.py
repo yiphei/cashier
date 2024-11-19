@@ -88,6 +88,23 @@ class TestAgent:
 
             TC.turns.append(turn)
         return TC
+    
+    def run_assetions(self, agent_executor, TC, tool_registry, model_provider):
+        assert not DeepDiff(
+            self.message_list,
+            agent_executor.TC.model_provider_to_message_manager[
+                model_provider
+            ].message_dicts,
+        )
+        assert not DeepDiff(
+            agent_executor.get_model_completion_kwargs(),
+            {
+                "turn_container": TC,
+                "tool_registry": tool_registry,
+                "force_tool_choice": None,
+            },
+        )
+
 
     def create_mock_model_completion(
         self,
@@ -511,44 +528,16 @@ class TestAgent:
     def test_graph_initialization(
         self, remove_prev_tool_calls, agent_executor, start_turns
     ):
-        assert not DeepDiff(
-            self.message_list,
-            agent_executor.TC.model_provider_to_message_manager[
-                agent_executor.model_provider
-            ].message_dicts,
-        )
-
         TC = self.create_turn_container(start_turns)
-        assert not DeepDiff(
-            agent_executor.get_model_completion_kwargs(),
-            {
-                "turn_container": TC,
-                "tool_registry": self.start_node_schema.tool_registry,
-                "force_tool_choice": None,
-            },
-        )
+        self.run_assetions(agent_executor, TC, self.start_node_schema.tool_registry, agent_executor.model_provider)
 
     def test_add_user_turn(
         self, model_provider, remove_prev_tool_calls, agent_executor, start_turns
     ):
         user_turn = self.add_user_turn(agent_executor, "hello", model_provider, True)
 
-        assert not DeepDiff(
-            self.message_list,
-            agent_executor.TC.model_provider_to_message_manager[
-                model_provider
-            ].message_dicts,
-        )
-
         TC = self.create_turn_container([*start_turns, user_turn])
-        assert not DeepDiff(
-            agent_executor.get_model_completion_kwargs(),
-            {
-                "turn_container": TC,
-                "tool_registry": self.start_node_schema.tool_registry,
-                "force_tool_choice": None,
-            },
-        )
+        self.run_assetions(agent_executor, TC, self.start_node_schema.tool_registry, model_provider)
 
     def test_add_user_turn_with_wait(
         self,
@@ -579,23 +568,9 @@ class TestAgent:
         )
         self.build_messages_from_turn(assistant_turn, model_provider)
 
-        assert not DeepDiff(
-            self.message_list,
-            agent_executor.TC.model_provider_to_message_manager[
-                model_provider
-            ].message_dicts,
-        )
-
         TC = self.create_turn_container([*start_turns, user_turn, assistant_turn])
 
-        assert not DeepDiff(
-            agent_executor.get_model_completion_kwargs(),
-            {
-                "turn_container": TC,
-                "tool_registry": self.start_node_schema.tool_registry,
-                "force_tool_choice": None,
-            },
-        )
+        self.run_assetions(agent_executor, TC, self.start_node_schema.tool_registry, model_provider)
 
     def test_add_assistant_turn(
         self,
@@ -610,23 +585,10 @@ class TestAgent:
         assistant_turn = self.add_assistant_turn(
             agent_executor, model_provider, "hello back", is_stream
         )
-        assert not DeepDiff(
-            self.message_list,
-            agent_executor.TC.model_provider_to_message_manager[
-                model_provider
-            ].message_dicts,
-        )
 
         TC = self.create_turn_container([*start_turns, user_turn, assistant_turn])
 
-        assert not DeepDiff(
-            agent_executor.get_model_completion_kwargs(),
-            {
-                "turn_container": TC,
-                "tool_registry": self.start_node_schema.tool_registry,
-                "force_tool_choice": None,
-            },
-        )
+        self.run_assetions(agent_executor, TC, self.start_node_schema.tool_registry, model_provider)
 
     def test_add_assistant_turn_with_tool_calls(
         self,
@@ -641,23 +603,10 @@ class TestAgent:
         assistant_turn = self.add_assistant_turn(
             agent_executor, model_provider, None, is_stream, tool_names=fn_names
         )
-        assert not DeepDiff(
-            self.message_list,
-            agent_executor.TC.model_provider_to_message_manager[
-                model_provider
-            ].message_dicts,
-        )
 
         TC = self.create_turn_container([*start_turns, user_turn, assistant_turn])
 
-        assert not DeepDiff(
-            agent_executor.get_model_completion_kwargs(),
-            {
-                "turn_container": TC,
-                "tool_registry": self.start_node_schema.tool_registry,
-                "force_tool_choice": None,
-            },
-        )
+        self.run_assetions(agent_executor, TC, self.start_node_schema.tool_registry, model_provider)
 
     @pytest.mark.parametrize(
         "other_fn_names",
@@ -707,23 +656,9 @@ class TestAgent:
             fn_call_id_to_fn_output,
         )
 
-        assert not DeepDiff(
-            self.message_list,
-            agent_executor.TC.model_provider_to_message_manager[
-                model_provider
-            ].message_dicts,
-        )
-
         TC = self.create_turn_container([*start_turns, assistant_turn])
 
-        assert not DeepDiff(
-            agent_executor.get_model_completion_kwargs(),
-            {
-                "turn_container": TC,
-                "tool_registry": self.start_node_schema.tool_registry,
-                "force_tool_choice": None,
-            },
-        )
+        self.run_assetions(agent_executor, TC, self.start_node_schema.tool_registry, model_provider)
 
     def test_node_transition(
         self,
@@ -794,12 +729,6 @@ class TestAgent:
             remove_prev_tool_calls=remove_prev_tool_calls,
         )
 
-        assert not DeepDiff(
-            self.message_list,
-            agent_executor.TC.model_provider_to_message_manager[
-                model_provider
-            ].message_dicts,
-        )
 
         TC = self.create_turn_container(
             [
@@ -812,14 +741,7 @@ class TestAgent:
             ]
         )
 
-        assert not DeepDiff(
-            agent_executor.get_model_completion_kwargs(),
-            {
-                "turn_container": TC,
-                "tool_registry": next_node_schema.tool_registry,
-                "force_tool_choice": None,
-            },
-        )
+        self.run_assetions(agent_executor, TC, next_node_schema.tool_registry, model_provider)
 
     def test_backward_node_skip(
         self,
@@ -942,13 +864,6 @@ class TestAgent:
         )
         self.build_messages_from_turn(t7, model_provider)
 
-        assert not DeepDiff(
-            self.message_list,
-            agent_executor.TC.model_provider_to_message_manager[
-                model_provider
-            ].message_dicts,
-        )
-
         TC = self.create_turn_container(
             [
                 *start_turns,
@@ -964,14 +879,7 @@ class TestAgent:
             ],
         )
 
-        assert not DeepDiff(
-            agent_executor.get_model_completion_kwargs(),
-            {
-                "turn_container": TC,
-                "tool_registry": self.start_node_schema.tool_registry,
-                "force_tool_choice": None,
-            },
-        )
+        self.run_assetions(agent_executor, TC, self.start_node_schema.tool_registry, model_provider)
 
     def test_forward_node_skip(
         self,
@@ -1214,18 +1122,4 @@ class TestAgent:
             ],
         )
 
-        assert not DeepDiff(
-            self.message_list,
-            agent_executor.TC.model_provider_to_message_manager[
-                model_provider
-            ].message_dicts,
-        )
-
-        assert not DeepDiff(
-            agent_executor.get_model_completion_kwargs(),
-            {
-                "turn_container": TC,
-                "tool_registry": next_node_schema.tool_registry,
-                "force_tool_choice": None,
-            },
-        )
+        self.run_assetions(agent_executor, TC, next_node_schema.tool_registry, model_provider)
