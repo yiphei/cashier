@@ -324,10 +324,11 @@ class TestAgent:
         self.message_list = None
 
     @pytest.fixture(autouse=True)
-    def setup_start_message_list(self, start_turns, setup_message_dicts, model_provider):
+    def setup_start_message_list(
+        self, start_turns, setup_message_dicts, model_provider
+    ):
         self.build_messages_from_turn(start_turns[0].turn, model_provider)
         self.build_messages_from_turn(start_turns[1], model_provider)
-
 
     @pytest.fixture
     def start_turns(self, remove_prev_tool_calls):
