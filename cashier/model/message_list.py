@@ -2,7 +2,17 @@ import copy
 from bisect import bisect_left
 from collections import defaultdict
 from enum import StrEnum
-from typing import Any, Dict, Iterable, List, Set, SupportsIndex, overload, Optional, Union
+from typing import (
+    Any,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Set,
+    SupportsIndex,
+    Union,
+    overload,
+)
 
 from cashier.model.model_util import ModelProvider
 
