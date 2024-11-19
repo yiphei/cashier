@@ -749,7 +749,6 @@ class TestAgent:
         )
         self.run_message_dict_assertions(agent_executor, model_provider)
 
-
         order = Order(
             item_orders=[ItemOrder(name="pecan latte", size=CupSize.VENTI, options=[])]
         )
@@ -766,7 +765,7 @@ class TestAgent:
         second_fn_calls = [fn_call_1, fn_call_2]
         second_fn_call_id_to_fn_output = {
             fn_call.id: None for fn_call in second_fn_calls
-        }        
+        }
         t4 = self.add_assistant_turn(
             agent_executor,
             model_provider,
@@ -1037,7 +1036,6 @@ class TestAgent:
             True,
         )
         self.run_message_dict_assertions(agent_executor, model_provider)
-
 
         fn_call_1 = FunctionCall.create_fake_fn_call(
             model_provider,
