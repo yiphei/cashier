@@ -10,6 +10,7 @@ from pydantic import BaseModel, Field
 
 from cashier.agent_executor import AgentExecutor
 from cashier.graph import Node
+from cashier.model.message_list import MessageList
 from cashier.model.model_client import AnthropicModelOutput, Model, OAIModelOutput
 from cashier.model.model_turn import AssistantTurn, ModelTurn, NodeSystemTurn, UserTurn
 from cashier.model.model_util import (
@@ -87,6 +88,37 @@ class TestAgent:
 
             TC.turns.append(turn)
         return TC
+
+    def run_message_dict_assertions(self, agent_executor, model_provider):
+        assert not DeepDiff(
+            self.message_list,
+            agent_executor.TC.model_provider_to_message_manager[
+                model_provider
+            ].message_dicts,
+        )
+        assert not DeepDiff(
+            self.conversation_list,
+            agent_executor.TC.model_provider_to_message_manager[
+                model_provider
+            ].conversation_dicts,
+        )
+        assert not DeepDiff(
+            self.node_conversation_list,
+            agent_executor.TC.model_provider_to_message_manager[
+                model_provider
+            ].node_conversation_dicts,
+        )
+
+    def run_assertions(self, agent_executor, TC, tool_registry, model_provider):
+        self.run_message_dict_assertions(agent_executor, model_provider)
+        assert not DeepDiff(
+            agent_executor.get_model_completion_kwargs(),
+            {
+                "turn_container": TC,
+                "tool_registry": tool_registry,
+                "force_tool_choice": None,
+            },
+        )
 
     def create_mock_model_completion(
         self,
@@ -207,7 +239,9 @@ class TestAgent:
         with self.generate_random_string_context():
             agent_executor.add_user_turn(message)
 
-        return UserTurn(msg_content=message)
+        ut = UserTurn(msg_content=message)
+        self.build_messages_from_turn(ut, model_provider)
+        return ut
 
     def add_assistant_turn(
         self,
@@ -292,13 +326,15 @@ class TestAgent:
                 else:
                     patched_fn.assert_has_calls(expected_calls_map[fn_call.name])
 
-        return AssistantTurn(
+        at = AssistantTurn(
             msg_content=message,
             model_provider=model_provider,
             tool_registry=tool_registry,
             fn_calls=fn_calls,
             fn_call_id_to_fn_output=fn_call_id_to_fn_output or {},
         )
+        self.build_assistant_turn_messages(at, model_provider)
+        return at
 
     @pytest.fixture
     def agent_executor(self, model_provider, remove_prev_tool_calls):
@@ -310,6 +346,23 @@ class TestAgent:
             remove_prev_tool_calls=remove_prev_tool_calls,
             model_provider=model_provider,
         )
+
+    @pytest.fixture(autouse=True)
+    def setup_message_dicts(self, model_provider):
+        self.message_list = MessageList(model_provider=model_provider)
+        self.conversation_list = MessageList(model_provider=model_provider)
+        self.node_conversation_list = MessageList(model_provider=model_provider)
+        yield
+        self.message_list = None
+        self.conversation_list = None
+        self.node_conversation_list = None
+
+    @pytest.fixture(autouse=True)
+    def setup_start_message_list(
+        self, start_turns, setup_message_dicts, model_provider
+    ):
+        self.build_messages_from_turn(start_turns[0], model_provider)
+        self.build_messages_from_turn(start_turns[1], model_provider)
 
     @pytest.fixture
     def start_turns(self, remove_prev_tool_calls):
@@ -367,31 +420,182 @@ class TestAgent:
     def fn_names(cls, request):
         return request.param
 
+    def build_user_turn_messages(self, user_turn, model_provider):
+        self.message_list.extend(
+            user_turn.build_messages(model_provider), MessageList.ItemType.USER
+        )
+        self.conversation_list.extend(
+            user_turn.build_messages(model_provider), MessageList.ItemType.USER
+        )
+        self.node_conversation_list.extend(
+            user_turn.build_messages(model_provider), MessageList.ItemType.USER
+        )
+
+    def build_assistant_turn_messages(self, assistant_turn, model_provider):
+        messages = assistant_turn.build_messages(model_provider)
+        if model_provider == ModelProvider.OPENAI:
+            for message in messages:
+                if message.get("tool_calls", None) is not None:
+                    tool_call_id = message["tool_calls"][0]["id"]
+                    curr_fn_name = message["tool_calls"][0]["function"]["name"]
+                    self.message_list.append(
+                        message, MessageList.ItemType.TOOL_CALL, tool_call_id
+                    )
+                elif message["role"] == "tool":
+                    tool_call_id = message["tool_call_id"]
+                    self.message_list.append(
+                        message,
+                        MessageList.ItemType.TOOL_OUTPUT,
+                        MessageList.get_tool_output_uri_from_tool_id(tool_call_id),
+                    )
+                elif message["role"] == "system" and curr_fn_name is not None:
+                    self.message_list.remove_by_uri(curr_fn_name, False)
+                    self.message_list.append(
+                        message, MessageList.ItemType.TOOL_OUTPUT_SCHEMA, curr_fn_name
+                    )
+                    curr_fn_name = None
+                else:
+                    self.message_list.append(message, MessageList.ItemType.ASSISTANT)
+                    self.conversation_list.append(
+                        message, MessageList.ItemType.ASSISTANT
+                    )
+                    self.node_conversation_list.append(
+                        message, MessageList.ItemType.ASSISTANT
+                    )
+        else:
+            if len(messages) == 2:
+                [message_1, message_2] = messages
+            else:
+                [message_1] = messages
+                message_2 = None
+
+            contents = message_1["content"]
+            self.message_list.append(message_1)
+            has_fn_calls = False
+            if type(contents) == list:
+                for content in contents:
+                    if content["type"] == "tool_use":
+                        tool_call_id = content["id"]
+                        self.message_list.track_idx(
+                            MessageList.ItemType.TOOL_CALL, uri=tool_call_id
+                        )
+                        has_fn_calls = True
+
+            if not has_fn_calls:
+                self.message_list.track_idx(MessageList.ItemType.ASSISTANT)
+                ass_message = {
+                    "role": "assistant",
+                    "content": assistant_turn.msg_content,
+                }
+                self.conversation_list.append(
+                    ass_message, MessageList.ItemType.ASSISTANT
+                )
+                self.node_conversation_list.append(
+                    ass_message, MessageList.ItemType.ASSISTANT
+                )
+
+            if message_2 is not None:
+                self.message_list.append(message_2)
+                for content in message_2["content"]:
+                    if content["type"] == "tool_result":
+                        tool_id = content["tool_use_id"]
+                        self.message_list.track_idx(
+                            MessageList.ItemType.TOOL_OUTPUT,
+                            uri=MessageList.get_tool_output_uri_from_tool_id(tool_id),
+                        )
+
+    def build_node_turn_messages(
+        self,
+        node_turn,
+        model_provider,
+        remove_prev_fn_return_schema,
+        remove_prev_tool_calls,
+        is_skip,
+    ):
+        if remove_prev_tool_calls:
+            assert remove_prev_fn_return_schema is not False
+
+        if remove_prev_fn_return_schema is True or remove_prev_tool_calls:
+            self.message_list.clear(MessageList.ItemType.TOOL_OUTPUT_SCHEMA)
+
+        if remove_prev_tool_calls:
+            self.message_list.clear(
+                [MessageList.ItemType.TOOL_CALL, MessageList.ItemType.TOOL_OUTPUT]
+            )
+
+        if is_skip:
+            self.conversation_list.track_idx(
+                MessageList.ItemType.NODE, len(self.conversation_list) - 2
+            )
+            self.node_conversation_list = self.node_conversation_list[-1:]
+        else:
+            self.conversation_list.track_idx(MessageList.ItemType.NODE)
+            self.node_conversation_list.clear()
+
+        if model_provider == ModelProvider.OPENAI:
+            self.message_list.clear(MessageList.ItemType.NODE)
+            [msg] = node_turn.build_oai_messages()
+            if is_skip:
+                self.message_list.insert(
+                    len(self.message_list) - 1, msg, MessageList.ItemType.NODE
+                )
+            else:
+                self.message_list.append(msg, MessageList.ItemType.NODE)
+        else:
+            self.system = node_turn.msg_content  # TODO: this is currently not used
+
+            if is_skip:
+                self.message_list.track_idx(
+                    MessageList.ItemType.NODE, len(self.message_list) - 2
+                )
+            else:
+                self.message_list.track_idx(MessageList.ItemType.NODE)
+
+    def build_messages_from_turn(
+        self,
+        turn,
+        model_provider,
+        remove_prev_fn_return_schema=None,
+        remove_prev_tool_calls=False,
+        is_skip=False,
+    ):
+        if isinstance(turn, TurnArgs):
+            turn = turn.turn
+
+        if isinstance(turn, UserTurn):
+            self.build_user_turn_messages(turn, model_provider)
+        elif isinstance(turn, AssistantTurn):
+            self.build_assistant_turn_messages(turn, model_provider)
+        elif isinstance(turn, NodeSystemTurn):
+            self.build_node_turn_messages(
+                turn,
+                model_provider,
+                remove_prev_fn_return_schema,
+                remove_prev_tool_calls,
+                is_skip,
+            )
+        else:
+            raise ValueError(f"Unknown turn type: {type(turn)}")
+
     def test_graph_initialization(
-        self, remove_prev_tool_calls, agent_executor, start_turns
+        self, model_provider, remove_prev_tool_calls, agent_executor, start_turns
     ):
         TC = self.create_turn_container(start_turns)
-        assert not DeepDiff(
-            agent_executor.get_model_completion_kwargs(),
-            {
-                "turn_container": TC,
-                "tool_registry": self.start_node_schema.tool_registry,
-                "force_tool_choice": None,
-            },
+        self.run_assertions(
+            agent_executor,
+            TC,
+            self.start_node_schema.tool_registry,
+            model_provider,
         )
 
     def test_add_user_turn(
         self, model_provider, remove_prev_tool_calls, agent_executor, start_turns
     ):
         user_turn = self.add_user_turn(agent_executor, "hello", model_provider, True)
+
         TC = self.create_turn_container([*start_turns, user_turn])
-        assert not DeepDiff(
-            agent_executor.get_model_completion_kwargs(),
-            {
-                "turn_container": TC,
-                "tool_registry": self.start_node_schema.tool_registry,
-                "force_tool_choice": None,
-            },
+        self.run_assertions(
+            agent_executor, TC, self.start_node_schema.tool_registry, model_provider
         )
 
     def test_add_user_turn_with_wait(
@@ -421,16 +625,12 @@ class TestAgent:
             fn_calls=[fake_fn_call],
             fn_call_id_to_fn_output={fake_fn_call.id: None},
         )
+        self.build_messages_from_turn(assistant_turn, model_provider)
 
         TC = self.create_turn_container([*start_turns, user_turn, assistant_turn])
 
-        assert not DeepDiff(
-            agent_executor.get_model_completion_kwargs(),
-            {
-                "turn_container": TC,
-                "tool_registry": self.start_node_schema.tool_registry,
-                "force_tool_choice": None,
-            },
+        self.run_assertions(
+            agent_executor, TC, self.start_node_schema.tool_registry, model_provider
         )
 
     def test_add_assistant_turn(
@@ -441,6 +641,7 @@ class TestAgent:
         agent_executor,
         start_turns,
     ):
+
         user_turn = self.add_user_turn(agent_executor, "hello", model_provider, True)
         assistant_turn = self.add_assistant_turn(
             agent_executor, model_provider, "hello back", is_stream
@@ -448,13 +649,8 @@ class TestAgent:
 
         TC = self.create_turn_container([*start_turns, user_turn, assistant_turn])
 
-        assert not DeepDiff(
-            agent_executor.get_model_completion_kwargs(),
-            {
-                "turn_container": TC,
-                "tool_registry": self.start_node_schema.tool_registry,
-                "force_tool_choice": None,
-            },
+        self.run_assertions(
+            agent_executor, TC, self.start_node_schema.tool_registry, model_provider
         )
 
     def test_add_assistant_turn_with_tool_calls(
@@ -473,13 +669,8 @@ class TestAgent:
 
         TC = self.create_turn_container([*start_turns, user_turn, assistant_turn])
 
-        assert not DeepDiff(
-            agent_executor.get_model_completion_kwargs(),
-            {
-                "turn_container": TC,
-                "tool_registry": self.start_node_schema.tool_registry,
-                "force_tool_choice": None,
-            },
+        self.run_assertions(
+            agent_executor, TC, self.start_node_schema.tool_registry, model_provider
         )
 
     @pytest.mark.parametrize(
@@ -532,13 +723,8 @@ class TestAgent:
 
         TC = self.create_turn_container([*start_turns, assistant_turn])
 
-        assert not DeepDiff(
-            agent_executor.get_model_completion_kwargs(),
-            {
-                "turn_container": TC,
-                "tool_registry": self.start_node_schema.tool_registry,
-                "force_tool_choice": None,
-            },
+        self.run_assertions(
+            agent_executor, TC, self.start_node_schema.tool_registry, model_provider
         )
 
     def test_node_transition(
@@ -561,6 +747,7 @@ class TestAgent:
         t3 = self.add_user_turn(
             agent_executor, "i want pecan latte", model_provider, True
         )
+        self.run_message_dict_assertions(agent_executor, model_provider)
 
         order = Order(
             item_orders=[ItemOrder(name="pecan latte", size=CupSize.VENTI, options=[])]
@@ -604,6 +791,11 @@ class TestAgent:
             ),
             kwargs={"remove_prev_tool_calls": remove_prev_tool_calls},
         )
+        self.build_messages_from_turn(
+            node_turn,
+            model_provider,
+            remove_prev_tool_calls=remove_prev_tool_calls,
+        )
 
         TC = self.create_turn_container(
             [
@@ -616,13 +808,8 @@ class TestAgent:
             ]
         )
 
-        assert not DeepDiff(
-            agent_executor.get_model_completion_kwargs(),
-            {
-                "turn_container": TC,
-                "tool_registry": next_node_schema.tool_registry,
-                "force_tool_choice": None,
-            },
+        self.run_assertions(
+            agent_executor, TC, next_node_schema.tool_registry, model_provider
         )
 
     def test_backward_node_skip(
@@ -634,7 +821,6 @@ class TestAgent:
         agent_executor,
         start_turns,
     ):
-
         t1 = self.add_user_turn(agent_executor, "hello", model_provider, True)
         t2 = self.add_assistant_turn(
             agent_executor,
@@ -646,6 +832,7 @@ class TestAgent:
         t3 = self.add_user_turn(
             agent_executor, "i want pecan latte", model_provider, True
         )
+        self.run_message_dict_assertions(agent_executor, model_provider)
 
         order = Order(
             item_orders=[ItemOrder(name="pecan latte", size=CupSize.VENTI, options=[])]
@@ -672,20 +859,6 @@ class TestAgent:
             second_fn_calls,
             second_fn_call_id_to_fn_output,
         )
-        t5 = self.add_assistant_turn(
-            agent_executor,
-            model_provider,
-            "can you confirm the order?",
-            is_stream,
-        )
-
-        t6 = self.add_user_turn(
-            agent_executor,
-            "i want to change order",
-            model_provider,
-            False,
-            bwd_skip_node_schema_id=self.start_node_schema.id,
-        )
 
         next_node_schema = cashier_graph_schema.from_node_schema_id_to_edge_schema[
             self.start_node_schema.id
@@ -703,6 +876,27 @@ class TestAgent:
             ),
             kwargs={"remove_prev_tool_calls": remove_prev_tool_calls},
         )
+        self.build_messages_from_turn(
+            node_turn_1,
+            model_provider,
+            remove_prev_tool_calls=remove_prev_tool_calls,
+        )
+
+        t5 = self.add_assistant_turn(
+            agent_executor,
+            model_provider,
+            "can you confirm the order?",
+            is_stream,
+        )
+        self.run_message_dict_assertions(agent_executor, model_provider)
+
+        t6 = self.add_user_turn(
+            agent_executor,
+            "i want to change order",
+            model_provider,
+            False,
+            bwd_skip_node_schema_id=self.start_node_schema.id,
+        )
 
         node_turn_2 = TurnArgs(
             turn=NodeSystemTurn(
@@ -716,6 +910,12 @@ class TestAgent:
                 node_id=3,
             ),
             kwargs={"remove_prev_tool_calls": remove_prev_tool_calls, "is_skip": True},
+        )
+        self.build_messages_from_turn(
+            node_turn_2,
+            model_provider,
+            remove_prev_tool_calls=remove_prev_tool_calls,
+            is_skip=True,
         )
 
         get_state_fn_call = FunctionCall(
@@ -733,6 +933,7 @@ class TestAgent:
                 get_state_fn_call.id: agent_executor.curr_node.state
             },
         )
+        self.build_messages_from_turn(t7, model_provider)
 
         TC = self.create_turn_container(
             [
@@ -749,13 +950,8 @@ class TestAgent:
             ],
         )
 
-        assert not DeepDiff(
-            agent_executor.get_model_completion_kwargs(),
-            {
-                "turn_container": TC,
-                "tool_registry": self.start_node_schema.tool_registry,
-                "force_tool_choice": None,
-            },
+        self.run_assertions(
+            agent_executor, TC, self.start_node_schema.tool_registry, model_provider
         )
 
     def test_forward_node_skip(
@@ -767,7 +963,6 @@ class TestAgent:
         agent_executor,
         start_turns,
     ):
-
         t1 = self.add_user_turn(agent_executor, "hello", model_provider, True)
         t2 = self.add_assistant_turn(
             agent_executor,
@@ -779,6 +974,7 @@ class TestAgent:
         t3 = self.add_user_turn(
             agent_executor, "i want pecan latte", model_provider, True
         )
+        self.run_message_dict_assertions(agent_executor, model_provider)
 
         order = Order(
             item_orders=[ItemOrder(name="pecan latte", size=CupSize.VENTI, options=[])]
@@ -821,6 +1017,11 @@ class TestAgent:
             ),
             kwargs={"remove_prev_tool_calls": remove_prev_tool_calls},
         )
+        self.build_messages_from_turn(
+            node_turn_1,
+            model_provider,
+            remove_prev_tool_calls=remove_prev_tool_calls,
+        )
         t5 = self.add_assistant_turn(
             agent_executor,
             model_provider,
@@ -834,6 +1035,7 @@ class TestAgent:
             model_provider,
             True,
         )
+        self.run_message_dict_assertions(agent_executor, model_provider)
 
         fn_call_1 = FunctionCall.create_fake_fn_call(
             model_provider,
@@ -869,12 +1071,19 @@ class TestAgent:
             ),
             kwargs={"remove_prev_tool_calls": remove_prev_tool_calls},
         )
+        self.build_messages_from_turn(
+            node_turn_2,
+            model_provider,
+            remove_prev_tool_calls=remove_prev_tool_calls,
+        )
         t8 = self.add_assistant_turn(
             agent_executor,
             model_provider,
             "thanks for confirming",
             is_stream,
         )
+        self.run_message_dict_assertions(agent_executor, model_provider)
+
         t9 = self.add_user_turn(
             agent_executor,
             "actually, i want to change my order",
@@ -896,6 +1105,12 @@ class TestAgent:
             ),
             kwargs={"remove_prev_tool_calls": remove_prev_tool_calls, "is_skip": True},
         )
+        self.build_messages_from_turn(
+            node_turn_3,
+            model_provider,
+            remove_prev_tool_calls=remove_prev_tool_calls,
+            is_skip=True,
+        )
         get_state_fn_call = FunctionCall(
             id=MODEL_PROVIDER_TO_TOOL_CALL_ID_PREFIX[model_provider]
             + self.rand_tool_ids.popleft(),
@@ -911,12 +1126,15 @@ class TestAgent:
                 get_state_fn_call.id: agent_executor.curr_node.state
             },
         )
+        self.build_messages_from_turn(t10, model_provider)
         t11 = self.add_assistant_turn(
             agent_executor,
             model_provider,
             "what do you want to change?",
             is_stream,
         )
+        self.run_message_dict_assertions(agent_executor, model_provider)
+
         t12 = self.add_user_turn(
             agent_executor,
             "nvm, nothing",
@@ -937,6 +1155,12 @@ class TestAgent:
             ),
             kwargs={"remove_prev_tool_calls": remove_prev_tool_calls, "is_skip": True},
         )
+        self.build_messages_from_turn(
+            node_turn_4,
+            model_provider,
+            remove_prev_tool_calls=remove_prev_tool_calls,
+            is_skip=True,
+        )
         get_state_fn_call = FunctionCall(
             id=MODEL_PROVIDER_TO_TOOL_CALL_ID_PREFIX[model_provider]
             + self.rand_tool_ids.popleft(),
@@ -952,6 +1176,7 @@ class TestAgent:
                 get_state_fn_call.id: agent_executor.curr_node.state
             },
         )
+        self.build_messages_from_turn(t13, model_provider)
 
         TC = self.create_turn_container(
             [
@@ -976,11 +1201,6 @@ class TestAgent:
             ],
         )
 
-        assert not DeepDiff(
-            agent_executor.get_model_completion_kwargs(),
-            {
-                "turn_container": TC,
-                "tool_registry": next_node_schema.tool_registry,
-                "force_tool_choice": None,
-            },
+        self.run_assertions(
+            agent_executor, TC, next_node_schema.tool_registry, model_provider
         )
