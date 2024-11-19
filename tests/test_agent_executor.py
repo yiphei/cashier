@@ -421,8 +421,12 @@ class TestAgent:
         self.message_list.extend(
             user_turn.build_messages(model_provider), MessageList.ItemType.USER
         )
-        self.conversation_list.extend(user_turn.build_messages(model_provider), MessageList.ItemType.USER)
-        self.node_conversation_list.extend(user_turn.build_messages(model_provider), MessageList.ItemType.USER)
+        self.conversation_list.extend(
+            user_turn.build_messages(model_provider), MessageList.ItemType.USER
+        )
+        self.node_conversation_list.extend(
+            user_turn.build_messages(model_provider), MessageList.ItemType.USER
+        )
 
     def build_assistant_turn_messages(self, assistant_turn, model_provider):
         messages = assistant_turn.build_messages(model_provider)
@@ -449,8 +453,12 @@ class TestAgent:
                     curr_fn_name = None
                 else:
                     self.message_list.append(message, MessageList.ItemType.ASSISTANT)
-                    self.conversation_list.append(message, MessageList.ItemType.ASSISTANT)
-                    self.node_conversation_list.append(message, MessageList.ItemType.ASSISTANT)
+                    self.conversation_list.append(
+                        message, MessageList.ItemType.ASSISTANT
+                    )
+                    self.node_conversation_list.append(
+                        message, MessageList.ItemType.ASSISTANT
+                    )
         else:
             if len(messages) == 2:
                 [message_1, message_2] = messages
@@ -472,9 +480,16 @@ class TestAgent:
 
             if not has_fn_calls:
                 self.message_list.track_idx(MessageList.ItemType.ASSISTANT)
-                ass_message = {"role": "assistant", "content": assistant_turn.msg_content}
-                self.conversation_list.append(ass_message, MessageList.ItemType.ASSISTANT)
-                self.node_conversation_list.append(ass_message, MessageList.ItemType.ASSISTANT)
+                ass_message = {
+                    "role": "assistant",
+                    "content": assistant_turn.msg_content,
+                }
+                self.conversation_list.append(
+                    ass_message, MessageList.ItemType.ASSISTANT
+                )
+                self.node_conversation_list.append(
+                    ass_message, MessageList.ItemType.ASSISTANT
+                )
 
             if message_2 is not None:
                 self.message_list.append(message_2)
@@ -524,7 +539,7 @@ class TestAgent:
             else:
                 self.message_list.append(msg, MessageList.ItemType.NODE)
         else:
-            self.system = node_turn.msg_content # TODO: this is currently not used
+            self.system = node_turn.msg_content  # TODO: this is currently not used
 
             if is_skip:
                 self.message_list.track_idx(
