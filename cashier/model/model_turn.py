@@ -2,14 +2,7 @@ from __future__ import annotations
 
 import json
 from abc import ABC, abstractmethod
-from typing import (
-    Any,
-    ClassVar,
-    Dict,
-    List,
-    Optional,
-    Union,
-)
+from typing import Any, ClassVar, Dict, List, Optional, Union
 
 from pydantic import (
     BaseModel,
@@ -386,5 +379,3 @@ class AnthropicMessageManager(MessageManager):
                         MessageList.ItemType.TOOL_OUTPUT,
                         uri=MessageList.get_tool_output_uri_from_tool_id(tool_id),
                     )
-
-

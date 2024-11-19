@@ -1,11 +1,10 @@
-from cashier.model.model_util import ModelProvider
-
-
 import copy
 from bisect import bisect_left
 from collections import defaultdict
 from enum import StrEnum
-from typing import Any, Dict, Iterable, List, Set, SupportsIndex, overload
+from typing import Any, Dict, Iterable, List, Set, SupportsIndex, overload, Optional, Union
+
+from cashier.model.model_util import ModelProvider
 
 
 class MessageList(list):
