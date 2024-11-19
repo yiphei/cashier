@@ -208,7 +208,10 @@ class TestAgent:
         with self.generate_random_string_context():
             agent_executor.add_user_turn(message)
 
-        return UserTurn(msg_content=message)
+        ut= UserTurn(msg_content=message)
+        # self.build_user_turn_messages(ut, model_provider)
+        self.build_messages_from_turn(ut, model_provider)
+        return ut
 
     def add_assistant_turn(
         self,
@@ -293,13 +296,15 @@ class TestAgent:
                 else:
                     patched_fn.assert_has_calls(expected_calls_map[fn_call.name])
 
-        return AssistantTurn(
+        at = AssistantTurn(
             msg_content=message,
             model_provider=model_provider,
             tool_registry=tool_registry,
             fn_calls=fn_calls,
             fn_call_id_to_fn_output=fn_call_id_to_fn_output or {},
         )
+        self.build_assistant_turn_messages(at, model_provider)
+        return at
 
     @pytest.fixture
     def agent_executor(self, model_provider, remove_prev_tool_calls):
@@ -527,7 +532,7 @@ class TestAgent:
         self.build_messages_from_turn(start_turns[0].turn, model_provider)
         self.build_messages_from_turn(start_turns[1], model_provider)
         user_turn = self.add_user_turn(agent_executor, "hello", model_provider, True)
-        self.build_messages_from_turn(user_turn, model_provider)
+
         assert not DeepDiff(
             self.message_list,
             agent_executor.TC.model_provider_to_message_manager[
@@ -557,7 +562,6 @@ class TestAgent:
         user_turn = self.add_user_turn(
             agent_executor, "hello", model_provider, False, 2
         )
-        self.build_messages_from_turn(user_turn, model_provider)
 
         fake_fn_call = FunctionCall(
             id=MODEL_PROVIDER_TO_TOOL_CALL_ID_PREFIX[model_provider]
@@ -607,11 +611,9 @@ class TestAgent:
         self.build_messages_from_turn(start_turns[1], model_provider)
 
         user_turn = self.add_user_turn(agent_executor, "hello", model_provider, True)
-        self.build_messages_from_turn(user_turn, model_provider)
         assistant_turn = self.add_assistant_turn(
             agent_executor, model_provider, "hello back", is_stream
         )
-        self.build_messages_from_turn(assistant_turn, model_provider)
         assert not DeepDiff(
             self.message_list,
             agent_executor.TC.model_provider_to_message_manager[
@@ -642,11 +644,9 @@ class TestAgent:
         self.build_messages_from_turn(start_turns[0].turn, model_provider)
         self.build_messages_from_turn(start_turns[1], model_provider)
         user_turn = self.add_user_turn(agent_executor, "hello", model_provider, True)
-        self.build_messages_from_turn(user_turn, model_provider)
         assistant_turn = self.add_assistant_turn(
             agent_executor, model_provider, None, is_stream, tool_names=fn_names
         )
-        self.build_messages_from_turn(assistant_turn, model_provider)
         assert not DeepDiff(
             self.message_list,
             agent_executor.TC.model_provider_to_message_manager[
@@ -714,7 +714,6 @@ class TestAgent:
             fn_calls,
             fn_call_id_to_fn_output,
         )
-        self.build_messages_from_turn(assistant_turn, model_provider)
 
         assert not DeepDiff(
             self.message_list,
@@ -746,7 +745,6 @@ class TestAgent:
         self.build_messages_from_turn(start_turns[0].turn, model_provider)
         self.build_messages_from_turn(start_turns[1], model_provider)
         t1 = self.add_user_turn(agent_executor, "hello", model_provider, True)
-        self.build_messages_from_turn(t1, model_provider)
         t2 = self.add_assistant_turn(
             agent_executor,
             model_provider,
@@ -754,11 +752,9 @@ class TestAgent:
             is_stream,
             tool_names=fn_names,
         )
-        self.build_messages_from_turn(t2, model_provider)
         t3 = self.add_user_turn(
             agent_executor, "i want pecan latte", model_provider, True
         )
-        self.build_messages_from_turn(t3, model_provider)
 
         order = Order(
             item_orders=[ItemOrder(name="pecan latte", size=CupSize.VENTI, options=[])]
@@ -785,7 +781,6 @@ class TestAgent:
             second_fn_calls,
             second_fn_call_id_to_fn_output,
         )
-        self.build_messages_from_turn(t4, model_provider)
 
         next_node_schema = cashier_graph_schema.from_node_schema_id_to_edge_schema[
             self.start_node_schema.id
@@ -848,7 +843,6 @@ class TestAgent:
         self.build_messages_from_turn(start_turns[0].turn, model_provider)
         self.build_messages_from_turn(start_turns[1], model_provider)
         t1 = self.add_user_turn(agent_executor, "hello", model_provider, True)
-        self.build_messages_from_turn(t1, model_provider)
         t2 = self.add_assistant_turn(
             agent_executor,
             model_provider,
@@ -856,11 +850,9 @@ class TestAgent:
             is_stream,
             tool_names=fn_names,
         )
-        self.build_messages_from_turn(t2, model_provider)
         t3 = self.add_user_turn(
             agent_executor, "i want pecan latte", model_provider, True
         )
-        self.build_messages_from_turn(t3, model_provider)
 
         order = Order(
             item_orders=[ItemOrder(name="pecan latte", size=CupSize.VENTI, options=[])]
@@ -887,7 +879,6 @@ class TestAgent:
             second_fn_calls,
             second_fn_call_id_to_fn_output,
         )
-        self.build_messages_from_turn(t4, model_provider)
 
         next_node_schema = cashier_graph_schema.from_node_schema_id_to_edge_schema[
             self.start_node_schema.id
@@ -917,7 +908,6 @@ class TestAgent:
             "can you confirm the order?",
             is_stream,
         )
-        self.build_messages_from_turn(t5, model_provider)
 
         t6 = self.add_user_turn(
             agent_executor,
@@ -926,7 +916,6 @@ class TestAgent:
             False,
             bwd_skip_node_schema_id=self.start_node_schema.id,
         )
-        self.build_messages_from_turn(t6, model_provider)
 
         node_turn_2 = TurnArgs(
             turn=NodeSystemTurn(
@@ -1008,7 +997,6 @@ class TestAgent:
         self.build_messages_from_turn(start_turns[0].turn, model_provider)
         self.build_messages_from_turn(start_turns[1], model_provider)
         t1 = self.add_user_turn(agent_executor, "hello", model_provider, True)
-        self.build_messages_from_turn(t1, model_provider)
         t2 = self.add_assistant_turn(
             agent_executor,
             model_provider,
@@ -1016,11 +1004,9 @@ class TestAgent:
             is_stream,
             tool_names=fn_names,
         )
-        self.build_messages_from_turn(t2, model_provider)
         t3 = self.add_user_turn(
             agent_executor, "i want pecan latte", model_provider, True
         )
-        self.build_messages_from_turn(t3, model_provider)
 
         order = Order(
             item_orders=[ItemOrder(name="pecan latte", size=CupSize.VENTI, options=[])]
@@ -1047,7 +1033,6 @@ class TestAgent:
             second_fn_calls,
             second_fn_call_id_to_fn_output,
         )
-        self.build_messages_from_turn(t4, model_provider)
         next_node_schema = cashier_graph_schema.from_node_schema_id_to_edge_schema[
             self.start_node_schema.id
         ][0].to_node_schema
@@ -1075,7 +1060,6 @@ class TestAgent:
             "can you confirm the order?",
             is_stream,
         )
-        self.build_messages_from_turn(t5, model_provider)
 
         t6 = self.add_user_turn(
             agent_executor,
@@ -1083,7 +1067,6 @@ class TestAgent:
             model_provider,
             True,
         )
-        self.build_messages_from_turn(t6, model_provider)
 
         fn_call_1 = FunctionCall.create_fake_fn_call(
             model_provider,
@@ -1102,7 +1085,6 @@ class TestAgent:
             third_fn_calls,
             third_fn_calls_fn_call_id_to_fn_output,
         )
-        self.build_messages_from_turn(t7, model_provider)
 
         next_next_node_schema = cashier_graph_schema.from_node_schema_id_to_edge_schema[
             next_node_schema.id
@@ -1131,7 +1113,6 @@ class TestAgent:
             "thanks for confirming",
             is_stream,
         )
-        self.build_messages_from_turn(t8, model_provider)
         t9 = self.add_user_turn(
             agent_executor,
             "actually, i want to change my order",
@@ -1140,7 +1121,6 @@ class TestAgent:
             bwd_skip_node_schema_id=self.start_node_schema.id,
             include_fwd_skip_node_schema_id=False,
         )
-        self.build_messages_from_turn(t9, model_provider)
         node_turn_3 = TurnArgs(
             turn=NodeSystemTurn(
                 msg_content=self.start_node_schema.node_system_prompt(
@@ -1182,7 +1162,6 @@ class TestAgent:
             "what do you want to change?",
             is_stream,
         )
-        self.build_messages_from_turn(t11, model_provider)
         t12 = self.add_user_turn(
             agent_executor,
             "nvm, nothing",
@@ -1190,7 +1169,6 @@ class TestAgent:
             False,
             bwd_skip_node_schema_id=2,
         )
-        self.build_messages_from_turn(t12, model_provider)
         node_turn_4 = TurnArgs(
             turn=NodeSystemTurn(
                 msg_content=next_node_schema.node_system_prompt(
