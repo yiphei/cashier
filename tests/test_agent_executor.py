@@ -209,7 +209,6 @@ class TestAgent:
             agent_executor.add_user_turn(message)
 
         ut = UserTurn(msg_content=message)
-        # self.build_user_turn_messages(ut, model_provider)
         self.build_messages_from_turn(ut, model_provider)
         return ut
 
