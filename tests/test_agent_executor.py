@@ -578,14 +578,14 @@ class TestAgent:
             raise ValueError(f"Unknown turn type: {type(turn)}")
 
     def test_graph_initialization(
-        self, remove_prev_tool_calls, agent_executor, start_turns
+        self, model_provider, remove_prev_tool_calls, agent_executor, start_turns
     ):
         TC = self.create_turn_container(start_turns)
         self.run_assertions(
             agent_executor,
             TC,
             self.start_node_schema.tool_registry,
-            agent_executor.model_provider,
+            model_provider,
         )
 
     def test_add_user_turn(
