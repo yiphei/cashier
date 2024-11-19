@@ -88,7 +88,7 @@ class TestAgent:
 
             TC.turns.append(turn)
         return TC
-    
+
     def run_assetions(self, agent_executor, TC, tool_registry, model_provider):
         assert not DeepDiff(
             self.message_list,
@@ -104,7 +104,6 @@ class TestAgent:
                 "force_tool_choice": None,
             },
         )
-
 
     def create_mock_model_completion(
         self,
@@ -529,7 +528,12 @@ class TestAgent:
         self, remove_prev_tool_calls, agent_executor, start_turns
     ):
         TC = self.create_turn_container(start_turns)
-        self.run_assetions(agent_executor, TC, self.start_node_schema.tool_registry, agent_executor.model_provider)
+        self.run_assetions(
+            agent_executor,
+            TC,
+            self.start_node_schema.tool_registry,
+            agent_executor.model_provider,
+        )
 
     def test_add_user_turn(
         self, model_provider, remove_prev_tool_calls, agent_executor, start_turns
@@ -537,7 +541,9 @@ class TestAgent:
         user_turn = self.add_user_turn(agent_executor, "hello", model_provider, True)
 
         TC = self.create_turn_container([*start_turns, user_turn])
-        self.run_assetions(agent_executor, TC, self.start_node_schema.tool_registry, model_provider)
+        self.run_assetions(
+            agent_executor, TC, self.start_node_schema.tool_registry, model_provider
+        )
 
     def test_add_user_turn_with_wait(
         self,
@@ -570,7 +576,9 @@ class TestAgent:
 
         TC = self.create_turn_container([*start_turns, user_turn, assistant_turn])
 
-        self.run_assetions(agent_executor, TC, self.start_node_schema.tool_registry, model_provider)
+        self.run_assetions(
+            agent_executor, TC, self.start_node_schema.tool_registry, model_provider
+        )
 
     def test_add_assistant_turn(
         self,
@@ -588,7 +596,9 @@ class TestAgent:
 
         TC = self.create_turn_container([*start_turns, user_turn, assistant_turn])
 
-        self.run_assetions(agent_executor, TC, self.start_node_schema.tool_registry, model_provider)
+        self.run_assetions(
+            agent_executor, TC, self.start_node_schema.tool_registry, model_provider
+        )
 
     def test_add_assistant_turn_with_tool_calls(
         self,
@@ -606,7 +616,9 @@ class TestAgent:
 
         TC = self.create_turn_container([*start_turns, user_turn, assistant_turn])
 
-        self.run_assetions(agent_executor, TC, self.start_node_schema.tool_registry, model_provider)
+        self.run_assetions(
+            agent_executor, TC, self.start_node_schema.tool_registry, model_provider
+        )
 
     @pytest.mark.parametrize(
         "other_fn_names",
@@ -658,7 +670,9 @@ class TestAgent:
 
         TC = self.create_turn_container([*start_turns, assistant_turn])
 
-        self.run_assetions(agent_executor, TC, self.start_node_schema.tool_registry, model_provider)
+        self.run_assetions(
+            agent_executor, TC, self.start_node_schema.tool_registry, model_provider
+        )
 
     def test_node_transition(
         self,
@@ -729,7 +743,6 @@ class TestAgent:
             remove_prev_tool_calls=remove_prev_tool_calls,
         )
 
-
         TC = self.create_turn_container(
             [
                 *start_turns,
@@ -741,7 +754,9 @@ class TestAgent:
             ]
         )
 
-        self.run_assetions(agent_executor, TC, next_node_schema.tool_registry, model_provider)
+        self.run_assetions(
+            agent_executor, TC, next_node_schema.tool_registry, model_provider
+        )
 
     def test_backward_node_skip(
         self,
@@ -879,7 +894,9 @@ class TestAgent:
             ],
         )
 
-        self.run_assetions(agent_executor, TC, self.start_node_schema.tool_registry, model_provider)
+        self.run_assetions(
+            agent_executor, TC, self.start_node_schema.tool_registry, model_provider
+        )
 
     def test_forward_node_skip(
         self,
@@ -1122,4 +1139,6 @@ class TestAgent:
             ],
         )
 
-        self.run_assetions(agent_executor, TC, next_node_schema.tool_registry, model_provider)
+        self.run_assetions(
+            agent_executor, TC, next_node_schema.tool_registry, model_provider
+        )
