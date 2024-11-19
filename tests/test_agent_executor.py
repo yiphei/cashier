@@ -89,7 +89,7 @@ class TestAgent:
             TC.turns.append(turn)
         return TC
 
-    def run_assertions(self, agent_executor, TC, tool_registry, model_provider):
+    def run_message_dict_assertions(self, agent_executor, model_provider):
         assert not DeepDiff(
             self.message_list,
             agent_executor.TC.model_provider_to_message_manager[
@@ -108,6 +108,9 @@ class TestAgent:
                 model_provider
             ].node_conversation_dicts,
         )
+
+    def run_assertions(self, agent_executor, TC, tool_registry, model_provider):
+        self.run_message_dict_assertions(agent_executor, model_provider)
         assert not DeepDiff(
             agent_executor.get_model_completion_kwargs(),
             {
@@ -744,6 +747,8 @@ class TestAgent:
         t3 = self.add_user_turn(
             agent_executor, "i want pecan latte", model_provider, True
         )
+        self.run_message_dict_assertions(agent_executor, model_provider)
+
 
         order = Order(
             item_orders=[ItemOrder(name="pecan latte", size=CupSize.VENTI, options=[])]
@@ -761,7 +766,7 @@ class TestAgent:
         second_fn_calls = [fn_call_1, fn_call_2]
         second_fn_call_id_to_fn_output = {
             fn_call.id: None for fn_call in second_fn_calls
-        }
+        }        
         t4 = self.add_assistant_turn(
             agent_executor,
             model_provider,
@@ -828,6 +833,7 @@ class TestAgent:
         t3 = self.add_user_turn(
             agent_executor, "i want pecan latte", model_provider, True
         )
+        self.run_message_dict_assertions(agent_executor, model_provider)
 
         order = Order(
             item_orders=[ItemOrder(name="pecan latte", size=CupSize.VENTI, options=[])]
@@ -883,6 +889,7 @@ class TestAgent:
             "can you confirm the order?",
             is_stream,
         )
+        self.run_message_dict_assertions(agent_executor, model_provider)
 
         t6 = self.add_user_turn(
             agent_executor,
@@ -968,6 +975,7 @@ class TestAgent:
         t3 = self.add_user_turn(
             agent_executor, "i want pecan latte", model_provider, True
         )
+        self.run_message_dict_assertions(agent_executor, model_provider)
 
         order = Order(
             item_orders=[ItemOrder(name="pecan latte", size=CupSize.VENTI, options=[])]
@@ -1028,6 +1036,8 @@ class TestAgent:
             model_provider,
             True,
         )
+        self.run_message_dict_assertions(agent_executor, model_provider)
+
 
         fn_call_1 = FunctionCall.create_fake_fn_call(
             model_provider,
@@ -1074,6 +1084,8 @@ class TestAgent:
             "thanks for confirming",
             is_stream,
         )
+        self.run_message_dict_assertions(agent_executor, model_provider)
+
         t9 = self.add_user_turn(
             agent_executor,
             "actually, i want to change my order",
@@ -1123,6 +1135,8 @@ class TestAgent:
             "what do you want to change?",
             is_stream,
         )
+        self.run_message_dict_assertions(agent_executor, model_provider)
+
         t12 = self.add_user_turn(
             agent_executor,
             "nvm, nothing",
