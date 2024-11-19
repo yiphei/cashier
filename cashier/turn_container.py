@@ -1,10 +1,10 @@
 from typing import Any, Dict, List, Optional
 
 from cashier.graph import Node
+from cashier.model.message_list import MessageList
 from cashier.model.model_turn import (
     AnthropicMessageManager,
     AssistantTurn,
-    MessageList,
     MessageManager,
     ModelTurn,
     NodeSystemTurn,
