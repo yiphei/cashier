@@ -26,6 +26,7 @@ from cashier.tool.function_call_context import (
 from cashier.turn_container import TurnContainer
 from data.graph.cashier import cashier_graph_schema
 from data.tool_registry.cashier_tool_registry import CupSize, ItemOrder, Order
+from cashier.model.message_list import MessageList
 
 
 class TurnArgs(BaseModel):
@@ -310,6 +311,12 @@ class TestAgent:
             remove_prev_tool_calls=remove_prev_tool_calls,
             model_provider=model_provider,
         )
+    
+    @pytest.fixture(autouse=True)
+    def a_message_list(self, model_provider):
+        self.message_list = MessageList(model_provider=model_provider)
+        yield
+        self.message_list = None
 
     @pytest.fixture
     def start_turns(self, remove_prev_tool_calls):
@@ -368,39 +375,114 @@ class TestAgent:
         return request.param
     
     def build_user_turn_messages(self, user_turn, model_provider):
-        return [{"role": "user", "content": user_turn.msg_content}]
+        self.message_list.extend(user_turn.build_messages(model_provider), MessageList.ItemType.USER)
     
-    def build_assistant_turn_messages(self, assistant_turn, model_provider):
-        return [{"role": "assistant", "content": assistant_turn.msg_content}]
-    
-    def build_node_turn_messages(self, assistant_turn, model_provider):
-        return [{"role": "system", "content": assistant_turn.msg_content}] if model_provider != ModelProvider.ANTHROPIC else []
-    
-    def build_messages_from_turn(self, turn, model_provider):
-        if isinstance(turn, UserTurn):
-            return self.build_user_turn_messages(turn, model_provider)
-        elif isinstance(turn, AssistantTurn):
-            return self.build_assistant_turn_messages(turn, model_provider)
-        elif isinstance(turn, NodeSystemTurn):
-            return self.build_node_turn_messages(turn, model_provider)
+    def build_assistant_turn_messages(self, assistant_turn, model_provider):    
+        messages = assistant_turn.build_messages(model_provider)
+        if model_provider == ModelProvider.OPENAI:
+            for message in messages:
+                if message.get("tool_calls", None) is not None:
+                    tool_call_id = message["tool_calls"][0]["id"]
+                    curr_fn_name = message["tool_calls"][0]["function"]["name"]
+                    self.message_list.append(
+                        message, MessageList.ItemType.TOOL_CALL, tool_call_id
+                    )
+                elif message["role"] == "tool":
+                    tool_call_id = message["tool_call_id"]
+                    self.message_list.append(
+                        message,
+                        MessageList.ItemType.TOOL_OUTPUT,
+                        MessageList.get_tool_output_uri_from_tool_id(tool_call_id),
+                    )
+                elif message["role"] == "system" and curr_fn_name is not None:
+                    self.message_list.remove_by_uri(curr_fn_name, False)
+                    self.message_list.append(
+                        message, MessageList.ItemType.TOOL_OUTPUT_SCHEMA, curr_fn_name
+                    )
+                    curr_fn_name = None
+                else:
+                    self.message_list.append(message, MessageList.ItemType.ASSISTANT)
         else:
-            raise ValueError(f"Unknown turn type: {type(turn)}")
+            if len(messages) == 2:
+                [message_1, message_2] = messages
+            else:
+                [message_1] = messages
+                message_2 = None
+
+            contents = message_1["content"]
+            self.message_list.append(message_1)
+            has_fn_calls = False
+            if type(contents) == list:
+                for content in contents:
+                    if content["type"] == "tool_use":
+                        tool_call_id = content["id"]
+                        self.message_list.track_idx(
+                            MessageList.ItemType.TOOL_CALL, uri=tool_call_id
+                        )
+                        has_fn_calls = True
+
+            if not has_fn_calls:
+                self.message_list.track_idx(MessageList.ItemType.ASSISTANT)
+
+            if message_2 is not None:
+                self.message_list.append(message_2)
+                for content in message_2["content"]:
+                    if content["type"] == "tool_result":
+                        tool_id = content["tool_use_id"]
+                        self.message_list.track_idx(
+                            MessageList.ItemType.TOOL_OUTPUT,
+                            uri=MessageList.get_tool_output_uri_from_tool_id(tool_id),
+                        )
 
     
-    def get_messages_from_turns(self, turns, model_provider):
-        messages = []
-        for turn in turns:
-            target_turn = turn
-            if isinstance(turn, TurnArgs):
-                target_turn = turn.turn
-            messages.extend(self.build_messages_from_turn(target_turn, model_provider))
-        return messages
+    def build_node_turn_messages(self, node_turn, model_provider, remove_prev_fn_return_schema, remove_prev_tool_calls, is_skip):
+        if remove_prev_tool_calls:
+            assert remove_prev_fn_return_schema is not False
+
+        if remove_prev_fn_return_schema is True or remove_prev_tool_calls:
+            self.message_list.clear(MessageList.ItemType.TOOL_OUTPUT_SCHEMA)
+
+        if remove_prev_tool_calls:
+            self.message_list.clear(
+                [MessageList.ItemType.TOOL_CALL, MessageList.ItemType.TOOL_OUTPUT]
+            )
+
+        if model_provider == ModelProvider.OPENAI:
+            self.message_list.clear(MessageList.ItemType.NODE)
+            [msg] = node_turn.build_oai_messages()
+            if is_skip:
+                self.message_list.insert(
+                    len(self.message_list) - 1, msg, MessageList.ItemType.NODE
+                )
+            else:
+                self.message_list.append(msg, MessageList.ItemType.NODE)
+        else:
+            self.system = node_turn.msg_content
+
+            if is_skip:
+                self.message_list.track_idx(
+                    MessageList.ItemType.NODE, len(self.message_list) - 2
+                )
+            else:
+                self.message_list.track_idx(MessageList.ItemType.NODE)
+
+
+    def build_messages_from_turn(self, turn, model_provider, remove_prev_fn_return_schema=None, remove_prev_tool_calls=False,is_skip=False):
+        if isinstance(turn, UserTurn):
+            self.build_user_turn_messages(turn, model_provider)
+        elif isinstance(turn, AssistantTurn):
+            self.build_assistant_turn_messages(turn, model_provider)
+        elif isinstance(turn, NodeSystemTurn):
+            self.build_node_turn_messages(turn, model_provider, remove_prev_fn_return_schema, remove_prev_tool_calls, is_skip)
+        else:
+            raise ValueError(f"Unknown turn type: {type(turn)}")
 
     def test_graph_initialization(
         self, remove_prev_tool_calls, agent_executor, start_turns
     ):
-        messages = self.get_messages_from_turns(start_turns, agent_executor.model_provider)
-        assert not DeepDiff(messages, list(agent_executor.TC.model_provider_to_message_manager[agent_executor.model_provider].message_dicts))
+        self.build_messages_from_turn(start_turns[0].turn, agent_executor.model_provider)
+        self.build_messages_from_turn(start_turns[1], agent_executor.model_provider)
+        assert not DeepDiff(self.message_list, agent_executor.TC.model_provider_to_message_manager[agent_executor.model_provider].message_dicts)
 
         TC = self.create_turn_container(start_turns)
         assert not DeepDiff(
@@ -415,11 +497,11 @@ class TestAgent:
     def test_add_user_turn(
         self, model_provider, remove_prev_tool_calls, agent_executor, start_turns
     ):
-        messages = self.get_messages_from_turns(start_turns, model_provider)
+        self.build_messages_from_turn(start_turns[0].turn, model_provider)
+        self.build_messages_from_turn(start_turns[1], model_provider)
         user_turn = self.add_user_turn(agent_executor, "hello", model_provider, True)
-        messages.extend(self.build_messages_from_turn(user_turn, model_provider))
-
-        assert not DeepDiff(messages, list(agent_executor.TC.model_provider_to_message_manager[agent_executor.model_provider].message_dicts))
+        self.build_messages_from_turn(user_turn, model_provider)
+        assert not DeepDiff(self.message_list, agent_executor.TC.model_provider_to_message_manager[model_provider].message_dicts)
 
         TC = self.create_turn_container([*start_turns, user_turn])
         assert not DeepDiff(
@@ -438,9 +520,12 @@ class TestAgent:
         agent_executor,
         start_turns,
     ):
+        self.build_messages_from_turn(start_turns[0].turn, model_provider)
+        self.build_messages_from_turn(start_turns[1], model_provider)
         user_turn = self.add_user_turn(
             agent_executor, "hello", model_provider, False, 2
         )
+        self.build_messages_from_turn(user_turn, model_provider)
 
         fake_fn_call = FunctionCall(
             id=MODEL_PROVIDER_TO_TOOL_CALL_ID_PREFIX[model_provider]
@@ -458,6 +543,9 @@ class TestAgent:
             fn_calls=[fake_fn_call],
             fn_call_id_to_fn_output={fake_fn_call.id: None},
         )
+        self.build_messages_from_turn(assistant_turn, model_provider)
+
+        assert not DeepDiff(self.message_list, agent_executor.TC.model_provider_to_message_manager[model_provider].message_dicts)
 
         TC = self.create_turn_container([*start_turns, user_turn, assistant_turn])
 
@@ -478,10 +566,16 @@ class TestAgent:
         agent_executor,
         start_turns,
     ):
+        self.build_messages_from_turn(start_turns[0].turn, model_provider)
+        self.build_messages_from_turn(start_turns[1], model_provider)
+
         user_turn = self.add_user_turn(agent_executor, "hello", model_provider, True)
+        self.build_messages_from_turn(user_turn, model_provider)
         assistant_turn = self.add_assistant_turn(
             agent_executor, model_provider, "hello back", is_stream
         )
+        self.build_messages_from_turn(assistant_turn, model_provider)
+        assert not DeepDiff(self.message_list, agent_executor.TC.model_provider_to_message_manager[model_provider].message_dicts)
 
         TC = self.create_turn_container([*start_turns, user_turn, assistant_turn])
 
@@ -503,10 +597,15 @@ class TestAgent:
         agent_executor,
         start_turns,
     ):
+        self.build_messages_from_turn(start_turns[0].turn, model_provider)
+        self.build_messages_from_turn(start_turns[1], model_provider)
         user_turn = self.add_user_turn(agent_executor, "hello", model_provider, True)
+        self.build_messages_from_turn(user_turn, model_provider)
         assistant_turn = self.add_assistant_turn(
             agent_executor, model_provider, None, is_stream, tool_names=fn_names
         )
+        self.build_messages_from_turn(assistant_turn, model_provider)
+        assert not DeepDiff(self.message_list, agent_executor.TC.model_provider_to_message_manager[model_provider].message_dicts)
 
         TC = self.create_turn_container([*start_turns, user_turn, assistant_turn])
 
@@ -545,6 +644,8 @@ class TestAgent:
         agent_executor,
         start_turns,
     ):
+        self.build_messages_from_turn(start_turns[0].turn, model_provider)
+        self.build_messages_from_turn(start_turns[1], model_provider)
         fn_calls, fn_call_id_to_fn_output = self.create_fake_fn_calls(
             model_provider, other_fn_names, agent_executor.curr_node
         )
@@ -566,6 +667,9 @@ class TestAgent:
             fn_calls,
             fn_call_id_to_fn_output,
         )
+        self.build_messages_from_turn(assistant_turn, model_provider)
+
+        assert not DeepDiff(self.message_list, agent_executor.TC.model_provider_to_message_manager[model_provider].message_dicts)
 
         TC = self.create_turn_container([*start_turns, assistant_turn])
 
@@ -587,7 +691,10 @@ class TestAgent:
         agent_executor,
         start_turns,
     ):
+        self.build_messages_from_turn(start_turns[0].turn, model_provider)
+        self.build_messages_from_turn(start_turns[1], model_provider)
         t1 = self.add_user_turn(agent_executor, "hello", model_provider, True)
+        self.build_messages_from_turn(t1, model_provider)
         t2 = self.add_assistant_turn(
             agent_executor,
             model_provider,
@@ -595,9 +702,11 @@ class TestAgent:
             is_stream,
             tool_names=fn_names,
         )
+        self.build_messages_from_turn(t2, model_provider)
         t3 = self.add_user_turn(
             agent_executor, "i want pecan latte", model_provider, True
         )
+        self.build_messages_from_turn(t3, model_provider)
 
         order = Order(
             item_orders=[ItemOrder(name="pecan latte", size=CupSize.VENTI, options=[])]
@@ -624,6 +733,7 @@ class TestAgent:
             second_fn_calls,
             second_fn_call_id_to_fn_output,
         )
+        self.build_messages_from_turn(t4, model_provider)
 
         next_node_schema = cashier_graph_schema.from_node_schema_id_to_edge_schema[
             self.start_node_schema.id
@@ -641,6 +751,9 @@ class TestAgent:
             ),
             kwargs={"remove_prev_tool_calls": remove_prev_tool_calls},
         )
+        self.build_messages_from_turn(node_turn.turn, model_provider, remove_prev_tool_calls=remove_prev_tool_calls)
+
+        assert not DeepDiff(self.message_list, agent_executor.TC.model_provider_to_message_manager[model_provider].message_dicts)
 
         TC = self.create_turn_container(
             [
@@ -671,8 +784,10 @@ class TestAgent:
         agent_executor,
         start_turns,
     ):
-
+        self.build_messages_from_turn(start_turns[0].turn, model_provider)
+        self.build_messages_from_turn(start_turns[1], model_provider)
         t1 = self.add_user_turn(agent_executor, "hello", model_provider, True)
+        self.build_messages_from_turn(t1, model_provider)
         t2 = self.add_assistant_turn(
             agent_executor,
             model_provider,
@@ -680,9 +795,11 @@ class TestAgent:
             is_stream,
             tool_names=fn_names,
         )
+        self.build_messages_from_turn(t2, model_provider)
         t3 = self.add_user_turn(
             agent_executor, "i want pecan latte", model_provider, True
         )
+        self.build_messages_from_turn(t3, model_provider)
 
         order = Order(
             item_orders=[ItemOrder(name="pecan latte", size=CupSize.VENTI, options=[])]
@@ -709,20 +826,7 @@ class TestAgent:
             second_fn_calls,
             second_fn_call_id_to_fn_output,
         )
-        t5 = self.add_assistant_turn(
-            agent_executor,
-            model_provider,
-            "can you confirm the order?",
-            is_stream,
-        )
-
-        t6 = self.add_user_turn(
-            agent_executor,
-            "i want to change order",
-            model_provider,
-            False,
-            bwd_skip_node_schema_id=self.start_node_schema.id,
-        )
+        self.build_messages_from_turn(t4, model_provider)
 
         next_node_schema = cashier_graph_schema.from_node_schema_id_to_edge_schema[
             self.start_node_schema.id
@@ -740,6 +844,24 @@ class TestAgent:
             ),
             kwargs={"remove_prev_tool_calls": remove_prev_tool_calls},
         )
+        self.build_messages_from_turn(node_turn_1.turn, model_provider, remove_prev_tool_calls=remove_prev_tool_calls)
+
+        t5 = self.add_assistant_turn(
+            agent_executor,
+            model_provider,
+            "can you confirm the order?",
+            is_stream,
+        )
+        self.build_messages_from_turn(t5, model_provider)
+
+        t6 = self.add_user_turn(
+            agent_executor,
+            "i want to change order",
+            model_provider,
+            False,
+            bwd_skip_node_schema_id=self.start_node_schema.id,
+        )
+        self.build_messages_from_turn(t6, model_provider)
 
         node_turn_2 = TurnArgs(
             turn=NodeSystemTurn(
@@ -754,6 +876,7 @@ class TestAgent:
             ),
             kwargs={"remove_prev_tool_calls": remove_prev_tool_calls, "is_skip": True},
         )
+        self.build_messages_from_turn(node_turn_2.turn, model_provider, remove_prev_tool_calls=remove_prev_tool_calls, is_skip=True)
 
         get_state_fn_call = FunctionCall(
             id=MODEL_PROVIDER_TO_TOOL_CALL_ID_PREFIX[model_provider]
@@ -770,6 +893,9 @@ class TestAgent:
                 get_state_fn_call.id: agent_executor.curr_node.state
             },
         )
+        self.build_messages_from_turn(t7, model_provider)
+
+        assert not DeepDiff(self.message_list, agent_executor.TC.model_provider_to_message_manager[model_provider].message_dicts)
 
         TC = self.create_turn_container(
             [
@@ -804,8 +930,10 @@ class TestAgent:
         agent_executor,
         start_turns,
     ):
-
+        self.build_messages_from_turn(start_turns[0].turn, model_provider)
+        self.build_messages_from_turn(start_turns[1], model_provider)
         t1 = self.add_user_turn(agent_executor, "hello", model_provider, True)
+        self.build_messages_from_turn(t1, model_provider)
         t2 = self.add_assistant_turn(
             agent_executor,
             model_provider,
@@ -813,9 +941,11 @@ class TestAgent:
             is_stream,
             tool_names=fn_names,
         )
+        self.build_messages_from_turn(t2, model_provider)
         t3 = self.add_user_turn(
             agent_executor, "i want pecan latte", model_provider, True
         )
+        self.build_messages_from_turn(t3, model_provider)
 
         order = Order(
             item_orders=[ItemOrder(name="pecan latte", size=CupSize.VENTI, options=[])]
@@ -842,6 +972,7 @@ class TestAgent:
             second_fn_calls,
             second_fn_call_id_to_fn_output,
         )
+        self.build_messages_from_turn(t4, model_provider)
         next_node_schema = cashier_graph_schema.from_node_schema_id_to_edge_schema[
             self.start_node_schema.id
         ][0].to_node_schema
@@ -858,12 +989,14 @@ class TestAgent:
             ),
             kwargs={"remove_prev_tool_calls": remove_prev_tool_calls},
         )
+        self.build_messages_from_turn(node_turn_1.turn, model_provider, remove_prev_tool_calls=remove_prev_tool_calls)
         t5 = self.add_assistant_turn(
             agent_executor,
             model_provider,
             "can you confirm the order?",
             is_stream,
         )
+        self.build_messages_from_turn(t5, model_provider)
 
         t6 = self.add_user_turn(
             agent_executor,
@@ -871,6 +1004,7 @@ class TestAgent:
             model_provider,
             True,
         )
+        self.build_messages_from_turn(t6, model_provider)
 
         fn_call_1 = FunctionCall.create_fake_fn_call(
             model_provider,
@@ -889,6 +1023,7 @@ class TestAgent:
             third_fn_calls,
             third_fn_calls_fn_call_id_to_fn_output,
         )
+        self.build_messages_from_turn(t7, model_provider)
 
         next_next_node_schema = cashier_graph_schema.from_node_schema_id_to_edge_schema[
             next_node_schema.id
@@ -906,12 +1041,14 @@ class TestAgent:
             ),
             kwargs={"remove_prev_tool_calls": remove_prev_tool_calls},
         )
+        self.build_messages_from_turn(node_turn_2.turn, model_provider, remove_prev_tool_calls=remove_prev_tool_calls)
         t8 = self.add_assistant_turn(
             agent_executor,
             model_provider,
             "thanks for confirming",
             is_stream,
         )
+        self.build_messages_from_turn(t8, model_provider)
         t9 = self.add_user_turn(
             agent_executor,
             "actually, i want to change my order",
@@ -920,6 +1057,7 @@ class TestAgent:
             bwd_skip_node_schema_id=self.start_node_schema.id,
             include_fwd_skip_node_schema_id=False,
         )
+        self.build_messages_from_turn(t9, model_provider)
         node_turn_3 = TurnArgs(
             turn=NodeSystemTurn(
                 msg_content=self.start_node_schema.node_system_prompt(
@@ -933,6 +1071,7 @@ class TestAgent:
             ),
             kwargs={"remove_prev_tool_calls": remove_prev_tool_calls, "is_skip": True},
         )
+        self.build_messages_from_turn(node_turn_3.turn, model_provider, remove_prev_tool_calls=remove_prev_tool_calls, is_skip=True)
         get_state_fn_call = FunctionCall(
             id=MODEL_PROVIDER_TO_TOOL_CALL_ID_PREFIX[model_provider]
             + self.rand_tool_ids.popleft(),
@@ -948,12 +1087,14 @@ class TestAgent:
                 get_state_fn_call.id: agent_executor.curr_node.state
             },
         )
+        self.build_messages_from_turn(t10, model_provider)
         t11 = self.add_assistant_turn(
             agent_executor,
             model_provider,
             "what do you want to change?",
             is_stream,
         )
+        self.build_messages_from_turn(t11, model_provider)
         t12 = self.add_user_turn(
             agent_executor,
             "nvm, nothing",
@@ -961,6 +1102,7 @@ class TestAgent:
             False,
             bwd_skip_node_schema_id=2,
         )
+        self.build_messages_from_turn(t12, model_provider)
         node_turn_4 = TurnArgs(
             turn=NodeSystemTurn(
                 msg_content=next_node_schema.node_system_prompt(
@@ -974,6 +1116,7 @@ class TestAgent:
             ),
             kwargs={"remove_prev_tool_calls": remove_prev_tool_calls, "is_skip": True},
         )
+        self.build_messages_from_turn(node_turn_4.turn, model_provider, remove_prev_tool_calls=remove_prev_tool_calls, is_skip=True)
         get_state_fn_call = FunctionCall(
             id=MODEL_PROVIDER_TO_TOOL_CALL_ID_PREFIX[model_provider]
             + self.rand_tool_ids.popleft(),
@@ -989,6 +1132,7 @@ class TestAgent:
                 get_state_fn_call.id: agent_executor.curr_node.state
             },
         )
+        self.build_messages_from_turn(t13, model_provider)
 
         TC = self.create_turn_container(
             [
@@ -1012,6 +1156,8 @@ class TestAgent:
                 t13,
             ],
         )
+
+        assert not DeepDiff(self.message_list, agent_executor.TC.model_provider_to_message_manager[model_provider].message_dicts)
 
         assert not DeepDiff(
             agent_executor.get_model_completion_kwargs(),
