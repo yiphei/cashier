@@ -318,10 +318,16 @@ class TestAgent:
         )
 
     @pytest.fixture(autouse=True)
-    def a_message_list(self, model_provider):
+    def setup_message_dicts(self, model_provider):
         self.message_list = MessageList(model_provider=model_provider)
         yield
         self.message_list = None
+
+    @pytest.fixture(autouse=True)
+    def setup_start_message_list(self, start_turns, setup_message_dicts, model_provider):
+        self.build_messages_from_turn(start_turns[0].turn, model_provider)
+        self.build_messages_from_turn(start_turns[1], model_provider)
+
 
     @pytest.fixture
     def start_turns(self, remove_prev_tool_calls):
@@ -505,10 +511,6 @@ class TestAgent:
     def test_graph_initialization(
         self, remove_prev_tool_calls, agent_executor, start_turns
     ):
-        self.build_messages_from_turn(
-            start_turns[0].turn, agent_executor.model_provider
-        )
-        self.build_messages_from_turn(start_turns[1], agent_executor.model_provider)
         assert not DeepDiff(
             self.message_list,
             agent_executor.TC.model_provider_to_message_manager[
@@ -529,8 +531,6 @@ class TestAgent:
     def test_add_user_turn(
         self, model_provider, remove_prev_tool_calls, agent_executor, start_turns
     ):
-        self.build_messages_from_turn(start_turns[0].turn, model_provider)
-        self.build_messages_from_turn(start_turns[1], model_provider)
         user_turn = self.add_user_turn(agent_executor, "hello", model_provider, True)
 
         assert not DeepDiff(
@@ -557,8 +557,6 @@ class TestAgent:
         agent_executor,
         start_turns,
     ):
-        self.build_messages_from_turn(start_turns[0].turn, model_provider)
-        self.build_messages_from_turn(start_turns[1], model_provider)
         user_turn = self.add_user_turn(
             agent_executor, "hello", model_provider, False, 2
         )
@@ -607,8 +605,6 @@ class TestAgent:
         agent_executor,
         start_turns,
     ):
-        self.build_messages_from_turn(start_turns[0].turn, model_provider)
-        self.build_messages_from_turn(start_turns[1], model_provider)
 
         user_turn = self.add_user_turn(agent_executor, "hello", model_provider, True)
         assistant_turn = self.add_assistant_turn(
@@ -641,8 +637,6 @@ class TestAgent:
         agent_executor,
         start_turns,
     ):
-        self.build_messages_from_turn(start_turns[0].turn, model_provider)
-        self.build_messages_from_turn(start_turns[1], model_provider)
         user_turn = self.add_user_turn(agent_executor, "hello", model_provider, True)
         assistant_turn = self.add_assistant_turn(
             agent_executor, model_provider, None, is_stream, tool_names=fn_names
@@ -691,8 +685,6 @@ class TestAgent:
         agent_executor,
         start_turns,
     ):
-        self.build_messages_from_turn(start_turns[0].turn, model_provider)
-        self.build_messages_from_turn(start_turns[1], model_provider)
         fn_calls, fn_call_id_to_fn_output = self.create_fake_fn_calls(
             model_provider, other_fn_names, agent_executor.curr_node
         )
@@ -742,8 +734,6 @@ class TestAgent:
         agent_executor,
         start_turns,
     ):
-        self.build_messages_from_turn(start_turns[0].turn, model_provider)
-        self.build_messages_from_turn(start_turns[1], model_provider)
         t1 = self.add_user_turn(agent_executor, "hello", model_provider, True)
         t2 = self.add_assistant_turn(
             agent_executor,
@@ -840,8 +830,6 @@ class TestAgent:
         agent_executor,
         start_turns,
     ):
-        self.build_messages_from_turn(start_turns[0].turn, model_provider)
-        self.build_messages_from_turn(start_turns[1], model_provider)
         t1 = self.add_user_turn(agent_executor, "hello", model_provider, True)
         t2 = self.add_assistant_turn(
             agent_executor,
@@ -994,8 +982,6 @@ class TestAgent:
         agent_executor,
         start_turns,
     ):
-        self.build_messages_from_turn(start_turns[0].turn, model_provider)
-        self.build_messages_from_turn(start_turns[1], model_provider)
         t1 = self.add_user_turn(agent_executor, "hello", model_provider, True)
         t2 = self.add_assistant_turn(
             agent_executor,
