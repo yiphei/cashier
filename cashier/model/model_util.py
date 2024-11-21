@@ -127,8 +127,8 @@ class FunctionCall(BaseModel):
         return FunctionCall(
             name=name,
             id_model_provider=id_model_provider,
-            input_args_json=args_json,
-            input_args=args,
+            args_json=args_json,
+            args=args,
             **id_args,
         )
 
