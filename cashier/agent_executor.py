@@ -42,12 +42,10 @@ class AgentExecutor:
 
     def __init__(
         self,
-        elevenlabs_client: Any,
         graph_schema: GraphSchema,
         audio_output: bool,
         remove_prev_tool_calls: bool,
     ):
-        self.elevenlabs_client = elevenlabs_client
         self.graph_schema = graph_schema
         self.remove_prev_tool_calls = remove_prev_tool_calls
         self.audio_output = audio_output
@@ -332,7 +330,7 @@ class AgentExecutor:
         message = model_completion.get_or_stream_message()
         if message is not None:
             if self.audio_output:
-                get_speech_from_text(message, self.elevenlabs_client)
+                get_speech_from_text(message)
                 MessageDisplay.display_assistant_message(
                     cast(str, model_completion.msg_content)
                 )

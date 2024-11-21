@@ -371,7 +371,6 @@ class TestAgent:
     @pytest.fixture
     def agent_executor(self, remove_prev_tool_calls):
         return AgentExecutor(
-            elevenlabs_client=None,
             graph_schema=cashier_graph_schema,
             audio_output=False,
             remove_prev_tool_calls=remove_prev_tool_calls,
