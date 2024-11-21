@@ -32,13 +32,11 @@ def get_user_input(use_audio_input: bool) -> str:
 
 
 def run_chat(args: Namespace, elevenlabs_client: Any) -> None:
-    model_provider = Model.get_model_provider(args.model)
     AE = AgentExecutor(
         elevenlabs_client,
         cashier_graph_schema,
         args.audio_output,
         args.remove_prev_tool_calls,
-        model_provider,
     )
 
     while True:
