@@ -9,6 +9,7 @@ from cashier.graph.edge_schema import EdgeSchema
 from cashier.graph.graph_schema import Graph, GraphSchema
 from cashier.graph.node_schema import Direction, Node, NodeSchema
 from cashier.gui import MessageDisplay
+from cashier.is_off_topic_action import IsOffTopicAction
 from cashier.logger import logger
 from cashier.model.model_completion import Model, ModelName, ModelOutput
 from cashier.model.model_turn import AssistantTurn
@@ -19,11 +20,12 @@ from cashier.tool.function_call_context import (
     InexistentFunctionError,
 )
 from cashier.turn_container import TurnContainer
-from cashier.is_off_topic_action import IsOffTopicAction
 
 
 def is_on_topic(TM: TurnContainer, current_node_schema: NodeSchema) -> bool:
-    return IsOffTopicAction.run("claude-3.5",current_node_schema=current_node_schema, tc=TM )
+    return IsOffTopicAction.run(
+        "claude-3.5", current_node_schema=current_node_schema, tc=TM
+    )
 
 
 def should_skip_node_schema(

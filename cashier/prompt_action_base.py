@@ -1,12 +1,14 @@
 from __future__ import annotations
 
-from cashier.model.model_completion import ModelName, Model
 from abc import ABC, abstractmethod
+
+from cashier.model.model_completion import Model, ModelName
+
 
 class PromptActionBase(ABC):
     # TODO: fix these to raise NotImplemenetedError
-    prompt = None 
-    input_kwargs=None
+    prompt = None
+    input_kwargs = None
 
     @classmethod
     @abstractmethod
@@ -15,7 +17,7 @@ class PromptActionBase(ABC):
 
     @classmethod
     @abstractmethod
-    def get_output(cls, model_provider,chat_completion, input):
+    def get_output(cls, model_provider, chat_completion, input):
         raise NotImplementedError
 
     @classmethod
@@ -27,8 +29,5 @@ class PromptActionBase(ABC):
         if "response_format" not in args and cls.prompt.response_format is not None:
             args["response_format"] = cls.prompt.response_format
 
-        chat_completion = Model.chat(
-            model_name=model_name,
-            **args
-        )
+        chat_completion = Model.chat(model_name=model_name, **args)
         return cls.get_output(model_provider, chat_completion, input)

@@ -1,12 +1,14 @@
-from cashier.graph.node_schema import NodeSchema
-from cashier.model.model_util import ModelProvider
-from cashier.prompts.off_topic import OffTopicPrompt
 import copy
-from pydantic import BaseModel, ConfigDict
 import json
-from cashier.turn_container import TurnContainer
+
+from pydantic import BaseModel, ConfigDict
+
+from cashier.graph.node_schema import NodeSchema
 from cashier.logger import logger
+from cashier.model.model_util import ModelProvider
 from cashier.prompt_action_base import PromptActionBase
+from cashier.prompts.off_topic import OffTopicPrompt
+from cashier.turn_container import TurnContainer
 
 
 class Input(BaseModel):
@@ -15,9 +17,10 @@ class Input(BaseModel):
     current_node_schema: NodeSchema
     tc: TurnContainer
 
+
 class IsOffTopicAction(PromptActionBase):
-    prompt= OffTopicPrompt
-    input_kwargs= Input
+    prompt = OffTopicPrompt
+    input_kwargs = Input
 
     @classmethod
     def get_model_completion_args(cls, model_provider, input):
@@ -45,12 +48,10 @@ class IsOffTopicAction(PromptActionBase):
         elif model_provider == ModelProvider.OPENAI:
             node_conv_msgs.append({"role": "system", "content": prompt})
 
-        return {"message_dicts":node_conv_msgs,
-            "logprobs": True,
-            "temperature":0}
+        return {"message_dicts": node_conv_msgs, "logprobs": True, "temperature": 0}
 
     @classmethod
-    def get_output(cls, model_provider,chat_completion, input):
+    def get_output(cls, model_provider, chat_completion, input):
         is_on_topic = chat_completion.get_message_prop("output")
         if model_provider == ModelProvider.OPENAI:
             prob = chat_completion.get_prob(-2)  # type: ignore
