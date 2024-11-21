@@ -1,15 +1,14 @@
+import os
 import queue
 import tempfile
 import threading
 import time
 import wave
 from typing import Any, Iterator, Optional, Union
-import os
 
 import numpy as np
 import pyaudio
-from elevenlabs import Voice, VoiceSettings, stream
-from elevenlabs import ElevenLabs
+from elevenlabs import ElevenLabs, Voice, VoiceSettings, stream
 
 from cashier.gui import remove_previous_line
 from cashier.logger import logger
@@ -33,8 +32,6 @@ stop_recording_event = (
 )  # Event to signal when to stop the recording thread
 
 
-
-
 class ElevenLabsClient:
     _client: Optional[ElevenLabs] = None
 
@@ -42,15 +39,14 @@ class ElevenLabsClient:
     def initialize(cls) -> None:
         if cls._client is None:
             cls._client = ElevenLabs(
-        api_key=os.getenv("ELEVENLABS_API_KEY"),
-    )
+                api_key=os.getenv("ELEVENLABS_API_KEY"),
+            )
 
     @classmethod
     def get_client(cls) -> ElevenLabs:
         if cls._client is None:
             raise RuntimeError("Client not initialized. Call initialize() first.")
         return cls._client
-
 
 
 def is_silent(data: bytes) -> bool:
@@ -144,9 +140,7 @@ def get_text_from_speech(audio_data: bytes, oai_client: Any) -> str:
     return transcription.text
 
 
-def get_speech_from_text(
-    text_iterator: Union[str, Iterator[str]]
-) -> None:
+def get_speech_from_text(text_iterator: Union[str, Iterator[str]]) -> None:
     audio = ElevenLabsClient.get_client().generate(
         voice=Voice(
             voice_id="cgSgspJ2msm6clMCkdW9",

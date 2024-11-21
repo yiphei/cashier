@@ -1,11 +1,8 @@
 import argparse
-import os
 from argparse import Namespace
 from distutils.util import strtobool
-from typing import Any
 
 from dotenv import load_dotenv  # Add this import
-from elevenlabs import ElevenLabs
 
 from cashier.agent_executor import AgentExecutor
 from cashier.audio import ElevenLabsClient, get_audio_input, get_text_from_speech
