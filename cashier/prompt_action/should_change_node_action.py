@@ -21,7 +21,7 @@ class Input(BaseModel):
     is_wait: bool
 
 
-class SholdSkipNodeAction(PromptActionBase[Input]):
+class ShouldChangeNodeAction(PromptActionBase[Input]):
     prompt = NodeSchemaSelectionPrompt
     input_kwargs = Input
 

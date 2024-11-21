@@ -13,7 +13,7 @@ from cashier.model.model_completion import ModelOutput
 from cashier.model.model_turn import AssistantTurn
 from cashier.model.model_util import CustomJSONEncoder, FunctionCall, ModelProvider
 from cashier.prompt_action.is_off_topic_action import IsOffTopicAction
-from cashier.prompt_action.should_skip_node_action import SholdSkipNodeAction
+from cashier.prompt_action.should_change_node_action import ShouldChangeNodeAction
 from cashier.tool.function_call_context import (
     FunctionCallContext,
     InexistentFunctionError,
@@ -35,7 +35,7 @@ def should_skip_node_schema(
 ) -> Optional[int]:
     if len(all_node_schemas) == 1:
         return None
-    return SholdSkipNodeAction.run(
+    return ShouldChangeNodeAction.run(
         "claude-3.5",
         current_node_schema=current_node_schema,
         tc=TM,
