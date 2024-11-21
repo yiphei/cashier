@@ -18,10 +18,8 @@ from typing import (
     overload,
 )
 
-import anthropic
 import numpy as np
 from anthropic.types.raw_message_stream_event import RawMessageStreamEvent
-from openai import OpenAI
 from openai.types.chat.chat_completion_chunk import (
     ChatCompletionChunk,
     ChoiceDeltaToolCall,
