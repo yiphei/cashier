@@ -1,6 +1,6 @@
 import copy
 import json
-from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Union, cast
+from typing import Any, Callable, Dict, Optional, Set, Tuple, Union, cast
 
 from colorama import Style
 
@@ -67,7 +67,7 @@ def is_on_topic(TM: TurnContainer, current_node_schema: NodeSchema) -> bool:
 def should_skip_node_schema(
     TM: TurnContainer,
     current_node_schema: NodeSchema,
-    all_node_schemas: List[NodeSchema],
+    all_node_schemas: Set[NodeSchema],
     is_wait: bool,
 ) -> Optional[int]:
     if len(all_node_schemas) == 1:
@@ -234,9 +234,9 @@ class AgentExecutor:
         fwd_skip_edge_schemas: Set[EdgeSchema],
         bwd_skip_edge_schemas: Set[EdgeSchema],
     ) -> Union[Tuple[EdgeSchema, NodeSchema], Tuple[None, None]]:
-        all_node_schemas = [self.curr_node.schema]
-        all_node_schemas += [edge.to_node_schema for edge in fwd_skip_edge_schemas]
-        all_node_schemas += [edge.from_node_schema for edge in bwd_skip_edge_schemas]
+        all_node_schemas = {self.curr_node.schema}
+        all_node_schemas.update(edge.to_node_schema for edge in fwd_skip_edge_schemas)
+        all_node_schemas.update(edge.from_node_schema for edge in bwd_skip_edge_schemas)
 
         node_schema_id = should_skip_node_schema(
             self.TC, self.curr_node.schema, all_node_schemas, False
@@ -274,8 +274,8 @@ class AgentExecutor:
             - bwd_skip_edge_schemas
         )
 
-        all_node_schemas = [self.curr_node.schema]
-        all_node_schemas += [edge.to_node_schema for edge in remaining_edge_schemas]
+        all_node_schemas = {self.curr_node.schema}
+        all_node_schemas.update(edge.to_node_schema for edge in remaining_edge_schemas)
 
         node_schema_id = should_skip_node_schema(
             self.TC, self.curr_node.schema, all_node_schemas, True
