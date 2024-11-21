@@ -1,6 +1,7 @@
 from __future__ import annotations
+
 from enum import StrEnum
-from typing import Any, Callable, NamedTuple, Optional, Tuple, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Callable, NamedTuple, Optional, Tuple
 
 from pydantic import BaseModel
 

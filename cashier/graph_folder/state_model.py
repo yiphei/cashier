@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from pydantic import BaseModel, ConfigDict
-
 import copy
+
+from pydantic import BaseModel, ConfigDict
 
 
 class BaseStateModel(BaseModel):
