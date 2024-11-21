@@ -9,7 +9,7 @@ from deepdiff import DeepDiff
 from pydantic import BaseModel, Field
 
 from cashier.agent_executor import AgentExecutor
-from cashier.graph import Node
+from cashier.graph.node_schema import Node
 from cashier.model.message_list import MessageList
 from cashier.model.model_client import AnthropicModelOutput, Model, OAIModelOutput
 from cashier.model.model_turn import AssistantTurn, ModelTurn, NodeSystemTurn, UserTurn

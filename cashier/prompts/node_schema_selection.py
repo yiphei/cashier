@@ -3,7 +3,7 @@ from typing import List
 
 from pydantic import BaseModel
 
-from cashier.graph import NodeSchema
+from cashier.graph.node_schema import NodeSchema
 from cashier.model.model_util import ModelProvider
 from cashier.prompts.base_prompt import BasePrompt
 

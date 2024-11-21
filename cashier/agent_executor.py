@@ -5,7 +5,9 @@ from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Union, cast
 from colorama import Style
 
 from cashier.audio import get_speech_from_text
-from cashier.graph import Direction, EdgeSchema, Graph, GraphSchema, Node, NodeSchema
+from cashier.graph.edge_schema import EdgeSchema
+from cashier.graph.graph_schema import Graph, GraphSchema
+from cashier.graph.node_schema import Direction, Node, NodeSchema
 from cashier.gui import MessageDisplay
 from cashier.logger import logger
 from cashier.model.model_client import Model, ModelName, ModelOutput
