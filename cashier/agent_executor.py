@@ -321,7 +321,7 @@ class AgentExecutor:
             if edge_schema and node_schema:
                 if is_wait:
                     fake_fn_call = FunctionCall.create(
-                        id_model_provider=None,
+                        api_id_model_provider=None,
                         name="think",
                         args={
                             "thought": "At least part of the customer request/question is off-topic for the current conversation and will actually be addressed later. According to the policies, I must tell the customer that 1) their off-topic request/question will be addressed later and 2) we must finish the current business before we can get to it. I must refuse to engage with the off-topic request/question in any way."
@@ -341,7 +341,7 @@ class AgentExecutor:
                     )
 
                     fake_fn_call = FunctionCall.create(
-                        id_model_provider=None, name="get_state", args={}
+                        api_id_model_provider=None, name="get_state", args={}
                     )
                     self.TC.add_assistant_turn(
                         None,

@@ -10,6 +10,7 @@ from typing import Any, Dict, Optional, cast
 from pydantic import BaseModel, Field, model_validator
 
 from cashier.tool.function_call_context import ToolExceptionWrapper
+import uuid
 
 
 class ModelProvider(StrEnum):
@@ -64,10 +65,11 @@ MODEL_PROVIDER_TO_TOOL_CALL_ID_PREFIX = {
 
 
 class FunctionCall(BaseModel):
-    id_model_provider: Optional[ModelProvider]  # None means that it was faked
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    api_id_model_provider: Optional[ModelProvider]  # None means that it was faked
     name: str
-    oai_id: str
-    anthropic_id: str
+    oai_api_id: str
+    anthropic_api_id: str
     # when using model_dump, must add by_alias=True to get the alias names
     input_args_json: Optional[str] = Field(default=None, alias="args_json")
     input_args: Optional[Dict] = Field(default=None, alias="args")
@@ -100,46 +102,46 @@ class FunctionCall(BaseModel):
     def create(
         cls,
         name: str,
-        id_model_provider: Optional[ModelProvider],
-        id: Optional[str],
+        api_id_model_provider: Optional[ModelProvider],
+        api_id: Optional[str],
         args_json: Optional[str] = None,
         args: Optional[Dict] = None,
     ) -> FunctionCall:
-        if id_model_provider == ModelProvider.OPENAI:
-            assert id is not None
+        if api_id_model_provider == ModelProvider.OPENAI:
+            assert api_id is not None
             id_args = {
-                "oai_id": id,
-                "anthropic_id": cls.generate_fake_id(ModelProvider.ANTHROPIC, id),
+                "oai_api_id": api_id,
+                "anthropic_api_id": cls.generate_fake_id(ModelProvider.ANTHROPIC, api_id),
             }
-        elif id_model_provider == ModelProvider.ANTHROPIC:
-            assert id is not None
+        elif api_id_model_provider == ModelProvider.ANTHROPIC:
+            assert api_id is not None
             id_args = {
-                "oai_id": cls.generate_fake_id(ModelProvider.OPENAI, id),
-                "anthropic_id": id,
+                "oai_api_id": cls.generate_fake_id(ModelProvider.OPENAI, api_id),
+                "anthropic_api_id": api_id,
             }
         else:
-            oai_id = cls.generate_fake_id(ModelProvider.OPENAI, id)
+            oai_id = cls.generate_fake_id(ModelProvider.OPENAI, api_id)
             id_args = {
-                "oai_id": oai_id,
-                "anthropic_id": cls.generate_fake_id(ModelProvider.ANTHROPIC, oai_id),
+                "oai_api_id": oai_id,
+                "anthropic_api_id": cls.generate_fake_id(ModelProvider.ANTHROPIC, oai_id),
             }
 
         return FunctionCall(
             name=name,
-            id_model_provider=id_model_provider,
+            api_id_model_provider=api_id_model_provider,
             args_json=args_json,
             args=args,
             **id_args,
         )
 
     @property
-    def id(self) -> str:
-        if self.id_model_provider == ModelProvider.OPENAI:
-            return self.oai_id
-        elif self.id_model_provider == ModelProvider.ANTHROPIC:
-            return self.anthropic_id
+    def api_id(self) -> str:
+        if self.api_id_model_provider == ModelProvider.OPENAI:
+            return self.oai_api_id
+        elif self.api_id_model_provider == ModelProvider.ANTHROPIC:
+            return self.anthropic_api_id
         else:
-            return self.oai_id
+            return self.oai_api_id
 
     # the following is to pass mypy checks
 

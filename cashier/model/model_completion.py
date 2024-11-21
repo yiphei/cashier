@@ -430,8 +430,8 @@ class ModelOutput(ABC, Generic[ModelResponseChunkType]):
                 if tool_call_id is not None:
                     fn_call = FunctionCall.create(
                         name=function_name,
-                        id=tool_call_id,
-                        id_model_provider=self.model_provider,
+                        api_id=tool_call_id,
+                        api_id_model_provider=self.model_provider,
                         args_json=function_args_json,
                     )
                     self.fn_calls.append(fn_call)
@@ -447,8 +447,8 @@ class ModelOutput(ABC, Generic[ModelResponseChunkType]):
             assert function_name is not None
             fn_call = FunctionCall.create(
                 name=function_name,
-                id_model_provider=self.model_provider,
-                id=tool_call_id,
+                api_id_model_provider=self.model_provider,
+                api_id=tool_call_id,
                 args_json=function_args_json,
             )
 
@@ -531,8 +531,8 @@ class OAIModelOutput(ModelOutput[ChatCompletionChunk]):
         for tool_call in tool_calls:
             fn_call = FunctionCall.create(
                 name=tool_call.function.name,
-                id_model_provider=self.model_provider,
-                id=tool_call.id,
+                api_id_model_provider=self.model_provider,
+                api_id=tool_call.id,
                 args_json=tool_call.function.arguments,
             )
             if tool_call.id not in self.fn_call_ids:
@@ -608,8 +608,8 @@ class AnthropicModelOutput(ModelOutput[RawMessageStreamEvent]):
             if content.type == "tool_use":
                 fn_call = FunctionCall.create(
                     name=content.name,
-                    id_model_provider=self.model_provider,
-                    id=content.id,
+                    api_id_model_provider=self.model_provider,
+                    api_id=content.id,
                     args=content.input,
                 )
                 if content.id not in self.fn_call_ids:
