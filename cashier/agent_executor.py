@@ -243,8 +243,8 @@ class AgentExecutor:
         MessageDisplay.print_msg("user", msg)
         self.TC.add_user_turn(msg)
         if not IsOffTopicAction.run(
-        "claude-3.5", current_node_schema=self.curr_node.schema, tc=self.TC
-    ):
+            "claude-3.5", current_node_schema=self.curr_node.schema, tc=self.TC
+        ):
             edge_schema, node_schema, is_wait = self.handle_is_off_topic()
             if edge_schema and node_schema:
                 if is_wait:
