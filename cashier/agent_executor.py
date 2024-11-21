@@ -21,12 +21,6 @@ from cashier.tool.function_call_context import (
 from cashier.turn_container import TurnContainer
 
 
-def is_on_topic(TM: TurnContainer, current_node_schema: NodeSchema) -> bool:
-    return IsOffTopicAction.run(
-        "claude-3.5", current_node_schema=current_node_schema, tc=TM
-    )
-
-
 def should_skip_node_schema(
     TM: TurnContainer,
     current_node_schema: NodeSchema,
@@ -248,7 +242,9 @@ class AgentExecutor:
     ) -> None:
         MessageDisplay.print_msg("user", msg)
         self.TC.add_user_turn(msg)
-        if not is_on_topic(self.TC, self.curr_node.schema):
+        if not IsOffTopicAction.run(
+        "claude-3.5", current_node_schema=self.curr_node.schema, tc=self.TC
+    ):
             edge_schema, node_schema, is_wait = self.handle_is_off_topic()
             if edge_schema and node_schema:
                 if is_wait:
