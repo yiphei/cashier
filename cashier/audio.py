@@ -11,7 +11,7 @@ from elevenlabs import Voice, VoiceSettings, stream
 
 from cashier.gui import remove_previous_line
 from cashier.logger import logger
-from cashier.model.model_other import ModelClient
+from cashier.model.model_client import ModelClient
 from cashier.model.model_util import ModelProvider
 
 # Settings for audio recording
