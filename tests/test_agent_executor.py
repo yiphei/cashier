@@ -1,3 +1,4 @@
+import uuid
 from collections import defaultdict, deque
 from contextlib import ExitStack, contextmanager
 from io import StringIO
@@ -42,28 +43,36 @@ class TestAgent:
         Node._counter = 0
         self.start_node_schema = cashier_graph_schema.start_node_schema
         self.rand_tool_ids = deque()
+        self.rand_uuids = deque()
         self.model_chat_patcher = patch("cashier.model.model_completion.Model.chat")
         self.model_chat = self.model_chat_patcher.start()
 
         yield
 
         self.rand_tool_ids.clear()
+        self.rand_uuids.clear()
         self.stdout_patcher.stop()
         self.model_chat_patcher.stop()
 
     @contextmanager
     def generate_random_string_context(self):
         original_generate_random_string = generate_random_string
+        original_uuid4 = uuid.uuid4
 
         def capture_fn_call(*args, **kwargs):
             output = original_generate_random_string(*args, **kwargs)
             self.rand_tool_ids.append(output)
             return output
 
+        def capture_uuid_call(*args, **kwargs):
+            output = original_uuid4(*args, **kwargs)
+            self.rand_uuids.append(str(output))
+            return output
+
         with patch(
             "cashier.model.model_util.generate_random_string",
             side_effect=capture_fn_call,
-        ):
+        ), patch("cashier.model.model_util.uuid.uuid4", side_effect=capture_uuid_call):
             yield
 
     def create_turn_container(self, turn_args_list):
@@ -155,6 +164,27 @@ class TestAgent:
                 model_completion.get_prob = Mock(return_value=prob)
         return model_completion
 
+    def recreate_fake_single_fn_call(self, fn_name, args):
+        id = self.rand_uuids.popleft()
+        oai_api_id = (
+            MODEL_PROVIDER_TO_TOOL_CALL_ID_PREFIX[ModelProvider.OPENAI]
+            + self.rand_tool_ids.popleft()
+        )
+        anthropic_api_id = (
+            MODEL_PROVIDER_TO_TOOL_CALL_ID_PREFIX[ModelProvider.ANTHROPIC]
+            + self.rand_tool_ids.popleft()
+        )
+        fn = FunctionCall(
+            id=id,
+            name=fn_name,
+            oai_api_id=oai_api_id,
+            anthropic_api_id=anthropic_api_id,
+            api_id_model_provider=None,
+            args=args,
+        )
+        fn.model_fields_set.remove("id")
+        return fn
+
     def create_fake_fn_calls(self, model_provider, fn_names, node):
         fn_calls = []
         tool_registry = node.schema.tool_registry
@@ -176,9 +206,10 @@ class TestAgent:
                 )
                 args = {field_name: default_value}
 
-            fn_call = FunctionCall.create_fake_fn_call(
-                model_provider,
-                fn_name,
+            fn_call = FunctionCall.create(
+                api_id_model_provider=model_provider,
+                api_id=FunctionCall.generate_fake_id(model_provider),
+                name=fn_name,
                 args=args,
             )
             fn_calls.append(fn_call)
@@ -609,11 +640,9 @@ class TestAgent:
             agent_executor, "hello", model_provider, False, 2
         )
 
-        fake_fn_call = FunctionCall(
-            id=MODEL_PROVIDER_TO_TOOL_CALL_ID_PREFIX[model_provider]
-            + self.rand_tool_ids.popleft(),
-            name="think",
-            args={
+        fake_fn_call = self.recreate_fake_single_fn_call(
+            "think",
+            {
                 "thought": "At least part of the customer request/question is off-topic for the current conversation and will actually be addressed later. According to the policies, I must tell the customer that 1) their off-topic request/question will be addressed later and 2) we must finish the current business before we can get to it. I must refuse to engage with the off-topic request/question in any way."
             },
         )
@@ -702,8 +731,11 @@ class TestAgent:
         fn_calls, fn_call_id_to_fn_output = self.create_fake_fn_calls(
             model_provider, other_fn_names, agent_executor.curr_node
         )
-        fn_call = FunctionCall.create_fake_fn_call(
-            model_provider, name="update_state_order", args={"order": None}
+        fn_call = FunctionCall.create(
+            name="update_state_order",
+            args={"order": None},
+            api_id_model_provider=model_provider,
+            api_id=FunctionCall.generate_fake_id(model_provider),
         )
         fn_calls.append(fn_call)
         fn_call_id_to_fn_output[fn_call.id] = ToolExceptionWrapper(
@@ -752,13 +784,15 @@ class TestAgent:
         order = Order(
             item_orders=[ItemOrder(name="pecan latte", size=CupSize.VENTI, options=[])]
         )
-        fn_call_1 = FunctionCall.create_fake_fn_call(
-            model_provider,
+        fn_call_1 = FunctionCall.create(
+            api_id_model_provider=model_provider,
+            api_id=FunctionCall.generate_fake_id(model_provider),
             name="update_state_order",
             args={"order": order.model_dump()},
         )
-        fn_call_2 = FunctionCall.create_fake_fn_call(
-            model_provider,
+        fn_call_2 = FunctionCall.create(
+            api_id_model_provider=model_provider,
+            api_id=FunctionCall.generate_fake_id(model_provider),
             name="update_state_has_finished_ordering",
             args={"has_finished_ordering": True},
         )
@@ -837,13 +871,15 @@ class TestAgent:
         order = Order(
             item_orders=[ItemOrder(name="pecan latte", size=CupSize.VENTI, options=[])]
         )
-        fn_call_1 = FunctionCall.create_fake_fn_call(
-            model_provider,
+        fn_call_1 = FunctionCall.create(
+            api_id_model_provider=model_provider,
+            api_id=FunctionCall.generate_fake_id(model_provider),
             name="update_state_order",
             args={"order": order.model_dump()},
         )
-        fn_call_2 = FunctionCall.create_fake_fn_call(
-            model_provider,
+        fn_call_2 = FunctionCall.create(
+            api_id_model_provider=model_provider,
+            api_id=FunctionCall.generate_fake_id(model_provider),
             name="update_state_has_finished_ordering",
             args={"has_finished_ordering": True},
         )
@@ -918,12 +954,11 @@ class TestAgent:
             is_skip=True,
         )
 
-        get_state_fn_call = FunctionCall(
-            id=MODEL_PROVIDER_TO_TOOL_CALL_ID_PREFIX[model_provider]
-            + self.rand_tool_ids.popleft(),
-            name="get_state",
-            args={},
+        get_state_fn_call = self.recreate_fake_single_fn_call(
+            "get_state",
+            {},
         )
+
         t7 = AssistantTurn(
             msg_content=None,
             model_provider=model_provider,
@@ -979,13 +1014,15 @@ class TestAgent:
         order = Order(
             item_orders=[ItemOrder(name="pecan latte", size=CupSize.VENTI, options=[])]
         )
-        fn_call_1 = FunctionCall.create_fake_fn_call(
-            model_provider,
+        fn_call_1 = FunctionCall.create(
+            api_id_model_provider=model_provider,
+            api_id=FunctionCall.generate_fake_id(model_provider),
             name="update_state_order",
             args={"order": order.model_dump()},
         )
-        fn_call_2 = FunctionCall.create_fake_fn_call(
-            model_provider,
+        fn_call_2 = FunctionCall.create(
+            api_id_model_provider=model_provider,
+            api_id=FunctionCall.generate_fake_id(model_provider),
             name="update_state_has_finished_ordering",
             args={"has_finished_ordering": True},
         )
@@ -1037,8 +1074,9 @@ class TestAgent:
         )
         self.run_message_dict_assertions(agent_executor, model_provider)
 
-        fn_call_1 = FunctionCall.create_fake_fn_call(
-            model_provider,
+        fn_call_1 = FunctionCall.create(
+            api_id_model_provider=model_provider,
+            api_id=FunctionCall.generate_fake_id(model_provider),
             name="update_state_has_confirmed_order",
             args={"has_confirmed_order": True},
         )
@@ -1111,12 +1149,7 @@ class TestAgent:
             remove_prev_tool_calls=remove_prev_tool_calls,
             is_skip=True,
         )
-        get_state_fn_call = FunctionCall(
-            id=MODEL_PROVIDER_TO_TOOL_CALL_ID_PREFIX[model_provider]
-            + self.rand_tool_ids.popleft(),
-            name="get_state",
-            args={},
-        )
+        get_state_fn_call = self.recreate_fake_single_fn_call("get_state", {})
         t10 = AssistantTurn(
             msg_content=None,
             model_provider=model_provider,
@@ -1161,12 +1194,7 @@ class TestAgent:
             remove_prev_tool_calls=remove_prev_tool_calls,
             is_skip=True,
         )
-        get_state_fn_call = FunctionCall(
-            id=MODEL_PROVIDER_TO_TOOL_CALL_ID_PREFIX[model_provider]
-            + self.rand_tool_ids.popleft(),
-            name="get_state",
-            args={},
-        )
+        get_state_fn_call = self.recreate_fake_single_fn_call("get_state", {})
         t13 = AssistantTurn(
             msg_content=None,
             model_provider=model_provider,

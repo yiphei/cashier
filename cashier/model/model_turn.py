@@ -101,12 +101,13 @@ class AssistantTurn(ModelTurn):
             for fn_call in self.fn_calls:
                 assert self.fn_call_id_to_fn_output is not None
                 assert self.tool_registry is not None
+                api_id = fn_call.oai_api_id
                 messages.append(
                     {
                         "role": "assistant",
                         "tool_calls": [
                             {
-                                "id": fn_call.id,
+                                "id": api_id,
                                 "type": "function",
                                 "function": {
                                     "arguments": fn_call.args_json,
@@ -123,7 +124,7 @@ class AssistantTurn(ModelTurn):
                             self.fn_call_id_to_fn_output[fn_call.id],
                             cls=CustomJSONEncoder,
                         ),
-                        "tool_call_id": fn_call.id,
+                        "tool_call_id": api_id,
                     }
                 )
 
@@ -156,7 +157,7 @@ class AssistantTurn(ModelTurn):
                 contents.append(
                     {
                         "type": "tool_use",
-                        "id": fn_call.id,
+                        "id": fn_call.anthropic_api_id,
                         "name": fn_call.name,
                         "input": fn_call.args,
                     }
@@ -178,7 +179,7 @@ class AssistantTurn(ModelTurn):
                             cls=CustomJSONEncoder,
                         ),
                         "type": "tool_result",
-                        "tool_use_id": fn_call.id,
+                        "tool_use_id": fn_call.anthropic_api_id,
                         "is_error": isinstance(
                             self.fn_call_id_to_fn_output[fn_call.id],
                             ToolExceptionWrapper,

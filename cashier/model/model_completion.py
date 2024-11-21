@@ -10,7 +10,6 @@ from typing import (
     List,
     Literal,
     Optional,
-    Set,
     Type,
     TypeVar,
     Union,
@@ -320,7 +319,7 @@ class ModelOutput(ABC, Generic[ModelResponseChunkType]):
         self.msg_content: Optional[str] = None
         self.last_chunk: Optional[ModelResponseChunkType] = None
         self.fn_calls: List[FunctionCall] = []
-        self.fn_call_ids: Set[str] = set()
+        self.fn_api_id_to_fn_call: Dict[str, FunctionCall] = {}
 
     @property
     @abstractmethod
@@ -428,9 +427,10 @@ class ModelOutput(ABC, Generic[ModelResponseChunkType]):
         for chunk in itertools.chain([self.last_chunk], self.output_obj):
             if self.has_function_call_id(chunk):
                 if tool_call_id is not None:
-                    fn_call = FunctionCall(
+                    fn_call = FunctionCall.create(
                         name=function_name,
-                        id=tool_call_id,
+                        api_id=tool_call_id,
+                        api_id_model_provider=self.model_provider,
                         args_json=function_args_json,
                     )
                     self.fn_calls.append(fn_call)
@@ -444,9 +444,10 @@ class ModelOutput(ABC, Generic[ModelResponseChunkType]):
 
         if tool_call_id is not None:
             assert function_name is not None
-            fn_call = FunctionCall(
+            fn_call = FunctionCall.create(
                 name=function_name,
-                id=tool_call_id,
+                api_id_model_provider=self.model_provider,
+                api_id=tool_call_id,
                 args_json=function_args_json,
             )
 
@@ -527,14 +528,17 @@ class OAIModelOutput(ModelOutput[ChatCompletionChunk]):
     def get_fn_calls(self) -> Iterator[FunctionCall]:
         tool_calls = self.output_obj.choices[0].message.tool_calls or []
         for tool_call in tool_calls:
-            fn_call = FunctionCall(
-                name=tool_call.function.name,
-                id=tool_call.id,
-                args_json=tool_call.function.arguments,
-            )
-            if tool_call.id not in self.fn_call_ids:
+            if tool_call.id not in self.fn_api_id_to_fn_call:
+                fn_call = FunctionCall.create(
+                    name=tool_call.function.name,
+                    api_id_model_provider=self.model_provider,
+                    api_id=tool_call.id,
+                    args_json=tool_call.function.arguments,
+                )
                 self.fn_calls.append(fn_call)
-                self.fn_call_ids.add(tool_call.id)
+                self.fn_api_id_to_fn_call[tool_call.id] = fn_call
+            else:
+                fn_call = self.fn_api_id_to_fn_call[tool_call.id]
             yield fn_call
 
 
@@ -603,12 +607,15 @@ class AnthropicModelOutput(ModelOutput[RawMessageStreamEvent]):
     def get_fn_calls(self) -> Iterator[FunctionCall]:
         for content in self.output_obj.content:
             if content.type == "tool_use":
-                fn_call = FunctionCall(
-                    name=content.name,
-                    id=content.id,
-                    args=content.input,
-                )
-                if content.id not in self.fn_call_ids:
+                if content.id not in self.fn_api_id_to_fn_call:
+                    fn_call = FunctionCall.create(
+                        name=content.name,
+                        api_id_model_provider=self.model_provider,
+                        api_id=content.id,
+                        args=content.input,
+                    )
                     self.fn_calls.append(fn_call)
-                    self.fn_call_ids.add(content.id)
+                    self.fn_api_id_to_fn_call[content.id] = fn_call
+                else:
+                    fn_call = self.fn_api_id_to_fn_call[content.id]
                 yield fn_call
