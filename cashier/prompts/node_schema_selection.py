@@ -1,5 +1,5 @@
 import json
-from typing import List
+from typing import Set
 
 from pydantic import BaseModel
 
@@ -18,7 +18,7 @@ class NodeSchemaSelectionPrompt(BasePrompt):
 
     def dynamic_prompt(  # type: ignore
         self,
-        all_node_schemas: List[NodeSchema],
+        all_node_schemas: Set[NodeSchema],
         model_provider: ModelProvider,
         last_customer_msg: str,
     ) -> str:
@@ -47,7 +47,7 @@ class NodeSchemaSelectionPrompt(BasePrompt):
         prompt += (
             "All agents share the following background:\n"  # type: ignore
             "<background>\n"
-            f"{all_node_schemas[0].node_system_prompt.BACKGROUND_PROMPT()}\n"
+            f"{next(iter(all_node_schemas)).node_system_prompt.BACKGROUND_PROMPT()}\n"
             "</background>\n\n"
             "Given a conversation with a customer and the list above of AI agents with their attributes, "
             "determine which AI agent can best continue the conversation, especially given last customer message, in accordance with the universal guidelines defined in <guidelines>. "
