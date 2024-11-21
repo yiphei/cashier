@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import random
 import string
+import uuid
 from collections import defaultdict
 from enum import StrEnum
 from typing import Any, Dict, Optional, cast
@@ -10,7 +11,6 @@ from typing import Any, Dict, Optional, cast
 from pydantic import BaseModel, Field, model_validator
 
 from cashier.tool.function_call_context import ToolExceptionWrapper
-import uuid
 
 
 class ModelProvider(StrEnum):
@@ -111,7 +111,9 @@ class FunctionCall(BaseModel):
             assert api_id is not None
             id_args = {
                 "oai_api_id": api_id,
-                "anthropic_api_id": cls.generate_fake_id(ModelProvider.ANTHROPIC, api_id),
+                "anthropic_api_id": cls.generate_fake_id(
+                    ModelProvider.ANTHROPIC, api_id
+                ),
             }
         elif api_id_model_provider == ModelProvider.ANTHROPIC:
             assert api_id is not None
@@ -123,7 +125,9 @@ class FunctionCall(BaseModel):
             oai_id = cls.generate_fake_id(ModelProvider.OPENAI, api_id)
             id_args = {
                 "oai_api_id": oai_id,
-                "anthropic_api_id": cls.generate_fake_id(ModelProvider.ANTHROPIC, oai_id),
+                "anthropic_api_id": cls.generate_fake_id(
+                    ModelProvider.ANTHROPIC, oai_id
+                ),
             }
 
         return FunctionCall(
