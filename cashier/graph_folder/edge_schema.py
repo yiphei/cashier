@@ -1,9 +1,12 @@
+from __future__ import annotations
 from enum import StrEnum
-from typing import Any, Callable, NamedTuple, Optional, Tuple
+from typing import Any, Callable, NamedTuple, Optional, Tuple, TYPE_CHECKING
 
 from pydantic import BaseModel
 
-from cashier.graph_folder.node_schema import Node, NodeSchema
+if TYPE_CHECKING:
+    from cashier.graph_folder.node_schema import Node, NodeSchema
+
 from cashier.graph_folder.state_model import BaseStateModel
 
 
