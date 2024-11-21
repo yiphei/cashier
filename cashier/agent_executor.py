@@ -121,13 +121,12 @@ class AgentExecutor:
         graph_schema: GraphSchema,
         audio_output: bool,
         remove_prev_tool_calls: bool,
-        model_provider: ModelProvider,  # TODO: remove this and allow model provider (thus model name) to change mid-conversation
     ):
         self.elevenlabs_client = elevenlabs_client
         self.graph_schema = graph_schema
         self.remove_prev_tool_calls = remove_prev_tool_calls
         self.audio_output = audio_output
-        self.model_provider = model_provider
+        self.last_model_provider = None
         self.TC = TurnContainer()
 
         self.curr_node = None  # type: Node # type: ignore
@@ -313,7 +312,9 @@ class AgentExecutor:
         )
         return edge_schema, node_schema, False  # type: ignore
 
-    def add_user_turn(self, msg: str) -> None:
+    def add_user_turn(
+        self, msg: str, model_provider: Optional[ModelProvider] = None
+    ) -> None:
         MessageDisplay.print_msg("user", msg)
         self.TC.add_user_turn(msg)
         if not is_on_topic(self.TC, self.curr_node.schema):
@@ -330,7 +331,9 @@ class AgentExecutor:
                     )
                     self.TC.add_assistant_turn(
                         None,
-                        self.model_provider,
+                        model_provider
+                        or self.last_model_provider
+                        or ModelProvider.OPENAI,
                         self.curr_node.schema.tool_registry,
                         [fake_fn_call],
                         {fake_fn_call.id: None},
@@ -349,7 +352,9 @@ class AgentExecutor:
                     )
                     self.TC.add_assistant_turn(
                         None,
-                        self.model_provider,
+                        model_provider
+                        or self.last_model_provider
+                        or ModelProvider.OPENAI,
                         self.curr_node.schema.tool_registry,
                         [fake_fn_call],
                         {fake_fn_call.id: self.curr_node.get_state()},
@@ -396,6 +401,7 @@ class AgentExecutor:
     def add_assistant_turn(
         self, model_completion: ModelOutput, fn_callback: Optional[Callable] = None
     ) -> None:
+        self.last_model_provider = model_completion.model_provider
         message = model_completion.get_or_stream_message()
         if message is not None:
             if self.audio_output:

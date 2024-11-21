@@ -269,7 +269,7 @@ class TestAgent:
 
         self.model_chat.side_effect = model_chat_side_effects
         with self.generate_random_string_context():
-            agent_executor.add_user_turn(message)
+            agent_executor.add_user_turn(message, model_provider)
 
         ut = UserTurn(msg_content=message)
         self.build_messages_from_turn(ut, model_provider)
@@ -369,13 +369,12 @@ class TestAgent:
         return at
 
     @pytest.fixture
-    def agent_executor(self, model_provider, remove_prev_tool_calls):
+    def agent_executor(self, remove_prev_tool_calls):
         return AgentExecutor(
             elevenlabs_client=None,
             graph_schema=cashier_graph_schema,
             audio_output=False,
             remove_prev_tool_calls=remove_prev_tool_calls,
-            model_provider=model_provider,
         )
 
     @pytest.fixture(autouse=True)
