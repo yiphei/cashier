@@ -1,5 +1,5 @@
 from enum import StrEnum
-from typing import Any, Callable, NamedTuple, Optional, Tuple, Union
+from typing import Any, Callable, NamedTuple, Optional, Tuple
 
 from pydantic import BaseModel
 
