@@ -99,16 +99,12 @@ class FunctionCall(BaseModel):
     @classmethod
     def create(
         cls,
-        name,
+        name: str,
         id_model_provider: Optional[ModelProvider],
         id: Optional[str],
         args_json: Optional[str] = None,
         args: Optional[Dict] = None,
     ) -> FunctionCall:
-        id_arg_name = (
-            "oai_id" if id_model_provider == ModelProvider.OPENAI else "anthropic_id"
-        )
-        id_args = {id_arg_name: id}
         if id_model_provider == ModelProvider.OPENAI:
             assert id is not None
             id_args = {
