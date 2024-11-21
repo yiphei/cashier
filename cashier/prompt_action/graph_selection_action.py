@@ -25,8 +25,8 @@ class GraphSelectionAction(PromptActionBase[Input]):
         cls, model_provider: ModelProvider, input: Input
     ) -> Dict[str, Any]:
         prompt = cls.prompt(
-                    graph_schemas =  input.graph_schemas,
-        request = input.request,
+            graph_schemas=input.graph_schemas,
+            request=input.request,
         )
 
         msgs = [{"role": "user", "content": prompt}]
