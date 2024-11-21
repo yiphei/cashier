@@ -8,7 +8,7 @@ from dotenv import load_dotenv  # Add this import
 from elevenlabs import ElevenLabs
 
 from cashier.agent_executor import AgentExecutor
-from cashier.audio import get_audio_input, get_text_from_speech
+from cashier.audio import ElevenLabsClient, get_audio_input, get_text_from_speech
 from cashier.db import DBClient
 from cashier.gui import remove_previous_line
 from cashier.logger import logger
@@ -31,9 +31,8 @@ def get_user_input(use_audio_input: bool) -> str:
     return text_input
 
 
-def run_chat(args: Namespace, elevenlabs_client: Any) -> None:
+def run_chat(args: Namespace) -> None:
     AE = AgentExecutor(
-        elevenlabs_client,
         cashier_graph_schema,
         args.audio_output,
         args.remove_prev_tool_calls,
@@ -96,13 +95,11 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    elevenlabs_client = ElevenLabs(
-        api_key=os.getenv("ELEVENLABS_API_KEY"),
-    )
+    ElevenLabsClient.initialize()
 
     DBClient.initialize()
     ModelClient.initialize()
 
     if not args.enable_logging:
         logger.disabled = True
-    run_chat(args, elevenlabs_client)
+    run_chat(args)
