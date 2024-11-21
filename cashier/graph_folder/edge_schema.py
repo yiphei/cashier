@@ -3,7 +3,8 @@ from typing import Any, Callable, NamedTuple, Optional, Tuple
 
 from pydantic import BaseModel
 
-from cashier.graph_folder.node_schema import BaseStateModel, Node, NodeSchema
+from cashier.graph_folder.node_schema import Node, NodeSchema
+from cashier.graph_folder.state_model import BaseStateModel
 
 
 class BwdStateInit(StrEnum):

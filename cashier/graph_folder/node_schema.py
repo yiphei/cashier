@@ -1,34 +1,17 @@
 from __future__ import annotations
 
-import copy
 from enum import StrEnum
 from typing import Any, List, Literal, Optional, Type, Union, cast, overload
 
 from openai.types.chat.chat_completion_tool_param import ChatCompletionToolParam
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel
 
 from cashier.graph_folder.edge_schema import BwdStateInit, EdgeSchema, FwdStateInit
+from cashier.graph_folder.state_model import BaseStateModel
 from cashier.model.model_turn import ModelTurn
 from cashier.prompts.node_system import NodeSystemPrompt
 from cashier.tool.function_call_context import StateUpdateError
 from cashier.tool.tool_registry import ToolRegistry
-
-
-class BaseStateModel(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
-    def copy_resume(self) -> BaseStateModel:
-        new_data = copy.deepcopy(dict(self))
-
-        # Iterate through fields and reset those marked as resettable
-        for field_name, field_info in self.model_fields.items():
-            # Check if field has the resettable marker in its metadata
-            if field_info.json_schema_extra and field_info.json_schema_extra.get(
-                "resettable"
-            ):
-                new_data[field_name] = field_info.default
-
-        return self.__class__(**new_data)
 
 
 class Direction(StrEnum):
