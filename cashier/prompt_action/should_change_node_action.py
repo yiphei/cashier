@@ -30,11 +30,11 @@ class ShouldChangeNodeAction(PromptActionBase[Input]):
         cls, model_provider: ModelProvider, input: Input
     ) -> Dict[str, Any]:
         all_node_schemas = input.all_node_schemas
-        TM = input.tc
+        tc = input.tc
         node_conv_msgs = copy.deepcopy(
-            TM.model_provider_to_message_manager[model_provider].node_conversation_dicts
+            tc.model_provider_to_message_manager[model_provider].node_conversation_dicts
         )
-        last_customer_msg = TM.get_user_message(content_only=True)
+        last_customer_msg = tc.get_user_message(content_only=True)
 
         prompt = NodeSchemaSelectionPrompt(
             all_node_schemas=all_node_schemas,
