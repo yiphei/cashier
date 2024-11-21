@@ -1,9 +1,9 @@
+import uuid
 from collections import defaultdict, deque
 from contextlib import ExitStack, contextmanager
 from io import StringIO
 from typing import Any, Dict
 from unittest.mock import Mock, call, patch
-import uuid
 
 import pytest
 from deepdiff import DeepDiff
@@ -67,13 +67,12 @@ class TestAgent:
         def capture_uuid_call(*args, **kwargs):
             output = original_uuid4(*args, **kwargs)
             self.rand_uuids.append(str(output))
-            return output   
-
+            return output
 
         with patch(
             "cashier.model.model_util.generate_random_string",
             side_effect=capture_fn_call,
-        ), patch('cashier.model.model_util.uuid.uuid4', side_effect=capture_uuid_call):
+        ), patch("cashier.model.model_util.uuid.uuid4", side_effect=capture_uuid_call):
             yield
 
     def create_turn_container(self, turn_args_list):
@@ -167,17 +166,23 @@ class TestAgent:
 
     def recreate_fake_single_fn_call(self, fn_name, args):
         id = self.rand_uuids.popleft()
-        oai_api_id = MODEL_PROVIDER_TO_TOOL_CALL_ID_PREFIX[ModelProvider.OPENAI] + self.rand_tool_ids.popleft()
-        anthropic_api_id = MODEL_PROVIDER_TO_TOOL_CALL_ID_PREFIX[ModelProvider.ANTHROPIC] + self.rand_tool_ids.popleft()
+        oai_api_id = (
+            MODEL_PROVIDER_TO_TOOL_CALL_ID_PREFIX[ModelProvider.OPENAI]
+            + self.rand_tool_ids.popleft()
+        )
+        anthropic_api_id = (
+            MODEL_PROVIDER_TO_TOOL_CALL_ID_PREFIX[ModelProvider.ANTHROPIC]
+            + self.rand_tool_ids.popleft()
+        )
         fn = FunctionCall(
-            id = id,
-            name = fn_name,
+            id=id,
+            name=fn_name,
             oai_api_id=oai_api_id,
-            anthropic_api_id= anthropic_api_id,
+            anthropic_api_id=anthropic_api_id,
             api_id_model_provider=None,
             args=args,
         )
-        fn.model_fields_set.remove('id')
+        fn.model_fields_set.remove("id")
         return fn
 
     def create_fake_fn_calls(self, model_provider, fn_names, node):
@@ -636,7 +641,10 @@ class TestAgent:
         )
 
         fake_fn_call = self.recreate_fake_single_fn_call(
-            "think", {"thought": "At least part of the customer request/question is off-topic for the current conversation and will actually be addressed later. According to the policies, I must tell the customer that 1) their off-topic request/question will be addressed later and 2) we must finish the current business before we can get to it. I must refuse to engage with the off-topic request/question in any way."}
+            "think",
+            {
+                "thought": "At least part of the customer request/question is off-topic for the current conversation and will actually be addressed later. According to the policies, I must tell the customer that 1) their off-topic request/question will be addressed later and 2) we must finish the current business before we can get to it. I must refuse to engage with the off-topic request/question in any way."
+            },
         )
 
         assistant_turn = AssistantTurn(
@@ -724,9 +732,10 @@ class TestAgent:
             model_provider, other_fn_names, agent_executor.curr_node
         )
         fn_call = FunctionCall.create(
-             name="update_state_order", args={"order": None},
-                api_id_model_provider=model_provider,
-                api_id=FunctionCall.generate_fake_id(model_provider),
+            name="update_state_order",
+            args={"order": None},
+            api_id_model_provider=model_provider,
+            api_id=FunctionCall.generate_fake_id(model_provider),
         )
         fn_calls.append(fn_call)
         fn_call_id_to_fn_output[fn_call.id] = ToolExceptionWrapper(
@@ -1140,9 +1149,7 @@ class TestAgent:
             remove_prev_tool_calls=remove_prev_tool_calls,
             is_skip=True,
         )
-        get_state_fn_call = self.recreate_fake_single_fn_call(
-            "get_state",{}
-        )
+        get_state_fn_call = self.recreate_fake_single_fn_call("get_state", {})
         t10 = AssistantTurn(
             msg_content=None,
             model_provider=model_provider,
@@ -1187,10 +1194,7 @@ class TestAgent:
             remove_prev_tool_calls=remove_prev_tool_calls,
             is_skip=True,
         )
-        get_state_fn_call = self.recreate_fake_single_fn_call(
-            "get_state",
-            {}
-        )
+        get_state_fn_call = self.recreate_fake_single_fn_call("get_state", {})
         t13 = AssistantTurn(
             msg_content=None,
             model_provider=model_provider,

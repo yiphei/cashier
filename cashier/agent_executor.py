@@ -343,7 +343,9 @@ class AgentExecutor:
 
                     fake_fn_call = FunctionCall.create(
                         api_id=None,
-                        api_id_model_provider=None, name="get_state", args={}
+                        api_id_model_provider=None,
+                        name="get_state",
+                        args={},
                     )
                     self.TC.add_assistant_turn(
                         None,
