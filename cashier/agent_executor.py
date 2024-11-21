@@ -23,7 +23,7 @@ from cashier.turn_container import TurnContainer
 
 
 def is_on_topic(
-    model: Model, TM: TurnContainer, current_node_schema: NodeSchema
+    TM: TurnContainer, current_node_schema: NodeSchema
 ) -> bool:
     model_name: ModelName = "claude-3.5"
     model_provider = Model.get_model_provider(model_name)
@@ -49,7 +49,7 @@ def is_on_topic(
     elif model_provider == ModelProvider.OPENAI:
         node_conv_msgs.append({"role": "system", "content": prompt})
 
-    chat_completion = model.chat(
+    chat_completion = Model.chat(
         model_name=model_name,
         message_dicts=node_conv_msgs,
         response_format=OffTopicPrompt.response_format,
@@ -67,7 +67,6 @@ def is_on_topic(
 
 
 def should_skip_node_schema(
-    model: Model,
     TM: TurnContainer,
     current_node_schema: NodeSchema,
     all_node_schemas: List[NodeSchema],
@@ -93,7 +92,7 @@ def should_skip_node_schema(
     elif model_provider == ModelProvider.OPENAI:
         node_conv_msgs.append({"role": "system", "content": prompt})
 
-    chat_completion = model.chat(
+    chat_completion = Model.chat(
         model_name=model_name,
         message_dicts=node_conv_msgs,
         response_format=NodeSchemaSelectionPrompt.response_format,
@@ -120,14 +119,12 @@ class AgentExecutor:
 
     def __init__(
         self,
-        model: Model,
         elevenlabs_client: Any,
         graph_schema: GraphSchema,
         audio_output: bool,
         remove_prev_tool_calls: bool,
         model_provider: ModelProvider,  # TODO: remove this and allow model provider (thus model name) to change mid-conversation
     ):
-        self.model = model
         self.elevenlabs_client = elevenlabs_client
         self.graph_schema = graph_schema
         self.remove_prev_tool_calls = remove_prev_tool_calls
@@ -245,7 +242,7 @@ class AgentExecutor:
         all_node_schemas += [edge.from_node_schema for edge in bwd_skip_edge_schemas]
 
         node_schema_id = should_skip_node_schema(
-            self.model, self.TC, self.curr_node.schema, all_node_schemas, False
+         self.TC, self.curr_node.schema, all_node_schemas, False
         )
 
         if node_schema_id is not None:
@@ -284,7 +281,7 @@ class AgentExecutor:
         all_node_schemas += [edge.to_node_schema for edge in remaining_edge_schemas]
 
         node_schema_id = should_skip_node_schema(
-            self.model, self.TC, self.curr_node.schema, all_node_schemas, True
+            self.TC, self.curr_node.schema, all_node_schemas, True
         )
 
         if node_schema_id is not None:
@@ -321,7 +318,7 @@ class AgentExecutor:
     def add_user_turn(self, msg: str) -> None:
         MessageDisplay.print_msg("user", msg)
         self.TC.add_user_turn(msg)
-        if not is_on_topic(self.model, self.TC, self.curr_node.schema):
+        if not is_on_topic(self.TC, self.curr_node.schema):
             edge_schema, node_schema, is_wait = self.handle_is_off_topic()
             if edge_schema and node_schema:
                 if is_wait:

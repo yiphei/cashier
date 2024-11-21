@@ -37,18 +37,19 @@ class TurnArgs(BaseModel):
 class TestAgent:
     @pytest.fixture(autouse=True)
     def setup(self):
-        self.model = Mock(spec=Model)
         self.stdout_patcher = patch("sys.stdout", new_callable=StringIO)
         self.stdout_patcher.start()
         Node._counter = 0
         self.start_node_schema = cashier_graph_schema.start_node_schema
         self.rand_tool_ids = deque()
+        self.model_chat_patcher = patch("cashier.model.model_completion.Model.chat")
+        self.model_chat = self.model_chat_patcher.start()
 
         yield
 
         self.rand_tool_ids.clear()
         self.stdout_patcher.stop()
-        self.model.reset_mock()
+        self.model_chat_patcher.stop()
 
     @contextmanager
     def generate_random_string_context(self):
@@ -235,7 +236,7 @@ class TestAgent:
                 )
                 model_chat_side_effects.append(bwd_skip_model_completion)
 
-        self.model.chat.side_effect = model_chat_side_effects
+        self.model_chat.side_effect = model_chat_side_effects
         with self.generate_random_string_context():
             agent_executor.add_user_turn(message)
 
@@ -339,7 +340,6 @@ class TestAgent:
     @pytest.fixture
     def agent_executor(self, model_provider, remove_prev_tool_calls):
         return AgentExecutor(
-            model=self.model,
             elevenlabs_client=None,
             graph_schema=cashier_graph_schema,
             audio_output=False,

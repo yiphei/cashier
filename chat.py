@@ -31,10 +31,9 @@ def get_user_input(use_audio_input: bool) -> str:
     return text_input
 
 
-def run_chat(args: Namespace, model: Model, elevenlabs_client: Any) -> None:
+def run_chat(args: Namespace, elevenlabs_client: Any) -> None:
     model_provider = Model.get_model_provider(args.model)
     AE = AgentExecutor(
-        model,
         elevenlabs_client,
         cashier_graph_schema,
         args.audio_output,
@@ -52,7 +51,7 @@ def run_chat(args: Namespace, model: Model, elevenlabs_client: Any) -> None:
                 break
             AE.add_user_turn(text_input)
 
-        chat_completion = model.chat(
+        chat_completion = Model.chat(
             model_name=args.model,
             stream=args.stream,
             **AE.get_model_completion_kwargs(),
@@ -99,7 +98,6 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    model = Model()
     elevenlabs_client = ElevenLabs(
         api_key=os.getenv("ELEVENLABS_API_KEY"),
     )
@@ -108,4 +106,4 @@ if __name__ == "__main__":
 
     if not args.enable_logging:
         logger.disabled = True
-    run_chat(args, model, elevenlabs_client)
+    run_chat(args, elevenlabs_client)
