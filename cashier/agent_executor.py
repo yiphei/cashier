@@ -21,7 +21,7 @@ from cashier.tool.function_call_context import (
 from cashier.turn_container import TurnContainer
 
 
-def should_skip_node_schema(
+def should_change_node_schema(
     TM: TurnContainer,
     current_node_schema: NodeSchema,
     all_node_schemas: Set[NodeSchema],
@@ -163,7 +163,7 @@ class AgentExecutor:
         all_node_schemas.update(edge.to_node_schema for edge in fwd_skip_edge_schemas)
         all_node_schemas.update(edge.from_node_schema for edge in bwd_skip_edge_schemas)
 
-        node_schema_id = should_skip_node_schema(
+        node_schema_id = should_change_node_schema(
             self.TC, self.curr_node.schema, all_node_schemas, False
         )
 
@@ -202,7 +202,7 @@ class AgentExecutor:
         all_node_schemas = {self.curr_node.schema}
         all_node_schemas.update(edge.to_node_schema for edge in remaining_edge_schemas)
 
-        node_schema_id = should_skip_node_schema(
+        node_schema_id = should_change_node_schema(
             self.TC, self.curr_node.schema, all_node_schemas, True
         )
 
