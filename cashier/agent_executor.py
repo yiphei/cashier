@@ -9,11 +9,11 @@ from cashier.graph.edge_schema import EdgeSchema
 from cashier.graph.graph_schema import Graph, GraphSchema
 from cashier.graph.node_schema import Direction, Node, NodeSchema
 from cashier.gui import MessageDisplay
-from cashier.prompt_action.is_off_topic_action import IsOffTopicAction
 from cashier.logger import logger
 from cashier.model.model_completion import Model, ModelName, ModelOutput
 from cashier.model.model_turn import AssistantTurn
 from cashier.model.model_util import CustomJSONEncoder, FunctionCall, ModelProvider
+from cashier.prompt_action.is_off_topic_action import IsOffTopicAction
 from cashier.prompts.node_schema_selection import NodeSchemaSelectionPrompt
 from cashier.tool.function_call_context import (
     FunctionCallContext,
