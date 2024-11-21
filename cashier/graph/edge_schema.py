@@ -90,6 +90,7 @@ class EdgeSchema:
         self, from_node: Node, to_node: Node, is_prev_from_node_completed: bool
     ) -> Tuple[bool, Optional[FwdSkipType]]:
         from cashier.graph.node_schema import Node
+
         assert from_node.schema == self.from_node_schema
         assert to_node.schema == self.to_node_schema
 
