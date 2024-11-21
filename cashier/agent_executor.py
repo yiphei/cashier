@@ -1,4 +1,3 @@
-import copy
 import json
 from typing import Any, Callable, Dict, Optional, Set, Tuple, Union, cast
 
@@ -10,12 +9,11 @@ from cashier.graph.graph_schema import Graph, GraphSchema
 from cashier.graph.node_schema import Direction, Node, NodeSchema
 from cashier.gui import MessageDisplay
 from cashier.logger import logger
-from cashier.model.model_completion import Model, ModelName, ModelOutput
+from cashier.model.model_completion import ModelOutput
 from cashier.model.model_turn import AssistantTurn
 from cashier.model.model_util import CustomJSONEncoder, FunctionCall, ModelProvider
 from cashier.prompt_action.is_off_topic_action import IsOffTopicAction
 from cashier.prompt_action.should_skip_node_action import SholdSkipNodeAction
-from cashier.prompts.node_schema_selection import NodeSchemaSelectionPrompt
 from cashier.tool.function_call_context import (
     FunctionCallContext,
     InexistentFunctionError,
@@ -38,8 +36,13 @@ def should_skip_node_schema(
     if len(all_node_schemas) == 1:
         return None
     return SholdSkipNodeAction.run(
-        "claude-3.5", current_node_schema=current_node_schema, tc=TM, all_node_schemas=all_node_schemas, is_wait=is_wait
+        "claude-3.5",
+        current_node_schema=current_node_schema,
+        tc=TM,
+        all_node_schemas=all_node_schemas,
+        is_wait=is_wait,
     )
+
 
 class AgentExecutor:
 
