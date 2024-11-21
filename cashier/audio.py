@@ -11,6 +11,8 @@ from elevenlabs import Voice, VoiceSettings, stream
 
 from cashier.gui import remove_previous_line
 from cashier.logger import logger
+from cashier.model.model_other import ModelClient
+from cashier.model.model_util import ModelProvider
 
 # Settings for audio recording
 FORMAT = pyaudio.paInt16  # Audio format (16-bit)
@@ -110,7 +112,7 @@ def get_text_from_speech(audio_data: bytes, oai_client: Any) -> str:
         save_audio_to_wav(audio_data, temp_wav_file.name)
 
         # Use OpenAI's API to transcribe the saved WAV file
-        transcription = oai_client.audio.transcriptions.create(
+        transcription = ModelClient.get_client(ModelProvider.OPENAI).audio.transcriptions.create(
             model="whisper-1",
             language="en",
             file=open(temp_wav_file.name, "rb"),  # Open the saved WAV file for reading

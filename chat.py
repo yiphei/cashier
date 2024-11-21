@@ -14,15 +14,16 @@ from cashier.logger import logger
 from cashier.model.model_client import Model
 from data.graph.cashier import cashier_graph_schema
 from data.tool_registry.cashier_tool_registry import create_db_client
+from cashier.model.model_other import ModelClient
 
 # Load environment variables from .env file
 load_dotenv()
 
 
-def get_user_input(use_audio_input: bool, openai_client: Any) -> str:
+def get_user_input(use_audio_input: bool) -> str:
     if use_audio_input:
         audio_input = get_audio_input()
-        text_input = get_text_from_speech(audio_input, openai_client)
+        text_input = get_text_from_speech(audio_input)
     else:
         text_input = input("You: ")
         remove_previous_line()
@@ -44,7 +45,7 @@ def run_chat(args: Namespace, model: Model, elevenlabs_client: Any) -> None:
     while True:
         if AE.need_user_input:
             # Read user input from stdin
-            text_input = get_user_input(args.audio_input, model.oai_client)
+            text_input = get_user_input(args.audio_input)
             # If user types 'exit', break the loop and end the program
             if text_input.lower() == "exit":
                 print("Exiting chatbot. Goodbye!")
@@ -103,6 +104,7 @@ if __name__ == "__main__":
         api_key=os.getenv("ELEVENLABS_API_KEY"),
     )
     create_db_client()
+    ModelClient.initialize()
 
     if not args.enable_logging:
         logger.disabled = True

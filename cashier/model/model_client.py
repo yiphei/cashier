@@ -30,6 +30,7 @@ from openai.types.chat.chat_completion_tool_param import ChatCompletionToolParam
 from pydantic import BaseModel
 
 from cashier.model.message_list import MessageList
+from cashier.model.model_other import ModelClient
 from cashier.model.model_turn import AnthropicMessageManager
 from cashier.model.model_util import FunctionCall, ModelProvider
 from cashier.tool.tool_registry import ToolRegistry
@@ -72,10 +73,6 @@ class Model:
         "claude-3.5": "claude-3-5-sonnet-latest"
     }
 
-    def __init__(self) -> None:
-        self.oai_client = OpenAI()
-        self.anthropic_client = anthropic.Anthropic()
-
     @classmethod
     def get_model_provider(cls, model_name: ModelName) -> ModelProvider:
         if model_name in cls.alias_to_model_name:
@@ -83,9 +80,10 @@ class Model:
 
         return cls.model_name_to_provider[model_name]
 
+    @classmethod
     @overload
     def chat(  # noqa: E704
-        self,
+        cls,
         *,
         model_name: OpenAIModel,
         turn_container: Literal[None] = None,
@@ -99,9 +97,10 @@ class Model:
         **kwargs: Any,
     ) -> ModelOutput: ...
 
+    @classmethod
     @overload
     def chat(  # noqa: E704
-        self,
+        cls,
         *,
         model_name: AnthropicModelAlias,
         turn_container: Literal[None] = None,
@@ -115,9 +114,10 @@ class Model:
         **kwargs: Any,
     ) -> ModelOutput: ...
 
+    @classmethod
     @overload
     def chat(  # noqa: E704
-        self,
+        cls,
         *,
         model_name: ModelName,
         turn_container: TurnContainer,
@@ -131,8 +131,9 @@ class Model:
         **kwargs: Any,
     ) -> ModelOutput: ...
 
+    @classmethod
     def chat(
-        self,
+        cls,
         *,
         model_name: ModelName,
         turn_container: Optional[TurnContainer] = None,
@@ -145,9 +146,9 @@ class Model:
         response_format: Optional[Type[BaseModel]] = None,
         **kwargs: Any,
     ) -> ModelOutput:
-        if model_name in self.alias_to_model_name:
-            model_name = self.alias_to_model_name[model_name]
-        model_provider = self.get_model_provider(model_name)
+        if model_name in cls.alias_to_model_name:
+            model_name = cls.alias_to_model_name[model_name]
+        model_provider = cls.get_model_provider(model_name)
 
         tools = None
         if tool_registry is not None:
@@ -173,7 +174,7 @@ class Model:
                 else:
                     messages.insert(system_idx, system_dict)
 
-            return self.oai_chat(
+            return cls.oai_chat(
                 cast(OpenAIModel, model_name),
                 messages,
                 tools,  # type: ignore
@@ -186,7 +187,7 @@ class Model:
             if message_manager is not None:
                 assert isinstance(message_manager, AnthropicMessageManager)
                 system = message_manager.system
-            return self.ant_chat(
+            return cls.ant_chat(
                 cast(AnthropicModel, model_name),
                 messages,
                 system,
@@ -198,8 +199,9 @@ class Model:
         else:
             raise ValueError()
 
+    @classmethod
     def get_tool_choice_arg(
-        self, args: Dict[str, Any], model_provider: ModelProvider
+        cls, args: Dict[str, Any], model_provider: ModelProvider
     ) -> None:
         if "force_tool_choice" in args:
             if args["force_tool_choice"] is not None:
@@ -214,8 +216,9 @@ class Model:
 
             args.pop("force_tool_choice")
 
+    @classmethod
     def oai_chat(
-        self,
+        cls,
         model_name: OpenAIModel,
         messages: Union[List[Dict[str, Any]], MessageList],
         tools: Optional[List[ChatCompletionToolParam]] = None,
@@ -224,10 +227,12 @@ class Model:
         response_format: Optional[Type[BaseModel]] = None,
         **kwargs: Any,
     ) -> OAIModelOutput:
+        oai_client = ModelClient.get_client(ModelProvider.OPENAI)
+
         chat_fn = (
-            self.oai_client.chat.completions.create
+            oai_client.chat.completions.create
             if response_format is None
-            else self.oai_client.beta.chat.completions.parse
+            else oai_client.beta.chat.completions.parse
         )
         args = {
             "model": model_name,
@@ -246,12 +251,13 @@ class Model:
         if not stream:
             args.pop("stream")
 
-        self.get_tool_choice_arg(args, ModelProvider.OPENAI)
+        cls.get_tool_choice_arg(args, ModelProvider.OPENAI)
 
         return OAIModelOutput(chat_fn(**args), stream, response_format)  # type: ignore
 
+    @classmethod
     def ant_chat(
-        self,
+        cls,
         model_name: AnthropicModel,
         messages: Union[List[Dict[str, Any]], MessageList],
         system: Optional[str] = None,
@@ -260,6 +266,7 @@ class Model:
         response_format: Optional[Type[BaseModel]] = None,
         **kwargs: Any,
     ) -> AnthropicModelOutput:
+        anthropic_client = ModelClient.get_client(ModelProvider.ANTHROPIC)
         tool_choice = None
         if response_format is not None:
             if stream:
@@ -293,10 +300,10 @@ class Model:
         if not system:
             args.pop("system")
 
-        self.get_tool_choice_arg(args, ModelProvider.ANTHROPIC)
+        cls.get_tool_choice_arg(args, ModelProvider.ANTHROPIC)
 
         return AnthropicModelOutput(
-            self.anthropic_client.messages.create(**args), stream, response_format
+            anthropic_client.messages.create(**args), stream, response_format
         )
 
 
