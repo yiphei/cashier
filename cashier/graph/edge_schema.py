@@ -6,9 +6,9 @@ from typing import TYPE_CHECKING, Any, Callable, NamedTuple, Optional, Tuple
 from pydantic import BaseModel
 
 if TYPE_CHECKING:
-    from cashier.graph_folder.node_schema import Node, NodeSchema
+    from cashier.graph.node_schema import Node, NodeSchema
 
-from cashier.graph_folder.state_model import BaseStateModel
+from cashier.graph.state_model import BaseStateModel
 
 
 class BwdStateInit(StrEnum):

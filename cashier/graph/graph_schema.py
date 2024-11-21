@@ -5,8 +5,8 @@ from typing import Any, Dict, List, Literal, Optional, Set, Tuple, overload
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from cashier.graph_folder.edge_schema import Edge, EdgeSchema, FwdSkipType
-from cashier.graph_folder.node_schema import Direction, Node, NodeSchema
+from cashier.graph.edge_schema import Edge, EdgeSchema, FwdSkipType
+from cashier.graph.node_schema import Direction, Node, NodeSchema
 
 
 class GraphSchema(BaseModel):

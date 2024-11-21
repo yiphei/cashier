@@ -6,8 +6,8 @@ from typing import Any, List, Literal, Optional, Type, Union, cast, overload
 from openai.types.chat.chat_completion_tool_param import ChatCompletionToolParam
 from pydantic import BaseModel
 
-from cashier.graph_folder.edge_schema import BwdStateInit, EdgeSchema, FwdStateInit
-from cashier.graph_folder.state_model import BaseStateModel
+from cashier.graph.edge_schema import BwdStateInit, EdgeSchema, FwdStateInit
+from cashier.graph.state_model import BaseStateModel
 from cashier.model.model_turn import ModelTurn
 from cashier.prompts.node_system import NodeSystemPrompt
 from cashier.tool.function_call_context import StateUpdateError

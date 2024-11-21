@@ -2,10 +2,10 @@ from typing import Optional
 
 from pydantic import Field
 
-from cashier.graph_folder.edge_schema import EdgeSchema
-from cashier.graph_folder.graph_schema import GraphSchema
-from cashier.graph_folder.node_schema import NodeSchema
-from cashier.graph_folder.state_model import BaseStateModel
+from cashier.graph.edge_schema import EdgeSchema
+from cashier.graph.graph_schema import GraphSchema
+from cashier.graph.node_schema import NodeSchema
+from cashier.graph.state_model import BaseStateModel
 from cashier.model.model_turn import AssistantTurn
 from cashier.model.model_util import ModelProvider
 from cashier.prompts.node_system import NodeSystemPrompt
