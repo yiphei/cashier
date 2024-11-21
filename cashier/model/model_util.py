@@ -64,7 +64,7 @@ MODEL_PROVIDER_TO_TOOL_CALL_ID_PREFIX = {
 
 
 class FunctionCall(BaseModel):
-    id_model_provider: Optional[ModelProvider] # None means that it was faked
+    id_model_provider: Optional[ModelProvider]  # None means that it was faked
     name: str
     oai_id: Optional[str] = None
     anthropic_id: Optional[str] = None
@@ -76,7 +76,7 @@ class FunctionCall(BaseModel):
     def check_function_args(self) -> FunctionCall:
         if self.input_args_json is None and self.input_args is None:
             raise ValueError("One of [args_json, args] must be provided")
-        
+
         if self.oai_id is None and self.anthropic_id is None:
             raise ValueError("One of [oai_id, anthropic_id] must be provided")
 
@@ -91,38 +91,45 @@ class FunctionCall(BaseModel):
         if self.input_args is not None and self.input_args_json is None:
             self.input_args_json = json.dumps(self.input_args)
         return self
-    
+
     @classmethod
-    def generate_fake_id(cls, model_provider: ModelProvider, id_seed: Optional[str] = None) -> str:
+    def generate_fake_id(
+        cls, model_provider: ModelProvider, id_seed: Optional[str] = None
+    ) -> str:
         id_prefix = MODEL_PROVIDER_TO_TOOL_CALL_ID_PREFIX[model_provider]
         return id_prefix + generate_random_string(24, id_seed)
 
-
     @classmethod
-    def create(cls, name, id_model_provider: Optional[ModelProvider],id: Optional[str],
-                       args_json: Optional[str] = None,
+    def create(
+        cls,
+        name,
+        id_model_provider: Optional[ModelProvider],
+        id: Optional[str],
+        args_json: Optional[str] = None,
         args: Optional[Dict] = None,
-                ) -> FunctionCall:
-        id_arg_name = "oai_id" if id_model_provider == ModelProvider.OPENAI else "anthropic_id"
+    ) -> FunctionCall:
+        id_arg_name = (
+            "oai_id" if id_model_provider == ModelProvider.OPENAI else "anthropic_id"
+        )
         id_args = {id_arg_name: id}
         if id_model_provider == ModelProvider.OPENAI:
             assert id is not None
             id_args = {
-                'oai_id': id,
-                'anthropic_id': cls.generate_fake_id(ModelProvider.ANTHROPIC, id)
+                "oai_id": id,
+                "anthropic_id": cls.generate_fake_id(ModelProvider.ANTHROPIC, id),
             }
         elif id_model_provider == ModelProvider.ANTHROPIC:
             assert id is not None
             id_args = {
-                'oai_id': cls.generate_fake_id(ModelProvider.OPENAI, id),
-                'anthropic_id': id
+                "oai_id": cls.generate_fake_id(ModelProvider.OPENAI, id),
+                "anthropic_id": id,
             }
         else:
-             oai_id = cls.generate_fake_id(ModelProvider.OPENAI, id)
-             id_args = {
-                'oai_id': oai_id,
-                'anthropic_id': cls.generate_fake_id(ModelProvider.ANTHROPIC, oai_id)
-            }           
+            oai_id = cls.generate_fake_id(ModelProvider.OPENAI, id)
+            id_args = {
+                "oai_id": oai_id,
+                "anthropic_id": cls.generate_fake_id(ModelProvider.ANTHROPIC, oai_id),
+            }
 
         return FunctionCall(
             name=name,
@@ -130,23 +137,6 @@ class FunctionCall(BaseModel):
             input_args_json=args_json,
             input_args=args,
             **id_args,
-        )
-
-    @classmethod
-    def create_fake_fn_call(
-        cls,
-        name: str,
-        args_json: Optional[str] = None,
-        args: Optional[Dict] = None,
-    ) -> FunctionCall:
-        id_prefix = MODEL_PROVIDER_TO_TOOL_CALL_ID_PREFIX[model_provider]
-        fake_id = id_prefix + generate_random_string(24)
-
-        return FunctionCall(
-            name=name,
-            id=fake_id,
-            args_json=args_json,
-            args=args,
         )
 
     @property
