@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Optional
 
-from cashier.graph import Node
+from cashier.graph_folder.node_schema import Node
 from cashier.model.message_list import MessageList
 from cashier.model.model_turn import (
     AnthropicMessageManager,
