@@ -11,7 +11,7 @@ from pydantic import BaseModel, Field
 from cashier.agent_executor import AgentExecutor
 from cashier.graph.node_schema import Node
 from cashier.model.message_list import MessageList
-from cashier.model.model_completion import AnthropicModelOutput, Model, OAIModelOutput
+from cashier.model.model_completion import AnthropicModelOutput, OAIModelOutput
 from cashier.model.model_turn import AssistantTurn, ModelTurn, NodeSystemTurn, UserTurn
 from cashier.model.model_util import (
     MODEL_PROVIDER_TO_TOOL_CALL_ID_PREFIX,

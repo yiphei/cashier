@@ -22,9 +22,7 @@ from cashier.tool.function_call_context import (
 from cashier.turn_container import TurnContainer
 
 
-def is_on_topic(
-    TM: TurnContainer, current_node_schema: NodeSchema
-) -> bool:
+def is_on_topic(TM: TurnContainer, current_node_schema: NodeSchema) -> bool:
     model_name: ModelName = "claude-3.5"
     model_provider = Model.get_model_provider(model_name)
     node_conv_msgs = copy.deepcopy(
@@ -242,7 +240,7 @@ class AgentExecutor:
         all_node_schemas += [edge.from_node_schema for edge in bwd_skip_edge_schemas]
 
         node_schema_id = should_skip_node_schema(
-         self.TC, self.curr_node.schema, all_node_schemas, False
+            self.TC, self.curr_node.schema, all_node_schemas, False
         )
 
         if node_schema_id is not None:
