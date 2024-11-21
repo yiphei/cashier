@@ -1,7 +1,8 @@
 import os
+from typing import Optional
+
 from supabase import Client
 from supabase import create_client as create_supabase_client
-from typing import Optional
 
 
 class DBClient:
@@ -11,13 +12,11 @@ class DBClient:
     def initialize(cls) -> None:
         if cls._client is None:
             cls._client = create_supabase_client(
-        os.environ.get("SUPABASE_URL"), os.environ.get("SUPABASE_KEY")  # type: ignore
-    )
+                os.environ.get("SUPABASE_URL"), os.environ.get("SUPABASE_KEY")  # type: ignore
+            )
 
     @classmethod
-    def get_client(
-        cls
-    ) -> Client:
+    def get_client(cls) -> Client:
         if cls._client is None:
             raise RuntimeError("Client not initialized. Call initialize() first.")
         return cls._client

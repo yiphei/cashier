@@ -4,9 +4,8 @@ from typing import Dict, List, Optional
 
 from pydantic import BaseModel, Field
 
-from cashier.tool.general import GeneralToolRegistry
 from cashier.db import DBClient
-
+from cashier.tool.general import GeneralToolRegistry
 
 CASHIER_TOOL_REGISTRY = GeneralToolRegistry()
 
@@ -35,7 +34,8 @@ def get_menu_items_options(menu_item_id: int) -> Dict[str, List[Option]]:
         A mapping of cup size to the list of options available for that size.
     """
     response = (
-        DBClient.get_client().table("menu_item_to_options_map")
+        DBClient.get_client()
+        .table("menu_item_to_options_map")
         .select(
             "*, option(name, type, value_type, num_unit), option_type_config(default_num_value, default_bool_value, default_discrete_value_id, discrete_option_value(name)), menu_item_to_option_values_map(discrete_option_value(name))"
         )
@@ -98,7 +98,8 @@ def get_menu_item_from_name(menu_item_name: str) -> MenuItem:
     """
     formatted_menu_item_name = menu_item_name.replace(" ", "&")
     response = (
-        DBClient.get_client().table("menu_item")
+        DBClient.get_client()
+        .table("menu_item")
         .select("id, name, description, group")
         .text_search("name", formatted_menu_item_name)
         .execute()
