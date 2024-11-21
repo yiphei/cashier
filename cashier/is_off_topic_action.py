@@ -1,10 +1,12 @@
 import copy
 import json
+from typing import Any, Dict
 
 from pydantic import BaseModel, ConfigDict
 
 from cashier.graph.node_schema import NodeSchema
 from cashier.logger import logger
+from cashier.model.model_completion import ModelOutput
 from cashier.model.model_util import ModelProvider
 from cashier.prompt_action_base import PromptActionBase
 from cashier.prompts.off_topic import OffTopicPrompt
@@ -23,7 +25,7 @@ class IsOffTopicAction(PromptActionBase):
     input_kwargs = Input
 
     @classmethod
-    def get_model_completion_args(cls, model_provider, input):
+    def get_model_completion_args(cls, model_provider: ModelProvider, input: Any)->Dict[str,Any]:
         current_node_schema = input.current_node_schema
         tc = input.tc
         node_conv_msgs = copy.deepcopy(
@@ -51,7 +53,7 @@ class IsOffTopicAction(PromptActionBase):
         return {"message_dicts": node_conv_msgs, "logprobs": True, "temperature": 0}
 
     @classmethod
-    def get_output(cls, model_provider, chat_completion, input):
+    def get_output(cls, model_provider: ModelProvider, chat_completion: ModelOutput, input: Any)->bool:
         is_on_topic = chat_completion.get_message_prop("output")
         if model_provider == ModelProvider.OPENAI:
             prob = chat_completion.get_prob(-2)  # type: ignore

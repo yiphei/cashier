@@ -2,26 +2,38 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 
-from cashier.model.model_completion import Model, ModelName
+from pydantic import BaseModel
+
+from cashier.model.model_completion import Model, ModelName, ModelOutput
+from typing import Any, ClassVar, Dict, Type
+
+from cashier.model.model_util import ModelProvider
+from cashier.prompts.base_prompt import BasePrompt
 
 
 class PromptActionBase(ABC):
-    # TODO: fix these to raise NotImplemenetedError
-    prompt = None
-    input_kwargs = None
+    prompt: ClassVar[Type[BasePrompt]]
+    input_kwargs: ClassVar[Type[BaseModel]]
+
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+        if not hasattr(cls, 'prompt') or cls.prompt is None:
+            raise NotImplementedError("Subclasses must define 'prompt' class attribute")
+        if not hasattr(cls, 'input_kwargs') or cls.input_kwargs is None:
+            raise NotImplementedError("Subclasses must define 'input_kwargs' class attribute")
 
     @classmethod
     @abstractmethod
-    def get_model_completion_args(cls, model_provider, input):
+    def get_model_completion_args(cls, model_provider: ModelProvider, input: Any)->Dict[str,Any]:
         raise NotImplementedError
 
     @classmethod
     @abstractmethod
-    def get_output(cls, model_provider, chat_completion, input):
+    def get_output(cls, model_provider: ModelProvider, chat_completion: ModelOutput, input: Any)->Any:
         raise NotImplementedError
 
     @classmethod
-    def run(cls, model_name: ModelName, **kwargs):
+    def run(cls, model_name: ModelName, **kwargs: Any)->Any:
         input = cls.input_kwargs(**kwargs)
         model_provider = Model.get_model_provider(model_name)
         args = cls.get_model_completion_args(model_provider, input)
