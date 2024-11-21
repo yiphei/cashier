@@ -66,8 +66,8 @@ MODEL_PROVIDER_TO_TOOL_CALL_ID_PREFIX = {
 class FunctionCall(BaseModel):
     id_model_provider: Optional[ModelProvider]  # None means that it was faked
     name: str
-    oai_id: Optional[str] = None
-    anthropic_id: Optional[str] = None
+    oai_id: str
+    anthropic_id: str
     # when using model_dump, must add by_alias=True to get the alias names
     input_args_json: Optional[str] = Field(default=None, alias="args_json")
     input_args: Optional[Dict] = Field(default=None, alias="args")
@@ -76,9 +76,6 @@ class FunctionCall(BaseModel):
     def check_function_args(self) -> FunctionCall:
         if self.input_args_json is None and self.input_args is None:
             raise ValueError("One of [args_json, args] must be provided")
-
-        if self.oai_id is None and self.anthropic_id is None:
-            raise ValueError("One of [oai_id, anthropic_id] must be provided")
 
         if self.input_args_json is not None and self.input_args is None:
             if self.input_args_json:
