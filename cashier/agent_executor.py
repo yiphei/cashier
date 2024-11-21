@@ -14,54 +14,16 @@ from cashier.model.model_completion import Model, ModelName, ModelOutput
 from cashier.model.model_turn import AssistantTurn
 from cashier.model.model_util import CustomJSONEncoder, FunctionCall, ModelProvider
 from cashier.prompts.node_schema_selection import NodeSchemaSelectionPrompt
-from cashier.prompts.off_topic import OffTopicPrompt
 from cashier.tool.function_call_context import (
     FunctionCallContext,
     InexistentFunctionError,
 )
 from cashier.turn_container import TurnContainer
+from cashier.is_off_topic_action import IsOffTopicAction
 
 
 def is_on_topic(TM: TurnContainer, current_node_schema: NodeSchema) -> bool:
-    model_name: ModelName = "claude-3.5"
-    model_provider = Model.get_model_provider(model_name)
-    node_conv_msgs = copy.deepcopy(
-        TM.model_provider_to_message_manager[model_provider].node_conversation_dicts
-    )
-    last_customer_msg = TM.get_user_message(content_only=True)
-
-    prompt = OffTopicPrompt(
-        background_prompt=current_node_schema.node_system_prompt.BACKGROUND_PROMPT(),  # type: ignore
-        node_prompt=current_node_schema.node_prompt,
-        state_json_schema=current_node_schema.state_pydantic_model.model_json_schema(),
-        tool_defs=json.dumps(
-            current_node_schema.tool_registry.get_tool_defs(
-                model_provider=model_provider
-            )
-        ),
-        last_customer_msg=last_customer_msg,
-    )
-
-    if model_provider == ModelProvider.ANTHROPIC:
-        node_conv_msgs.append({"role": "user", "content": prompt})
-    elif model_provider == ModelProvider.OPENAI:
-        node_conv_msgs.append({"role": "system", "content": prompt})
-
-    chat_completion = Model.chat(
-        model_name=model_name,
-        message_dicts=node_conv_msgs,
-        response_format=OffTopicPrompt.response_format,
-        logprobs=True,
-        temperature=0,
-    )
-    is_on_topic = chat_completion.get_message_prop("output")
-    if model_provider == ModelProvider.OPENAI:
-        prob = chat_completion.get_prob(-2)  # type: ignore
-        logger.debug(f"IS_ON_TOPIC: {is_on_topic} with {prob}")
-    else:
-        logger.debug(f"IS_ON_TOPIC: {is_on_topic}")
-
-    return is_on_topic
+    return IsOffTopicAction.run("claude-3.5",current_node_schema=current_node_schema, tc=TM )
 
 
 def should_skip_node_schema(
