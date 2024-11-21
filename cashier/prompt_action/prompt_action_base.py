@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any, ClassVar, Dict, Type, TypeVar, Generic
+from typing import Any, ClassVar, Dict, Generic, Type, TypeVar
 
 from pydantic import BaseModel
 
@@ -9,7 +9,8 @@ from cashier.model.model_completion import Model, ModelName, ModelOutput
 from cashier.model.model_util import ModelProvider
 from cashier.prompts.base_prompt import BasePrompt
 
-T = TypeVar('T', bound=BaseModel)
+T = TypeVar("T", bound=BaseModel)
+
 
 class PromptActionBase(ABC, Generic[T]):
     prompt: ClassVar[Type[BasePrompt]]
