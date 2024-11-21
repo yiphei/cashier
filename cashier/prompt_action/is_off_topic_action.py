@@ -8,7 +8,7 @@ from cashier.graph.node_schema import NodeSchema
 from cashier.logger import logger
 from cashier.model.model_completion import ModelOutput
 from cashier.model.model_util import ModelProvider
-from cashier.prompt_action_base import PromptActionBase
+from cashier.prompt_action.prompt_action_base import PromptActionBase
 from cashier.prompts.off_topic import OffTopicPrompt
 from cashier.turn_container import TurnContainer
 
