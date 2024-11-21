@@ -122,7 +122,8 @@ class FunctionCall(BaseModel):
                 "anthropic_api_id": api_id,
             }
         else:
-            oai_id = cls.generate_fake_id(ModelProvider.OPENAI, api_id)
+            assert api_id is None
+            oai_id = cls.generate_fake_id(ModelProvider.OPENAI)
             id_args = {
                 "oai_api_id": oai_id,
                 "anthropic_api_id": cls.generate_fake_id(
