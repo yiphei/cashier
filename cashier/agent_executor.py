@@ -14,6 +14,7 @@ from cashier.model.model_completion import Model, ModelName, ModelOutput
 from cashier.model.model_turn import AssistantTurn
 from cashier.model.model_util import CustomJSONEncoder, FunctionCall, ModelProvider
 from cashier.prompt_action.is_off_topic_action import IsOffTopicAction
+from cashier.prompt_action.should_skip_node_action import SholdSkipNodeAction
 from cashier.prompts.node_schema_selection import NodeSchemaSelectionPrompt
 from cashier.tool.function_call_context import (
     FunctionCallContext,
@@ -36,46 +37,9 @@ def should_skip_node_schema(
 ) -> Optional[int]:
     if len(all_node_schemas) == 1:
         return None
-    model_name: ModelName = "claude-3.5"
-    model_provider = Model.get_model_provider(model_name)
-    node_conv_msgs = copy.deepcopy(
-        TM.model_provider_to_message_manager[model_provider].node_conversation_dicts
+    return SholdSkipNodeAction.run(
+        "claude-3.5", current_node_schema=current_node_schema, tc=TM, all_node_schemas=all_node_schemas, is_wait=is_wait
     )
-    last_customer_msg = TM.get_user_message(content_only=True)
-
-    prompt = NodeSchemaSelectionPrompt(
-        all_node_schemas=all_node_schemas,
-        model_provider=model_provider,
-        last_customer_msg=last_customer_msg,
-    )
-
-    if model_provider == ModelProvider.ANTHROPIC:
-        node_conv_msgs.append({"role": "user", "content": prompt})
-    elif model_provider == ModelProvider.OPENAI:
-        node_conv_msgs.append({"role": "system", "content": prompt})
-
-    chat_completion = Model.chat(
-        model_name=model_name,
-        message_dicts=node_conv_msgs,
-        response_format=NodeSchemaSelectionPrompt.response_format,
-        logprobs=True,
-        temperature=0,
-    )
-
-    agent_id = chat_completion.get_message_prop("agent_id")
-    actual_agent_id = agent_id if agent_id != current_node_schema.id else None
-    if model_provider == ModelProvider.OPENAI:
-        prob = chat_completion.get_prob(-2)  # type: ignore
-        logger.debug(
-            f"{'SKIP_AGENT_ID' if not is_wait else 'WAIT_AGENT_ID'}: {actual_agent_id or 'current_id'} with {prob}"
-        )
-    else:
-        logger.debug(
-            f"{'SKIP_AGENT_ID' if not is_wait else 'WAIT_AGENT_ID'}: {actual_agent_id or 'current_id'}"
-        )
-
-    return actual_agent_id
-
 
 class AgentExecutor:
 
