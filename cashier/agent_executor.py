@@ -312,7 +312,9 @@ class AgentExecutor:
         )
         return edge_schema, node_schema, False  # type: ignore
 
-    def add_user_turn(self, msg: str, model_provider: Optional[ModelProvider] = None) -> None:
+    def add_user_turn(
+        self, msg: str, model_provider: Optional[ModelProvider] = None
+    ) -> None:
         MessageDisplay.print_msg("user", msg)
         self.TC.add_user_turn(msg)
         if not is_on_topic(self.TC, self.curr_node.schema):
@@ -329,7 +331,9 @@ class AgentExecutor:
                     )
                     self.TC.add_assistant_turn(
                         None,
-                        model_provider or self.last_model_provider or ModelProvider.OPENAI,
+                        model_provider
+                        or self.last_model_provider
+                        or ModelProvider.OPENAI,
                         self.curr_node.schema.tool_registry,
                         [fake_fn_call],
                         {fake_fn_call.id: None},
@@ -348,7 +352,9 @@ class AgentExecutor:
                     )
                     self.TC.add_assistant_turn(
                         None,
-                        model_provider or self.last_model_provider or ModelProvider.OPENAI,
+                        model_provider
+                        or self.last_model_provider
+                        or ModelProvider.OPENAI,
                         self.curr_node.schema.tool_registry,
                         [fake_fn_call],
                         {fake_fn_call.id: self.curr_node.get_state()},
