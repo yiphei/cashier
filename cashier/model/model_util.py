@@ -33,7 +33,7 @@ class CustomJSONEncoder(json.JSONEncoder):
         return super().default(obj)
 
 
-def generate_random_string(length: int) -> str:
+def generate_random_string(length: int, seed: Optional[str] = None) -> str:
     """
     Generate a random string of specified length using alphanumeric characters
     (both uppercase and lowercase).
@@ -47,6 +47,11 @@ def generate_random_string(length: int) -> str:
     # Define the character set: uppercase + lowercase + digits
     charset = string.ascii_letters + string.digits
 
+    if seed is not None:
+        # Create a new Random instance with the string seed
+        # We hash the string to convert it to an integer seed
+        rng = random.Random(seed)
+        return "".join(rng.choices(charset, k=length))
     # Generate random string using random.choices
     # choices() is preferred over choice() in a loop as it's more efficient
     return "".join(random.choices(charset, k=length))
@@ -59,8 +64,10 @@ MODEL_PROVIDER_TO_TOOL_CALL_ID_PREFIX = {
 
 
 class FunctionCall(BaseModel):
+    id_model_provider: Optional[ModelProvider] # None means that it was faked
     name: str
-    id: str
+    oai_id: Optional[str] = None
+    anthropic_id: Optional[str] = None
     # when using model_dump, must add by_alias=True to get the alias names
     input_args_json: Optional[str] = Field(default=None, alias="args_json")
     input_args: Optional[Dict] = Field(default=None, alias="args")
@@ -69,6 +76,9 @@ class FunctionCall(BaseModel):
     def check_function_args(self) -> FunctionCall:
         if self.input_args_json is None and self.input_args is None:
             raise ValueError("One of [args_json, args] must be provided")
+        
+        if self.oai_id is None and self.anthropic_id is None:
+            raise ValueError("One of [oai_id, anthropic_id] must be provided")
 
         if self.input_args_json is not None and self.input_args is None:
             if self.input_args_json:
@@ -81,11 +91,50 @@ class FunctionCall(BaseModel):
         if self.input_args is not None and self.input_args_json is None:
             self.input_args_json = json.dumps(self.input_args)
         return self
+    
+    @classmethod
+    def generate_fake_id(cls, model_provider: ModelProvider, id_seed: Optional[str] = None) -> str:
+        id_prefix = MODEL_PROVIDER_TO_TOOL_CALL_ID_PREFIX[model_provider]
+        return id_prefix + generate_random_string(24, id_seed)
+
+
+    @classmethod
+    def create(cls, name, id_model_provider: Optional[ModelProvider],id: Optional[str],
+                       args_json: Optional[str] = None,
+        args: Optional[Dict] = None,
+                ) -> FunctionCall:
+        id_arg_name = "oai_id" if id_model_provider == ModelProvider.OPENAI else "anthropic_id"
+        id_args = {id_arg_name: id}
+        if id_model_provider == ModelProvider.OPENAI:
+            assert id is not None
+            id_args = {
+                'oai_id': id,
+                'anthropic_id': cls.generate_fake_id(ModelProvider.ANTHROPIC, id)
+            }
+        elif id_model_provider == ModelProvider.ANTHROPIC:
+            assert id is not None
+            id_args = {
+                'oai_id': cls.generate_fake_id(ModelProvider.OPENAI, id),
+                'anthropic_id': id
+            }
+        else:
+             oai_id = cls.generate_fake_id(ModelProvider.OPENAI, id)
+             id_args = {
+                'oai_id': oai_id,
+                'anthropic_id': cls.generate_fake_id(ModelProvider.ANTHROPIC, oai_id)
+            }           
+
+        return FunctionCall(
+            name=name,
+            id_model_provider=id_model_provider,
+            input_args_json=args_json,
+            input_args=args,
+            **id_args,
+        )
 
     @classmethod
     def create_fake_fn_call(
         cls,
-        model_provider: ModelProvider,
         name: str,
         args_json: Optional[str] = None,
         args: Optional[Dict] = None,
@@ -99,6 +148,15 @@ class FunctionCall(BaseModel):
             args_json=args_json,
             args=args,
         )
+
+    @property
+    def id(self) -> str:
+        if self.id_model_provider == ModelProvider.OPENAI:
+            return self.oai_id
+        elif self.id_model_provider == ModelProvider.ANTHROPIC:
+            return self.anthropic_id
+        else:
+            return self.oai_id
 
     # the following is to pass mypy checks
 

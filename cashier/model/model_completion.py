@@ -428,9 +428,10 @@ class ModelOutput(ABC, Generic[ModelResponseChunkType]):
         for chunk in itertools.chain([self.last_chunk], self.output_obj):
             if self.has_function_call_id(chunk):
                 if tool_call_id is not None:
-                    fn_call = FunctionCall(
+                    fn_call = FunctionCall.create(
                         name=function_name,
                         id=tool_call_id,
+                        id_model_provider=self.model_provider,
                         args_json=function_args_json,
                     )
                     self.fn_calls.append(fn_call)
@@ -444,8 +445,9 @@ class ModelOutput(ABC, Generic[ModelResponseChunkType]):
 
         if tool_call_id is not None:
             assert function_name is not None
-            fn_call = FunctionCall(
+            fn_call = FunctionCall.create(
                 name=function_name,
+                id_model_provider=self.model_provider,
                 id=tool_call_id,
                 args_json=function_args_json,
             )
@@ -527,8 +529,9 @@ class OAIModelOutput(ModelOutput[ChatCompletionChunk]):
     def get_fn_calls(self) -> Iterator[FunctionCall]:
         tool_calls = self.output_obj.choices[0].message.tool_calls or []
         for tool_call in tool_calls:
-            fn_call = FunctionCall(
+            fn_call = FunctionCall.create(
                 name=tool_call.function.name,
+                id_model_provider=self.model_provider,
                 id=tool_call.id,
                 args_json=tool_call.function.arguments,
             )
@@ -603,8 +606,9 @@ class AnthropicModelOutput(ModelOutput[RawMessageStreamEvent]):
     def get_fn_calls(self) -> Iterator[FunctionCall]:
         for content in self.output_obj.content:
             if content.type == "tool_use":
-                fn_call = FunctionCall(
+                fn_call = FunctionCall.create(
                     name=content.name,
+                    id_model_provider=self.model_provider,
                     id=content.id,
                     args=content.input,
                 )
