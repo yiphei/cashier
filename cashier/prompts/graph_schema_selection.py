@@ -21,10 +21,10 @@ class GraphSchemaSelectionPrompt(BasePrompt):
         request: str,
     ) -> str:
         prompt = (
-            "You are an AI-agent orchestration engine and your job is to select the best AI agent. "
-            "Each AI agent is defined by 2 attributes: description and output schema (i.e. the agent's final output). "
-            "The description <description> describes what the agent's conversation is supposed to be about and what they are expected to do. "
-            "The state <output_schema> represents the agent's final output.\n\n"
+            "You are an AI-agent orchestration engine and your job is to select the best AI agents for a customer request. "
+            "Each AI agent is defined by 2 attributes: description and output schema. "
+            "The description <description> is a verbal description of what the agent's conversation is supposed to be about and what they are expected to do. "
+            "The state <output_schema> represents the JSON schema of the agent's final output.\n\n"
         )
         for graph_schema in graph_schemas:
             prompt += (
@@ -39,8 +39,11 @@ class GraphSchemaSelectionPrompt(BasePrompt):
             )
 
         prompt += (
-            "Given a customer request and the list above of AI agents with their attributes, "
+            "Given a customer request and the above list of AI agents with their attributes, "
             "determine which AI agents can best address the request. "
-            "Respond by returning the AI agent IDs (in any order).\n\n"
+            "Respond by returning the AI agent IDs (in any order). You must return at least one agent ID and each agent ID must be unique.\n\n"
+            "<customer_request>\n"
+            f"{request}\n"
+            "</customer_request>\n\n"
         )
         return prompt
