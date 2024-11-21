@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any, ClassVar, Dict, Type
+from typing import Any, ClassVar, Dict, Type, TypeVar, Generic
 
 from pydantic import BaseModel
 
@@ -9,10 +9,11 @@ from cashier.model.model_completion import Model, ModelName, ModelOutput
 from cashier.model.model_util import ModelProvider
 from cashier.prompts.base_prompt import BasePrompt
 
+T = TypeVar('T', bound=BaseModel)
 
-class PromptActionBase(ABC):
+class PromptActionBase(ABC, Generic[T]):
     prompt: ClassVar[Type[BasePrompt]]
-    input_kwargs: ClassVar[Type[BaseModel]]
+    input_kwargs: ClassVar[Type[T]]
 
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
@@ -26,14 +27,14 @@ class PromptActionBase(ABC):
     @classmethod
     @abstractmethod
     def get_model_completion_args(
-        cls, model_provider: ModelProvider, input: Any
+        cls, model_provider: ModelProvider, input: T
     ) -> Dict[str, Any]:
         raise NotImplementedError
 
     @classmethod
     @abstractmethod
     def get_output(
-        cls, model_provider: ModelProvider, chat_completion: ModelOutput, input: Any
+        cls, model_provider: ModelProvider, chat_completion: ModelOutput, input: T
     ) -> Any:
         raise NotImplementedError
 

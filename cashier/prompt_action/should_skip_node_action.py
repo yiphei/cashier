@@ -21,13 +21,13 @@ class Input(BaseModel):
     is_wait: bool
 
 
-class SholdSkipNodeAction(PromptActionBase):
+class SholdSkipNodeAction(PromptActionBase[Input]):
     prompt = NodeSchemaSelectionPrompt
     input_kwargs = Input
 
     @classmethod
     def get_model_completion_args(
-        cls, model_provider: ModelProvider, input: Any
+        cls, model_provider: ModelProvider, input: Input
     ) -> Dict[str, Any]:
         all_node_schemas = input.all_node_schemas
         TM = input.tc
@@ -51,7 +51,7 @@ class SholdSkipNodeAction(PromptActionBase):
 
     @classmethod
     def get_output(
-        cls, model_provider: ModelProvider, chat_completion: ModelOutput, input: Any
+        cls, model_provider: ModelProvider, chat_completion: ModelOutput, input: Input
     ) -> bool:
         current_node_schema = input.current_node_schema
         is_wait = input.is_wait
