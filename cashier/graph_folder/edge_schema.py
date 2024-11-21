@@ -1,12 +1,9 @@
 from enum import StrEnum
-from cashier.graph_folder.node_schema import BaseStateModel
-from cashier.graph_folder.node_schema import Node, NodeSchema
-
+from typing import Any, Callable, NamedTuple, Optional, Tuple, Union
 
 from pydantic import BaseModel
 
-
-from typing import Any, Callable, NamedTuple, Tuple, Optional, Union
+from cashier.graph_folder.node_schema import BaseStateModel, Node, NodeSchema
 
 
 class BwdStateInit(StrEnum):

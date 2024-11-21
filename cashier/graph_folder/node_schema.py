@@ -1,18 +1,17 @@
 from __future__ import annotations
+
+import copy
 from enum import StrEnum
+from typing import Any, List, Literal, Optional, Type, Union, cast, overload
+
+from openai.types.chat.chat_completion_tool_param import ChatCompletionToolParam
+from pydantic import BaseModel, ConfigDict
+
 from cashier.graph_folder.edge_schema import BwdStateInit, EdgeSchema, FwdStateInit
 from cashier.model.model_turn import ModelTurn
 from cashier.prompts.node_system import NodeSystemPrompt
 from cashier.tool.function_call_context import StateUpdateError
 from cashier.tool.tool_registry import ToolRegistry
-import copy
-
-
-from openai.types.chat.chat_completion_tool_param import ChatCompletionToolParam
-from pydantic import BaseModel, ConfigDict
-
-
-from typing import Any, List, Literal, Type, cast, overload, Optional, Union
 
 
 class BaseStateModel(BaseModel):
