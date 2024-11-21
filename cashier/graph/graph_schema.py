@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections import defaultdict, deque
-from typing import Any, Dict, List, Literal, Optional, Set, Tuple, overload
+from typing import Any, Dict, List, Literal, Optional, Set, Tuple, Type, overload, ClassVar
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
@@ -10,8 +10,12 @@ from cashier.graph.node_schema import Direction, Node, NodeSchema
 
 
 class GraphSchema(BaseModel):
+    _counter: ClassVar[int] = 0
     model_config = ConfigDict(arbitrary_types_allowed=True)
-
+    
+    id: Optional[int] = None
+    output_schema: Type[BaseModel]
+    description: str
     start_node_schema: NodeSchema
     edge_schemas: List[EdgeSchema]
     node_schemas: List[NodeSchema]
@@ -29,6 +33,9 @@ class GraphSchema(BaseModel):
             self._from_node_schema_id_to_edge_schema[
                 edge_schema.from_node_schema.id
             ].append(edge_schema)
+
+        GraphSchema._counter += 1
+        self.id = GraphSchema._counter
         return self
 
     @property
