@@ -9,12 +9,12 @@ from elevenlabs import ElevenLabs
 
 from cashier.agent_executor import AgentExecutor
 from cashier.audio import get_audio_input, get_text_from_speech
+from cashier.db import DBClient
 from cashier.gui import remove_previous_line
 from cashier.logger import logger
 from cashier.model.model_client import ModelClient
 from cashier.model.model_completion import Model
 from data.graph.cashier import cashier_graph_schema
-from data.tool_registry.cashier_tool_registry import create_db_client
 
 # Load environment variables from .env file
 load_dotenv()
@@ -101,7 +101,8 @@ if __name__ == "__main__":
     elevenlabs_client = ElevenLabs(
         api_key=os.getenv("ELEVENLABS_API_KEY"),
     )
-    create_db_client()
+
+    DBClient.initialize()
     ModelClient.initialize()
 
     if not args.enable_logging:
