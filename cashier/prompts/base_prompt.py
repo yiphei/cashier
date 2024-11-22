@@ -53,9 +53,11 @@ class BasePrompt(metaclass=CallableMeta):
             if has_fstring
             else BasePrompt.extract_dynamic_args(cls.dynamic_prompt)
         )
-        cls.prompt_kwargs = create_model(cls.__name__ + "_prompt_kwargs", 
-                                         __config__=ConfigDict(extra='forbid'),
-                                         **prompt_kwargs_fields)
+        cls.prompt_kwargs = create_model(
+            cls.__name__ + "_prompt_kwargs",
+            __config__=ConfigDict(extra="forbid"),
+            **prompt_kwargs_fields,
+        )
         if cls.run_input_kwargs is None:
             cls.run_input_kwargs = cls.prompt_kwargs
 
@@ -103,7 +105,6 @@ class BasePrompt(metaclass=CallableMeta):
 
         return params
 
-
     @classmethod
     def get_model_completion_args(
         cls, model_provider: ModelProvider, input: Any
@@ -116,7 +117,6 @@ class BasePrompt(metaclass=CallableMeta):
         cls, model_provider: ModelProvider, chat_completion: ModelOutput, input: Any
     ) -> Any:
         return chat_completion
-
 
     @classmethod
     def run(cls, model_name: ModelName, **kwargs: Any) -> Any:
