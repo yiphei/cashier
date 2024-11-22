@@ -13,6 +13,7 @@ from cashier.logger import logger
 from cashier.model.model_completion import ModelOutput
 from cashier.model.model_turn import AssistantTurn
 from cashier.model.model_util import CustomJSONEncoder, FunctionCall, ModelProvider
+from cashier.prompt_action.graph_addition_action import GraphAdditionAction
 from cashier.prompt_action.is_off_topic_action import IsOffTopicAction
 from cashier.prompt_action.should_change_node_action import ShouldChangeNodeAction
 from cashier.tool.function_call_context import (
@@ -256,48 +257,68 @@ class AgentExecutor:
         if self.graph is not None:
             if not IsOffTopicAction.run(
                 "claude-3.5", current_node_schema=self.curr_node.schema, tc=self.TC
-            ):
-                edge_schema, node_schema, is_wait = self.handle_is_off_topic()
-                if edge_schema and node_schema:
-                    if is_wait:
-                        fake_fn_call = FunctionCall.create(
-                            api_id_model_provider=None,
-                            api_id=None,
-                            name="think",
-                            args={
-                                "thought": "At least part of the customer request/question is off-topic for the current conversation and will actually be addressed later. According to the policies, I must tell the customer that 1) their off-topic request/question will be addressed later and 2) we must finish the current business before we can get to it. I must refuse to engage with the off-topic request/question in any way."
-                            },
-                        )
-                        self.TC.add_assistant_turn(
-                            None,
-                            model_provider
-                            or self.last_model_provider
-                            or ModelProvider.OPENAI,
-                            self.curr_node.schema.tool_registry,
-                            [fake_fn_call],
-                            {fake_fn_call.id: None},
-                        )
-                    else:
-                        self.init_skip_node(
-                            node_schema,
-                            edge_schema,
-                        )
+            ):                
+                has_new_task = self.request_graph.add_tasks(msg)
+                if has_new_task:
+                    fake_fn_call = FunctionCall.create(
+                        api_id_model_provider=None,
+                        api_id=None,
+                        name="think",
+                        args={
+                            "thought": "At least part of the customer request/question is off-topic for the current conversation and will actually be addressed later. According to the policies, I must tell the customer that 1) their off-topic request/question will be addressed later and 2) we must finish the current business before we can get to it. I must refuse to engage with the off-topic request/question in any way."
+                        },
+                    )
+                    self.TC.add_assistant_turn(
+                        None,
+                        model_provider
+                        or self.last_model_provider
+                        or ModelProvider.OPENAI,
+                        self.curr_node.schema.tool_registry,
+                        [fake_fn_call],
+                        {fake_fn_call.id: None},
+                    )
+                else:
+                    edge_schema, node_schema, is_wait = self.handle_is_off_topic()
+                    if edge_schema and node_schema:
+                        if is_wait:
+                            fake_fn_call = FunctionCall.create(
+                                api_id_model_provider=None,
+                                api_id=None,
+                                name="think",
+                                args={
+                                    "thought": "At least part of the customer request/question is off-topic for the current conversation and will actually be addressed later. According to the policies, I must tell the customer that 1) their off-topic request/question will be addressed later and 2) we must finish the current business before we can get to it. I must refuse to engage with the off-topic request/question in any way."
+                                },
+                            )
+                            self.TC.add_assistant_turn(
+                                None,
+                                model_provider
+                                or self.last_model_provider
+                                or ModelProvider.OPENAI,
+                                self.curr_node.schema.tool_registry,
+                                [fake_fn_call],
+                                {fake_fn_call.id: None},
+                            )
+                        else:
+                            self.init_skip_node(
+                                node_schema,
+                                edge_schema,
+                            )
 
-                        fake_fn_call = FunctionCall.create(
-                            api_id=None,
-                            api_id_model_provider=None,
-                            name="get_state",
-                            args={},
-                        )
-                        self.TC.add_assistant_turn(
-                            None,
-                            model_provider
-                            or self.last_model_provider
-                            or ModelProvider.OPENAI,
-                            self.curr_node.schema.tool_registry,
-                            [fake_fn_call],
-                            {fake_fn_call.id: self.curr_node.get_state()},
-                        )
+                            fake_fn_call = FunctionCall.create(
+                                api_id=None,
+                                api_id_model_provider=None,
+                                name="get_state",
+                                args={},
+                            )
+                            self.TC.add_assistant_turn(
+                                None,
+                                model_provider
+                                or self.last_model_provider
+                                or ModelProvider.OPENAI,
+                                self.curr_node.schema.tool_registry,
+                                [fake_fn_call],
+                                {fake_fn_call.id: self.curr_node.get_state()},
+                            )
             self.curr_node.update_first_user_message()
         else:
             self.request_graph.get_graph_schemas(msg)

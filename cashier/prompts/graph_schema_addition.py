@@ -17,7 +17,7 @@ class Response(BaseModel):
     agent_selections: List[AgentSelection]
 
 
-class GraphSchemaSelectionPrompt(BasePrompt):
+class GraphSchemaAdditionPrompt(BasePrompt):
 
     response_format = Response
 
@@ -25,6 +25,8 @@ class GraphSchemaSelectionPrompt(BasePrompt):
         self,
         graph_schemas: List[GraphSchema],
         request: str,
+        curr_agent_id: int,
+        curr_task: str,
     ) -> str:
         prompt = (
             "You are an AI-agent orchestration engine and your job is to select the best AI agents for a customer request. "
@@ -45,8 +47,9 @@ class GraphSchemaSelectionPrompt(BasePrompt):
             )
 
         prompt += (
-            "Given a customer request and the above list of AI agents with their attributes, "
-            "determine which AI agents can best address the request. "
+            f"Right now, AI agent with ID {curr_agent_id} is helping the customer with this task: {curr_task}. However, in the last customer request, the customer might have asked for something that is not covered by the current task and that might require other agents. "
+            "Given the customer request and the above list of AI agents with their attributes, "
+            "determine which AI agents can best address the request, if any. "
             "Respond by returning the AI agent IDs in the correct logical order along with the transcription of the customer request into an approtiate task description, for each agent ID. The task description must be a paraphrase of the customer request (e.g. 'the customer wants ...'). You must return at least one agent ID and each agent ID must be unique. If no combination of agents can address the request, return an empty list.\n\n"
             "<customer_request>\n"
             f"{request}\n"
