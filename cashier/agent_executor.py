@@ -45,7 +45,7 @@ class AgentExecutor:
         graph_schema: GraphSchema,
         audio_output: bool,
         remove_prev_tool_calls: bool,
-        request_graph_schema = None,
+        request_graph_schema=None,
     ):
         self.request_graph_schema = request_graph_schema
         self.graph_schema = graph_schema if request_graph_schema is None else None
@@ -357,8 +357,8 @@ class AgentExecutor:
             fn_id_to_output = {}
             new_edge_schema = None
             for function_call in model_completion.get_or_stream_fn_calls():
-                fn_id_to_output[function_call.id], is_success = self.execute_function_call(
-                    function_call, fn_callback
+                fn_id_to_output[function_call.id], is_success = (
+                    self.execute_function_call(function_call, fn_callback)
                 )
 
                 self.need_user_input = False
@@ -385,13 +385,17 @@ class AgentExecutor:
                 )
 
         else:
-            self.TC.add_assistant_turn(model_completion.msg_content, model_completion.model_provider)
+            self.TC.add_assistant_turn(
+                model_completion.msg_content, model_completion.model_provider
+            )
 
     def get_model_completion_kwargs(self) -> Dict[str, Any]:
         force_tool_choice = self.force_tool_choice
         self.force_tool_choice = None
         return {
             "turn_container": self.TC,
-            "tool_registry": self.curr_node.schema.tool_registry if self.graph is not None else None,
+            "tool_registry": (
+                self.curr_node.schema.tool_registry if self.graph is not None else None
+            ),
             "force_tool_choice": force_tool_choice,
         }

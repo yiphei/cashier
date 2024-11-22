@@ -274,7 +274,7 @@ class OAIMessageManager(MessageManager):
 
     def parse_system_messages(self, msgs: List[Dict[str, Any]]) -> None:
         [msg] = msgs
-        self.message_dicts.append(msg, MessageList.ItemType.NODE) # TODO: refactor this
+        self.message_dicts.append(msg, MessageList.ItemType.NODE)  # TODO: refactor this
 
     def add_node_turn(
         self,
@@ -331,7 +331,7 @@ class AnthropicMessageManager(MessageManager):
     def parse_system_messages(self, msgs: List[Dict[str, Any]]) -> None:
         [msg] = msgs
         self.system = msg["content"]
-        self.message_dicts.track_idx(MessageList.ItemType.NODE) # TODO: refactor this
+        self.message_dicts.track_idx(MessageList.ItemType.NODE)  # TODO: refactor this
 
     def add_node_turn(
         self,
