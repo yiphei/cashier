@@ -4,7 +4,6 @@ from collections import defaultdict, deque
 from typing import (
     Any,
     Callable,
-    ClassVar,
     Dict,
     List,
     Literal,
@@ -26,6 +25,7 @@ def _get_next_id() -> int:
         _get_next_id.counter = 0
     _get_next_id.counter += 1
     return _get_next_id.counter
+
 
 class GraphSchema(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
