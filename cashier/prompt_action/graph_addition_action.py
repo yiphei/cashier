@@ -14,6 +14,8 @@ class Input(BaseModel):
 
     graph_schemas: List[GraphSchema]
     request: str
+    curr_agent_id: int
+    curr_task: str
 
 
 class GraphAdditionAction(PromptActionBase[Input]):
@@ -27,6 +29,8 @@ class GraphAdditionAction(PromptActionBase[Input]):
         prompt = cls.prompt(
             graph_schemas=input.graph_schemas,
             request=input.request,
+            curr_agent_id=input.curr_agent_id,
+            curr_task=input.curr_task,
         )
 
         msgs = [{"role": "user", "content": prompt}]
