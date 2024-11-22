@@ -5,9 +5,13 @@ from pydantic import BaseModel, Field
 from cashier.graph.graph_schema import GraphSchema
 from cashier.prompts.base_prompt import BasePrompt
 
+
 class AgentSelection(BaseModel):
     agent_id: int
-    task: str = Field(description="The appropriate task description for this agent to perform")
+    task: str = Field(
+        description="The appropriate task description for this agent to perform"
+    )
+
 
 class Response(BaseModel):
     agent_selections: List[AgentSelection]

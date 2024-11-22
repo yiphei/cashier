@@ -53,9 +53,9 @@ class AgentExecutor:
             self.request_graph = RequestGraph(request_graph_schema)
             self.curr_graph_schema = None
         else:
-            self.request_graph= None
+            self.request_graph = None
             self.curr_graph_schema = graph_schema
-        
+
         self.remove_prev_tool_calls = remove_prev_tool_calls
         self.audio_output = audio_output
         self.last_model_provider = None
@@ -377,9 +377,11 @@ class AgentExecutor:
                             self.curr_node.state
                         ):
                             self.request_graph.current_graph_schema_idx += 1
-                            self.curr_graph_schema = self.request_graph.graph_schema_sequence[
-                                 self.request_graph.current_graph_schema_idx
-                            ]
+                            self.curr_graph_schema = (
+                                self.request_graph.graph_schema_sequence[
+                                    self.request_graph.current_graph_schema_idx
+                                ]
+                            )
                             self.graph = Graph(graph_schema=self.curr_graph_schema)
                             new_node_schema = self.curr_graph_schema.start_node_schema
                     else:

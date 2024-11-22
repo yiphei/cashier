@@ -131,4 +131,7 @@ cashier_graph_schema = GraphSchema(
 )
 
 
-REQUEST_GRAPH_SCHEMA = RequestGraphSchema(graph_schemas=[cashier_graph_schema], system_prompt="You work at Heaven Coffee and help customers with anything they need.")
+REQUEST_GRAPH_SCHEMA = RequestGraphSchema(
+    graph_schemas=[cashier_graph_schema],
+    system_prompt="You work at Heaven Coffee and help customers with anything they need.",
+)
