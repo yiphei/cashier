@@ -11,7 +11,7 @@ from cashier.gui import remove_previous_line
 from cashier.logger import logger
 from cashier.model.model_client import ModelClient
 from cashier.model.model_completion import Model
-from data.graph.cashier import CashierRequestGraphSchema
+from data.graph.cashier import REQUEST_GRAPH_SCHEMA
 
 # Load environment variables from .env file
 load_dotenv()
@@ -33,7 +33,7 @@ def run_chat(args: Namespace) -> None:
         None,
         args.audio_output,
         args.remove_prev_tool_calls,
-        request_graph_schema=CashierRequestGraphSchema,
+        request_graph_schema=REQUEST_GRAPH_SCHEMA,
     )
 
     while True:

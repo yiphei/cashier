@@ -7,6 +7,7 @@ from cashier.audio import get_speech_from_text
 from cashier.graph.edge_schema import EdgeSchema
 from cashier.graph.graph_schema import Graph, GraphSchema
 from cashier.graph.node_schema import Direction, Node, NodeSchema
+from cashier.graph.request_graph import RequestGraph
 from cashier.gui import MessageDisplay
 from cashier.logger import logger
 from cashier.model.model_completion import ModelOutput
@@ -48,9 +49,13 @@ class AgentExecutor:
         request_graph_schema=None,
     ):
         self.request_graph_schema = request_graph_schema
-        self.curr_graph_schema = graph_schema if request_graph_schema is None else None
-        self.curr_graph_schema_idx = 0
-        self.graph_schema_sequences = None
+        if request_graph_schema is not None:
+            self.request_graph = RequestGraph(request_graph_schema)
+            self.curr_graph_schema = None
+        else:
+            self.request_graph= None
+            self.curr_graph_schema = graph_schema
+        
         self.remove_prev_tool_calls = remove_prev_tool_calls
         self.audio_output = audio_output
         self.last_model_provider = None
@@ -295,11 +300,9 @@ class AgentExecutor:
                         )
             self.curr_node.update_first_user_message()
         else:
-            graph_schemas = self.request_graph_schema.get_graph_schemas(msg)
-            if len(graph_schemas) > 0:
-                self.graph_schema_sequences = graph_schemas
-                self.curr_graph_schema = graph_schemas[0]
-                self.curr_graph_schema_idx = 0
+            self.request_graph.get_graph_schemas(msg)
+            if len(self.request_graph.graph_schema_sequence) > 0:
+                self.curr_graph_schema = self.request_graph.graph_schema_sequence[0]
                 self.graph = Graph(graph_schema=self.curr_graph_schema)
                 self.init_next_node(
                     self.curr_graph_schema.start_node_schema, None, None
@@ -373,9 +376,9 @@ class AgentExecutor:
                         if self.curr_graph_schema.last_node_success_fn(
                             self.curr_node.state
                         ):
-                            self.curr_graph_schema_idx += 1
-                            self.curr_graph_schema = self.graph_schema_sequences[
-                                self.curr_graph_schema_idx
+                            self.request_graph.current_graph_schema_idx += 1
+                            self.curr_graph_schema = self.request_graph.graph_schema_sequence[
+                                 self.request_graph.current_graph_schema_idx
                             ]
                             self.graph = Graph(graph_schema=self.curr_graph_schema)
                             new_node_schema = self.curr_graph_schema.start_node_schema

@@ -1,13 +1,16 @@
 from typing import List
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from cashier.graph.graph_schema import GraphSchema
 from cashier.prompts.base_prompt import BasePrompt
 
+class AgentSelection(BaseModel):
+    agent_id: int
+    task: str = Field(description="The appropriate task description for this agent to perform")
 
 class Response(BaseModel):
-    agent_ids: List[int]
+    agent_selections: List[AgentSelection]
 
 
 class GraphSchemaSelectionPrompt(BasePrompt):
@@ -40,7 +43,7 @@ class GraphSchemaSelectionPrompt(BasePrompt):
         prompt += (
             "Given a customer request and the above list of AI agents with their attributes, "
             "determine which AI agents can best address the request. "
-            "Respond by returning the AI agent IDs in the correct logical order. You must return at least one agent ID and each agent ID must be unique. If no combination of agents can address the request, return an empty list.\n\n"
+            "Respond by returning the AI agent IDs in the correct logical order along with the transcription of the customer request into an approtiate task description, for each agent ID. You must return at least one agent ID and each agent ID must be unique. If no combination of agents can address the request, return an empty list.\n\n"
             "<customer_request>\n"
             f"{request}\n"
             "</customer_request>\n\n"
