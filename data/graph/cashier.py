@@ -5,6 +5,7 @@ from pydantic import Field
 from cashier.graph.edge_schema import EdgeSchema
 from cashier.graph.graph_schema import GraphSchema
 from cashier.graph.node_schema import NodeSchema
+from cashier.graph.request_graph import RequestGraphSchema
 from cashier.graph.state_model import BaseStateModel
 from cashier.model.model_turn import AssistantTurn
 from cashier.model.model_util import ModelProvider
@@ -125,4 +126,9 @@ cashier_graph_schema = GraphSchema(
         confirm_order_node_schema,
         terminal_order_node_schema,
     ],
+)
+
+request_schema = RequestGraphSchema(
+    graph_schemas=[cashier_graph_schema],
+    system_prompt="You work at Heaven Coffee and help customers with anything they need.",
 )
