@@ -65,7 +65,7 @@ class AgentExecutor:
             self.init_next_node(graph_schema.start_node_schema, None, None)
         else:
             self.graph = None
-            self.TC.add_system_turn(request_graph_schema.prompt)
+            self.TC.add_system_turn(request_graph_schema.system_prompt)
         self.force_tool_choice = None
 
     def init_node_core(

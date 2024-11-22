@@ -8,7 +8,7 @@ class RequestGraphSchema:
     @classmethod
     def get_graph_schemas(cls, request):
         graph_schema_ids = GraphSelectionAction.run(
-            "claude-3.5", request, cls.graph_schemas
+            "claude-3.5", request=request, graph_schemas=cls.graph_schemas
         )
         return [
             graph_schema

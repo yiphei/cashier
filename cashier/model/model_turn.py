@@ -59,7 +59,7 @@ class SystemTurn(ModelTurn):
         return [{"role": "system", "content": self.msg_content}]
 
     def build_anthropic_messages(self) -> List[Dict[str, Any]]:
-        return []
+        return [{"role": "system", "content": self.msg_content}] # TODO: fix this
 
 
 class NodeSystemTurn(SystemTurn):
