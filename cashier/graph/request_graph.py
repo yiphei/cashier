@@ -1,8 +1,10 @@
+import json
+
+from cashier.logger import logger
 from cashier.model.model_util import CustomJSONEncoder
 from cashier.prompt_action.graph_addition_action import GraphAdditionAction
 from cashier.prompt_action.graph_selection_action import GraphSelectionAction
-from cashier.logger import logger
-import json
+
 
 class RequestGraphSchema:
     def __init__(self, graph_schemas, system_prompt):
@@ -44,7 +46,9 @@ class RequestGraph:
             curr_task=self.tasks[self.current_graph_schema_idx],
         )
 
-        logger.debug(f"agent_selections: {json.dumps(agent_selections, cls=CustomJSONEncoder, indent=4)}")
+        logger.debug(
+            f"agent_selections: {json.dumps(agent_selections, cls=CustomJSONEncoder, indent=4)}"
+        )
 
         for agent_selection in agent_selections:
             self.graph_schema_sequence.append(
