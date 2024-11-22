@@ -301,7 +301,9 @@ class AgentExecutor:
                 self.curr_graph_schema = graph_schemas[0]
                 self.curr_graph_schema_idx = 0
                 self.graph = Graph(graph_schema=self.curr_graph_schema)
-                self.init_next_node(self.curr_graph_schema.start_node_schema, None, None)
+                self.init_next_node(
+                    self.curr_graph_schema.start_node_schema, None, None
+                )
 
     def execute_function_call(
         self, fn_call: FunctionCall, fn_callback: Optional[Callable] = None
@@ -368,9 +370,13 @@ class AgentExecutor:
 
                 if is_success and function_call.name.startswith("update_state"):
                     if self.curr_node.schema == self.curr_graph_schema.last_node_schema:
-                        if self.curr_graph_schema.last_node_success_fn(self.curr_node.state):
+                        if self.curr_graph_schema.last_node_success_fn(
+                            self.curr_node.state
+                        ):
                             self.curr_graph_schema_idx += 1
-                            self.curr_graph_schema = self.graph_schema_sequences[self.curr_graph_schema_idx]
+                            self.curr_graph_schema = self.graph_schema_sequences[
+                                self.curr_graph_schema_idx
+                            ]
                             self.graph = Graph(graph_schema=self.curr_graph_schema)
                             new_node_schema = self.curr_graph_schema.start_node_schema
                     else:
