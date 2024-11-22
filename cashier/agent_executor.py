@@ -13,7 +13,6 @@ from cashier.logger import logger
 from cashier.model.model_completion import ModelOutput
 from cashier.model.model_turn import AssistantTurn
 from cashier.model.model_util import CustomJSONEncoder, FunctionCall, ModelProvider
-from cashier.prompt_action.graph_addition_action import GraphAdditionAction
 from cashier.prompt_action.is_off_topic_action import IsOffTopicAction
 from cashier.prompt_action.should_change_node_action import ShouldChangeNodeAction
 from cashier.tool.function_call_context import (
@@ -257,7 +256,7 @@ class AgentExecutor:
         if self.graph is not None:
             if not IsOffTopicAction.run(
                 "claude-3.5", current_node_schema=self.curr_node.schema, tc=self.TC
-            ):                
+            ):
                 has_new_task = self.request_graph.add_tasks(msg)
                 if has_new_task:
                     fake_fn_call = FunctionCall.create(

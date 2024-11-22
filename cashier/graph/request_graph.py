@@ -33,15 +33,15 @@ class RequestGraph:
                 agent_selection.task
             )
 
-
     def add_tasks(self, request):
         agent_selections = GraphAdditionAction.run(
-                    "claude-3.5",
-                    graph_schemas = self.schema.graph_schemas,                    
-                    request =  request,
-                    curr_agent_id = self.graph_schema_sequence[self.current_graph_schema_idx].id,
-                    curr_task = self.tasks[self.current_graph_schema_idx])
-        
+            "claude-3.5",
+            graph_schemas=self.schema.graph_schemas,
+            request=request,
+            curr_agent_id=self.graph_schema_sequence[self.current_graph_schema_idx].id,
+            curr_task=self.tasks[self.current_graph_schema_idx],
+        )
+
         for agent_selection in agent_selections:
             self.graph_schema_sequence.append(
                 self.schema.graph_schema_id_to_graph_schema[agent_selection.agent_id]
@@ -50,5 +50,5 @@ class RequestGraph:
             self.graph_schema_id_to_task[agent_selection.agent_id] = (
                 agent_selection.task
             )
-     
+
         return True if agent_selections else False
