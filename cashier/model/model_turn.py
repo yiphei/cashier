@@ -273,7 +273,8 @@ class OAIMessageManager(MessageManager):
     model_provider = ModelProvider.OPENAI
 
     def parse_system_messages(self, msgs: List[Dict[str, Any]]) -> None:
-        self.message_dicts.extend(msgs)
+        [msg] = msgs
+        self.message_dicts.append(msg, MessageList.ItemType.NODE) # TODO: refactor this
 
     def add_node_turn(
         self,
@@ -328,7 +329,9 @@ class AnthropicMessageManager(MessageManager):
         self.system = None
 
     def parse_system_messages(self, msgs: List[Dict[str, Any]]) -> None:
-        return None
+        [msg] = msgs
+        self.system = msg["content"]
+        self.message_dicts.track_idx(MessageList.ItemType.NODE) # TODO: refactor this
 
     def add_node_turn(
         self,

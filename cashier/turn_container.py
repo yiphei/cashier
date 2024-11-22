@@ -66,7 +66,7 @@ class TurnContainer:
         self,
         msg_content: Optional[str],
         model_provider: ModelProvider,
-        tool_registry: ToolRegistry,
+        tool_registry: Optional[ToolRegistry]=None,
         fn_calls: Optional[List[FunctionCall]] = None,
         fn_id_to_outputs: Optional[Dict[str, Any]] = None,
     ) -> None:

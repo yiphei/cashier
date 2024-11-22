@@ -45,8 +45,11 @@ class AgentExecutor:
         graph_schema: GraphSchema,
         audio_output: bool,
         remove_prev_tool_calls: bool,
+        request_graph_schema = None,
     ):
-        self.graph_schema = graph_schema
+        self.request_graph_schema = request_graph_schema
+        self.graph_schema = graph_schema if request_graph_schema is None else None
+        self.graph_schema_sequences = None
         self.remove_prev_tool_calls = remove_prev_tool_calls
         self.audio_output = audio_output
         self.last_model_provider = None
@@ -54,11 +57,15 @@ class AgentExecutor:
 
         self.curr_node = None  # type: Node # type: ignore
         self.need_user_input = True
-        self.graph = Graph(graph_schema=graph_schema)
         self.next_edge_schemas: Set[EdgeSchema] = set()
         self.bwd_skip_edge_schemas: Set[EdgeSchema] = set()
 
-        self.init_next_node(graph_schema.start_node_schema, None, None)
+        if self.request_graph_schema is None:
+            self.graph = Graph(graph_schema=graph_schema)
+            self.init_next_node(graph_schema.start_node_schema, None, None)
+        else:
+            self.graph = None
+            self.TC.add_system_turn(request_graph_schema.prompt)
         self.force_tool_choice = None
 
     def init_node_core(
@@ -240,51 +247,59 @@ class AgentExecutor:
     ) -> None:
         MessageDisplay.print_msg("user", msg)
         self.TC.add_user_turn(msg)
-        if not IsOffTopicAction.run(
-            "claude-3.5", current_node_schema=self.curr_node.schema, tc=self.TC
-        ):
-            edge_schema, node_schema, is_wait = self.handle_is_off_topic()
-            if edge_schema and node_schema:
-                if is_wait:
-                    fake_fn_call = FunctionCall.create(
-                        api_id_model_provider=None,
-                        api_id=None,
-                        name="think",
-                        args={
-                            "thought": "At least part of the customer request/question is off-topic for the current conversation and will actually be addressed later. According to the policies, I must tell the customer that 1) their off-topic request/question will be addressed later and 2) we must finish the current business before we can get to it. I must refuse to engage with the off-topic request/question in any way."
-                        },
-                    )
-                    self.TC.add_assistant_turn(
-                        None,
-                        model_provider
-                        or self.last_model_provider
-                        or ModelProvider.OPENAI,
-                        self.curr_node.schema.tool_registry,
-                        [fake_fn_call],
-                        {fake_fn_call.id: None},
-                    )
-                else:
-                    self.init_skip_node(
-                        node_schema,
-                        edge_schema,
-                    )
+        if self.graph is not None:
+            if not IsOffTopicAction.run(
+                "claude-3.5", current_node_schema=self.curr_node.schema, tc=self.TC
+            ):
+                edge_schema, node_schema, is_wait = self.handle_is_off_topic()
+                if edge_schema and node_schema:
+                    if is_wait:
+                        fake_fn_call = FunctionCall.create(
+                            api_id_model_provider=None,
+                            api_id=None,
+                            name="think",
+                            args={
+                                "thought": "At least part of the customer request/question is off-topic for the current conversation and will actually be addressed later. According to the policies, I must tell the customer that 1) their off-topic request/question will be addressed later and 2) we must finish the current business before we can get to it. I must refuse to engage with the off-topic request/question in any way."
+                            },
+                        )
+                        self.TC.add_assistant_turn(
+                            None,
+                            model_provider
+                            or self.last_model_provider
+                            or ModelProvider.OPENAI,
+                            self.curr_node.schema.tool_registry,
+                            [fake_fn_call],
+                            {fake_fn_call.id: None},
+                        )
+                    else:
+                        self.init_skip_node(
+                            node_schema,
+                            edge_schema,
+                        )
 
-                    fake_fn_call = FunctionCall.create(
-                        api_id=None,
-                        api_id_model_provider=None,
-                        name="get_state",
-                        args={},
-                    )
-                    self.TC.add_assistant_turn(
-                        None,
-                        model_provider
-                        or self.last_model_provider
-                        or ModelProvider.OPENAI,
-                        self.curr_node.schema.tool_registry,
-                        [fake_fn_call],
-                        {fake_fn_call.id: self.curr_node.get_state()},
-                    )
-        self.curr_node.update_first_user_message()
+                        fake_fn_call = FunctionCall.create(
+                            api_id=None,
+                            api_id_model_provider=None,
+                            name="get_state",
+                            args={},
+                        )
+                        self.TC.add_assistant_turn(
+                            None,
+                            model_provider
+                            or self.last_model_provider
+                            or ModelProvider.OPENAI,
+                            self.curr_node.schema.tool_registry,
+                            [fake_fn_call],
+                            {fake_fn_call.id: self.curr_node.get_state()},
+                        )
+            self.curr_node.update_first_user_message()
+        else:
+            graph_schemas = self.request_graph_schema.get_graph_schemas(msg)
+            if len(graph_schemas) > 0:
+                self.graph_schema_sequences = graph_schemas
+                self.graph_schema = graph_schemas[0]
+                self.graph = Graph(graph_schema=self.graph_schema)
+                self.init_next_node(self.graph_schema.start_node_schema, None, None)
 
     def execute_function_call(
         self, fn_call: FunctionCall, fn_callback: Optional[Callable] = None
@@ -338,41 +353,45 @@ class AgentExecutor:
                 MessageDisplay.display_assistant_message(message)
             self.need_user_input = True
 
-        fn_id_to_output = {}
-        new_edge_schema = None
-        for function_call in model_completion.get_or_stream_fn_calls():
-            fn_id_to_output[function_call.id], is_success = self.execute_function_call(
-                function_call, fn_callback
+        if self.graph is not None:
+            fn_id_to_output = {}
+            new_edge_schema = None
+            for function_call in model_completion.get_or_stream_fn_calls():
+                fn_id_to_output[function_call.id], is_success = self.execute_function_call(
+                    function_call, fn_callback
+                )
+
+                self.need_user_input = False
+
+                if is_success and function_call.name.startswith("update_state"):
+                    for edge_schema in self.next_edge_schemas:
+                        if edge_schema.check_state_condition(self.curr_node.state):
+                            new_edge_schema = edge_schema
+                            break
+
+            self.TC.add_assistant_turn(
+                model_completion.msg_content,
+                model_completion.model_provider,
+                self.curr_node.schema.tool_registry,
+                model_completion.fn_calls,
+                fn_id_to_output,
             )
 
-            self.need_user_input = False
+            if new_edge_schema:
+                new_node_schema = new_edge_schema.to_node_schema
+                self.init_next_node(
+                    new_node_schema,
+                    new_edge_schema,
+                )
 
-            if is_success and function_call.name.startswith("update_state"):
-                for edge_schema in self.next_edge_schemas:
-                    if edge_schema.check_state_condition(self.curr_node.state):
-                        new_edge_schema = edge_schema
-                        break
-
-        self.TC.add_assistant_turn(
-            model_completion.msg_content,
-            model_completion.model_provider,
-            self.curr_node.schema.tool_registry,
-            model_completion.fn_calls,
-            fn_id_to_output,
-        )
-
-        if new_edge_schema:
-            new_node_schema = new_edge_schema.to_node_schema
-            self.init_next_node(
-                new_node_schema,
-                new_edge_schema,
-            )
+        else:
+            self.TC.add_assistant_turn(model_completion.msg_content, model_completion.model_provider)
 
     def get_model_completion_kwargs(self) -> Dict[str, Any]:
         force_tool_choice = self.force_tool_choice
         self.force_tool_choice = None
         return {
             "turn_container": self.TC,
-            "tool_registry": self.curr_node.schema.tool_registry,
+            "tool_registry": self.curr_node.schema.tool_registry if self.graph is not None else None,
             "force_tool_choice": force_tool_choice,
         }

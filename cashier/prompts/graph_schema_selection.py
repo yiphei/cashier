@@ -40,7 +40,7 @@ class GraphSchemaSelectionPrompt(BasePrompt):
         prompt += (
             "Given a customer request and the above list of AI agents with their attributes, "
             "determine which AI agents can best address the request. "
-            "Respond by returning the AI agent IDs (in any order). You must return at least one agent ID and each agent ID must be unique.\n\n"
+            "Respond by returning the AI agent IDs in the correct logical order. You must return at least one agent ID and each agent ID must be unique. If no combination of agents can address the request, return an empty list.\n\n"
             "<customer_request>\n"
             f"{request}\n"
             "</customer_request>\n\n"
