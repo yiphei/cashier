@@ -48,7 +48,8 @@ class AgentExecutor:
         request_graph_schema=None,
     ):
         self.request_graph_schema = request_graph_schema
-        self.graph_schema = graph_schema if request_graph_schema is None else None
+        self.curr_graph_schema = graph_schema if request_graph_schema is None else None
+        self.curr_graph_schema_idx = 0
         self.graph_schema_sequences = None
         self.remove_prev_tool_calls = remove_prev_tool_calls
         self.audio_output = audio_output
@@ -199,7 +200,7 @@ class AgentExecutor:
         bwd_skip_edge_schemas: Set[EdgeSchema],
     ) -> Union[Tuple[EdgeSchema, NodeSchema], Tuple[None, None]]:
         remaining_edge_schemas = (
-            set(self.graph_schema.edge_schemas)
+            set(self.curr_graph_schema.edge_schemas)
             - fwd_skip_edge_schemas
             - bwd_skip_edge_schemas
         )
@@ -297,9 +298,10 @@ class AgentExecutor:
             graph_schemas = self.request_graph_schema.get_graph_schemas(msg)
             if len(graph_schemas) > 0:
                 self.graph_schema_sequences = graph_schemas
-                self.graph_schema = graph_schemas[0]
-                self.graph = Graph(graph_schema=self.graph_schema)
-                self.init_next_node(self.graph_schema.start_node_schema, None, None)
+                self.curr_graph_schema = graph_schemas[0]
+                self.curr_graph_schema_idx = 0
+                self.graph = Graph(graph_schema=self.curr_graph_schema)
+                self.init_next_node(self.curr_graph_schema.start_node_schema, None, None)
 
     def execute_function_call(
         self, fn_call: FunctionCall, fn_callback: Optional[Callable] = None
@@ -356,6 +358,7 @@ class AgentExecutor:
         if self.graph is not None:
             fn_id_to_output = {}
             new_edge_schema = None
+            new_node_schema = None
             for function_call in model_completion.get_or_stream_fn_calls():
                 fn_id_to_output[function_call.id], is_success = (
                     self.execute_function_call(function_call, fn_callback)
@@ -364,10 +367,18 @@ class AgentExecutor:
                 self.need_user_input = False
 
                 if is_success and function_call.name.startswith("update_state"):
-                    for edge_schema in self.next_edge_schemas:
-                        if edge_schema.check_state_condition(self.curr_node.state):
-                            new_edge_schema = edge_schema
-                            break
+                    if self.curr_node.schema == self.curr_graph_schema.last_node_schema:
+                        if self.curr_graph_schema.last_node_success_fn(self.curr_node.state):
+                            self.curr_graph_schema_idx += 1
+                            self.curr_graph_schema = self.graph_schema_sequences[self.curr_graph_schema_idx]
+                            self.graph = Graph(graph_schema=self.curr_graph_schema)
+                            new_node_schema = self.curr_graph_schema.start_node_schema
+                    else:
+                        for edge_schema in self.next_edge_schemas:
+                            if edge_schema.check_state_condition(self.curr_node.state):
+                                new_edge_schema = edge_schema
+                                new_node_schema = edge_schema.to_node_schema
+                                break
 
             self.TC.add_assistant_turn(
                 model_completion.msg_content,
@@ -377,8 +388,7 @@ class AgentExecutor:
                 fn_id_to_output,
             )
 
-            if new_edge_schema:
-                new_node_schema = new_edge_schema.to_node_schema
+            if new_node_schema:
                 self.init_next_node(
                     new_node_schema,
                     new_edge_schema,

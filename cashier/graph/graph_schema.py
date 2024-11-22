@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections import defaultdict, deque
 from typing import (
     Any,
+    Callable,
     ClassVar,
     Dict,
     List,
@@ -28,6 +29,8 @@ class GraphSchema(BaseModel):
     output_schema: Type[BaseModel]
     description: str
     start_node_schema: NodeSchema
+    last_node_schema: NodeSchema
+    last_node_success_fn: Callable
     edge_schemas: List[EdgeSchema]
     node_schemas: List[NodeSchema]
 

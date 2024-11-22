@@ -120,6 +120,8 @@ cashier_graph_schema = GraphSchema(
     description="Help the customer place a coffee order",
     output_schema=Order,
     start_node_schema=take_order_node_schema,
+    last_node_schema = terminal_order_node_schema,
+    last_node_success_fn= lambda state: state.has_said_goodbye,
     edge_schemas=[take_to_confirm_edge_schema, confirm_to_terminal_edge_schema],
     node_schemas=[
         take_order_node_schema,
