@@ -37,4 +37,4 @@ class GraphSelectionAction(PromptActionBase[Input]):
     def get_output(
         cls, model_provider: ModelProvider, chat_completion: ModelOutput, input: Input
     ) -> bool:
-        return chat_completion.get_message_prop("agent_ids")
+        return chat_completion.get_message_prop("agent_selections")
