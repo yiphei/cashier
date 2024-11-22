@@ -116,6 +116,8 @@ confirm_to_terminal_edge_schema = EdgeSchema(
 
 
 cashier_graph_schema = GraphSchema(
+    description="Help the customer place a coffee order",
+    output_schema=Order,
     start_node_schema=take_order_node_schema,
     edge_schemas=[take_to_confirm_edge_schema, confirm_to_terminal_edge_schema],
     node_schemas=[
