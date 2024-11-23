@@ -1,8 +1,10 @@
-from typing import List
+from typing import Any, List
 
 from pydantic import BaseModel, Field
 
 from cashier.graph.graph_schema import GraphSchema
+from cashier.model.model_completion import ModelOutput
+from cashier.model.model_util import ModelProvider
 from cashier.prompts.base_prompt import BasePrompt
 
 
@@ -53,3 +55,10 @@ class GraphSchemaSelectionPrompt(BasePrompt):
             "</customer_request>\n\n"
         )
         return prompt
+
+
+    @classmethod
+    def get_output(
+        cls, model_provider: ModelProvider, chat_completion: ModelOutput, input: Any
+    ) -> bool:
+        return chat_completion.get_message_prop("agent_selections")
