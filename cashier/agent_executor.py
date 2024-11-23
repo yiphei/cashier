@@ -258,7 +258,9 @@ class AgentExecutor:
                 "claude-3.5", current_node_schema=self.curr_node.schema, tc=self.TC
             ):
                 has_new_task = (
-                    self.request_graph.add_tasks(msg, self.TC) if self.request_graph else False
+                    self.request_graph.add_tasks(msg, self.TC)
+                    if self.request_graph
+                    else False
                 )
                 if has_new_task:
                     fake_fn_call = FunctionCall.create(
