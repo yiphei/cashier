@@ -30,11 +30,13 @@ class RunInput(BaseModel):
     curr_task: str
     tc: TurnContainer
 
+
 class GraphSchemaAdditionPrompt(BasePrompt):
 
     response_format = Response
 
     run_input_kwargs = RunInput
+
     def dynamic_prompt(  # type: ignore
         self,
         graph_schemas: List[GraphSchema],
@@ -86,7 +88,7 @@ class GraphSchemaAdditionPrompt(BasePrompt):
             request=input.request,
             curr_agent_id=input.curr_agent_id,
             curr_task=input.curr_task,
-            last_customer_msg = last_customer_msg,
+            last_customer_msg=last_customer_msg,
         )
 
         if model_provider == ModelProvider.ANTHROPIC:
@@ -95,7 +97,6 @@ class GraphSchemaAdditionPrompt(BasePrompt):
             node_conv_msgs.append({"role": "system", "content": prompt})
 
         return {"message_dicts": node_conv_msgs, "logprobs": True, "temperature": 0}
-
 
     @classmethod
     def get_output(
