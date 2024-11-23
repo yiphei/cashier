@@ -109,7 +109,7 @@ class BasePrompt(metaclass=CallableMeta):
     def get_model_completion_args(
         cls, model_provider: ModelProvider, input: Any
     ) -> Dict[str, Any]:
-        prompt = cls({field: getattr(input, field) for field in input.model_fields})
+        prompt = cls(**{field: getattr(input, field) for field in input.model_fields})
         return {"message_dicts": [{"role": "user", "content": prompt}]}
 
     @classmethod
