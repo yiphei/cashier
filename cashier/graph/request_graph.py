@@ -2,8 +2,8 @@ import json
 
 from cashier.logger import logger
 from cashier.model.model_util import CustomJSONEncoder
-from cashier.prompts.graph_schema_selection import GraphSchemaSelectionPrompt
 from cashier.prompts.graph_schema_addition import GraphSchemaAdditionPrompt
+from cashier.prompts.graph_schema_selection import GraphSchemaSelectionPrompt
 
 
 class RequestGraphSchema:
