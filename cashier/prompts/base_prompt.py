@@ -110,7 +110,7 @@ class BasePrompt(metaclass=CallableMeta):
         cls, model_provider: ModelProvider, input: Any
     ) -> Dict[str, Any]:
         prompt = cls({field: getattr(input, field) for field in input.model_fields})
-        return {"role": "user", "content": prompt}
+        return {"message_dicts": [{"role": "user", "content": prompt}]}
 
     @classmethod
     def get_output(
