@@ -1,11 +1,13 @@
-from typing import Any, List
+import copy
+from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from cashier.graph.graph_schema import GraphSchema
 from cashier.model.model_completion import ModelOutput
 from cashier.model.model_util import ModelProvider
 from cashier.prompts.base_prompt import BasePrompt
+from cashier.turn_container import TurnContainer
 
 
 class AgentSelection(BaseModel):
@@ -16,13 +18,23 @@ class AgentSelection(BaseModel):
 
 
 class Response(BaseModel):
-    agent_selections: List[AgentSelection]
+    agent_selection: Optional[AgentSelection]
 
+
+class RunInput(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    graph_schemas: List[GraphSchema]
+    request: str
+    curr_agent_id: int
+    curr_task: str
+    tc: TurnContainer
 
 class GraphSchemaAdditionPrompt(BasePrompt):
 
     response_format = Response
 
+    run_input_kwargs = RunInput
     def dynamic_prompt(  # type: ignore
         self,
         graph_schemas: List[GraphSchema],
@@ -49,18 +61,44 @@ class GraphSchemaAdditionPrompt(BasePrompt):
             )
 
         prompt += (
-            f"Right now, AI agent with ID {curr_agent_id} is helping the customer with this task: {curr_task}. However, in the last customer request, the customer might have asked for something that is not covered by the current task and that might require other agents. "
-            "Given the customer request and the above list of AI agents with their attributes, "
-            "determine which AI agents can best address the request, if any. "
-            "Respond by returning the AI agent IDs in the correct logical order along with the transcription of the customer request into an approtiate task description, for each agent ID. The task description must be a paraphrase of the customer request (e.g. 'the customer wants ...'). You must return at least one agent ID and each agent ID must be unique. If no combination of agents can address the request, return an empty list.\n\n"
-            "<customer_request>\n"
+            f"Right now, AI agent with ID {curr_agent_id} is helping the customer with this request: {curr_task}. "
+            "Given a conversation with a customer and the list above of AI agents with their attributes, "
+            "determine if 1) the last customer message contains an entirely new request that requires an AI agent different from the current one. "
+            "If so, respond by returning the AI agent ID along with the transcription of the customer request into an approtiate task description. The task description must be a paraphrase of the customer request (e.g. 'the customer wants ...'). If not, return an empty list.\n\n"
+            "<last_customer_message>\n"
             f"{request}\n"
-            "</customer_request>\n\n"
+            "</last_customer_message>\n\n"
         )
         return prompt
+
+    @classmethod
+    def get_model_completion_args(
+        cls, model_provider: ModelProvider, input: Any
+    ) -> Dict[str, Any]:
+        tc = input.tc
+        node_conv_msgs = copy.deepcopy(
+            tc.model_provider_to_message_manager[model_provider].node_conversation_dicts
+        )
+        last_customer_msg = tc.get_user_message(content_only=True)
+
+        prompt = cls(
+            graph_schemas=input.graph_schemas,
+            request=input.request,
+            curr_agent_id=input.curr_agent_id,
+            curr_task=input.curr_task,
+            last_customer_msg = last_customer_msg,
+        )
+
+        if model_provider == ModelProvider.ANTHROPIC:
+            node_conv_msgs.append({"role": "user", "content": prompt})
+        elif model_provider == ModelProvider.OPENAI:
+            node_conv_msgs.append({"role": "system", "content": prompt})
+
+        return {"message_dicts": node_conv_msgs, "logprobs": True, "temperature": 0}
+
 
     @classmethod
     def get_output(
         cls, model_provider: ModelProvider, chat_completion: ModelOutput, input: Any
     ) -> bool:
-        return chat_completion.get_message_prop("agent_selections")
+        return chat_completion.get_message_prop("agent_selection")
