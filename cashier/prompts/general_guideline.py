@@ -1,4 +1,5 @@
 from typing import Optional
+
 from cashier.prompts.base_prompt import BasePrompt
 
 

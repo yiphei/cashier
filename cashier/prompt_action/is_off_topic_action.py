@@ -38,7 +38,9 @@ class IsOffTopicAction(PromptActionBase[Input]):
         prompt = cls.prompt(
             background_prompt=current_node_schema.node_system_prompt.BACKGROUND_PROMPT(),  # type: ignore
             node_prompt=current_node_schema.node_prompt,
-            state_json_schema=str(current_node_schema.state_pydantic_model.model_json_schema()),
+            state_json_schema=str(
+                current_node_schema.state_pydantic_model.model_json_schema()
+            ),
             tool_defs=json.dumps(
                 current_node_schema.tool_registry.get_tool_defs(
                     model_provider=model_provider

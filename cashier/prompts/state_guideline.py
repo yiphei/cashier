@@ -1,5 +1,7 @@
-from cashier.prompts.base_prompt import BasePrompt
 from typing import Optional
+
+from cashier.prompts.base_prompt import BasePrompt
+
 
 class StateGuidelinePrompt(BasePrompt):
 
