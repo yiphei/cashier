@@ -102,4 +102,8 @@ class GraphSchemaAdditionPrompt(BasePrompt):
     def get_output(
         cls, model_provider: ModelProvider, chat_completion: ModelOutput, input: Any
     ) -> bool:
-        return chat_completion.get_message_prop("agent_selection")
+        curr_agent_id = input.curr_agent_id
+        agent_selection = chat_completion.get_message_prop("agent_selection")
+        if agent_selection is not None and curr_agent_id == agent_selection.agent_id:
+            return None
+        return agent_selection

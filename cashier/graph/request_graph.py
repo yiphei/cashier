@@ -38,7 +38,7 @@ class RequestGraph:
             )
 
     def add_tasks(self, request):
-        agent_selections = GraphSchemaAdditionPrompt.run(
+        agent_selection = GraphSchemaAdditionPrompt.run(
             "claude-3.5",
             graph_schemas=self.schema.graph_schemas,
             request=request,
@@ -47,10 +47,9 @@ class RequestGraph:
         )
 
         logger.debug(
-            f"agent_selections: {json.dumps(agent_selections, cls=CustomJSONEncoder, indent=4)}"
+            f"agent_selection: {json.dumps(agent_selection, cls=CustomJSONEncoder, indent=4)}"
         )
-
-        for agent_selection in agent_selections:
+        if agent_selection is not None:
             self.graph_schema_sequence.append(
                 self.schema.graph_schema_id_to_graph_schema[agent_selection.agent_id]
             )
@@ -59,4 +58,4 @@ class RequestGraph:
                 agent_selection.task
             )
 
-        return True if agent_selections else False
+        return True if agent_selection else False
