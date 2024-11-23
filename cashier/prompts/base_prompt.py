@@ -125,8 +125,8 @@ class BasePrompt(metaclass=CallableMeta):
         model_provider = Model.get_model_provider(model_name)
         args = cls.get_model_completion_args(model_provider, input)
 
-        if "response_format" not in args and cls.prompt.response_format is not None:
-            args["response_format"] = cls.prompt.response_format
+        if "response_format" not in args and cls.response_format is not None:
+            args["response_format"] = cls.response_format
 
         chat_completion = Model.chat(model_name=model_name, **args)
         return cls.get_output(model_provider, chat_completion, input)
