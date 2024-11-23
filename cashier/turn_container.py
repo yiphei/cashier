@@ -1,6 +1,10 @@
-from typing import Any, Dict, List, Optional
+from __future__ import annotations
 
-from cashier.graph.node_schema import Node
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
+
+if TYPE_CHECKING:
+    from cashier.graph.node_schema import Node
+
 from cashier.model.message_list import MessageList
 from cashier.model.model_turn import (
     AnthropicMessageManager,

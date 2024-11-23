@@ -13,8 +13,8 @@ from cashier.logger import logger
 from cashier.model.model_completion import ModelOutput
 from cashier.model.model_turn import AssistantTurn
 from cashier.model.model_util import CustomJSONEncoder, FunctionCall, ModelProvider
-from cashier.prompt_action.is_off_topic_action import IsOffTopicAction
-from cashier.prompt_action.should_change_node_action import ShouldChangeNodeAction
+from cashier.prompts.node_schema_selection import NodeSchemaSelectionPrompt
+from cashier.prompts.off_topic import OffTopicPrompt
 from cashier.tool.function_call_context import (
     FunctionCallContext,
     InexistentFunctionError,
@@ -30,7 +30,7 @@ def should_change_node_schema(
 ) -> Optional[int]:
     if len(all_node_schemas) == 1:
         return None
-    return ShouldChangeNodeAction.run(
+    return NodeSchemaSelectionPrompt.run(
         "claude-3.5",
         current_node_schema=current_node_schema,
         tc=TM,
@@ -254,7 +254,7 @@ class AgentExecutor:
         MessageDisplay.print_msg("user", msg)
         self.TC.add_user_turn(msg)
         if self.graph is not None:
-            if not IsOffTopicAction.run(
+            if not OffTopicPrompt.run(
                 "claude-3.5", current_node_schema=self.curr_node.schema, tc=self.TC
             ):
                 has_new_task = (

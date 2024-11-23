@@ -20,9 +20,9 @@ class NodeSystemPrompt(BasePrompt):
         self,
         node_prompt: str,
         input: Any,
-        node_input_json_schema: Dict,
+        node_input_json_schema: Optional[Dict],
         state_json_schema: Dict,
-        last_msg: str,
+        last_msg: Optional[str],
     ) -> str:
         fn_kwargs = locals()
         fn_kwargs.pop("self")
