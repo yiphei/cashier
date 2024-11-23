@@ -56,7 +56,6 @@ class GraphSchemaSelectionPrompt(BasePrompt):
         )
         return prompt
 
-
     @classmethod
     def get_output(
         cls, model_provider: ModelProvider, chat_completion: ModelOutput, input: Any
