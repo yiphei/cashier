@@ -2,8 +2,8 @@ import json
 
 from cashier.logger import logger
 from cashier.model.model_util import CustomJSONEncoder
-from cashier.prompt_action.graph_addition_action import GraphAdditionAction
-from cashier.prompt_action.graph_selection_action import GraphSelectionAction
+from cashier.prompts.graph_schema_selection import GraphSchemaSelectionPrompt
+from cashier.prompts.graph_schema_addition import GraphSchemaAdditionPrompt
 
 
 class RequestGraphSchema:
@@ -25,7 +25,7 @@ class RequestGraph:
         self.graph_schema_id_to_task = {}
 
     def get_graph_schemas(self, request):
-        agent_selections = GraphSelectionAction.run(
+        agent_selections = GraphSchemaSelectionPrompt.run(
             "claude-3.5", request=request, graph_schemas=self.schema.graph_schemas
         )
         for agent_selection in agent_selections:
@@ -38,7 +38,7 @@ class RequestGraph:
             )
 
     def add_tasks(self, request):
-        agent_selections = GraphAdditionAction.run(
+        agent_selections = GraphSchemaAdditionPrompt.run(
             "claude-3.5",
             graph_schemas=self.schema.graph_schemas,
             request=request,
