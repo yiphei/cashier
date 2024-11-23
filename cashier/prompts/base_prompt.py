@@ -14,7 +14,6 @@ class CallableMeta(type):
         if not strict_kwargs_check:
             kwargs = {k: v for k, v in kwargs.items() if k in set(cls.prompt_kwargs.model_fields.keys())}  # type: ignore
 
-        print(kwargs)
         cls.prompt_kwargs.model_validate(kwargs)
         return (
             instance.f_string_prompt.format(**kwargs)
