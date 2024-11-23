@@ -43,6 +43,7 @@ class GraphSchemaAdditionPrompt(BasePrompt):
         request: str,
         curr_agent_id: int,
         curr_task: str,
+        last_customer_msg: str,
     ) -> str:
         prompt = (
             "You are an AI-agent orchestration engine and your job is to select the best AI agents for a customer request. "
@@ -68,7 +69,7 @@ class GraphSchemaAdditionPrompt(BasePrompt):
             "determine if 1) the last customer message contains an entirely new request that requires an AI agent different from the current one. "
             "If so, respond by returning the AI agent ID along with the transcription of the customer request into an approtiate task description. The task description must be a paraphrase of the customer request (e.g. 'the customer wants ...'). If not, return null.\n\n"
             "<last_customer_message>\n"
-            f"{request}\n"
+            f"{last_customer_msg}\n"
             "</last_customer_message>\n\n"
         )
         return prompt
