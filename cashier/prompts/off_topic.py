@@ -1,14 +1,15 @@
+import copy
+import json
 from typing import Any, Dict
+
 from pydantic import BaseModel, ConfigDict
 
 from cashier.graph.node_schema import NodeSchema
+from cashier.logger import logger
 from cashier.model.model_completion import ModelOutput
 from cashier.model.model_util import ModelProvider
 from cashier.prompts.base_prompt import BasePrompt
 from cashier.turn_container import TurnContainer
-import copy
-import json
-from cashier.logger import logger
 
 
 class Response(BaseModel):
@@ -20,6 +21,7 @@ class RunInput(BaseModel):
 
     current_node_schema: NodeSchema
     tc: TurnContainer
+
 
 class OffTopicPrompt(BasePrompt):
     run_input_kwargs = RunInput
