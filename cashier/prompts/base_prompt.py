@@ -14,6 +14,7 @@ class CallableMeta(type):
         if not strict_kwargs_check:
             kwargs = {k: v for k, v in kwargs.items() if k in set(cls.prompt_kwargs.model_fields.keys())}  # type: ignore
 
+        print(kwargs)
         cls.prompt_kwargs.model_validate(kwargs)
         return (
             instance.f_string_prompt.format(**kwargs)
@@ -55,7 +56,7 @@ class BasePrompt(metaclass=CallableMeta):
         )
         cls.prompt_kwargs = create_model(
             cls.__name__ + "_prompt_kwargs",
-            __config__=ConfigDict(extra="forbid"),
+            __config__=ConfigDict(extra="forbid", arbitrary_types_allowed=True),
             **prompt_kwargs_fields,
         )
         if cls.run_input_kwargs is None:

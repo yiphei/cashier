@@ -1,11 +1,11 @@
 from cashier.prompts.base_prompt import BasePrompt
-
+from typing import Optional
 
 class StateGuidelinePrompt(BasePrompt):
 
     def dynamic_prompt(  # type: ignore
         self,
-        last_msg: str,
+        last_msg: Optional[str],
     ) -> str:
         return (
             "<state_guidelines>\n"

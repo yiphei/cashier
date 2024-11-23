@@ -1,3 +1,4 @@
+from typing import Optional
 from cashier.prompts.base_prompt import BasePrompt
 
 
@@ -5,7 +6,7 @@ class GeneralGuidelinePrompt(BasePrompt):
 
     def dynamic_prompt(  # type: ignore
         self,
-        last_msg: str,
+        last_msg: Optional[str],
     ) -> str:
         return (
             "<general_guidelines>\n"
