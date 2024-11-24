@@ -401,13 +401,29 @@ class AgentExecutor:
                             self.curr_node.state
                         ):
                             self.request_graph.current_graph_schema_idx += 1
-                            self.curr_graph_schema = (
-                                self.request_graph.graph_schema_sequence[
-                                    self.request_graph.current_graph_schema_idx
-                                ]
-                            )
-                            self.graph = Graph(graph_schema=self.curr_graph_schema)
-                            new_node_schema = self.curr_graph_schema.start_node_schema
+                            if self.request_graph.current_graph_schema_idx < len(self.request_graph.graph_schema_sequence):
+                                fake_fn_call = FunctionCall.create(
+                                    api_id_model_provider=None,
+                                    api_id=None,
+                                    name="think",
+                                    args={
+                                        "thought": f"I just completed the current task. The next task is: {self.request_graph.tasks[self.request_graph.current_graph_schema_idx]}"
+                                    },
+                                )
+                                self.TC.add_assistant_turn(
+                                    None,
+                                    self.last_model_provider,
+                                    self.curr_node.schema.tool_registry,
+                                    [fake_fn_call],
+                                    {fake_fn_call.id: None},
+                                )
+                                self.curr_graph_schema = (
+                                    self.request_graph.graph_schema_sequence[
+                                        self.request_graph.current_graph_schema_idx
+                                    ]
+                                )
+                                self.graph = Graph(graph_schema=self.curr_graph_schema)
+                                new_node_schema = self.curr_graph_schema.start_node_schema
                     else:
                         for edge_schema in self.next_edge_schemas:
                             if edge_schema.check_state_condition(self.curr_node.state):
