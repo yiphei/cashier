@@ -401,7 +401,9 @@ class AgentExecutor:
                             self.curr_node.state
                         ):
                             self.request_graph.current_graph_schema_idx += 1
-                            if self.request_graph.current_graph_schema_idx < len(self.request_graph.graph_schema_sequence):
+                            if self.request_graph.current_graph_schema_idx < len(
+                                self.request_graph.graph_schema_sequence
+                            ):
                                 fake_fn_call = FunctionCall.create(
                                     api_id_model_provider=None,
                                     api_id=None,
@@ -423,7 +425,9 @@ class AgentExecutor:
                                     ]
                                 )
                                 self.graph = Graph(graph_schema=self.curr_graph_schema)
-                                new_node_schema = self.curr_graph_schema.start_node_schema
+                                new_node_schema = (
+                                    self.curr_graph_schema.start_node_schema
+                                )
                     else:
                         for edge_schema in self.next_edge_schemas:
                             if edge_schema.check_state_condition(self.curr_node.state):
