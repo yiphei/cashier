@@ -410,7 +410,7 @@ class AgentExecutor:
                         api_id=None,
                         name="think",
                         args={
-                            "thought": f"I just completed the current task. The next task is: {self.request_graph.tasks[self.request_graph.current_graph_schema_idx]}"
+                            "thought": f"I just completed the current task. The next task is: {self.request_graph.tasks[self.request_graph.current_graph_schema_idx + 1]}. I must tell the customer that I will soon address the next task. I don't currently have the tools to excute the task but once the customer acknowledges that it is ok to continue to the nest task, then I will receive the tools."
                         },
                     )
                     fn_id_to_output[fake_fn_call.id] = None
