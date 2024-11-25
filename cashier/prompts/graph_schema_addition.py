@@ -28,6 +28,7 @@ class RunInput(BaseModel):
     curr_agent_id: int
     curr_task: str
     tc: TurnContainer
+    all_tasks: List[str]
 
 
 class GraphSchemaAdditionPrompt(BasePrompt):
@@ -98,6 +99,7 @@ class GraphSchemaAdditionPrompt(BasePrompt):
             graph_schemas=input.graph_schemas,
             curr_agent_id=input.curr_agent_id,
             curr_task=input.curr_task,
+            all_tasks=input.all_tasks,
             last_customer_msg=last_customer_msg,
         )
 

@@ -48,6 +48,7 @@ class RequestGraph:
             curr_agent_id=self.graph_schema_sequence[self.current_graph_schema_idx].id,
             curr_task=self.tasks[self.current_graph_schema_idx],
             tc=tc,
+            all_tasks=self.tasks,
         )
 
         logger.debug(
