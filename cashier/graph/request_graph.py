@@ -37,6 +37,10 @@ class RequestGraph:
                 agent_selection.task
             )
 
+        logger.debug(
+            f"agent_selections: {json.dumps(agent_selections, cls=CustomJSONEncoder, indent=4)}"
+        )
+
     def add_tasks(self, request, tc):
         agent_selection = GraphSchemaAdditionPrompt.run(
             "claude-3.5",

@@ -66,8 +66,8 @@ class GraphSchemaAdditionPrompt(BasePrompt):
         prompt += (
             f"Right now, AI agent with ID {curr_agent_id} is helping the customer with this request: {curr_task}. "
             "Given a conversation with a customer and the list above of AI agents with their attributes, "
-            "determine if 1) the last customer message contains an entirely new request that requires an AI agent different from the current one. "
-            "If so, respond by returning the AI agent ID along with the transcription of the customer request into an approtiate task description. The task description must be a paraphrase of the customer request (e.g. 'the customer wants ...'). If not, return null.\n\n"
+            "determine if the last customer message contains 1) a new request that must require an AI agent different from the current one, or 2) a new request that requires the current agent but is in addition to the current request (so a refinement of the current request does not count). "
+            "If 1) or 2) is true, respond by returning the AI agent ID along with the transcription of the customer request into an appropriate task description. The task description must be a paraphrase of the customer request (e.g. 'the customer wants ...'). Do not include parts of the customer message that are not part of the new request. If 1) and 2) are false, return null.\n\n"
             "<last_customer_message>\n"
             f"{last_customer_msg}\n"
             "</last_customer_message>\n\n"
