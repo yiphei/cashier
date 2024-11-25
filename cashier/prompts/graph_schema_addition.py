@@ -64,13 +64,9 @@ class GraphSchemaAdditionPrompt(BasePrompt):
             )
 
         curr_task_id = None
-        prompt+= ("These are all the customer requests extracted from the conversation so far. They are queued up in order (i.e. the current task is the first task, so the one with id 1)")
+        prompt += "These are all the customer requests extracted from the conversation so far. They are queued up in order (i.e. the current task is the first task, so the one with id 1)"
         for i, task in enumerate(all_tasks):
-            prompt += (
-                f"<task id={i+1}>\n"
-                f"{task}\n"
-                "</task>\n\n"
-            )
+            prompt += f"<task id={i+1}>\n" f"{task}\n" "</task>\n\n"
             if task == curr_task:
                 curr_task_id = i + 1
 
