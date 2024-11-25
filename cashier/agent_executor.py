@@ -388,10 +388,12 @@ class AgentExecutor:
             fn_id_to_output = {}
             new_edge_schema = None
             new_node_schema = None
+            fn_calls = []
             for function_call in model_completion.get_or_stream_fn_calls():
                 fn_id_to_output[function_call.id], is_success = (
                     self.execute_function_call(function_call, fn_callback)
                 )
+                fn_calls.append(function_call)
                 if (
                     self.curr_graph_schema.final_fn_name
                     and function_call.name == self.curr_graph_schema.final_fn_name
@@ -406,7 +408,7 @@ class AgentExecutor:
                         },
                     )
                     fn_id_to_output[fake_fn_call.id] = None
-
+                    fn_calls.append(fake_fn_call)
                 self.need_user_input = False
 
                 if is_success and function_call.name.startswith("update_state"):
@@ -438,7 +440,7 @@ class AgentExecutor:
                 model_completion.msg_content,
                 model_completion.model_provider,
                 self.curr_node.schema.tool_registry,
-                model_completion.fn_calls,
+                fn_calls,
                 fn_id_to_output,
             )
 
