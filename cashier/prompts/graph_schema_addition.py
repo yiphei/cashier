@@ -64,16 +64,16 @@ class GraphSchemaAdditionPrompt(BasePrompt):
             )
 
         curr_task_id = None
-        prompt += "These are all the customer requests extracted from the conversation so far. They are queued up in order (i.e. the current task is the first task, so the one with id 1)"
+        prompt += "These are all the customer requests extracted from the conversation so far. They are queued up in order (i.e. the current request is the first request, so the one with id 1)"
         for i, task in enumerate(all_tasks):
-            prompt += f"<task id={i+1}>\n" f"{task}\n" "</task>\n\n"
+            prompt += f"<request id={i+1}>\n" f"{task}\n" "</request>\n\n"
             if task == curr_task:
                 curr_task_id = i + 1
 
         prompt += (
             f"Right now, AI agent with ID {curr_agent_id} is helping the customer with request ID {curr_task_id}. "
-            "Given a conversation with a customer and the list above of AI agents with their attributes, "
-            "determine if the last customer message contains 1) a new request that must require an AI agent different from the current one, or 2) a new request that requires the current agent and is in addition to the current request (so a refinement/modification of the current request does not count). "
+            "Given a conversation with a customer, the list above of AI agents with their attributes, and the list of requests, "
+            "determine if the last customer message contains a new request that is not present in the list of requets. New request is defined as a request that is in addition to the existing list of requests, so a refinement/modification of an existing request does not count as new request. "
             "If 1) or 2) is true, respond by returning the AI agent ID along with the transcription of the customer request into an appropriate task description. The task description must be a paraphrase of the customer request (e.g. 'the customer wants ...'). Do not include parts of the customer message that are not part of the new request. If 1) and 2) are false, return null.\n\n"
             "<last_customer_message>\n"
             f"{last_customer_msg}\n"
