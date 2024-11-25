@@ -45,7 +45,6 @@ class RequestGraph:
         agent_selection = GraphSchemaAdditionPrompt.run(
             "claude-3.5",
             graph_schemas=self.schema.graph_schemas,
-            request=request,
             curr_agent_id=self.graph_schema_sequence[self.current_graph_schema_idx].id,
             curr_task=self.tasks[self.current_graph_schema_idx],
             tc=tc,

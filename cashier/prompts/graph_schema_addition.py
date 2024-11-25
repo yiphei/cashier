@@ -25,7 +25,6 @@ class RunInput(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     graph_schemas: List[GraphSchema]
-    request: str
     curr_agent_id: int
     curr_task: str
     tc: TurnContainer
@@ -40,7 +39,6 @@ class GraphSchemaAdditionPrompt(BasePrompt):
     def dynamic_prompt(  # type: ignore
         self,
         graph_schemas: List[GraphSchema],
-        request: str,
         curr_agent_id: int,
         curr_task: str,
         last_customer_msg: str,
@@ -86,7 +84,6 @@ class GraphSchemaAdditionPrompt(BasePrompt):
 
         prompt = cls(
             graph_schemas=input.graph_schemas,
-            request=input.request,
             curr_agent_id=input.curr_agent_id,
             curr_task=input.curr_task,
             last_customer_msg=last_customer_msg,
