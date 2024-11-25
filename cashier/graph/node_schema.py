@@ -147,6 +147,7 @@ class NodeSchema:
     def create_node(  # noqa: E704
         self,
         input: Any,
+        curr_request: str,
         last_msg: Literal[None] = None,
         edge_schema: Literal[None] = None,
         prev_node: Literal[None] = None,
@@ -157,6 +158,7 @@ class NodeSchema:
     def create_node(  # noqa: E704
         self,
         input: Any,
+        curr_request: str,
         last_msg: str,
         edge_schema: EdgeSchema,
         prev_node: Literal[None] = None,
@@ -167,6 +169,7 @@ class NodeSchema:
     def create_node(  # noqa: E704
         self,
         input: Any,
+        curr_request: str,
         last_msg: str,
         edge_schema: EdgeSchema,
         prev_node: Node,
@@ -176,6 +179,7 @@ class NodeSchema:
     def create_node(
         self,
         input: Any,
+        curr_request: str,
         last_msg: Optional[str] = None,
         edge_schema: Optional[EdgeSchema] = None,
         prev_node: Optional[Node] = None,
@@ -199,6 +203,7 @@ class NodeSchema:
             ),
             state_json_schema=self.state_pydantic_model.model_json_schema(),
             last_msg=last_msg,
+            curr_request=curr_request
         )
 
         if direction == Direction.BWD:
