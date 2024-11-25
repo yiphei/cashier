@@ -38,6 +38,7 @@ class GraphSchema(BaseModel):
     last_node_success_fn: Callable
     edge_schemas: List[EdgeSchema]
     node_schemas: List[NodeSchema]
+    final_fn_name: Optional[str] = None
 
     @model_validator(mode="after")
     def init_computed_fields(self) -> GraphSchema:

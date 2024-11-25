@@ -392,6 +392,16 @@ class AgentExecutor:
                 fn_id_to_output[function_call.id], is_success = (
                     self.execute_function_call(function_call, fn_callback)
                 )
+                if self.curr_graph_schema.final_fn_name and function_call.name == self.curr_graph_schema.final_fn_name and is_success:
+                    fake_fn_call = FunctionCall.create(
+                        api_id_model_provider=None,
+                        api_id=None,
+                        name="think",
+                        args={
+                            "thought": f"I just completed the current task. The next task is: {self.request_graph.tasks[self.request_graph.current_graph_schema_idx]}"
+                        },
+                    )
+                    fn_id_to_output[fake_fn_call.id] = None
 
                 self.need_user_input = False
 
@@ -404,21 +414,6 @@ class AgentExecutor:
                             if self.request_graph.current_graph_schema_idx < len(
                                 self.request_graph.graph_schema_sequence
                             ):
-                                fake_fn_call = FunctionCall.create(
-                                    api_id_model_provider=None,
-                                    api_id=None,
-                                    name="think",
-                                    args={
-                                        "thought": f"I just completed the current task. The next task is: {self.request_graph.tasks[self.request_graph.current_graph_schema_idx]}"
-                                    },
-                                )
-                                self.TC.add_assistant_turn(
-                                    None,
-                                    self.last_model_provider,
-                                    self.curr_node.schema.tool_registry,
-                                    [fake_fn_call],
-                                    {fake_fn_call.id: None},
-                                )
                                 self.curr_graph_schema = (
                                     self.request_graph.graph_schema_sequence[
                                         self.request_graph.current_graph_schema_idx
