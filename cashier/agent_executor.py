@@ -397,7 +397,7 @@ class AgentExecutor:
                 if (
                     self.curr_graph_schema.final_fn_name
                     and function_call.name == self.curr_graph_schema.final_fn_name
-                    and is_success
+                    and is_success and (type(fn_id_to_output[function_call.id]) != str or not fn_id_to_output[function_call.id].strip().startswith("Error:"))
                 ):
                     fake_fn_call = FunctionCall.create(
                         api_id_model_provider=None,
