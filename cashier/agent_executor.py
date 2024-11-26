@@ -347,11 +347,12 @@ class AgentExecutor:
 
             self.need_user_input = False
 
-            if is_success and function_call.name.startswith("update_state"):
-                for edge_schema in self.next_edge_schemas:
-                    if edge_schema.check_state_condition(self.curr_node.state):
-                        new_edge_schema = edge_schema
-                        break
+            for edge_schema in self.next_edge_schemas:
+                if edge_schema.check_transition_config(
+                    self.curr_node.state, function_call, is_success
+                ):
+                    new_edge_schema = edge_schema
+                    break
 
         self.TC.add_assistant_turn(
             model_completion.msg_content,
