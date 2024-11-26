@@ -45,6 +45,7 @@ class Node:
         self.status = self.Status.IN_PROGRESS
         self.in_edge_schema = in_edge_schema
         self.direction = direction
+        self.has_run_assistant_turn_before_transition = False
 
     @classmethod
     def init_state(
@@ -108,6 +109,7 @@ class NodeSchema:
             Union[ToolRegistry, List[ChatCompletionToolParam]]
         ] = None,
         first_turn: Optional[ModelTurn] = None,
+        run_assistant_turn_before_transition: bool = False,
         tool_names: Optional[List[str]] = None,
     ):
         NodeSchema._counter += 1
@@ -119,6 +121,7 @@ class NodeSchema:
         assert issubclass(state_pydantic_model, BaseStateModel)
         self.state_pydantic_model = state_pydantic_model
         self.first_turn = first_turn
+        self.run_assistant_turn_before_transition = run_assistant_turn_before_transition
         if tool_registry_or_tool_defs is not None and isinstance(
             tool_registry_or_tool_defs, ToolRegistry
         ):
