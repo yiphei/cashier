@@ -370,10 +370,7 @@ class AgentExecutor:
                 f"[FUNCTION_RETURN] {Style.BRIGHT}name: {fn_call.name}, id: {fn_call.id}{Style.NORMAL} with output:\n{json.dumps(fn_output, cls=CustomJSONEncoder, indent=4)}"
             )
             return fn_output, (
-                type(fn_output) != str
-                or not fn_output
-                .strip()
-                .startswith("Error:")
+                type(fn_output) != str or not fn_output.strip().startswith("Error:")
             )
 
     def add_assistant_turn(
