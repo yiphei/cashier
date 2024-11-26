@@ -27,22 +27,22 @@ class FwdSkipType(StrEnum):
     SKIP_IF_INPUT_UNCHANGED = "SKIP_IF_INPUT_UNCHANGED"
 
 
-class BaseSuccessCondition(BaseModel):
+class BaseTransitionConfif(BaseModel):
     need_user_msg: bool
 
 
-class FunctionSuccessConditionType(StrEnum):
+class FunctionState(StrEnum):
     CALLED = "CALLED"
     CALLED_AND_SUCCEEDED = "CALLED_AND_SUCCEEDED"
 
 
-class FunctionSuccessCondition(BaseSuccessCondition):
+class FunctionTransitionConfig(BaseTransitionConfif):
     fn_name: str
-    success_condition_type: FunctionSuccessConditionType
+    state: FunctionState
 
 
-class StateSuccessCondition(BaseSuccessCondition):
-    fn_check: Callable[[BaseStateModel], bool]
+class StateTransitionConfig(BaseTransitionConfif):
+    state_check_fn: Callable[[BaseStateModel], bool]
 
 
 class EdgeSchema:
@@ -52,7 +52,7 @@ class EdgeSchema:
         self,
         from_node_schema: NodeSchema,
         to_node_schema: NodeSchema,
-        success_condition: BaseSuccessCondition,
+        transition_config: BaseTransitionConfif,
         new_input_fn: Callable[[BaseStateModel, BaseModel], Any],
         bwd_state_init: BwdStateInit = BwdStateInit.RESUME,
         fwd_state_init: FwdStateInit = FwdStateInit.RESET,
@@ -70,7 +70,7 @@ class EdgeSchema:
 
         self.from_node_schema = from_node_schema
         self.to_node_schema = to_node_schema
-        self.success_condition = success_condition
+        self.transition_config = transition_config
         self.new_input_fn = new_input_fn
         self.bwd_state_init = bwd_state_init
         self.fwd_state_init = fwd_state_init
@@ -86,24 +86,24 @@ class EdgeSchema:
             skip_from_incomplete_to_prev_incomplete
         )
 
-    def check_state_condition(
-        self, state: BaseStateModel, fn_call, is_output_success
+    def check_transition_config(
+        self, state: BaseStateModel, fn_call, is_fn_call_success
     ) -> bool:
-        if isinstance(self.success_condition, FunctionSuccessCondition):
+        if isinstance(self.transition_config, FunctionTransitionConfig):
             if (
-                self.success_condition.success_condition_type
-                == FunctionSuccessConditionType.CALLED
+                self.transition_config.state
+                == FunctionState.CALLED
             ):
-                return fn_call.name == self.success_condition.fn_name
+                return fn_call.name == self.transition_config.fn_name
             elif (
-                self.success_condition.success_condition_type
-                == FunctionSuccessConditionType.CALLED_AND_SUCCEEDED
+                self.transition_config.state
+                == FunctionState.CALLED_AND_SUCCEEDED
             ):
                 return (
-                    fn_call.name == self.success_condition.fn_name and is_output_success
+                    fn_call.name == self.transition_config.fn_name and is_fn_call_success
                 )
-        elif isinstance(self.success_condition, StateSuccessCondition):
-            return self.success_condition.fn_check(state)
+        elif isinstance(self.transition_config, StateTransitionConfig):
+            return self.transition_config.state_check_fn(state)
 
     def _can_skip(
         self, skip_type: Optional[FwdSkipType], from_node: Node, to_node: Node
