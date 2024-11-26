@@ -59,11 +59,11 @@ class Graph(BaseModel):
     state: BaseModel
 
     def __init__(self, **kwargs):
-        super().__init__(**kwargs)
         if "state" not in kwargs:
-            self.state = self.graph_schema.state_schema()
+            kwargs['state'] = kwargs['graph_schema'].state_schema()
         else:
             raise ValueError("state must not be provided")
+        super().__init__(**kwargs)
 
     def add_fwd_edge(self, from_node: Node, to_node: Node, edge_schema_id: int) -> None:
         self.edge_schema_id_to_edges[edge_schema_id].append(Edge(from_node, to_node))
