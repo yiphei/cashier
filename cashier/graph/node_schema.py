@@ -199,7 +199,11 @@ class NodeSchema:
                 if self.input_pydantic_model
                 else None
             ),
-            state_json_schema=self.state_pydantic_model.model_json_schema() if self.state_pydantic_model else None,
+            state_json_schema=(
+                self.state_pydantic_model.model_json_schema()
+                if self.state_pydantic_model
+                else None
+            ),
             last_msg=last_msg,
         )
 
