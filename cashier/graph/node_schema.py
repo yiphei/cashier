@@ -109,7 +109,7 @@ class NodeSchema:
             Union[ToolRegistry, List[ChatCompletionToolParam]]
         ] = None,
         first_turn: Optional[ModelTurn] = None,
-        run_assistant_turn_before_transition: bool=False,
+        run_assistant_turn_before_transition: bool = False,
         tool_names: Optional[List[str]] = None,
     ):
         NodeSchema._counter += 1

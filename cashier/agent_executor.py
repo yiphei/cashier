@@ -60,7 +60,7 @@ class AgentExecutor:
 
         self.init_next_node(graph_schema.start_node_schema, None, None)
         self.force_tool_choice = None
-        self.new_edge_schema=None
+        self.new_edge_schema = None
 
     def init_node_core(
         self,
@@ -342,8 +342,8 @@ class AgentExecutor:
         fn_id_to_output = {}
         if self.new_edge_schema is None:
             for function_call in model_completion.get_or_stream_fn_calls():
-                fn_id_to_output[function_call.id], is_success = self.execute_function_call(
-                    function_call, fn_callback
+                fn_id_to_output[function_call.id], is_success = (
+                    self.execute_function_call(function_call, fn_callback)
                 )
 
                 self.need_user_input = False
@@ -363,7 +363,10 @@ class AgentExecutor:
             fn_id_to_output,
         )
 
-        if self.new_edge_schema and (not self.curr_node.schema.run_assistant_turn_before_transition or self.curr_node.has_run_assistant_turn_before_transition):
+        if self.new_edge_schema and (
+            not self.curr_node.schema.run_assistant_turn_before_transition
+            or self.curr_node.has_run_assistant_turn_before_transition
+        ):
             new_node_schema = self.new_edge_schema.to_node_schema
             self.init_next_node(
                 new_node_schema,
