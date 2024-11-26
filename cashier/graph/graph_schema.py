@@ -60,7 +60,7 @@ class Graph(BaseModel):
 
     def __init__(self, **kwargs):
         if "state" not in kwargs:
-            kwargs['state'] = kwargs['graph_schema'].state_schema()
+            kwargs["state"] = kwargs["graph_schema"].state_schema()
         else:
             raise ValueError("state must not be provided")
         super().__init__(**kwargs)
