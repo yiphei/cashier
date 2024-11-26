@@ -1,13 +1,16 @@
 import json
+from collections import defaultdict
 
-from cashier.graph.edge_schema import FunctionState, FunctionTransitionConfig, StateTransitionConfig
+from cashier.graph.edge_schema import (
+    FunctionState,
+    FunctionTransitionConfig,
+    StateTransitionConfig,
+)
 from cashier.graph.state_model import BaseStateModel
 from cashier.logger import logger
 from cashier.model.model_util import CustomJSONEncoder
 from cashier.prompts.graph_schema_addition import GraphSchemaAdditionPrompt
 from cashier.prompts.graph_schema_selection import GraphSchemaSelectionPrompt
-
-from collections import defaultdict
 
 
 class RequestGraphSchema:
@@ -20,7 +23,9 @@ class RequestGraphSchema:
         self.system_prompt = system_prompt
         self.from_graph_schema_id_to_graph_edge_schemas = defaultdict(list)
         for graph_edge_schema in graph_edge_schemas:
-            self.from_graph_schema_id_to_graph_edge_schemas[graph_edge_schema.from_graph_schema.id].append(graph_edge_schema)
+            self.from_graph_schema_id_to_graph_edge_schemas[
+                graph_edge_schema.from_graph_schema.id
+            ].append(graph_edge_schema)
 
 
 class RequestGraph:
@@ -72,6 +77,7 @@ class RequestGraph:
             )
 
         return True if agent_selection else False
+
 
 class GraphEdgeSchema:
     _counter = 0
