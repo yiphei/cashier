@@ -90,17 +90,12 @@ class EdgeSchema:
         self, state: BaseStateModel, fn_call, is_fn_call_success
     ) -> bool:
         if isinstance(self.transition_config, FunctionTransitionConfig):
-            if (
-                self.transition_config.state
-                == FunctionState.CALLED
-            ):
+            if self.transition_config.state == FunctionState.CALLED:
                 return fn_call.name == self.transition_config.fn_name
-            elif (
-                self.transition_config.state
-                == FunctionState.CALLED_AND_SUCCEEDED
-            ):
+            elif self.transition_config.state == FunctionState.CALLED_AND_SUCCEEDED:
                 return (
-                    fn_call.name == self.transition_config.fn_name and is_fn_call_success
+                    fn_call.name == self.transition_config.fn_name
+                    and is_fn_call_success
                 )
         elif isinstance(self.transition_config, StateTransitionConfig):
             return self.transition_config.state_check_fn(state)
