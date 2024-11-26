@@ -2,7 +2,7 @@ from typing import Optional
 
 from pydantic import Field
 
-from cashier.graph.edge_schema import EdgeSchema
+from cashier.graph.edge_schema import EdgeSchema, StateTransitionConfig
 from cashier.graph.graph_schema import GraphSchema
 from cashier.graph.node_schema import NodeSchema
 from cashier.graph.request_graph import RequestGraphSchema
@@ -86,8 +86,11 @@ confirm_order_node_schema = NodeSchema(
 take_to_confirm_edge_schema = EdgeSchema(
     from_node_schema=take_order_node_schema,
     to_node_schema=confirm_order_node_schema,
-    state_condition_fn=lambda state: state.has_finished_ordering  # type: ignore
-    and state.order is not None,  # type: ignore
+    transition_config=StateTransitionConfig(
+        need_user_msg=True,
+        state_check_fn=lambda state: state.has_finished_ordering  # type: ignore
+        and state.order is not None,  # type: ignore
+    ),
     new_input_fn=lambda state, input: state.order,  # type: ignore
 )
 
@@ -111,9 +114,16 @@ terminal_order_node_schema = NodeSchema(
 confirm_to_terminal_edge_schema = EdgeSchema(
     from_node_schema=confirm_order_node_schema,
     to_node_schema=terminal_order_node_schema,
-    state_condition_fn=lambda state: state.has_confirmed_order,  # type: ignore
+    transition_config=StateTransitionConfig(
+        need_user_msg=True, state_check_fn=lambda state: state.has_confirmed_order  # type: ignore
+    ),
     new_input_fn=lambda state, input: None,
 )
+
+
+class GraphState(BaseStateModel):
+    order: Optional[Order] = None
+    has_confirmed_order: bool = False
 
 
 cashier_graph_schema = GraphSchema(
@@ -128,6 +138,7 @@ cashier_graph_schema = GraphSchema(
         confirm_order_node_schema,
         terminal_order_node_schema,
     ],
+    state_schema=GraphState,
 )
 
 

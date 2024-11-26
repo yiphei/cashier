@@ -73,6 +73,8 @@ class AgentExecutor:
             self.graph = None
             self.TC.add_system_turn(request_graph_schema.system_prompt)
         self.force_tool_choice = None
+        self.new_edge_schema = None
+        self.new_node_schema = None
 
     def init_node_core(
         self,
@@ -372,6 +374,12 @@ class AgentExecutor:
     def add_assistant_turn(
         self, model_completion: ModelOutput, fn_callback: Optional[Callable] = None
     ) -> None:
+        if (
+            self.new_edge_schema is not None
+            and self.curr_node.schema.run_assistant_turn_before_transition
+        ):
+            self.curr_node.has_run_assistant_turn_before_transition = True
+
         self.last_model_provider = model_completion.model_provider
         message = model_completion.get_or_stream_message()
         if message is not None:
@@ -389,33 +397,34 @@ class AgentExecutor:
             new_edge_schema = None
             new_node_schema = None
             fn_calls = []
-            for function_call in model_completion.get_or_stream_fn_calls():
-                fn_id_to_output[function_call.id], is_success = (
-                    self.execute_function_call(function_call, fn_callback)
-                )
-                fn_calls.append(function_call)
-                if (
-                    self.curr_graph_schema.final_fn_name
-                    and function_call.name == self.curr_graph_schema.final_fn_name
-                    and is_success
-                    and (
-                        type(fn_id_to_output[function_call.id]) != str
-                        or not fn_id_to_output[function_call.id]
-                        .strip()
-                        .startswith("Error:")
+            if self.new_edge_schema is None:
+                for function_call in model_completion.get_or_stream_fn_calls():
+                    fn_id_to_output[function_call.id], is_success = (
+                        self.execute_function_call(function_call, fn_callback)
                     )
-                ):
-                    fake_fn_call = FunctionCall.create(
-                        api_id_model_provider=None,
-                        api_id=None,
-                        name="think",
-                        args={
-                            "thought": f"I just completed the current task. The next task is: {self.request_graph.tasks[self.request_graph.current_graph_schema_idx + 1]}. I must tell the customer that I will soon address the next task. I don't currently have the tools to excute the task but once the customer acknowledges that it is ok to continue to the nest task, then I will receive the tools."
-                        },
-                    )
-                    fn_id_to_output[fake_fn_call.id] = None
-                    fn_calls.append(fake_fn_call)
-                self.need_user_input = False
+                    fn_calls.append(function_call)
+                    if (
+                        self.curr_graph_schema.final_fn_name
+                        and function_call.name == self.curr_graph_schema.final_fn_name
+                        and is_success
+                        and (
+                            type(fn_id_to_output[function_call.id]) != str
+                            or not fn_id_to_output[function_call.id]
+                            .strip()
+                            .startswith("Error:")
+                        )
+                    ):
+                        fake_fn_call = FunctionCall.create(
+                            api_id_model_provider=None,
+                            api_id=None,
+                            name="think",
+                            args={
+                                "thought": f"I just completed the current task. The next task is: {self.request_graph.tasks[self.request_graph.current_graph_schema_idx + 1]}. I must tell the customer that I will soon address the next task. I don't currently have the tools to excute the task but once the customer acknowledges that it is ok to continue to the nest task, then I will receive the tools."
+                            },
+                        )
+                        fn_id_to_output[fake_fn_call.id] = None
+                        fn_calls.append(fake_fn_call)
+                    self.need_user_input = False
 
                 if is_success and function_call.name.startswith("update_state"):
                     if self.curr_node.schema == self.curr_graph_schema.last_node_schema:
@@ -438,8 +447,8 @@ class AgentExecutor:
                     else:
                         for edge_schema in self.next_edge_schemas:
                             if edge_schema.check_state_condition(self.curr_node.state):
-                                new_edge_schema = edge_schema
-                                new_node_schema = edge_schema.to_node_schema
+                                self.new_edge_schema = edge_schema
+                                self.new_node_schema = edge_schema.to_node_schema
                                 break
 
             self.TC.add_assistant_turn(
@@ -450,16 +459,23 @@ class AgentExecutor:
                 fn_id_to_output,
             )
 
-            if new_node_schema:
+            if self.new_edge_schema and (
+                not self.curr_node.schema.run_assistant_turn_before_transition
+                or self.curr_node.has_run_assistant_turn_before_transition
+            ):
                 self.init_next_node(
-                    new_node_schema,
+                    self.new_node_schema,
+                    self.new_edge_schema,
                     new_edge_schema,
                 )
+                self.new_edge_schema = None
+                self.new_node_schema = None
 
         else:
             self.TC.add_assistant_turn(
                 model_completion.msg_content, model_completion.model_provider
             )
+            self.new_edge_schema = None
 
     def get_model_completion_kwargs(self) -> Dict[str, Any]:
         force_tool_choice = self.force_tool_choice
