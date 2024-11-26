@@ -464,7 +464,6 @@ class AgentExecutor:
                 self.init_next_node(
                     self.new_node_schema,
                     self.new_edge_schema,
-                    new_edge_schema,
                 )
                 self.new_edge_schema = None
                 self.new_node_schema = None
