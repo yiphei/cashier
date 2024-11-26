@@ -327,7 +327,10 @@ class AgentExecutor:
     def add_assistant_turn(
         self, model_completion: ModelOutput, fn_callback: Optional[Callable] = None
     ) -> None:
-        if self.new_edge_schema is not None and self.curr_node.schema.run_assistant_turn_before_transition:
+        if (
+            self.new_edge_schema is not None
+            and self.curr_node.schema.run_assistant_turn_before_transition
+        ):
             self.curr_node.has_run_assistant_turn_before_transition = True
 
         self.last_model_provider = model_completion.model_provider
