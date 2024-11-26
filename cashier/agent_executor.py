@@ -449,7 +449,7 @@ class AgentExecutor:
                                     )
                         else:
                             for edge_schema in self.next_edge_schemas:
-                                if edge_schema.check_state_condition(
+                                if edge_schema.check_transition_config(
                                     self.curr_node.state
                                 ):
                                     self.new_edge_schema = edge_schema
