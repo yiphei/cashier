@@ -394,8 +394,6 @@ class AgentExecutor:
 
         if self.graph is not None:
             fn_id_to_output = {}
-            new_edge_schema = None
-            new_node_schema = None
             fn_calls = []
             if self.new_edge_schema is None:
                 for function_call in model_completion.get_or_stream_fn_calls():
