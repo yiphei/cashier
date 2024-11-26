@@ -1,17 +1,7 @@
 from __future__ import annotations
 
 from collections import defaultdict, deque
-from typing import (
-    Any,
-    Dict,
-    List,
-    Literal,
-    Optional,
-    Set,
-    Tuple,
-    Type,
-    overload,
-)
+from typing import Any, Dict, List, Literal, Optional, Set, Tuple, Type, overload
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
