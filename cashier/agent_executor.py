@@ -7,7 +7,7 @@ from cashier.audio import get_speech_from_text
 from cashier.graph.edge_schema import EdgeSchema
 from cashier.graph.graph_schema import Graph, GraphSchema
 from cashier.graph.node_schema import Direction, Node, NodeSchema
-from cashier.graph.request_graph import RequestGraph
+from cashier.graph.request_graph import GraphEdgeSchema, RequestGraph
 from cashier.gui import MessageDisplay
 from cashier.logger import logger
 from cashier.model.model_completion import ModelOutput
@@ -403,21 +403,6 @@ class AgentExecutor:
                         self.execute_function_call(function_call, fn_callback)
                     )
                     fn_calls.append(function_call)
-                    if (
-                        self.curr_graph_schema.final_fn_name
-                        and function_call.name == self.curr_graph_schema.final_fn_name
-                        and is_success
-                    ):
-                        fake_fn_call = FunctionCall.create(
-                            api_id_model_provider=None,
-                            api_id=None,
-                            name="think",
-                            args={
-                                "thought": f"I just completed the current task. The next task is: {self.request_graph.tasks[self.request_graph.current_graph_schema_idx + 1]}. I must tell the customer that I will soon address the next task. I don't currently have the tools to excute the task but once the customer acknowledges that it is ok to continue to the nest task, then I will receive the tools."
-                            },
-                        )
-                        fn_id_to_output[fake_fn_call.id] = None
-                        fn_calls.append(fake_fn_call)
                     self.need_user_input = False
 
                     edge_schemas = (
@@ -432,6 +417,17 @@ class AgentExecutor:
                         if edge_schema.check_transition_config(
                             self.curr_node.state, function_call, is_success
                         ):
+                            if isinstance(edge_schema, GraphEdgeSchema):
+                                fake_fn_call = FunctionCall.create(
+                                    api_id_model_provider=None,
+                                    api_id=None,
+                                    name="think",
+                                    args={
+                                        "thought": f"I just completed the current task. The next task is: {self.request_graph.tasks[self.request_graph.current_graph_schema_idx + 1]}. I must tell the customer that I will soon address the next task. I don't currently have the tools to excute the task but once the customer acknowledges that it is ok to continue to the nest task, then I will receive the tools."
+                                    },
+                                )
+                                fn_id_to_output[fake_fn_call.id] = None
+                                fn_calls.append(fake_fn_call)
                             self.new_edge_schema = edge_schema
                             self.new_node_schema = edge_schema.to_node_schema
                             break
