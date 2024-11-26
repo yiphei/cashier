@@ -46,13 +46,14 @@ class OffTopicPrompt(BasePrompt):
             f"{node_prompt}\n"
             "</instructions>\n\n"
             + (
-            "The state keeps track of important data during the conversation.\n"
-            "<state>\n"
-            f"{state_json_schema}\n"
-            "</state>\n\n"
-            if state_json_schema else ""
-            ) +
-            "The tools represent explicit actions that the agent can perform.\n"
+                "The state keeps track of important data during the conversation.\n"
+                "<state>\n"
+                f"{state_json_schema}\n"
+                "</state>\n\n"
+                if state_json_schema
+                else ""
+            )
+            + "The tools represent explicit actions that the agent can perform.\n"
             "<tools>\n"
             f"{tool_defs}\n"
             "</tools>\n\n"
