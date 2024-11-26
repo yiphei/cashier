@@ -50,12 +50,15 @@ class Node:
     @classmethod
     def init_state(
         cls,
-        state_pydantic_model: Type[BaseStateModel],
+        state_pydantic_model: Optional[Type[BaseStateModel]],
         prev_node: Optional[Node],
         edge_schema: Optional[EdgeSchema],
         direction: Direction,
         input: Any,
-    ) -> BaseStateModel:
+    ) -> Optional[BaseStateModel]:
+        if state_pydantic_model is None:
+            return None
+
         if prev_node is not None:
             state_init_val = getattr(
                 edge_schema,
@@ -132,18 +135,19 @@ class NodeSchema:
         else:
             self.tool_registry = ToolRegistry(tool_registry_or_tool_defs)
 
-        for field_name, field_info in self.state_pydantic_model.model_fields.items():
-            new_tool_fn_name = f"update_state_{field_name}"
-            field_args = {field_name: (field_info.annotation, field_info)}
-            self.tool_registry.add_tool_def(
-                new_tool_fn_name,
-                f"Function to update the `{field_name}` field in the state",
-                field_args,
-            )
+        if self.state_pydantic_model is not None:
+            for field_name, field_info in self.state_pydantic_model.model_fields.items():
+                new_tool_fn_name = f"update_state_{field_name}"
+                field_args = {field_name: (field_info.annotation, field_info)}
+                self.tool_registry.add_tool_def(
+                    new_tool_fn_name,
+                    f"Function to update the `{field_name}` field in the state",
+                    field_args,
+                )
 
-        self.tool_registry.add_tool_def(
-            "get_state", "Function to get the current state, as defined in <state>", {}
-        )
+            self.tool_registry.add_tool_def(
+                "get_state", "Function to get the current state, as defined in <state>", {}
+            )
 
     @overload
     def create_node(  # noqa: E704

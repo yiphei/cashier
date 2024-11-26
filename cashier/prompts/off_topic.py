@@ -26,24 +26,25 @@ class RunInput(BaseModel):
 class OffTopicPrompt(BasePrompt):
     run_input_kwargs = RunInput
 
-    f_string_prompt = (
+    def dynamic_prompt(self, background_prompt: str, node_prompt: str, state_json_schema: str | None, tool_defs: str, last_customer_msg: str) -> str:
+        return (
         "You are an AI-agent orchestration engine and your job is to evaluate the current AI agent's performance. "
         "The AI agent's background is:\n"
         "<background>\n"
-        "{background_prompt}\n"
+        f"{background_prompt}\n"
         "</background>\n\n"
         "The AI agent is defined by 3 attributes: instructions, state, and tools (i.e. functions).\n\n"
         "The instructions describe what the agent's conversation is supposed to be about and what they are expected to do.\n"
         "<instructions>\n"
-        "{node_prompt}\n"
+        f"{node_prompt}\n"
         "</instructions>\n\n"
         "The state keeps track of important data during the conversation.\n"
         "<state>\n"
-        "{state_json_schema}\n"
+        f"{state_json_schema}\n"
         "</state>\n\n"
         "The tools represent explicit actions that the agent can perform.\n"
         "<tools>\n"
-        "{tool_defs}\n"
+        f"{tool_defs}\n"
         "</tools>\n\n"
         "Given a conversation between a customer and the current AI agent, determine if the"
         " conversation, especially given the last customer message, can continue to be fully handled by the current AI agent's <instructions>, <state>, or <tools> according to the guidelines defined in <guidelines>. Return true only if"
@@ -67,9 +68,10 @@ class OffTopicPrompt(BasePrompt):
         + "</general_guidelines>\n"
         "</guidelines>\n\n"
         "<last_customer_message>\n"
-        "{last_customer_msg}\n"
+        f"{last_customer_msg}\n"
         "</last_customer_message>\n\n"
     )
+
     response_format = Response
 
     @classmethod
@@ -87,7 +89,7 @@ class OffTopicPrompt(BasePrompt):
             background_prompt=current_node_schema.node_system_prompt.BACKGROUND_PROMPT(),  # type: ignore
             node_prompt=current_node_schema.node_prompt,
             state_json_schema=str(
-                current_node_schema.state_pydantic_model.model_json_schema()
+                current_node_schema.state_pydantic_model.model_json_schema() if current_node_schema.state_pydantic_model else None
             ),
             tool_defs=json.dumps(
                 current_node_schema.tool_registry.get_tool_defs(
