@@ -124,6 +124,7 @@ class GraphState(BaseStateModel):
     order: Optional[Order] = None
     has_confirmed_order: bool = False
 
+
 cashier_graph_schema = GraphSchema(
     start_node_schema=take_order_node_schema,
     edge_schemas=[take_to_confirm_edge_schema, confirm_to_terminal_edge_schema],
