@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from enum import StrEnum
-from typing import TYPE_CHECKING, Any, Callable, NamedTuple, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, Callable, NamedTuple, Optional, Tuple
 
 from pydantic import BaseModel
 
@@ -30,16 +30,20 @@ class FwdSkipType(StrEnum):
 class BaseSuccessCondition(BaseModel):
     need_user_msg: bool
 
+
 class FunctionSuccessConditionType(StrEnum):
     CALLED = "CALLED"
     CALLED_AND_SUCCEEDED = "CALLED_AND_SUCCEEDED"
+
 
 class FunctionSuccessCondition(BaseSuccessCondition):
     fn_name: str
     success_condition_type: FunctionSuccessConditionType
 
+
 class StateSuccessCondition(BaseSuccessCondition):
     fn_check: Callable[[BaseStateModel], bool]
+
 
 class EdgeSchema:
     _counter = 0
@@ -82,12 +86,22 @@ class EdgeSchema:
             skip_from_incomplete_to_prev_incomplete
         )
 
-    def check_state_condition(self, state: BaseStateModel, fn_call, is_output_success) -> bool:
+    def check_state_condition(
+        self, state: BaseStateModel, fn_call, is_output_success
+    ) -> bool:
         if isinstance(self.success_condition, FunctionSuccessCondition):
-            if self.success_condition.success_condition_type == FunctionSuccessConditionType.CALLED:
+            if (
+                self.success_condition.success_condition_type
+                == FunctionSuccessConditionType.CALLED
+            ):
                 return fn_call.name == self.success_condition.fn_name
-            elif self.success_condition.success_condition_type == FunctionSuccessConditionType.CALLED_AND_SUCCEEDED:
-                return fn_call.name == self.success_condition.fn_name and is_output_success
+            elif (
+                self.success_condition.success_condition_type
+                == FunctionSuccessConditionType.CALLED_AND_SUCCEEDED
+            ):
+                return (
+                    fn_call.name == self.success_condition.fn_name and is_output_success
+                )
         elif isinstance(self.success_condition, StateSuccessCondition):
             return self.success_condition.fn_check(state)
 

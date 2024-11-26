@@ -348,7 +348,9 @@ class AgentExecutor:
             self.need_user_input = False
 
             for edge_schema in self.next_edge_schemas:
-                if edge_schema.check_state_condition(self.curr_node.state, function_call, is_success):
+                if edge_schema.check_state_condition(
+                    self.curr_node.state, function_call, is_success
+                ):
                     new_edge_schema = edge_schema
                     break
 
