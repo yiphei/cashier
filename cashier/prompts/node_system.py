@@ -21,8 +21,8 @@ class NodeSystemPrompt(BasePrompt):
         node_prompt: str,
         input: Any,
         node_input_json_schema: Optional[Dict],
-        state_json_schema: Dict,
         curr_request: str,
+        state_json_schema: Optional[Dict],
         last_msg: Optional[str],
     ) -> str:
         fn_kwargs = locals()
@@ -52,12 +52,13 @@ class NodeSystemPrompt(BasePrompt):
                 "</input>\n\n"
             )
 
-        NODE_PROMPT += (
-            "This section provides the state's json schema. The state keeps track of important data during the conversation.\n"
-            "<state>\n"
-            "{state_json_schema}\n"
-            "</state>\n\n"
-        )
+        if state_json_schema is not None:
+            NODE_PROMPT += (
+                "This section provides the state's json schema. The state keeps track of important data during the conversation.\n"
+                "<state>\n"
+                "{state_json_schema}\n"
+                "</state>\n\n"
+            )
 
         if last_msg:
             NODE_PROMPT += (
@@ -78,7 +79,9 @@ class NodeSystemPrompt(BasePrompt):
         GUIDELINES += "</guidelines>"
 
         NODE_PROMPT += GUIDELINES
-        kwargs = {"state_json_schema": state_json_schema}
+        kwargs = {}
+        if state_json_schema is not None:
+            kwargs["state_json_schema"] = state_json_schema
         if input is not None:
             kwargs["node_input"] = input
             kwargs["node_input_json_schema"] = node_input_json_schema

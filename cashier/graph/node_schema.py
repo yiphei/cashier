@@ -50,12 +50,15 @@ class Node:
     @classmethod
     def init_state(
         cls,
-        state_pydantic_model: Type[BaseStateModel],
+        state_pydantic_model: Optional[Type[BaseStateModel]],
         prev_node: Optional[Node],
         edge_schema: Optional[EdgeSchema],
         direction: Direction,
         input: Any,
-    ) -> BaseStateModel:
+    ) -> Optional[BaseStateModel]:
+        if state_pydantic_model is None:
+            return None
+
         if prev_node is not None:
             state_init_val = getattr(
                 edge_schema,
@@ -104,7 +107,7 @@ class NodeSchema:
         node_prompt: str,
         node_system_prompt: Type[NodeSystemPrompt],
         input_pydantic_model: Optional[Type[BaseModel]],
-        state_pydantic_model: Type[BaseStateModel],
+        state_pydantic_model: Optional[Type[BaseStateModel]],
         tool_registry_or_tool_defs: Optional[
             Union[ToolRegistry, List[ChatCompletionToolParam]]
         ] = None,
@@ -118,7 +121,6 @@ class NodeSchema:
         self.node_prompt = node_prompt
         self.node_system_prompt = node_system_prompt
         self.input_pydantic_model = input_pydantic_model
-        assert issubclass(state_pydantic_model, BaseStateModel)
         self.state_pydantic_model = state_pydantic_model
         self.first_turn = first_turn
         self.run_assistant_turn_before_transition = run_assistant_turn_before_transition
@@ -133,18 +135,24 @@ class NodeSchema:
         else:
             self.tool_registry = ToolRegistry(tool_registry_or_tool_defs)
 
-        for field_name, field_info in self.state_pydantic_model.model_fields.items():
-            new_tool_fn_name = f"update_state_{field_name}"
-            field_args = {field_name: (field_info.annotation, field_info)}
-            self.tool_registry.add_tool_def(
-                new_tool_fn_name,
-                f"Function to update the `{field_name}` field in the state",
-                field_args,
-            )
+        if self.state_pydantic_model is not None:
+            for (
+                field_name,
+                field_info,
+            ) in self.state_pydantic_model.model_fields.items():
+                new_tool_fn_name = f"update_state_{field_name}"
+                field_args = {field_name: (field_info.annotation, field_info)}
+                self.tool_registry.add_tool_def(
+                    new_tool_fn_name,
+                    f"Function to update the `{field_name}` field in the state",
+                    field_args,
+                )
 
-        self.tool_registry.add_tool_def(
-            "get_state", "Function to get the current state, as defined in <state>", {}
-        )
+            self.tool_registry.add_tool_def(
+                "get_state",
+                "Function to get the current state, as defined in <state>",
+                {},
+            )
 
     @overload
     def create_node(  # noqa: E704
@@ -204,7 +212,11 @@ class NodeSchema:
                 if self.input_pydantic_model
                 else None
             ),
-            state_json_schema=self.state_pydantic_model.model_json_schema(),
+            state_json_schema=(
+                self.state_pydantic_model.model_json_schema()
+                if self.state_pydantic_model
+                else None
+            ),
             last_msg=last_msg,
             curr_request=curr_request,
         )
