@@ -425,9 +425,9 @@ class AgentExecutor:
                     self.need_user_input = False
 
                     if (
-                        self.curr_node.schema
-                        == self.curr_graph_schema.last_node_schema
-                        and is_success and function_call.name.startswith("update_state")
+                        self.curr_node.schema == self.curr_graph_schema.last_node_schema
+                        and is_success
+                        and function_call.name.startswith("update_state")
                     ):
                         if self.curr_graph_schema.last_node_success_fn(
                             self.curr_node.state
@@ -441,9 +441,7 @@ class AgentExecutor:
                                         self.request_graph.current_graph_schema_idx
                                     ]
                                 )
-                                self.graph = Graph(
-                                    graph_schema=self.curr_graph_schema
-                                )
+                                self.graph = Graph(graph_schema=self.curr_graph_schema)
                                 self.new_node_schema = (
                                     self.curr_graph_schema.start_node_schema
                                 )
