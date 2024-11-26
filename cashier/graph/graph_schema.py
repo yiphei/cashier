@@ -3,7 +3,6 @@ from __future__ import annotations
 from collections import defaultdict, deque
 from typing import (
     Any,
-    Callable,
     Dict,
     List,
     Literal,
