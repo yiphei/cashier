@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections import defaultdict, deque
-from typing import Any, Dict, List, Literal, Optional, Set, Tuple, overload
+from typing import Any, Dict, List, Literal, Optional, Set, Tuple, overload, Type
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
@@ -15,6 +15,7 @@ class GraphSchema(BaseModel):
     start_node_schema: NodeSchema
     edge_schemas: List[EdgeSchema]
     node_schemas: List[NodeSchema]
+    state_schema: Type[BaseModel]
 
     @model_validator(mode="after")
     def init_computed_fields(self) -> GraphSchema:
@@ -55,6 +56,14 @@ class Graph(BaseModel):
         default_factory=lambda: defaultdict(lambda: None)
     )
     edge_schema_id_to_from_node: Dict[int, Node] = Field(default_factory=dict)
+    state: BaseModel
+    
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        if "state" not in kwargs:
+            self.state = self.graph_schema.state_schema()
+        else:
+            raise ValueError("state must not be provided")
 
     def add_fwd_edge(self, from_node: Node, to_node: Node, edge_schema_id: int) -> None:
         self.edge_schema_id_to_edges[edge_schema_id].append(Edge(from_node, to_node))
