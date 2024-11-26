@@ -423,7 +423,7 @@ class AgentExecutor:
                                     api_id=None,
                                     name="think",
                                     args={
-                                        "thought": f"I just completed the current request. The next request to be addressed is: {self.request_graph.tasks[self.request_graph.current_graph_schema_idx + 1]}. I must explicitly inform the customer that the current request is completed and that I will address the next request (and receive new tools) as soon as they acknowledge the full completion of the current request."
+                                        "thought": f"I just completed the current request. The next request to be addressed is: {self.request_graph.tasks[self.request_graph.current_graph_schema_idx + 1]}. I must explicitly inform the customer that the current request is completed and that I will address the next request right away. Only after I informed the customer do I receive the tools to address the next request."
                                     },
                                 )
                                 fn_id_to_output[fake_fn_call.id] = None
