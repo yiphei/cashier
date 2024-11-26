@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from enum import StrEnum
-from typing import TYPE_CHECKING, Any, Callable, NamedTuple, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Callable, NamedTuple, Optional, Tuple, Union
 
 from pydantic import BaseModel
 
@@ -27,6 +27,20 @@ class FwdSkipType(StrEnum):
     SKIP_IF_INPUT_UNCHANGED = "SKIP_IF_INPUT_UNCHANGED"
 
 
+class BaseSuccessCondition(BaseModel):
+    need_user_msg: bool
+
+class FunctionSuccessConditionType(StrEnum):
+    CALLED = "CALLED"
+    CALLED_AND_SUCCEEDED = "CALLED_AND_SUCCEEDED"
+
+class FunctionSuccessCondition(BaseSuccessCondition):
+    fn_name: str
+    success_condition_type: FunctionSuccessConditionType
+
+class StateSuccessCondition(BaseSuccessCondition):
+    fn_check: Callable[[BaseStateModel], bool]
+
 class EdgeSchema:
     _counter = 0
 
@@ -34,7 +48,7 @@ class EdgeSchema:
         self,
         from_node_schema: NodeSchema,
         to_node_schema: NodeSchema,
-        state_condition_fn: Callable[[BaseStateModel], bool],
+        success_condition: BaseSuccessCondition,
         new_input_fn: Callable[[BaseStateModel, BaseModel], Any],
         bwd_state_init: BwdStateInit = BwdStateInit.RESUME,
         fwd_state_init: FwdStateInit = FwdStateInit.RESET,
@@ -52,7 +66,7 @@ class EdgeSchema:
 
         self.from_node_schema = from_node_schema
         self.to_node_schema = to_node_schema
-        self.state_condition_fn = state_condition_fn
+        self.success_condition = success_condition
         self.new_input_fn = new_input_fn
         self.bwd_state_init = bwd_state_init
         self.fwd_state_init = fwd_state_init
@@ -68,8 +82,14 @@ class EdgeSchema:
             skip_from_incomplete_to_prev_incomplete
         )
 
-    def check_state_condition(self, state: BaseStateModel) -> bool:
-        return self.state_condition_fn(state)
+    def check_state_condition(self, state: BaseStateModel, fn_call, is_output_success) -> bool:
+        if isinstance(self.success_condition, FunctionSuccessCondition):
+            if self.success_condition.success_condition_type == FunctionSuccessConditionType.CALLED:
+                return fn_call.name == self.success_condition.fn_name
+            elif self.success_condition.success_condition_type == FunctionSuccessConditionType.CALLED_AND_SUCCEEDED:
+                return fn_call.name == self.success_condition.fn_name and is_output_success
+        elif isinstance(self.success_condition, StateSuccessCondition):
+            return self.success_condition.fn_check(state)
 
     def _can_skip(
         self, skip_type: Optional[FwdSkipType], from_node: Node, to_node: Node
