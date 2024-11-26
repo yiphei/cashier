@@ -136,7 +136,10 @@ class NodeSchema:
             self.tool_registry = ToolRegistry(tool_registry_or_tool_defs)
 
         if self.state_pydantic_model is not None:
-            for field_name, field_info in self.state_pydantic_model.model_fields.items():
+            for (
+                field_name,
+                field_info,
+            ) in self.state_pydantic_model.model_fields.items():
                 new_tool_fn_name = f"update_state_{field_name}"
                 field_args = {field_name: (field_info.annotation, field_info)}
                 self.tool_registry.add_tool_def(
@@ -146,7 +149,9 @@ class NodeSchema:
                 )
 
             self.tool_registry.add_tool_def(
-                "get_state", "Function to get the current state, as defined in <state>", {}
+                "get_state",
+                "Function to get the current state, as defined in <state>",
+                {},
             )
 
     @overload
