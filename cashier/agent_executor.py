@@ -441,7 +441,7 @@ class AgentExecutor:
                                     ]
                                 )
                                 self.graph = Graph(graph_schema=self.curr_graph_schema)
-                                new_node_schema = (
+                                self.new_node_schema = (
                                     self.curr_graph_schema.start_node_schema
                                 )
                     else:
