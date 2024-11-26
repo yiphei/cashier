@@ -429,7 +429,10 @@ class AgentExecutor:
                                 fn_id_to_output[fake_fn_call.id] = None
                                 fn_calls.append(fake_fn_call)
                             self.new_edge_schema = edge_schema
-                            self.new_node_schema = edge_schema.to_node_schema
+                            if isinstance(edge_schema, GraphEdgeSchema):
+                                self.new_node_schema = edge_schema.to_graph_schema
+                            else:
+                                self.new_node_schema = edge_schema.to_node_schema
                             break
 
             self.TC.add_assistant_turn(
