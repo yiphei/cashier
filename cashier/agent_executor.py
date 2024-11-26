@@ -423,7 +423,7 @@ class AgentExecutor:
                                     api_id=None,
                                     name="think",
                                     args={
-                                        "thought": f"I just completed the current task. The next task is: {self.request_graph.tasks[self.request_graph.current_graph_schema_idx + 1]}. I must tell the customer that I will soon address the next task. I don't currently have the tools to excute the task but once the customer acknowledges that it is ok to continue to the nest task, then I will receive the tools."
+                                        "thought": f"I just completed the current request. The next request to be addressed is: {self.request_graph.tasks[self.request_graph.current_graph_schema_idx + 1]}. I must explicitly inform the customer that the current request is completed and that I will address the next request (and receive new tools) as soon as they acknowledge the full completion of the current request."
                                     },
                                 )
                                 fn_id_to_output[fake_fn_call.id] = None
@@ -442,7 +442,6 @@ class AgentExecutor:
                 fn_calls,
                 fn_id_to_output,
             )
-
             if self.new_edge_schema and (
                 not self.curr_node.schema.run_assistant_turn_before_transition
                 or self.curr_node.has_run_assistant_turn_before_transition
