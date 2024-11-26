@@ -424,37 +424,37 @@ class AgentExecutor:
                         fn_calls.append(fake_fn_call)
                     self.need_user_input = False
 
-                    if is_success and function_call.name.startswith("update_state"):
-                        if (
-                            self.curr_node.schema
-                            == self.curr_graph_schema.last_node_schema
+                    if (
+                        self.curr_node.schema
+                        == self.curr_graph_schema.last_node_schema
+                        and is_success and function_call.name.startswith("update_state")
+                    ):
+                        if self.curr_graph_schema.last_node_success_fn(
+                            self.curr_node.state
                         ):
-                            if self.curr_graph_schema.last_node_success_fn(
-                                self.curr_node.state
+                            self.request_graph.current_graph_schema_idx += 1
+                            if self.request_graph.current_graph_schema_idx < len(
+                                self.request_graph.graph_schema_sequence
                             ):
-                                self.request_graph.current_graph_schema_idx += 1
-                                if self.request_graph.current_graph_schema_idx < len(
-                                    self.request_graph.graph_schema_sequence
-                                ):
-                                    self.curr_graph_schema = (
-                                        self.request_graph.graph_schema_sequence[
-                                            self.request_graph.current_graph_schema_idx
-                                        ]
-                                    )
-                                    self.graph = Graph(
-                                        graph_schema=self.curr_graph_schema
-                                    )
-                                    self.new_node_schema = (
-                                        self.curr_graph_schema.start_node_schema
-                                    )
-                        else:
-                            for edge_schema in self.next_edge_schemas:
-                                if edge_schema.check_transition_config(
-                                    self.curr_node.state
-                                ):
-                                    self.new_edge_schema = edge_schema
-                                    self.new_node_schema = edge_schema.to_node_schema
-                                    break
+                                self.curr_graph_schema = (
+                                    self.request_graph.graph_schema_sequence[
+                                        self.request_graph.current_graph_schema_idx
+                                    ]
+                                )
+                                self.graph = Graph(
+                                    graph_schema=self.curr_graph_schema
+                                )
+                                self.new_node_schema = (
+                                    self.curr_graph_schema.start_node_schema
+                                )
+                    else:
+                        for edge_schema in self.next_edge_schemas:
+                            if edge_schema.check_transition_config(
+                                self.curr_node.state, function_call, is_success
+                            ):
+                                self.new_edge_schema = edge_schema
+                                self.new_node_schema = edge_schema.to_node_schema
+                                break
 
             self.TC.add_assistant_turn(
                 model_completion.msg_content,
