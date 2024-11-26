@@ -27,7 +27,7 @@ class FwdSkipType(StrEnum):
     SKIP_IF_INPUT_UNCHANGED = "SKIP_IF_INPUT_UNCHANGED"
 
 
-class BaseTransitionConfif(BaseModel):
+class BaseTransitionConfig(BaseModel):
     need_user_msg: bool
 
 
@@ -36,12 +36,12 @@ class FunctionState(StrEnum):
     CALLED_AND_SUCCEEDED = "CALLED_AND_SUCCEEDED"
 
 
-class FunctionTransitionConfig(BaseTransitionConfif):
+class FunctionTransitionConfig(BaseTransitionConfig):
     fn_name: str
     state: FunctionState
 
 
-class StateTransitionConfig(BaseTransitionConfif):
+class StateTransitionConfig(BaseTransitionConfig):
     state_check_fn: Callable[[BaseStateModel], bool]
 
 
@@ -52,7 +52,7 @@ class EdgeSchema:
         self,
         from_node_schema: NodeSchema,
         to_node_schema: NodeSchema,
-        transition_config: BaseTransitionConfif,
+        transition_config: BaseTransitionConfig,
         new_input_fn: Callable[[BaseStateModel, BaseModel], Any],
         bwd_state_init: BwdStateInit = BwdStateInit.RESUME,
         fwd_state_init: FwdStateInit = FwdStateInit.RESET,
