@@ -104,7 +104,7 @@ class NodeSchema:
         node_prompt: str,
         node_system_prompt: Type[NodeSystemPrompt],
         input_pydantic_model: Optional[Type[BaseModel]],
-        state_pydantic_model: Type[BaseStateModel],
+        state_pydantic_model: Optional[Type[BaseStateModel]],
         tool_registry_or_tool_defs: Optional[
             Union[ToolRegistry, List[ChatCompletionToolParam]]
         ] = None,
@@ -118,7 +118,6 @@ class NodeSchema:
         self.node_prompt = node_prompt
         self.node_system_prompt = node_system_prompt
         self.input_pydantic_model = input_pydantic_model
-        assert issubclass(state_pydantic_model, BaseStateModel)
         self.state_pydantic_model = state_pydantic_model
         self.first_turn = first_turn
         self.run_assistant_turn_before_transition = run_assistant_turn_before_transition
@@ -200,7 +199,7 @@ class NodeSchema:
                 if self.input_pydantic_model
                 else None
             ),
-            state_json_schema=self.state_pydantic_model.model_json_schema(),
+            state_json_schema=self.state_pydantic_model.model_json_schema() if self.state_pydantic_model else None,
             last_msg=last_msg,
         )
 

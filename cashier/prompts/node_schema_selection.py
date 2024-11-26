@@ -40,7 +40,7 @@ class NodeSchemaSelectionPrompt(BasePrompt):
             "You are an AI-agent orchestration engine and your job is to select the best AI agent. "
             "Each AI agent is defined by 3 attributes: instructions, state, and tools (i.e. functions). "
             "The instructions <instructions> describe what the agent's conversation is supposed to be about and what they are expected to do. "
-            "The state <state> keeps track of important data during the conversation. "
+            "The state <state> keeps track of important data during the conversation (some may not have a state). "
             "The tools <tools> represent explicit actions that the agent can perform.\n\n"
         )
         for node_schema in all_node_schemas:
@@ -49,9 +49,13 @@ class NodeSchemaSelectionPrompt(BasePrompt):
                 "<instructions>\n"
                 f"{node_schema.node_prompt}\n"
                 "</instructions>\n\n"
+                + (
                 "<state>\n"
                 f"{node_schema.state_pydantic_model.model_json_schema()}\n"
                 "</state>\n\n"
+                if node_schema.state_pydantic_model else ""
+                )
+                +
                 "<tools>\n"
                 f"{json.dumps(node_schema.tool_registry.get_tool_defs(model_provider=model_provider))}\n"
                 "</tools>\n"
