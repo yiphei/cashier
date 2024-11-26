@@ -51,7 +51,7 @@ class OffTopicPrompt(BasePrompt):
             f"{state_json_schema}\n"
             "</state>\n\n"
             if state_json_schema else ""
-            )
+            ) +
             "The tools represent explicit actions that the agent can perform.\n"
             "<tools>\n"
             f"{tool_defs}\n"
