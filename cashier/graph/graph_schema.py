@@ -35,7 +35,6 @@ class GraphSchema(BaseModel):
     description: str
     start_node_schema: NodeSchema
     last_node_schema: NodeSchema
-    last_node_success_fn: Callable
     edge_schemas: List[EdgeSchema]
     node_schemas: List[NodeSchema]
     state_schema: Type[BaseModel]
