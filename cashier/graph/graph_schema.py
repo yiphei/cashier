@@ -9,10 +9,21 @@ from cashier.graph.edge_schema import Edge, EdgeSchema, FwdSkipType
 from cashier.graph.node_schema import Direction, Node, NodeSchema
 
 
+def _get_next_id() -> int:
+    if not hasattr(_get_next_id, "counter"):
+        _get_next_id.counter = 0
+    _get_next_id.counter += 1
+    return _get_next_id.counter
+
+
 class GraphSchema(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
+    id: Optional[int] = Field(default_factory=_get_next_id)
+    output_schema: Type[BaseModel]
+    description: str
     start_node_schema: NodeSchema
+    last_node_schema: NodeSchema
     edge_schemas: List[EdgeSchema]
     node_schemas: List[NodeSchema]
     state_schema: Type[BaseModel]
@@ -30,6 +41,7 @@ class GraphSchema(BaseModel):
             self._from_node_schema_id_to_edge_schema[
                 edge_schema.from_node_schema.id
             ].append(edge_schema)
+
         return self
 
     @property

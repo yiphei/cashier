@@ -162,6 +162,7 @@ class NodeSchema:
         edge_schema: Literal[None] = None,
         prev_node: Literal[None] = None,
         direction: Literal[Direction.FWD] = Direction.FWD,
+        curr_request: Optional[str] = None,
     ) -> Node: ...
 
     @overload
@@ -172,6 +173,7 @@ class NodeSchema:
         edge_schema: EdgeSchema,
         prev_node: Literal[None] = None,
         direction: Literal[Direction.FWD] = Direction.FWD,
+        curr_request: Optional[str] = None,
     ) -> Node: ...
 
     @overload
@@ -182,6 +184,7 @@ class NodeSchema:
         edge_schema: EdgeSchema,
         prev_node: Node,
         direction: Direction = Direction.FWD,
+        curr_request: Optional[str] = None,
     ) -> Node: ...
 
     def create_node(
@@ -191,6 +194,7 @@ class NodeSchema:
         edge_schema: Optional[EdgeSchema] = None,
         prev_node: Optional[Node] = None,
         direction: Direction = Direction.FWD,
+        curr_request: Optional[str] = None,
     ) -> Node:
         state = Node.init_state(
             self.state_pydantic_model, prev_node, edge_schema, direction, input
@@ -214,6 +218,7 @@ class NodeSchema:
                 else None
             ),
             last_msg=last_msg,
+            curr_request=curr_request,
         )
 
         if direction == Direction.BWD:

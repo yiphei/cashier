@@ -5,6 +5,7 @@ from pydantic import Field
 from cashier.graph.edge_schema import EdgeSchema, StateTransitionConfig
 from cashier.graph.graph_schema import GraphSchema
 from cashier.graph.node_schema import NodeSchema
+from cashier.graph.request_graph import RequestGraphSchema
 from cashier.graph.state_model import BaseStateModel
 from cashier.model.model_turn import AssistantTurn
 from cashier.model.model_util import ModelProvider
@@ -126,7 +127,10 @@ class GraphState(BaseStateModel):
 
 
 cashier_graph_schema = GraphSchema(
+    description="Help the customer place a coffee order",
+    output_schema=Order,
     start_node_schema=take_order_node_schema,
+    last_node_schema=terminal_order_node_schema,
     edge_schemas=[take_to_confirm_edge_schema, confirm_to_terminal_edge_schema],
     node_schemas=[
         take_order_node_schema,
@@ -134,4 +138,11 @@ cashier_graph_schema = GraphSchema(
         terminal_order_node_schema,
     ],
     state_schema=GraphState,
+)
+
+
+REQUEST_GRAPH_SCHEMA = RequestGraphSchema(
+    graph_schemas=[cashier_graph_schema],
+    graph_edge_schemas=[],
+    system_prompt="You work at Heaven Coffee and help customers with anything they need.",
 )
