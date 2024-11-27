@@ -21,18 +21,21 @@ class NodeSystemPrompt(BasePrompt):
         node_prompt: str,
         input: Any,
         node_input_json_schema: Optional[Dict],
-        curr_request: str,
         state_json_schema: Optional[Dict],
         last_msg: Optional[str],
+        curr_request: Optional[str] =None,
     ) -> str:
         fn_kwargs = locals()
         fn_kwargs.pop("self")
         NODE_PROMPT = (
             self.BACKGROUND_PROMPT() + "\n\n"  # type: ignore
             "This request section describes what the overall customer request is\n"
-            "<request>\n"
+            +
+            ("<request>\n"
             f"{curr_request}\n"
             "</request>\n\n"
+            if curr_request else ""
+            )+
             "This instructions section describes what the current conversation is supposed to be about and what you are expected to do. The instructions only address a single part of the overall customer request.\n"
             "<instructions>\n"
             f"{node_prompt}\n"

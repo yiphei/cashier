@@ -90,7 +90,7 @@ class AgentExecutor:
             f"[NODE_SCHEMA] Initializing node with {Style.BRIGHT}node_schema_id: {node_schema.id}{Style.NORMAL}"
         )
         new_node = node_schema.create_node(
-            input, self.request_graph.tasks[self.request_graph.current_graph_schema_idx], last_msg, edge_schema, prev_node, direction  # type: ignore
+            input, last_msg, edge_schema, prev_node, direction, self.request_graph.tasks[self.request_graph.current_graph_schema_idx] if self.request_graph else None  # type: ignore
         )
 
         self.TC.add_node_turn(

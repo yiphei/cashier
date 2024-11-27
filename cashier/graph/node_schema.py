@@ -158,43 +158,43 @@ class NodeSchema:
     def create_node(  # noqa: E704
         self,
         input: Any,
-        curr_request: str,
         last_msg: Literal[None] = None,
         edge_schema: Literal[None] = None,
         prev_node: Literal[None] = None,
         direction: Literal[Direction.FWD] = Direction.FWD,
+        curr_request: Optional[str] = None,
     ) -> Node: ...
 
     @overload
     def create_node(  # noqa: E704
         self,
         input: Any,
-        curr_request: str,
         last_msg: str,
         edge_schema: EdgeSchema,
         prev_node: Literal[None] = None,
         direction: Literal[Direction.FWD] = Direction.FWD,
+        curr_request: Optional[str] = None,
     ) -> Node: ...
 
     @overload
     def create_node(  # noqa: E704
         self,
         input: Any,
-        curr_request: str,
         last_msg: str,
         edge_schema: EdgeSchema,
         prev_node: Node,
         direction: Direction = Direction.FWD,
+        curr_request: Optional[str] = None,
     ) -> Node: ...
 
     def create_node(
         self,
         input: Any,
-        curr_request: str,
         last_msg: Optional[str] = None,
         edge_schema: Optional[EdgeSchema] = None,
         prev_node: Optional[Node] = None,
         direction: Direction = Direction.FWD,
+        curr_request: Optional[str] = None,
     ) -> Node:
         state = Node.init_state(
             self.state_pydantic_model, prev_node, edge_schema, direction, input
