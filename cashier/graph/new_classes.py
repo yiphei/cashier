@@ -14,7 +14,7 @@ from cashier.graph.edge_schema import (
     FwdSkipType,
     FwdStateInit,
 )
-from cashier.graph.node_schema import Direction, Node, NodeSchema
+from cashier.graph.node_schema import Direction
 from cashier.graph.state_model import BaseStateModel
 from cashier.model.model_turn import ModelTurn
 from cashier.prompts.node_system import NodeSystemPrompt
@@ -113,7 +113,7 @@ class ActionableSchemaMixin(StateSchemaMixin):
         prev_node: Literal[None] = None,
         direction: Literal[Direction.FWD] = Direction.FWD,
         curr_request: Optional[str] = None,
-    ) -> Node: ...
+    ) -> ActionableMixin: ...
 
     @overload
     def create_node(  # noqa: E704
@@ -124,7 +124,7 @@ class ActionableSchemaMixin(StateSchemaMixin):
         prev_node: Literal[None] = None,
         direction: Literal[Direction.FWD] = Direction.FWD,
         curr_request: Optional[str] = None,
-    ) -> Node: ...
+    ) -> ActionableMixin: ...
 
     @overload
     def create_node(  # noqa: E704
@@ -132,20 +132,20 @@ class ActionableSchemaMixin(StateSchemaMixin):
         input: Any,
         last_msg: str,
         edge_schema: EdgeSchema,
-        prev_node: Node,
+        prev_node: ActionableMixin,
         direction: Direction = Direction.FWD,
         curr_request: Optional[str] = None,
-    ) -> Node: ...
+    ) -> ActionableMixin: ...
 
     def create_node(
         self,
         input: Any,
         last_msg: Optional[str] = None,
         edge_schema: Optional[EdgeSchema] = None,
-        prev_node: Optional[Node] = None,
+        prev_node: Optional[ActionableMixin] = None,
         direction: Direction = Direction.FWD,
         curr_request: Optional[str] = None,
-    ) -> Node:
+    ) -> ActionableMixin:
         state = ActionableMixin.init_state(
             self.state_pydantic_model, prev_node, edge_schema, direction, input
         )
@@ -245,7 +245,7 @@ class GraphSchemaMixin:
         self,
         description: str,
         edge_schemas: List[EdgeSchema],
-        node_schemas: List[NodeSchema],
+        node_schemas: List[ActionableMixin],
     ):
         self.description = description
         self.edge_schemas = edge_schemas
