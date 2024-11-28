@@ -15,27 +15,25 @@ class StateMixin:
 
 
 class StateWithToolRegistryMixin(StateMixin):
-
     def __init__(
         self,
         node_prompt: str,
         node_system_prompt: Type[NodeSystemPrompt],
+        input_pydantic_model: Optional[Type[BaseModel]]=None,
+        state_pydantic_model: Optional[Type[BaseStateModel]]=None,
         tool_registry_or_tool_defs: Optional[
             Union[ToolRegistry, List[ChatCompletionToolParam]]
         ] = None,
-        tool_names: Optional[List[str]] = None,
-        state_pydantic_model: Optional[Type[BaseStateModel]] = None,
         first_turn: Optional[ModelTurn] = None,
         run_assistant_turn_before_transition: bool = False,
-        input_pydantic_model: Optional[Type[BaseModel]] = None,
+        tool_names: Optional[List[str]] = None,
     ):
-        super().__init__(state_pydantic_model)
         self.node_prompt = node_prompt
         self.node_system_prompt = node_system_prompt
+        self.input_pydantic_model = input_pydantic_model
+        self.state_pydantic_model = state_pydantic_model
         self.first_turn = first_turn
         self.run_assistant_turn_before_transition = run_assistant_turn_before_transition
-        self.input_pydantic_model = input_pydantic_model
-
         if tool_registry_or_tool_defs is not None and isinstance(
             tool_registry_or_tool_defs, ToolRegistry
         ):
