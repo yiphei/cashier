@@ -237,6 +237,7 @@ class ActionableMixin(StateMixin):
     def mark_as_completed(self) -> None:
         self.status = self.Status.COMPLETED
 
+
 class GraphSchemaMixin:
     def __init__(
         self,
