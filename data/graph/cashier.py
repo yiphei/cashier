@@ -137,7 +137,7 @@ cashier_graph_schema = GraphSchema(
         confirm_order_node_schema,
         terminal_order_node_schema,
     ],
-    state_schema=GraphState,
+    state_pydantic_model=GraphState,
 )
 
 

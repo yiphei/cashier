@@ -25,7 +25,7 @@ class GraphSchema(GraphSchemaMixin, StateSchemaMixin):
         last_node_schema: NodeSchema,
         edge_schemas: List[EdgeSchema],
         node_schemas: List[NodeSchema],
-        state_schema: Type[BaseModel],
+        state_pydantic_model: Type[BaseModel],
     ):
         GraphSchema._counter += 1
         self.id = GraphSchema._counter
@@ -35,7 +35,7 @@ class GraphSchema(GraphSchemaMixin, StateSchemaMixin):
             edge_schemas,
             node_schemas,
         )
-        StateSchemaMixin.__init__(self, state_schema)
+        StateSchemaMixin.__init__(self, state_pydantic_model)
         self.output_schema = output_schema
         self.start_node_schema = start_node_schema
         self.last_node_schema = last_node_schema
