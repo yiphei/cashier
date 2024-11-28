@@ -19,8 +19,8 @@ class StateWithToolRegistryMixin(StateMixin):
         self,
         node_prompt: str,
         node_system_prompt: Type[NodeSystemPrompt],
-        input_pydantic_model: Optional[Type[BaseModel]]=None,
-        state_pydantic_model: Optional[Type[BaseStateModel]]=None,
+        input_pydantic_model: Optional[Type[BaseModel]] = None,
+        state_pydantic_model: Optional[Type[BaseStateModel]] = None,
         tool_registry_or_tool_defs: Optional[
             Union[ToolRegistry, List[ChatCompletionToolParam]]
         ] = None,
