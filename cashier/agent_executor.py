@@ -49,7 +49,12 @@ class AgentExecutor:
         request_graph_schema=None,
     ):
         self.request_graph_schema = request_graph_schema
-        self.request_graph = RequestGraph(request_graph_schema)
+        self.request_graph = request_graph_schema.create_node(
+        input=None,
+        last_msg = None,
+        edge_schema = None,
+        prev_node =  None,
+        )
         self.curr_graph_schema = None
 
         self.remove_prev_tool_calls = remove_prev_tool_calls
