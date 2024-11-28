@@ -542,7 +542,7 @@ class TestAgent:
             contents = message_1["content"]
             self.message_list.append(message_1)
             has_fn_calls = False
-            if type(contents) == list:
+            if type(contents) is list:
                 for content in contents:
                     if content["type"] == "tool_use":
                         tool_call_id = content["id"]
