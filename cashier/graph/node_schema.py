@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from enum import StrEnum
-from typing import Any, List, Literal, Optional, Type, Union, cast, overload
+from typing import Any, List, Optional, Type, Union
 
 from openai.types.chat.chat_completion_tool_param import ChatCompletionToolParam
 from pydantic import BaseModel
@@ -121,12 +121,12 @@ class NodeSchema(ActionableSchemaMixin):
         self.id = NodeSchema._counter
 
         super().__init__(
-                    node_prompt,
-        node_system_prompt,
-        input_pydantic_model,
-        state_pydantic_model,
-        tool_registry_or_tool_defs,
-        first_turn,
-        run_assistant_turn_before_transition,
-        tool_names,
+            node_prompt,
+            node_system_prompt,
+            input_pydantic_model,
+            state_pydantic_model,
+            tool_registry_or_tool_defs,
+            first_turn,
+            run_assistant_turn_before_transition,
+            tool_names,
         )
