@@ -20,7 +20,6 @@ class StateWithToolRegistryMixin(StateMixin):
         self,
         node_prompt: str,
         node_system_prompt: Type[NodeSystemPrompt],
-        tate_pydantic_model: Optional[Type[BaseStateModel]],
         tool_registry_or_tool_defs: Optional[
             Union[ToolRegistry, List[ChatCompletionToolParam]]
         ] = None,
