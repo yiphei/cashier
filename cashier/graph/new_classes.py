@@ -2,13 +2,29 @@ from __future__ import annotations
 
 from collections import defaultdict, deque
 from enum import StrEnum
-from typing import Any, Dict, List, Literal, Optional, Set, Tuple, Type, Union, cast, overload
+from typing import (
+    Any,
+    List,
+    Literal,
+    Optional,
+    Set,
+    Tuple,
+    Type,
+    Union,
+    cast,
+    overload,
+)
 
 from openai.types.chat.chat_completion_tool_param import ChatCompletionToolParam
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
-from cashier.graph.edge_schema import BwdStateInit, Edge, EdgeSchema, FwdSkipType, FwdStateInit
-from cashier.graph.graph_schema import GraphSchema
+from cashier.graph.edge_schema import (
+    BwdStateInit,
+    Edge,
+    EdgeSchema,
+    FwdSkipType,
+    FwdStateInit,
+)
 from cashier.graph.node_schema import Direction, Node, NodeSchema
 from cashier.graph.state_model import BaseStateModel
 from cashier.model.model_turn import ModelTurn
@@ -249,18 +265,19 @@ class GraphSchemaMixin:
             ].append(edge_schema)
 
 
-
 class GraphMixin:
-    def __init__(self, 
-                     graph_schema: GraphSchemaMixin,
-                 ):
+    def __init__(
+        self,
+        graph_schema: GraphSchemaMixin,
+    ):
         self.graph_schema = graph_schema
         self.edge_schema_id_to_edges = defaultdict(list)
         self.from_node_schema_id_to_last_edge_schema_id = defaultdict(lambda: None)
         self.edge_schema_id_to_from_node = {}
 
-
-    def add_fwd_edge(self, from_node: ActionableMixin, to_node: ActionableMixin, edge_schema_id: int) -> None:
+    def add_fwd_edge(
+        self, from_node: ActionableMixin, to_node: ActionableMixin, edge_schema_id: int
+    ) -> None:
         self.edge_schema_id_to_edges[edge_schema_id].append(Edge(from_node, to_node))
         self.from_node_schema_id_to_last_edge_schema_id[from_node.schema.id] = (
             edge_schema_id
@@ -368,7 +385,10 @@ class GraphMixin:
         return edge[0].status == ActionableMixin.Status.COMPLETED if edge else False
 
     def compute_next_edge_schema(
-        self, start_edge_schema: EdgeSchema, start_input: Any, curr_node: ActionableMixin
+        self,
+        start_edge_schema: EdgeSchema,
+        start_input: Any,
+        curr_node: ActionableMixin,
     ) -> Tuple[EdgeSchema, Any]:
         next_edge_schema = start_edge_schema
         edge_schema = start_edge_schema
