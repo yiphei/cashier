@@ -39,7 +39,7 @@ class Node(ActionableMixin):
 
 class NodeSchema(ActionableSchemaMixin):
     _counter = 0
-    instance_cls = None
+    instance_cls = Node
 
     def __init__(
         self,
