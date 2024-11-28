@@ -146,5 +146,5 @@ REQUEST_GRAPH_SCHEMA = RequestGraphSchema(
     edge_schemas=[],
     node_prompt="You work at Heaven Coffee and help customers with anything they need.",
     node_system_prompt=NodeSystemPrompt,
-    description="todo"
+    description="todo",
 )

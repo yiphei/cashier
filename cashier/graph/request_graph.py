@@ -2,6 +2,7 @@ import json
 from collections import defaultdict
 from typing import List, Optional, Type, Union
 
+from openai.types.chat.chat_completion_tool_param import ChatCompletionToolParam
 from pydantic import BaseModel
 
 from cashier.graph.edge_schema import (
@@ -10,24 +11,29 @@ from cashier.graph.edge_schema import (
     FunctionTransitionConfig,
     StateTransitionConfig,
 )
+from cashier.graph.new_classes import (
+    ActionableMixin,
+    ActionableSchemaMixin,
+    GraphMixin,
+    GraphSchemaMixin,
+)
 from cashier.graph.state_model import BaseStateModel
 from cashier.logger import logger
 from cashier.model.model_turn import ModelTurn
 from cashier.model.model_util import CustomJSONEncoder
 from cashier.prompts.graph_schema_addition import GraphSchemaAdditionPrompt
 from cashier.prompts.graph_schema_selection import GraphSchemaSelectionPrompt
-from cashier.graph.new_classes import GraphMixin, GraphSchemaMixin, ActionableMixin, ActionableSchemaMixin
 from cashier.prompts.node_system import NodeSystemPrompt
 from cashier.tool.tool_registry import ToolRegistry
-from openai.types.chat.chat_completion_tool_param import ChatCompletionToolParam
 
 
 class RequestGraphSchema(GraphSchemaMixin, ActionableSchemaMixin):
-    def __init__(self,
-                         description: str,
+    def __init__(
+        self,
+        description: str,
         edge_schemas: List[EdgeSchema],
         node_schemas: List[ActionableMixin],
-                         node_prompt: str,
+        node_prompt: str,
         node_system_prompt: Type[NodeSystemPrompt],
         input_pydantic_model: Optional[Type[BaseModel]] = None,
         state_pydantic_model: Optional[Type[BaseStateModel]] = None,
@@ -37,22 +43,19 @@ class RequestGraphSchema(GraphSchemaMixin, ActionableSchemaMixin):
         first_turn: Optional[ModelTurn] = None,
         run_assistant_turn_before_transition: bool = False,
         tool_names: Optional[List[str]] = None,
-                 ):
-            GraphSchemaMixin.__init__(self, 
-                                      description,
-                                      edge_schemas,
-                                      node_schemas
-                                      )
-            ActionableSchemaMixin.__init__(self,
-                                           node_prompt,
-                                           node_system_prompt,
-                                           input_pydantic_model,
-                                           state_pydantic_model,
-                                           tool_registry_or_tool_defs,
-                                           first_turn,
-                                           run_assistant_turn_before_transition,
-                                           tool_names,
-                                           )
+    ):
+        GraphSchemaMixin.__init__(self, description, edge_schemas, node_schemas)
+        ActionableSchemaMixin.__init__(
+            self,
+            node_prompt,
+            node_system_prompt,
+            input_pydantic_model,
+            state_pydantic_model,
+            tool_registry_or_tool_defs,
+            first_turn,
+            run_assistant_turn_before_transition,
+            tool_names,
+        )
 
 
 class RequestGraph:
