@@ -2,18 +2,7 @@ from __future__ import annotations
 
 from collections import defaultdict, deque
 from enum import StrEnum
-from typing import (
-    Any,
-    List,
-    Literal,
-    Optional,
-    Set,
-    Tuple,
-    Type,
-    Union,
-    cast,
-    overload,
-)
+from typing import Any, List, Literal, Optional, Set, Tuple, Type, Union, cast, overload
 
 from openai.types.chat.chat_completion_tool_param import ChatCompletionToolParam
 from pydantic import BaseModel
