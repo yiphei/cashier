@@ -13,7 +13,13 @@ from cashier.agent_executor import AgentExecutor
 from cashier.graph.node_schema import Node
 from cashier.model.message_list import MessageList
 from cashier.model.model_completion import AnthropicModelOutput, OAIModelOutput
-from cashier.model.model_turn import AssistantTurn, ModelTurn, NodeSystemTurn, SystemTurn, UserTurn
+from cashier.model.model_turn import (
+    AssistantTurn,
+    ModelTurn,
+    NodeSystemTurn,
+    SystemTurn,
+    UserTurn,
+)
 from cashier.model.model_util import (
     MODEL_PROVIDER_TO_TOOL_CALL_ID_PREFIX,
     FunctionCall,
@@ -27,7 +33,7 @@ from cashier.tool.function_call_context import (
     ToolExceptionWrapper,
 )
 from cashier.turn_container import TurnContainer
-from data.graph.cashier import cashier_graph_schema, REQUEST_GRAPH_SCHEMA
+from data.graph.cashier import REQUEST_GRAPH_SCHEMA, cashier_graph_schema
 from data.tool_registry.cashier_tool_registry import CupSize, ItemOrder, Order
 
 
@@ -162,7 +168,7 @@ class TestAgent:
         model_completion.stream_fn_calls = Mock(return_value=iter(fn_calls))
         model_completion.fn_calls = fn_calls
         if message_prop is not None:
-            if message_prop == "null": # TODO: fix this
+            if message_prop == "null":  # TODO: fix this
                 message_prop = None
             model_completion.get_message_prop = Mock(return_value=message_prop)
             if model_provider == ModelProvider.OPENAI:
@@ -283,14 +289,16 @@ class TestAgent:
         ut = UserTurn(msg_content=message)
         self.build_messages_from_turn(ut, model_provider)
         return ut
-    
+
     def add_request_user_turn(
         self,
         agent_executor,
         message,
         model_provider,
     ):
-        agent_selection = AgentSelection(agent_id = 1, task='customer wants to order coffee')
+        agent_selection = AgentSelection(
+            agent_id=1, task="customer wants to order coffee"
+        )
         graph_schema_selection_completion = self.create_mock_model_completion(
             model_provider, None, False, [agent_selection], 0.5
         )
@@ -422,7 +430,9 @@ class TestAgent:
 
     @pytest.fixture
     def start_turns(self, remove_prev_tool_calls, agent_executor, model_provider):
-        ut = self.add_request_user_turn(agent_executor, "i want to order coffee", model_provider)
+        ut = self.add_request_user_turn(
+            agent_executor, "i want to order coffee", model_provider
+        )
         return [
             SystemTurn(msg_content=REQUEST_GRAPH_SCHEMA.system_prompt),
             ut,
@@ -434,7 +444,7 @@ class TestAgent:
                         node_input_json_schema=None,
                         state_json_schema=self.start_node_schema.state_pydantic_model.model_json_schema(),
                         last_msg="i want to order coffee",
-                        curr_request='customer wants to order coffee',
+                        curr_request="customer wants to order coffee",
                     ),
                     node_id=1,
                 ),
@@ -849,7 +859,7 @@ class TestAgent:
                     node_input_json_schema=next_node_schema.input_pydantic_model.model_json_schema(),
                     state_json_schema=next_node_schema.state_pydantic_model.model_json_schema(),
                     last_msg="i want pecan latte",
-                    curr_request='customer wants to order coffee',
+                    curr_request="customer wants to order coffee",
                 ),
                 node_id=2,
             ),
@@ -937,7 +947,7 @@ class TestAgent:
                     node_input_json_schema=next_node_schema.input_pydantic_model.model_json_schema(),
                     state_json_schema=next_node_schema.state_pydantic_model.model_json_schema(),
                     last_msg="i want pecan latte",
-                    curr_request='customer wants to order coffee',
+                    curr_request="customer wants to order coffee",
                 ),
                 node_id=2,
             ),
@@ -973,7 +983,7 @@ class TestAgent:
                     node_input_json_schema=None,
                     state_json_schema=self.start_node_schema.state_pydantic_model.model_json_schema(),
                     last_msg="can you confirm the order?",
-                    curr_request='customer wants to order coffee',
+                    curr_request="customer wants to order coffee",
                 ),
                 node_id=3,
             ),
@@ -1081,7 +1091,7 @@ class TestAgent:
                     node_input_json_schema=next_node_schema.input_pydantic_model.model_json_schema(),
                     state_json_schema=next_node_schema.state_pydantic_model.model_json_schema(),
                     last_msg="i want pecan latte",
-                    curr_request='customer wants to order coffee',
+                    curr_request="customer wants to order coffee",
                 ),
                 node_id=2,
             ),
@@ -1137,7 +1147,7 @@ class TestAgent:
                     node_input_json_schema=None,
                     state_json_schema=next_next_node_schema.state_pydantic_model.model_json_schema(),
                     last_msg="i confirm",
-                    curr_request='customer wants to order coffee',
+                    curr_request="customer wants to order coffee",
                 ),
                 node_id=3,
             ),
@@ -1172,7 +1182,7 @@ class TestAgent:
                     node_input_json_schema=None,
                     state_json_schema=self.start_node_schema.state_pydantic_model.model_json_schema(),
                     last_msg="thanks for confirming",
-                    curr_request='customer wants to order coffee',
+                    curr_request="customer wants to order coffee",
                 ),
                 node_id=4,
             ),
@@ -1218,7 +1228,7 @@ class TestAgent:
                     node_input_json_schema=next_node_schema.input_pydantic_model.model_json_schema(),
                     state_json_schema=next_node_schema.state_pydantic_model.model_json_schema(),
                     last_msg="what do you want to change?",
-                    curr_request='customer wants to order coffee',
+                    curr_request="customer wants to order coffee",
                 ),
                 node_id=5,
             ),
