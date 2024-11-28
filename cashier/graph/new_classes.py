@@ -53,6 +53,8 @@ class StateMixin:
 
 
 class ActionableSchemaMixin(StateSchemaMixin):
+    instance_cls = None
+
     def __init__(
         self,
         node_prompt: str,
@@ -174,7 +176,7 @@ class ActionableSchemaMixin(StateSchemaMixin):
             in_edge_schema = prev_node.in_edge_schema
         else:
             in_edge_schema = edge_schema
-        return ActionableMixin(
+        return self.instance_cls(
             self, input, state, cast(str, prompt), in_edge_schema, direction
         )
 

@@ -7,6 +7,7 @@ from openai.types.chat.chat_completion_tool_param import ChatCompletionToolParam
 from pydantic import BaseModel
 
 from cashier.graph.edge_schema import BwdStateInit, EdgeSchema, FwdStateInit
+from cashier.graph.new_classes import ActionableSchemaMixin
 from cashier.graph.state_model import BaseStateModel
 from cashier.model.model_turn import ModelTurn
 from cashier.prompts.node_system import NodeSystemPrompt
@@ -99,15 +100,16 @@ class Node:
         self.first_user_message = True
 
 
-class NodeSchema:
+class NodeSchema(ActionableSchemaMixin):
     _counter = 0
+    instance_cls = None
 
     def __init__(
         self,
         node_prompt: str,
         node_system_prompt: Type[NodeSystemPrompt],
-        input_pydantic_model: Optional[Type[BaseModel]],
-        state_pydantic_model: Optional[Type[BaseStateModel]],
+        input_pydantic_model: Optional[Type[BaseModel]] = None,
+        state_pydantic_model: Optional[Type[BaseStateModel]] = None,
         tool_registry_or_tool_defs: Optional[
             Union[ToolRegistry, List[ChatCompletionToolParam]]
         ] = None,
@@ -118,112 +120,13 @@ class NodeSchema:
         NodeSchema._counter += 1
         self.id = NodeSchema._counter
 
-        self.node_prompt = node_prompt
-        self.node_system_prompt = node_system_prompt
-        self.input_pydantic_model = input_pydantic_model
-        self.state_pydantic_model = state_pydantic_model
-        self.first_turn = first_turn
-        self.run_assistant_turn_before_transition = run_assistant_turn_before_transition
-        if tool_registry_or_tool_defs is not None and isinstance(
-            tool_registry_or_tool_defs, ToolRegistry
-        ):
-            self.tool_registry = (
-                tool_registry_or_tool_defs.__class__.create_from_tool_registry(
-                    tool_registry_or_tool_defs, tool_names
-                )
-            )
-        else:
-            self.tool_registry = ToolRegistry(tool_registry_or_tool_defs)
-
-        if self.state_pydantic_model is not None:
-            for (
-                field_name,
-                field_info,
-            ) in self.state_pydantic_model.model_fields.items():
-                new_tool_fn_name = f"update_state_{field_name}"
-                field_args = {field_name: (field_info.annotation, field_info)}
-                self.tool_registry.add_tool_def(
-                    new_tool_fn_name,
-                    f"Function to update the `{field_name}` field in the state",
-                    field_args,
-                )
-
-            self.tool_registry.add_tool_def(
-                "get_state",
-                "Function to get the current state, as defined in <state>",
-                {},
-            )
-
-    @overload
-    def create_node(  # noqa: E704
-        self,
-        input: Any,
-        last_msg: Literal[None] = None,
-        edge_schema: Literal[None] = None,
-        prev_node: Literal[None] = None,
-        direction: Literal[Direction.FWD] = Direction.FWD,
-        curr_request: Optional[str] = None,
-    ) -> Node: ...
-
-    @overload
-    def create_node(  # noqa: E704
-        self,
-        input: Any,
-        last_msg: str,
-        edge_schema: EdgeSchema,
-        prev_node: Literal[None] = None,
-        direction: Literal[Direction.FWD] = Direction.FWD,
-        curr_request: Optional[str] = None,
-    ) -> Node: ...
-
-    @overload
-    def create_node(  # noqa: E704
-        self,
-        input: Any,
-        last_msg: str,
-        edge_schema: EdgeSchema,
-        prev_node: Node,
-        direction: Direction = Direction.FWD,
-        curr_request: Optional[str] = None,
-    ) -> Node: ...
-
-    def create_node(
-        self,
-        input: Any,
-        last_msg: Optional[str] = None,
-        edge_schema: Optional[EdgeSchema] = None,
-        prev_node: Optional[Node] = None,
-        direction: Direction = Direction.FWD,
-        curr_request: Optional[str] = None,
-    ) -> Node:
-        state = Node.init_state(
-            self.state_pydantic_model, prev_node, edge_schema, direction, input
+        super().__init__(
+                    node_prompt,
+        node_system_prompt,
+        input_pydantic_model,
+        state_pydantic_model,
+        tool_registry_or_tool_defs,
+        first_turn,
+        run_assistant_turn_before_transition,
+        tool_names,
         )
-
-        prompt = self.node_system_prompt(
-            node_prompt=self.node_prompt,
-            input=(
-                input.model_dump_json()
-                if self.input_pydantic_model is not None
-                else None
-            ),
-            node_input_json_schema=(
-                self.input_pydantic_model.model_json_schema()
-                if self.input_pydantic_model
-                else None
-            ),
-            state_json_schema=(
-                self.state_pydantic_model.model_json_schema()
-                if self.state_pydantic_model
-                else None
-            ),
-            last_msg=last_msg,
-            curr_request=curr_request,
-        )
-
-        if direction == Direction.BWD:
-            assert prev_node is not None
-            in_edge_schema = prev_node.in_edge_schema
-        else:
-            in_edge_schema = edge_schema
-        return Node(self, input, state, cast(str, prompt), in_edge_schema, direction)
