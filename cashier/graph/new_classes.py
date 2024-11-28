@@ -27,6 +27,31 @@ class StateSchemaMixin:
         self.state_pydantic_model = state_pydantic_model
 
 
+class StateMixin:
+    def __init__(
+        self,
+        state: BaseStateModel,
+    ):
+        self.state = state
+        self.first_user_message = False
+
+    def update_state(self, **kwargs: Any) -> None:
+        if self.first_user_message:
+            old_state = self.state.model_dump()
+            new_state = old_state | kwargs
+            self.state = self.state.__class__(**new_state)
+        else:
+            raise StateUpdateError(
+                "cannot update any state field until you get the first customer message in the current conversation. Remember, the current conversation starts after <cutoff_msg>"
+            )
+
+    def get_state(self) -> BaseStateModel:
+        return self.state
+
+    def update_first_user_message(self) -> None:
+        self.first_user_message = True
+
+
 class ActionableSchemaMixin(StateSchemaMixin):
     def __init__(
         self,
@@ -154,7 +179,7 @@ class ActionableSchemaMixin(StateSchemaMixin):
         )
 
 
-class ActionableMixin:
+class ActionableMixin(StateMixin):
     class Status(StrEnum):
         IN_PROGRESS = "IN_PROGRESS"
         COMPLETED = "COMPLETED"
@@ -168,11 +193,10 @@ class ActionableMixin:
         in_edge_schema: Optional[EdgeSchema],
         direction: Direction = Direction.FWD,
     ):
-        self.state = state
+        super().__init__(state)
         self.prompt = prompt
         self.input = input
         self.schema = schema
-        self.first_user_message = False
         self.status = self.Status.IN_PROGRESS
         self.in_edge_schema = in_edge_schema
         self.direction = direction
@@ -212,23 +236,6 @@ class ActionableMixin:
 
     def mark_as_completed(self) -> None:
         self.status = self.Status.COMPLETED
-
-    def update_state(self, **kwargs: Any) -> None:
-        if self.first_user_message:
-            old_state = self.state.model_dump()
-            new_state = old_state | kwargs
-            self.state = self.state.__class__(**new_state)
-        else:
-            raise StateUpdateError(
-                "cannot update any state field until you get the first customer message in the current conversation. Remember, the current conversation starts after <cutoff_msg>"
-            )
-
-    def get_state(self) -> BaseStateModel:
-        return self.state
-
-    def update_first_user_message(self) -> None:
-        self.first_user_message = True
-
 
 class GraphSchemaMixin:
     def __init__(
