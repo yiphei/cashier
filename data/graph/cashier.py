@@ -142,7 +142,9 @@ cashier_graph_schema = GraphSchema(
 
 
 REQUEST_GRAPH_SCHEMA = RequestGraphSchema(
-    graph_schemas=[cashier_graph_schema],
-    graph_edge_schemas=[],
-    system_prompt="You work at Heaven Coffee and help customers with anything they need.",
+    node_schemas=[cashier_graph_schema],
+    edge_schemas=[],
+    node_prompt="You work at Heaven Coffee and help customers with anything they need.",
+    node_system_prompt=NodeSystemPrompt,
+    description="todo"
 )

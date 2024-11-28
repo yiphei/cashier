@@ -63,7 +63,7 @@ class AgentExecutor:
         self.bwd_skip_edge_schemas: Set[EdgeSchema] = set()
 
         self.graph = None
-        self.TC.add_system_turn(request_graph_schema.system_prompt)
+        self.TC.add_system_turn(request_graph_schema.node_prompt)
         self.force_tool_choice = None
         self.new_edge_schema = None
         self.new_node_schema = None

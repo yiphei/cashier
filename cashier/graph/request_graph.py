@@ -1,31 +1,58 @@
 import json
 from collections import defaultdict
+from typing import List, Optional, Type, Union
+
+from pydantic import BaseModel
 
 from cashier.graph.edge_schema import (
+    EdgeSchema,
     FunctionState,
     FunctionTransitionConfig,
     StateTransitionConfig,
 )
 from cashier.graph.state_model import BaseStateModel
 from cashier.logger import logger
+from cashier.model.model_turn import ModelTurn
 from cashier.model.model_util import CustomJSONEncoder
 from cashier.prompts.graph_schema_addition import GraphSchemaAdditionPrompt
 from cashier.prompts.graph_schema_selection import GraphSchemaSelectionPrompt
+from cashier.graph.new_classes import GraphMixin, GraphSchemaMixin, ActionableMixin, ActionableSchemaMixin
+from cashier.prompts.node_system import NodeSystemPrompt
+from cashier.tool.tool_registry import ToolRegistry
+from openai.types.chat.chat_completion_tool_param import ChatCompletionToolParam
 
 
-class RequestGraphSchema:
-    def __init__(self, graph_schemas, graph_edge_schemas, system_prompt):
-        self.graph_schemas = graph_schemas
-        self.graph_edge_schemas = graph_edge_schemas
-        self.graph_schema_id_to_graph_schema = {
-            graph_schema.id: graph_schema for graph_schema in self.graph_schemas
-        }
-        self.system_prompt = system_prompt
-        self.from_graph_schema_id_to_graph_edge_schemas = defaultdict(list)
-        for graph_edge_schema in graph_edge_schemas:
-            self.from_graph_schema_id_to_graph_edge_schemas[
-                graph_edge_schema.from_graph_schema.id
-            ].append(graph_edge_schema)
+class RequestGraphSchema(GraphSchemaMixin, ActionableSchemaMixin):
+    def __init__(self,
+                         description: str,
+        edge_schemas: List[EdgeSchema],
+        node_schemas: List[ActionableMixin],
+                         node_prompt: str,
+        node_system_prompt: Type[NodeSystemPrompt],
+        input_pydantic_model: Optional[Type[BaseModel]] = None,
+        state_pydantic_model: Optional[Type[BaseStateModel]] = None,
+        tool_registry_or_tool_defs: Optional[
+            Union[ToolRegistry, List[ChatCompletionToolParam]]
+        ] = None,
+        first_turn: Optional[ModelTurn] = None,
+        run_assistant_turn_before_transition: bool = False,
+        tool_names: Optional[List[str]] = None,
+                 ):
+            GraphSchemaMixin.__init__(self, 
+                                      description,
+                                      edge_schemas,
+                                      node_schemas
+                                      )
+            ActionableSchemaMixin.__init__(self,
+                                           node_prompt,
+                                           node_system_prompt,
+                                           input_pydantic_model,
+                                           state_pydantic_model,
+                                           tool_registry_or_tool_defs,
+                                           first_turn,
+                                           run_assistant_turn_before_transition,
+                                           tool_names,
+                                           )
 
 
 class RequestGraph:
@@ -39,11 +66,11 @@ class RequestGraph:
 
     def get_graph_schemas(self, request):
         agent_selections = GraphSchemaSelectionPrompt.run(
-            "claude-3.5", request=request, graph_schemas=self.schema.graph_schemas
+            "claude-3.5", request=request, graph_schemas=self.schema.node_schemas
         )
         for agent_selection in agent_selections:
             self.graph_schema_sequence.append(
-                self.schema.graph_schema_id_to_graph_schema[agent_selection.agent_id]
+                self.schema.node_schema_id_to_node_schema[agent_selection.agent_id]
             )
             self.tasks.append(agent_selection.task)
             self.graph_schema_id_to_task[agent_selection.agent_id] = (
@@ -57,7 +84,7 @@ class RequestGraph:
     def add_tasks(self, request, tc):
         agent_selection = GraphSchemaAdditionPrompt.run(
             "claude-3.5",
-            graph_schemas=self.schema.graph_schemas,
+            graph_schemas=self.schema.node_schemas,
             curr_agent_id=self.graph_schema_sequence[self.current_graph_schema_idx].id,
             curr_task=self.tasks[self.current_graph_schema_idx],
             tc=tc,

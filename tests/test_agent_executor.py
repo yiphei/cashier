@@ -434,7 +434,7 @@ class TestAgent:
             agent_executor, "i want to order coffee", model_provider
         )
         return [
-            SystemTurn(msg_content=REQUEST_GRAPH_SCHEMA.system_prompt),
+            SystemTurn(msg_content=REQUEST_GRAPH_SCHEMA.node_prompt),
             ut,
             TurnArgs(
                 turn=NodeSystemTurn(
