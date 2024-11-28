@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 from collections import defaultdict
 from enum import StrEnum
 from typing import Any, List, Literal, Optional, Type, Union, cast, overload
@@ -142,7 +143,9 @@ class ActionableSchemaMixin(StateSchemaMixin):
             in_edge_schema = prev_node.in_edge_schema
         else:
             in_edge_schema = edge_schema
-        return ActionableMixin(self, input, state, cast(str, prompt), in_edge_schema, direction)
+        return ActionableMixin(
+            self, input, state, cast(str, prompt), in_edge_schema, direction
+        )
 
 
 class ActionableMixin:
@@ -219,6 +222,7 @@ class ActionableMixin:
 
     def update_first_user_message(self) -> None:
         self.first_user_message = True
+
 
 class GraphSchemaMixin:
     def __init__(
