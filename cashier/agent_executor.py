@@ -8,7 +8,7 @@ from cashier.graph.edge_schema import EdgeSchema
 from cashier.graph.graph_schema import Graph, GraphSchema
 from cashier.graph.new_classes import Direction
 from cashier.graph.node_schema import Node, NodeSchema
-from cashier.graph.request_graph import GraphEdgeSchema, RequestGraph
+from cashier.graph.request_graph import GraphEdgeSchema
 from cashier.gui import MessageDisplay
 from cashier.logger import logger
 from cashier.model.model_completion import ModelOutput
@@ -50,10 +50,10 @@ class AgentExecutor:
     ):
         self.request_graph_schema = request_graph_schema
         self.request_graph = request_graph_schema.create_node(
-        input=None,
-        last_msg = None,
-        edge_schema = None,
-        prev_node =  None,
+            input=None,
+            last_msg=None,
+            edge_schema=None,
+            prev_node=None,
         )
         self.curr_graph_schema = None
 

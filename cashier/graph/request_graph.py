@@ -1,6 +1,6 @@
 from __future__ import annotations
+
 import json
-from collections import defaultdict
 from typing import Any, List, Optional, Type, Union
 
 from openai.types.chat.chat_completion_tool_param import ChatCompletionToolParam
@@ -28,27 +28,24 @@ from cashier.prompts.graph_schema_selection import GraphSchemaSelectionPrompt
 from cashier.prompts.node_system import NodeSystemPrompt
 from cashier.tool.tool_registry import ToolRegistry
 
+
 class RequestGraph(GraphMixin, ActionableMixin):
 
-    def __init__(self,
+    def __init__(
+        self,
         schema: RequestGraphSchema,
         input: Any,
         state: BaseStateModel,
         prompt: str,
         in_edge_schema: Optional[EdgeSchema],
         direction: Direction = Direction.FWD,
-                 ):
-        
+    ):
+
         GraphMixin.__init__(self, schema)
-        ActionableMixin.__init__(self, 
-                                 schema,
-                                 input, 
-                                 state,
-                                 prompt,
-                                 in_edge_schema,
-                                 direction
-                                 )
-        
+        ActionableMixin.__init__(
+            self, schema, input, state, prompt, in_edge_schema, direction
+        )
+
         self.tasks = []
         self.graph_schema_sequence = []
         self.current_graph_schema_idx = 0
@@ -127,6 +124,7 @@ class RequestGraphSchema(GraphSchemaMixin, ActionableSchemaMixin):
             run_assistant_turn_before_transition,
             tool_names,
         )
+
 
 class GraphEdgeSchema:
     _counter = 0
