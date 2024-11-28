@@ -142,17 +142,17 @@ class ActionableSchemaMixin(StateSchemaMixin):
         return Node(self, input, state, cast(str, prompt), in_edge_schema, direction)
 
 
-
-
 class GraphSchemaMixin:
 
-    def __init__(self,
-    output_schema: Type[BaseModel],
-    description: str,
-    start_node_schema: NodeSchema,
-    last_node_schema: NodeSchema,
-    edge_schemas: List[EdgeSchema],
-    node_schemas: List[NodeSchema]):
+    def __init__(
+        self,
+        output_schema: Type[BaseModel],
+        description: str,
+        start_node_schema: NodeSchema,
+        last_node_schema: NodeSchema,
+        edge_schemas: List[EdgeSchema],
+        node_schemas: List[NodeSchema],
+    ):
         self.output_schema = output_schema
         self.description = description
         self.start_node_schema = start_node_schema
