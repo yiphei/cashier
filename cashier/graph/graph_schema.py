@@ -6,7 +6,8 @@ from typing import Any, Dict, List, Literal, Optional, Set, Tuple, Type, overloa
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from cashier.graph.edge_schema import Edge, EdgeSchema, FwdSkipType
-from cashier.graph.node_schema import Direction, Node, NodeSchema
+from cashier.graph.new_classes import Direction
+from cashier.graph.node_schema import Node, NodeSchema
 
 
 def _get_next_id() -> int:

@@ -14,7 +14,6 @@ from cashier.graph.edge_schema import (
     FwdSkipType,
     FwdStateInit,
 )
-from cashier.graph.node_schema import Direction
 from cashier.graph.state_model import BaseStateModel
 from cashier.model.model_turn import ModelTurn
 from cashier.prompts.node_system import NodeSystemPrompt
@@ -50,6 +49,11 @@ class StateMixin:
 
     def update_first_user_message(self) -> None:
         self.first_user_message = True
+
+
+class Direction(StrEnum):
+    FWD = "FWD"
+    BWD = "BWD"
 
 
 class ActionableSchemaMixin(StateSchemaMixin):
