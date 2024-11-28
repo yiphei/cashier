@@ -8,54 +8,36 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 from cashier.graph.edge_schema import Edge, EdgeSchema, FwdSkipType
 from cashier.graph.new_classes import Direction
 from cashier.graph.node_schema import Node, NodeSchema
+from cashier.graph.new_classes import GraphSchemaMixin, StateSchemaMixin
 
 
-def _get_next_id() -> int:
-    if not hasattr(_get_next_id, "counter"):
-        _get_next_id.counter = 0
-    _get_next_id.counter += 1
-    return _get_next_id.counter
+class GraphSchema(GraphSchemaMixin, StateSchemaMixin):
+    _counter = 0
 
-
-class GraphSchema(BaseModel):
-    model_config = ConfigDict(arbitrary_types_allowed=True)
-
-    id: Optional[int] = Field(default_factory=_get_next_id)
-    output_schema: Type[BaseModel]
-    description: str
-    start_node_schema: NodeSchema
-    last_node_schema: NodeSchema
-    edge_schemas: List[EdgeSchema]
-    node_schemas: List[NodeSchema]
+    def __init__(self,
+    output_schema: Type[BaseModel],
+    description: str,
+    start_node_schema: NodeSchema,
+    last_node_schema: NodeSchema,
+    edge_schemas: List[EdgeSchema],
+    node_schemas: List[NodeSchema],
     state_schema: Type[BaseModel]
-
-    @model_validator(mode="after")
-    def init_computed_fields(self) -> GraphSchema:
-        self._node_schema_id_to_node_schema = {
-            node_schema.id: node_schema for node_schema in self.node_schemas
-        }
-        self._edge_schema_id_to_edge_schema = {
-            edge_schema.id: edge_schema for edge_schema in self.edge_schemas
-        }
-        self._from_node_schema_id_to_edge_schema = defaultdict(list)
-        for edge_schema in self.edge_schemas:
-            self._from_node_schema_id_to_edge_schema[
-                edge_schema.from_node_schema.id
-            ].append(edge_schema)
-
-        return self
-
-    @property
-    def node_schema_id_to_node_schema(self) -> Dict[int, NodeSchema]:
-        return self._node_schema_id_to_node_schema
-
-    @property
-    def edge_schema_id_to_edge_schema(self) -> Dict[int, EdgeSchema]:
-        return self._edge_schema_id_to_edge_schema
-
-    @property
-    def from_node_schema_id_to_edge_schema(self) -> Dict[int, List[EdgeSchema]]:
-        return self._from_node_schema_id_to_edge_schema
+                 ):
+        GraphSchema._counter += 1
+        self.id = GraphSchema._counter
+        GraphSchemaMixin.__init__(
+            self,
+        description,
+        edge_schemas,
+        node_schemas,
+        )
+        StateSchemaMixin.__init__(
+            self,
+            state_schema
+        )
+        self.output_schema = output_schema
+        self.start_node_schema = start_node_schema
+        self.last_node_schema = last_node_schema
 
 
 class Graph(BaseModel):
@@ -73,7 +55,7 @@ class Graph(BaseModel):
 
     def __init__(self, **kwargs):
         if "state" not in kwargs:
-            kwargs["state"] = kwargs["graph_schema"].state_schema()
+            kwargs["state"] = kwargs["graph_schema"].state_pydantic_model()
         else:
             raise ValueError("state must not be provided")
         super().__init__(**kwargs)
