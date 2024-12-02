@@ -6,6 +6,7 @@ from pydantic import BaseModel
 
 from cashier.graph.edge_schema import EdgeSchema
 from cashier.graph.new_classes import (
+    AutoMixinInit,
     GraphMixin,
     GraphSchemaMixin,
     StateMixin,
@@ -14,7 +15,7 @@ from cashier.graph.new_classes import (
 from cashier.graph.node_schema import NodeSchema
 
 
-class GraphSchema(GraphSchemaMixin, StateSchemaMixin):
+class GraphSchema(GraphSchemaMixin, StateSchemaMixin, metaclass=AutoMixinInit):
     _counter = 0
 
     def __init__(
@@ -29,13 +30,6 @@ class GraphSchema(GraphSchemaMixin, StateSchemaMixin):
     ):
         GraphSchema._counter += 1
         self.id = GraphSchema._counter
-        GraphSchemaMixin.__init__(
-            self,
-            description,
-            edge_schemas,
-            node_schemas,
-        )
-        StateSchemaMixin.__init__(self, state_pydantic_model)
         self.output_schema = output_schema
         self.start_node_schema = start_node_schema
         self.last_node_schema = last_node_schema

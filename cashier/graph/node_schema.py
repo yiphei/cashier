@@ -6,14 +6,14 @@ from openai.types.chat.chat_completion_tool_param import ChatCompletionToolParam
 from pydantic import BaseModel
 
 from cashier.graph.edge_schema import EdgeSchema
-from cashier.graph.new_classes import ActionableMixin, ActionableSchemaMixin, Direction
+from cashier.graph.new_classes import ActionableMixin, ActionableSchemaMixin, AutoMixinInit, Direction
 from cashier.graph.state_model import BaseStateModel
 from cashier.model.model_turn import ModelTurn
 from cashier.prompts.node_system import NodeSystemPrompt
 from cashier.tool.tool_registry import ToolRegistry
 
 
-class Node(ActionableMixin):
+class Node(ActionableMixin, metaclass=AutoMixinInit):
     _counter = 0
 
     def __init__(
@@ -27,17 +27,8 @@ class Node(ActionableMixin):
     ):
         Node._counter += 1
         self.id = Node._counter
-        super().__init__(
-            schema,
-            input,
-            state,
-            prompt,
-            in_edge_schema,
-            direction,
-        )
 
-
-class NodeSchema(ActionableSchemaMixin):
+class NodeSchema(ActionableSchemaMixin, metaclass=AutoMixinInit):
     _counter = 0
     instance_cls = Node
 
@@ -56,14 +47,3 @@ class NodeSchema(ActionableSchemaMixin):
     ):
         NodeSchema._counter += 1
         self.id = NodeSchema._counter
-
-        super().__init__(
-            node_prompt,
-            node_system_prompt,
-            input_pydantic_model,
-            state_pydantic_model,
-            tool_registry_or_tool_defs,
-            first_turn,
-            run_assistant_turn_before_transition,
-            tool_names,
-        )
