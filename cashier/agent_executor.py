@@ -43,18 +43,13 @@ class AgentExecutor:
 
     def __init__(
         self,
-        graph_schema: GraphSchema,
         audio_output: bool,
         remove_prev_tool_calls: bool,
         request_graph_schema=None,
     ):
         self.request_graph_schema = request_graph_schema
-        if request_graph_schema is not None:
-            self.request_graph = RequestGraph(request_graph_schema)
-            self.curr_graph_schema = None
-        else:
-            self.request_graph = None
-            self.curr_graph_schema = graph_schema
+        self.request_graph = RequestGraph(request_graph_schema)
+        self.curr_graph_schema = None
 
         self.remove_prev_tool_calls = remove_prev_tool_calls
         self.audio_output = audio_output
@@ -66,12 +61,8 @@ class AgentExecutor:
         self.next_edge_schemas: Set[EdgeSchema] = set()
         self.bwd_skip_edge_schemas: Set[EdgeSchema] = set()
 
-        if self.request_graph_schema is None:
-            self.graph = Graph(graph_schema=graph_schema)
-            self.init_next_node(graph_schema.start_node_schema, None, None)
-        else:
-            self.graph = None
-            self.TC.add_system_turn(request_graph_schema.system_prompt)
+        self.graph = None
+        self.TC.add_system_turn(request_graph_schema.system_prompt)
         self.force_tool_choice = None
         self.new_edge_schema = None
         self.new_node_schema = None
@@ -90,7 +81,7 @@ class AgentExecutor:
             f"[NODE_SCHEMA] Initializing node with {Style.BRIGHT}node_schema_id: {node_schema.id}{Style.NORMAL}"
         )
         new_node = node_schema.create_node(
-            input, last_msg, edge_schema, prev_node, direction, self.request_graph.tasks[self.request_graph.current_graph_schema_idx] if self.request_graph else None  # type: ignore
+            input, last_msg, edge_schema, prev_node, direction, self.request_graph.tasks[self.request_graph.current_graph_schema_idx]  # type: ignore
         )
 
         self.TC.add_node_turn(
@@ -353,7 +344,8 @@ class AgentExecutor:
                 # TODO: this exists for benchmarking. remove this once done
                 fn_output = fn_callback(**function_args)
                 if fn_output and (
-                    type(fn_output) != str or not fn_output.strip().startswith("Error:")
+                    type(fn_output) is not str
+                    or not fn_output.strip().startswith("Error:")
                 ):
                     fn_output = json.loads(fn_output)
             else:
@@ -370,7 +362,7 @@ class AgentExecutor:
                 f"[FUNCTION_RETURN] {Style.BRIGHT}name: {fn_call.name}, id: {fn_call.id}{Style.NORMAL} with output:\n{json.dumps(fn_output, cls=CustomJSONEncoder, indent=4)}"
             )
             return fn_output, (
-                type(fn_output) != str or not fn_output.strip().startswith("Error:")
+                type(fn_output) is not str or not fn_output.strip().startswith("Error:")
             )
 
     def add_assistant_turn(
