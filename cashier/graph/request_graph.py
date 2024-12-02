@@ -3,7 +3,6 @@ from __future__ import annotations
 import json
 from typing import Any, Optional
 
-
 from cashier.graph.edge_schema import (
     EdgeSchema,
     FunctionState,
@@ -89,7 +88,9 @@ class RequestGraph(GraphMixin, ActionableMixin):
         return True if agent_selection else False
 
 
-class RequestGraphSchema(GraphSchemaMixin, ActionableSchemaMixin, metaclass=AutoMixinInit):
+class RequestGraphSchema(
+    GraphSchemaMixin, ActionableSchemaMixin, metaclass=AutoMixinInit
+):
     instance_cls = RequestGraph
 
 
