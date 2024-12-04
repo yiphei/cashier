@@ -123,9 +123,14 @@ class AgentExecutor:
     ) -> None:
         if self.curr_node:
             self.curr_node.mark_as_completed()
+            old_state = self.graph.state.model_dump()
+            new_state = old_state | self.curr_node.state.model_dump(
+                exclude=self.curr_node.state.resettable_fields
+            )
+            self.graph.state = self.graph.state.__class__(**new_state)
 
         if input is None and edge_schema:
-            input = edge_schema.new_input_fn(self.curr_node.state, self.curr_node.input)
+            input = edge_schema.new_input_fn(self.graph.state)
 
         if edge_schema:
             edge_schema, input = self.graph.compute_next_edge_schema(
@@ -326,10 +331,11 @@ class AgentExecutor:
             self.request_graph.get_graph_schemas(msg)
             if len(self.request_graph.graph_schema_sequence) > 0:
                 self.curr_graph_schema = self.request_graph.graph_schema_sequence[0]
-                self.graph = Graph(graph_schema=self.curr_graph_schema)
-                self.init_next_node(
-                    self.curr_graph_schema.start_node_schema, None, None
+                self.graph = Graph(input=None, graph_schema=self.curr_graph_schema)
+                new_node_schema, new_edge_schema = (
+                    self.graph.compute_init_node_edge_schema()
                 )
+                self.init_next_node(new_node_schema, new_edge_schema, None)
 
     def execute_function_call(
         self, fn_call: FunctionCall, fn_callback: Optional[Callable] = None
@@ -445,13 +451,17 @@ class AgentExecutor:
                 or self.curr_node.has_run_assistant_turn_before_transition
             ):
                 if isinstance(self.new_node_schema, GraphSchema):
+                    new_input = self.new_edge_schema.new_input_fn(self.graph.state)
                     self.request_graph.current_graph_schema_idx += 1
                     self.curr_graph_schema = self.request_graph.graph_schema_sequence[
                         self.request_graph.current_graph_schema_idx
                     ]
-                    self.graph = Graph(graph_schema=self.curr_graph_schema)
-                    self.new_node_schema = self.curr_graph_schema.start_node_schema
-                    self.new_edge_schema = None
+                    self.graph = Graph(
+                        input=new_input, graph_schema=self.curr_graph_schema
+                    )
+                    self.new_node_schema, self.new_edge_schema = (
+                        self.graph.compute_init_node_edge_schema()
+                    )
 
                 self.init_next_node(
                     self.new_node_schema,

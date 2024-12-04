@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import List, Type
+from typing import Any, List, Type
 
 from pydantic import BaseModel
 
@@ -33,7 +33,40 @@ class GraphSchema(
 class Graph(HasGraphMixin, HasStateMixin):
     def __init__(
         self,
+        input: Any,
         graph_schema: HasGraphSchemaMixin,
     ):
         HasGraphMixin.__init__(self, graph_schema)
-        HasStateMixin.__init__(self, graph_schema.state_pydantic_model)
+        HasStateMixin.__init__(self, graph_schema.state_pydantic_model(**(input or {})))
+
+    def compute_init_node_edge_schema(
+        self,
+    ):
+        node_schema = self.graph_schema.start_node_schema
+        edge_schema = None
+        next_edge_schemas = self.graph_schema.from_node_schema_id_to_edge_schema[
+            node_schema.id
+        ]
+        while next_edge_schemas:
+            passed_check = False
+            for next_edge_schema in next_edge_schemas:
+                if next_edge_schema.check_transition_config(
+                    self.state,
+                    None,
+                    None,
+                    check_resettable_fields=False,
+                ):
+                    passed_check = True
+                    node_schema = next_edge_schema.to_node_schema
+                    edge_schema = next_edge_schema
+                    next_edge_schemas = (
+                        self.graph_schema.from_node_schema_id_to_edge_schema[
+                            node_schema.id
+                        ]
+                    )
+                    break
+
+            if not passed_check:
+                break
+
+        return node_schema, edge_schema

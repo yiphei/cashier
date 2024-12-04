@@ -20,6 +20,8 @@ class CashierNodeSystemPrompt(NodeSystemPrompt):
 
 
 class TakeOrderState(BaseStateModel):
+    resettable_fields = ["has_finished_ordering"]
+
     order: Optional[Order] = None
     has_finished_ordering: bool = Field(  # type: ignore
         description=(
@@ -28,7 +30,6 @@ class TakeOrderState(BaseStateModel):
             " by asking questions like 'Anything else?'."
         ),
         default=False,
-        json_schema_extra={"resettable": True},
     )
 
 
@@ -66,10 +67,11 @@ take_order_node_schema = NodeSchema(
 
 
 class ConfirmOrderState(BaseStateModel):
+    resettable_fields = ["has_confirmed_order"]
+
     has_confirmed_order: bool = Field(  # type: ignore
         description="whether the customer has confirmed their order",
         default=False,
-        json_schema_extra={"resettable": True},
     )
 
 
@@ -89,18 +91,21 @@ take_to_confirm_edge_schema = EdgeSchema(
     to_node_schema=confirm_order_node_schema,
     transition_config=StateTransitionConfig(
         need_user_msg=True,
-        state_check_fn=lambda state: state.has_finished_ordering  # type: ignore
-        and state.order is not None,  # type: ignore
+        state_check_fn_map={
+            "has_finished_ordering": lambda val: val,
+            "order": lambda val: val is not None,
+        },
     ),
-    new_input_fn=lambda state, input: state.order,  # type: ignore
+    new_input_fn=lambda state: state.order,  # type: ignore
 )
 
 
 class TerminalOrderState(BaseStateModel):
+    resettable_fields = ["has_said_goodbye"]
+
     has_said_goodbye: bool = Field(  # type: ignore
         description="whether the customer has said goodbye",
         default=False,
-        json_schema_extra={"resettable": True},
     )
 
 
@@ -116,15 +121,14 @@ confirm_to_terminal_edge_schema = EdgeSchema(
     from_node_schema=confirm_order_node_schema,
     to_node_schema=terminal_order_node_schema,
     transition_config=StateTransitionConfig(
-        need_user_msg=True, state_check_fn=lambda state: state.has_confirmed_order  # type: ignore
+        need_user_msg=True, state_check_fn_map={"has_confirmed_order": lambda val: val}
     ),
-    new_input_fn=lambda state, input: None,
+    new_input_fn=lambda state: None,
 )
 
 
 class GraphState(BaseStateModel):
     order: Optional[Order] = None
-    has_confirmed_order: bool = False
 
 
 cashier_graph_schema = GraphSchema(

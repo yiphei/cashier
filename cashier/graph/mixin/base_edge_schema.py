@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from enum import StrEnum
-from typing import TYPE_CHECKING, Any, Callable, NamedTuple, Optional
+from typing import TYPE_CHECKING, Any, Callable, Dict, NamedTuple, Optional
 
 from pydantic import BaseModel
 
@@ -42,7 +42,7 @@ class FunctionTransitionConfig(BaseTransitionConfig):
 
 
 class StateTransitionConfig(BaseTransitionConfig):
-    state_check_fn: Callable[[BaseStateModel], bool]
+    state_check_fn_map: Dict[str, Callable[[Any], bool]]
 
 
 class BaseEdgeSchema:
@@ -51,7 +51,7 @@ class BaseEdgeSchema:
         from_node_schema: NodeSchema,
         to_node_schema: NodeSchema,
         transition_config: BaseTransitionConfig,
-        new_input_fn: Callable[[BaseStateModel, BaseModel], Any],
+        new_input_fn: Callable[[BaseStateModel], Any],
         bwd_state_init: BwdStateInit = BwdStateInit.RESUME,
         fwd_state_init: FwdStateInit = FwdStateInit.RESET,
         skip_from_complete_to_prev_complete: Optional[
@@ -82,7 +82,11 @@ class BaseEdgeSchema:
         )
 
     def check_transition_config(
-        self, state: BaseStateModel, fn_call, is_fn_call_success
+        self,
+        state: BaseStateModel,
+        fn_call,
+        is_fn_call_success,
+        check_resettable_fields=True,
     ) -> bool:
         if isinstance(self.transition_config, FunctionTransitionConfig):
             if self.transition_config.state == FunctionState.CALLED:
@@ -93,7 +97,24 @@ class BaseEdgeSchema:
                     and is_fn_call_success
                 )
         elif isinstance(self.transition_config, StateTransitionConfig):
-            return self.transition_config.state_check_fn(state)
+            resettable_fields = (
+                self.from_node_schema.state_pydantic_model.resettable_fields
+            )
+            for (
+                field_name,
+                state_check_fn,
+            ) in self.transition_config.state_check_fn_map.items():
+                if (
+                    resettable_fields
+                    and field_name in resettable_fields
+                    and not check_resettable_fields
+                ):
+                    continue
+
+                field_value = getattr(state, field_name)
+                if not state_check_fn(field_value):
+                    return False
+            return True
 
 
 class Edge(NamedTuple):
