@@ -59,12 +59,12 @@ class HasIdMixin:
         self.id = self.__class__._counter
 
 
-class StateSchemaMixin:
+class HasStateSchemaMixin:
     def __init__(self, state_pydantic_model: Optional[Type[BaseStateModel]]):
         self.state_pydantic_model = state_pydantic_model
 
 
-class StateMixin:
+class HasStateMixin:
     def __init__(
         self,
         state: BaseStateModel,
@@ -94,7 +94,7 @@ class Direction(StrEnum):
     BWD = "BWD"
 
 
-class ActionableSchemaMixin(StateSchemaMixin):
+class HasActionableSchemaMixin(HasStateSchemaMixin):
     instance_cls = None
 
     def __init__(
@@ -155,7 +155,7 @@ class ActionableSchemaMixin(StateSchemaMixin):
         prev_node: Literal[None] = None,
         direction: Literal[Direction.FWD] = Direction.FWD,
         curr_request: Optional[str] = None,
-    ) -> ActionableMixin: ...
+    ) -> HasActionableMixin: ...
 
     @overload
     def create_node(  # noqa: E704
@@ -166,7 +166,7 @@ class ActionableSchemaMixin(StateSchemaMixin):
         prev_node: Literal[None] = None,
         direction: Literal[Direction.FWD] = Direction.FWD,
         curr_request: Optional[str] = None,
-    ) -> ActionableMixin: ...
+    ) -> HasActionableMixin: ...
 
     @overload
     def create_node(  # noqa: E704
@@ -174,21 +174,21 @@ class ActionableSchemaMixin(StateSchemaMixin):
         input: Any,
         last_msg: str,
         edge_schema: EdgeSchema,
-        prev_node: ActionableMixin,
+        prev_node: HasActionableMixin,
         direction: Direction = Direction.FWD,
         curr_request: Optional[str] = None,
-    ) -> ActionableMixin: ...
+    ) -> HasActionableMixin: ...
 
     def create_node(
         self,
         input: Any,
         last_msg: Optional[str] = None,
         edge_schema: Optional[EdgeSchema] = None,
-        prev_node: Optional[ActionableMixin] = None,
+        prev_node: Optional[HasActionableMixin] = None,
         direction: Direction = Direction.FWD,
         curr_request: Optional[str] = None,
-    ) -> ActionableMixin:
-        state = ActionableMixin.init_state(
+    ) -> HasActionableMixin:
+        state = HasActionableMixin.init_state(
             self.state_pydantic_model, prev_node, edge_schema, direction, input
         )
 
@@ -228,14 +228,14 @@ class ActionableSchemaMixin(StateSchemaMixin):
         )
 
 
-class ActionableMixin(StateMixin):
+class HasActionableMixin(HasStateMixin):
     class Status(StrEnum):
         IN_PROGRESS = "IN_PROGRESS"
         COMPLETED = "COMPLETED"
 
     def __init__(
         self,
-        schema: ActionableSchemaMixin,
+        schema: HasActionableSchemaMixin,
         input: Any,
         state: BaseStateModel,
         prompt: str,
@@ -255,7 +255,7 @@ class ActionableMixin(StateMixin):
     def init_state(
         cls,
         state_pydantic_model: Optional[Type[BaseStateModel]],
-        prev_node: Optional[ActionableMixin],
+        prev_node: Optional[HasActionableMixin],
         edge_schema: Optional[EdgeSchema],
         direction: Direction,
         input: Any,
@@ -287,12 +287,12 @@ class ActionableMixin(StateMixin):
         self.status = self.Status.COMPLETED
 
 
-class GraphSchemaMixin:
+class HasGraphSchemaMixin:
     def __init__(
         self,
         description: str,
         edge_schemas: List[EdgeSchema],
-        node_schemas: List[ActionableMixin],
+        node_schemas: List[HasActionableMixin],
     ):
         self.description = description
         self.edge_schemas = edge_schemas
@@ -311,10 +311,10 @@ class GraphSchemaMixin:
             ].append(edge_schema)
 
 
-class GraphMixin:
+class HasGraphMixin:
     def __init__(
         self,
-        graph_schema: GraphSchemaMixin,
+        graph_schema: HasGraphSchemaMixin,
     ):
         self.graph_schema = graph_schema
         self.edge_schema_id_to_edges = defaultdict(list)
@@ -322,7 +322,7 @@ class GraphMixin:
         self.edge_schema_id_to_from_node = {}
 
     def add_fwd_edge(
-        self, from_node: ActionableMixin, to_node: ActionableMixin, edge_schema_id: int
+        self, from_node: HasActionableMixin, to_node: HasActionableMixin, edge_schema_id: int
     ) -> None:
         self.edge_schema_id_to_edges[edge_schema_id].append(Edge(from_node, to_node))
         self.from_node_schema_id_to_last_edge_schema_id[from_node.schema.id] = (
@@ -364,7 +364,7 @@ class GraphMixin:
 
     def get_prev_node(
         self, edge_schema: Optional[EdgeSchema], direction: Direction
-    ) -> Optional[ActionableMixin]:
+    ) -> Optional[HasActionableMixin]:
         if (
             edge_schema
             and self.get_edge_by_edge_schema_id(edge_schema.id, raise_if_none=False)
@@ -376,7 +376,7 @@ class GraphMixin:
             return None
 
     def compute_bwd_skip_edge_schemas(
-        self, start_node: ActionableMixin, curr_bwd_skip_edge_schemas: Set[EdgeSchema]
+        self, start_node: HasActionableMixin, curr_bwd_skip_edge_schemas: Set[EdgeSchema]
     ) -> Set[EdgeSchema]:
         from_node = start_node
         new_edge_schemas = set()
@@ -393,7 +393,7 @@ class GraphMixin:
         return new_edge_schemas | curr_bwd_skip_edge_schemas
 
     def compute_fwd_skip_edge_schemas(
-        self, start_node: ActionableMixin, start_edge_schemas: Set[EdgeSchema]
+        self, start_node: HasActionableMixin, start_edge_schemas: Set[EdgeSchema]
     ) -> Set[EdgeSchema]:
         fwd_jump_edge_schemas = set()
         edge_schemas = deque(start_edge_schemas)
@@ -428,13 +428,13 @@ class GraphMixin:
     ) -> bool:
         idx = -1 if is_start_node else -2
         edge = self.get_edge_by_edge_schema_id(edge_schema.id, idx, raise_if_none=False)
-        return edge[0].status == ActionableMixin.Status.COMPLETED if edge else False
+        return edge[0].status == HasActionableMixin.Status.COMPLETED if edge else False
 
     def compute_next_edge_schema(
         self,
         start_edge_schema: EdgeSchema,
         start_input: Any,
-        curr_node: ActionableMixin,
+        curr_node: HasActionableMixin,
     ) -> Tuple[EdgeSchema, Any]:
         next_edge_schema = start_edge_schema
         edge_schema = start_edge_schema
@@ -468,7 +468,7 @@ class GraphMixin:
                     input = to_node.input
                     break
             elif skip_type == FwdSkipType.SKIP_IF_INPUT_UNCHANGED:
-                if from_node.status != ActionableMixin.Status.COMPLETED:
+                if from_node.status != HasActionableMixin.Status.COMPLETED:
                     input = from_node.input
                 else:
                     edge_schema = next_edge_schema
@@ -486,8 +486,8 @@ class GraphMixin:
 
     def add_edge(
         self,
-        curr_node: ActionableMixin,
-        new_node: ActionableMixin,
+        curr_node: HasActionableMixin,
+        new_node: HasActionableMixin,
         edge_schema: EdgeSchema,
         direction: Direction = Direction.FWD,
     ) -> None:

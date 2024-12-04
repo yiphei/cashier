@@ -10,12 +10,12 @@ from cashier.graph.edge_schema import (
     StateTransitionConfig,
 )
 from cashier.graph.new_classes import (
-    ActionableMixin,
-    ActionableSchemaMixin,
+    HasActionableMixin,
+    HasActionableSchemaMixin,
     AutoMixinInit,
     Direction,
-    GraphMixin,
-    GraphSchemaMixin,
+    HasGraphMixin,
+    HasGraphSchemaMixin,
 )
 from cashier.graph.state_model import BaseStateModel
 from cashier.logger import logger
@@ -24,7 +24,7 @@ from cashier.prompts.graph_schema_addition import GraphSchemaAdditionPrompt
 from cashier.prompts.graph_schema_selection import GraphSchemaSelectionPrompt
 
 
-class RequestGraph(GraphMixin, ActionableMixin):
+class RequestGraph(HasGraphMixin, HasActionableMixin):
 
     def __init__(
         self,
@@ -36,8 +36,8 @@ class RequestGraph(GraphMixin, ActionableMixin):
         direction: Direction = Direction.FWD,
     ):
 
-        GraphMixin.__init__(self, schema)
-        ActionableMixin.__init__(
+        HasGraphMixin.__init__(self, schema)
+        HasActionableMixin.__init__(
             self, schema, input, state, prompt, in_edge_schema, direction
         )
 
@@ -89,7 +89,7 @@ class RequestGraph(GraphMixin, ActionableMixin):
 
 
 class RequestGraphSchema(
-    GraphSchemaMixin, ActionableSchemaMixin, metaclass=AutoMixinInit
+    HasGraphSchemaMixin, HasActionableSchemaMixin, metaclass=AutoMixinInit
 ):
     instance_cls = RequestGraph
 
