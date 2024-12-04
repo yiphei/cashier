@@ -10,10 +10,10 @@ from cashier.graph.edge_schema import (
     StateTransitionConfig,
 )
 from cashier.graph.new_classes import (
-    HasActionableMixin,
-    HasActionableSchemaMixin,
     AutoMixinInit,
     Direction,
+    HasActionableMixin,
+    HasActionableSchemaMixin,
     HasGraphMixin,
     HasGraphSchemaMixin,
 )

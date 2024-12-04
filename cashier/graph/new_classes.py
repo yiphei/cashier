@@ -322,7 +322,10 @@ class HasGraphMixin:
         self.edge_schema_id_to_from_node = {}
 
     def add_fwd_edge(
-        self, from_node: HasActionableMixin, to_node: HasActionableMixin, edge_schema_id: int
+        self,
+        from_node: HasActionableMixin,
+        to_node: HasActionableMixin,
+        edge_schema_id: int,
     ) -> None:
         self.edge_schema_id_to_edges[edge_schema_id].append(Edge(from_node, to_node))
         self.from_node_schema_id_to_last_edge_schema_id[from_node.schema.id] = (
@@ -376,7 +379,9 @@ class HasGraphMixin:
             return None
 
     def compute_bwd_skip_edge_schemas(
-        self, start_node: HasActionableMixin, curr_bwd_skip_edge_schemas: Set[EdgeSchema]
+        self,
+        start_node: HasActionableMixin,
+        curr_bwd_skip_edge_schemas: Set[EdgeSchema],
     ) -> Set[EdgeSchema]:
         from_node = start_node
         new_edge_schemas = set()

@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 from cashier.graph.new_classes import (
+    AutoMixinInit,
     HasActionableMixin,
     HasActionableSchemaMixin,
-    AutoMixinInit,
     HasIdMixin,
 )
 
