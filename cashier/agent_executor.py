@@ -451,9 +451,7 @@ class AgentExecutor:
                 or self.curr_node.has_run_assistant_turn_before_transition
             ):
                 if isinstance(self.new_node_schema, GraphSchema):
-                    new_input = self.new_edge_schema.new_input_fn(
-                        self.graph.state
-                    )
+                    new_input = self.new_edge_schema.new_input_fn(self.graph.state)
                     self.request_graph.current_graph_schema_idx += 1
                     self.curr_graph_schema = self.request_graph.graph_schema_sequence[
                         self.request_graph.current_graph_schema_idx
