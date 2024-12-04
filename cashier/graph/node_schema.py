@@ -2,12 +2,12 @@ from __future__ import annotations
 
 from cashier.graph.auto_mixin_init import AutoMixinInit
 from cashier.graph.has_id_mixin import HasIdMixin
-from cashier.graph.new_classes import HasActionableMixin, HasActionableSchemaMixin
+from cashier.graph.has_chat_mixin import HasChatMixin, HasChatSchemaMixin
 
 
-class Node(HasIdMixin, HasActionableMixin, metaclass=AutoMixinInit):
+class Node(HasIdMixin, HasChatMixin, metaclass=AutoMixinInit):
     pass
 
 
-class NodeSchema(HasIdMixin, HasActionableSchemaMixin, metaclass=AutoMixinInit):
+class NodeSchema(HasIdMixin, HasChatSchemaMixin, metaclass=AutoMixinInit):
     instance_cls = Node

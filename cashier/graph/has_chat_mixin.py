@@ -18,7 +18,7 @@ class Direction(StrEnum):
     BWD = "BWD"
 
 
-class HasActionableSchemaMixin(HasStateSchemaMixin):
+class HasChatSchemaMixin(HasStateSchemaMixin):
     instance_cls = None
 
     def __init__(
@@ -79,7 +79,7 @@ class HasActionableSchemaMixin(HasStateSchemaMixin):
         prev_node: Literal[None] = None,
         direction: Literal[Direction.FWD] = Direction.FWD,
         curr_request: Optional[str] = None,
-    ) -> HasActionableMixin: ...
+    ) -> HasChatMixin: ...
 
     @overload
     def create_node(  # noqa: E704
@@ -90,7 +90,7 @@ class HasActionableSchemaMixin(HasStateSchemaMixin):
         prev_node: Literal[None] = None,
         direction: Literal[Direction.FWD] = Direction.FWD,
         curr_request: Optional[str] = None,
-    ) -> HasActionableMixin: ...
+    ) -> HasChatMixin: ...
 
     @overload
     def create_node(  # noqa: E704
@@ -98,21 +98,21 @@ class HasActionableSchemaMixin(HasStateSchemaMixin):
         input: Any,
         last_msg: str,
         edge_schema: EdgeSchema,
-        prev_node: HasActionableMixin,
+        prev_node: HasChatMixin,
         direction: Direction = Direction.FWD,
         curr_request: Optional[str] = None,
-    ) -> HasActionableMixin: ...
+    ) -> HasChatMixin: ...
 
     def create_node(
         self,
         input: Any,
         last_msg: Optional[str] = None,
         edge_schema: Optional[EdgeSchema] = None,
-        prev_node: Optional[HasActionableMixin] = None,
+        prev_node: Optional[HasChatMixin] = None,
         direction: Direction = Direction.FWD,
         curr_request: Optional[str] = None,
-    ) -> HasActionableMixin:
-        state = HasActionableMixin.init_state(
+    ) -> HasChatMixin:
+        state = HasChatMixin.init_state(
             self.state_pydantic_model, prev_node, edge_schema, direction, input
         )
 
@@ -152,14 +152,14 @@ class HasActionableSchemaMixin(HasStateSchemaMixin):
         )
 
 
-class HasActionableMixin(HasStateMixin):
+class HasChatMixin(HasStateMixin):
     class Status(StrEnum):
         IN_PROGRESS = "IN_PROGRESS"
         COMPLETED = "COMPLETED"
 
     def __init__(
         self,
-        schema: HasActionableSchemaMixin,
+        schema: HasChatSchemaMixin,
         input: Any,
         state: BaseStateModel,
         prompt: str,
@@ -179,7 +179,7 @@ class HasActionableMixin(HasStateMixin):
     def init_state(
         cls,
         state_pydantic_model: Optional[Type[BaseStateModel]],
-        prev_node: Optional[HasActionableMixin],
+        prev_node: Optional[HasChatMixin],
         edge_schema: Optional[EdgeSchema],
         direction: Direction,
         input: Any,
