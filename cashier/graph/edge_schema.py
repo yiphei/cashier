@@ -8,7 +8,7 @@ from pydantic import BaseModel
 if TYPE_CHECKING:
     from cashier.graph.node_schema import Node, NodeSchema
 
-from cashier.graph.state_model import BaseStateModel
+from cashier.graph.state import BaseStateModel
 
 
 class BwdStateInit(StrEnum):

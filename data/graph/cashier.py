@@ -6,7 +6,7 @@ from cashier.graph.edge_schema import EdgeSchema, StateTransitionConfig
 from cashier.graph.graph_schema import GraphSchema
 from cashier.graph.node_schema import NodeSchema
 from cashier.graph.request_graph import RequestGraphSchema
-from cashier.graph.state_model import BaseStateModel
+from cashier.graph.state import BaseStateModel
 from cashier.model.model_turn import AssistantTurn
 from cashier.model.model_util import ModelProvider
 from cashier.prompts.node_system import NodeSystemPrompt
@@ -137,12 +137,14 @@ cashier_graph_schema = GraphSchema(
         confirm_order_node_schema,
         terminal_order_node_schema,
     ],
-    state_schema=GraphState,
+    state_pydantic_model=GraphState,
 )
 
 
 REQUEST_GRAPH_SCHEMA = RequestGraphSchema(
-    graph_schemas=[cashier_graph_schema],
-    graph_edge_schemas=[],
-    system_prompt="You work at Heaven Coffee and help customers with anything they need.",
+    node_schemas=[cashier_graph_schema],
+    edge_schemas=[],
+    node_prompt="You work at Heaven Coffee and help customers with anything they need.",
+    node_system_prompt=CashierNodeSystemPrompt,
+    description="todo",
 )
