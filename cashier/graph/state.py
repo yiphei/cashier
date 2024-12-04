@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import copy
-from typing import Any, Type
+from typing import Any, Type, Optional
 
 from pydantic import BaseModel, ConfigDict
 
