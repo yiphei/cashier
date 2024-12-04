@@ -428,7 +428,7 @@ class AgentExecutor:
                                 fn_calls.append(fake_fn_call)
                             self.new_edge_schema = edge_schema
                             if isinstance(edge_schema, GraphEdgeSchema):
-                                self.new_node_schema = edge_schema.to_graph_schema
+                                self.new_node_schema = edge_schema.to_node_schema
                             else:
                                 self.new_node_schema = edge_schema.to_node_schema
                             break
