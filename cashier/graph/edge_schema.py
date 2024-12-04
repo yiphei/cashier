@@ -1,20 +1,18 @@
 from __future__ import annotations
 
-from enum import StrEnum
-from typing import TYPE_CHECKING, Any, Callable, NamedTuple, Optional, Tuple
+from typing import TYPE_CHECKING, NamedTuple, Optional, Tuple
 
-from pydantic import BaseModel
 
 from cashier.graph.has_id_mixin import HasIdMixin
 
 if TYPE_CHECKING:
-    from cashier.graph.node_schema import Node, NodeSchema
+    from cashier.graph.node_schema import Node
 
 from cashier.graph.auto_mixin_init import AutoMixinInit
 from cashier.graph.base_edge_schema import BaseEdgeSchema, FwdSkipType
-from cashier.graph.state import BaseStateModel
 
-class EdgeSchema(BaseEdgeSchema,HasIdMixin, metaclass=AutoMixinInit):
+
+class EdgeSchema(BaseEdgeSchema, HasIdMixin, metaclass=AutoMixinInit):
     def _can_skip(
         self, skip_type: Optional[FwdSkipType], from_node: Node, to_node: Node
     ) -> Tuple[bool, Optional[FwdSkipType]]:
