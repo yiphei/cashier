@@ -4,14 +4,11 @@ import json
 from typing import Any, Optional
 
 from cashier.graph.auto_mixin_init import AutoMixinInit
-from cashier.graph.edge_schema import (
-    EdgeSchema,
-    FunctionState,
-    FunctionTransitionConfig,
-    StateTransitionConfig,
-)
+from cashier.graph.base_edge_schema import BaseEdgeSchema
+from cashier.graph.edge_schema import EdgeSchema
 from cashier.graph.graph_mixin import HasGraphMixin, HasGraphSchemaMixin
 from cashier.graph.has_chat_mixin import Direction, HasChatMixin, HasChatSchemaMixin
+from cashier.graph.has_id_mixin import HasIdMixin
 from cashier.graph.state import BaseStateModel
 from cashier.logger import logger
 from cashier.model.model_util import CustomJSONEncoder
@@ -89,32 +86,5 @@ class RequestGraphSchema(
     instance_cls = RequestGraph
 
 
-class GraphEdgeSchema:
-    _counter = 0
-
-    def __init__(
-        self,
-        from_graph_schema,
-        to_graph_schema,
-        transition_config,
-    ):
-        GraphEdgeSchema._counter += 1
-        self.id = GraphEdgeSchema._counter
-
-        self.from_graph_schema = from_graph_schema
-        self.to_graph_schema = to_graph_schema
-        self.transition_config = transition_config
-
-    def check_transition_config(
-        self, state: BaseStateModel, fn_call, is_fn_call_success
-    ) -> bool:
-        if isinstance(self.transition_config, FunctionTransitionConfig):
-            if self.transition_config.state == FunctionState.CALLED:
-                return fn_call.name == self.transition_config.fn_name
-            elif self.transition_config.state == FunctionState.CALLED_AND_SUCCEEDED:
-                return (
-                    fn_call.name == self.transition_config.fn_name
-                    and is_fn_call_success
-                )
-        elif isinstance(self.transition_config, StateTransitionConfig):
-            return self.transition_config.state_check_fn(state)
+class GraphEdgeSchema(BaseEdgeSchema, HasIdMixin, metaclass=AutoMixinInit):
+    pass
