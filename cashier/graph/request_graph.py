@@ -6,10 +6,8 @@ from typing import Any, Optional
 from cashier.graph.auto_mixin_init import AutoMixinInit
 from cashier.graph.edge_schema import (
     EdgeSchema,
-    FunctionState,
-    FunctionTransitionConfig,
-    StateTransitionConfig,
 )
+from cashier.graph.base_edge_schema import FunctionState, FunctionTransitionConfig, StateTransitionConfig
 from cashier.graph.graph_mixin import HasGraphMixin, HasGraphSchemaMixin
 from cashier.graph.has_chat_mixin import Direction, HasChatMixin, HasChatSchemaMixin
 from cashier.graph.state import BaseStateModel

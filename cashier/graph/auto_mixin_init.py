@@ -9,6 +9,7 @@ class AutoMixinInit(type):
 
         # Get all base classes that end with 'Mixin'
         mixins = [base for base in cls.__bases__ if base.__name__.endswith("Mixin")]
+        first_base = next((base for base in cls.__bases__ if not base.__name__.endswith("Mixin")), None)
 
         # Initialize each mixin with matching kwargs
         for mixin in mixins:
@@ -27,4 +28,6 @@ class AutoMixinInit(type):
 
         if "__init__" in cls.__dict__:
             cls.__init__(instance, *args, **kwargs)
+        elif first_base is not None:
+            first_base.__init__(instance, **kwargs)
         return instance
