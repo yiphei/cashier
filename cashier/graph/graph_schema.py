@@ -6,7 +6,8 @@ from pydantic import BaseModel
 
 from cashier.graph.edge_schema import EdgeSchema
 from cashier.graph.graph_mixin import HasGraphMixin, HasGraphSchemaMixin
-from cashier.graph.new_classes import AutoMixinInit, HasIdMixin
+from cashier.graph.has_id_mixin import HasIdMixin
+from cashier.graph.auto_mixin_init import AutoMixinInit
 from cashier.graph.node_schema import NodeSchema
 from cashier.graph.state import HasStateMixin, HasStateSchemaMixin
 

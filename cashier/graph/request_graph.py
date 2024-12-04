@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from typing import Any, Optional
 
+from cashier.graph.auto_mixin_init import AutoMixinInit
 from cashier.graph.edge_schema import (
     EdgeSchema,
     FunctionState,
@@ -11,7 +12,6 @@ from cashier.graph.edge_schema import (
 )
 from cashier.graph.graph_mixin import HasGraphMixin, HasGraphSchemaMixin
 from cashier.graph.new_classes import (
-    AutoMixinInit,
     Direction,
     HasActionableMixin,
     HasActionableSchemaMixin,
