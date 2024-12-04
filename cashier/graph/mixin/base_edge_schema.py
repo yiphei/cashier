@@ -51,7 +51,7 @@ class BaseEdgeSchema:
         from_node_schema: NodeSchema,
         to_node_schema: NodeSchema,
         transition_config: BaseTransitionConfig,
-        new_input_fn: Callable[[BaseStateModel, BaseModel], Any],
+        new_input_fn: Callable[[BaseStateModel], Any],
         bwd_state_init: BwdStateInit = BwdStateInit.RESUME,
         fwd_state_init: FwdStateInit = FwdStateInit.RESET,
         skip_from_complete_to_prev_complete: Optional[
