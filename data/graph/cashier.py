@@ -6,7 +6,7 @@ from cashier.graph.edge_schema import EdgeSchema, StateTransitionConfig
 from cashier.graph.graph_schema import GraphSchema
 from cashier.graph.node_schema import NodeSchema
 from cashier.graph.request_graph import RequestGraphSchema
-from cashier.graph.state_model import BaseStateModel
+from cashier.graph.state import BaseStateModel
 from cashier.model.model_turn import AssistantTurn
 from cashier.model.model_util import ModelProvider
 from cashier.prompts.node_system import NodeSystemPrompt

@@ -17,7 +17,7 @@ from cashier.graph.new_classes import (
     HasGraphMixin,
     HasGraphSchemaMixin,
 )
-from cashier.graph.state_model import BaseStateModel
+from cashier.graph.state import BaseStateModel
 from cashier.logger import logger
 from cashier.model.model_util import CustomJSONEncoder
 from cashier.prompts.graph_schema_addition import GraphSchemaAdditionPrompt

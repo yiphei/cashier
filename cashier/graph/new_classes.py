@@ -15,10 +15,9 @@ from cashier.graph.edge_schema import (
     FwdSkipType,
     FwdStateInit,
 )
-from cashier.graph.state_model import BaseStateModel
+from cashier.graph.state import BaseStateModel, HasStateMixin, HasStateSchemaMixin
 from cashier.model.model_turn import ModelTurn
 from cashier.prompts.node_system import NodeSystemPrompt
-from cashier.tool.function_call_context import StateUpdateError
 from cashier.tool.tool_registry import ToolRegistry
 
 
@@ -57,36 +56,6 @@ class HasIdMixin:
     def __init__(self):
         self.__class__._counter += 1
         self.id = self.__class__._counter
-
-
-class HasStateSchemaMixin:
-    def __init__(self, state_pydantic_model: Optional[Type[BaseStateModel]]):
-        self.state_pydantic_model = state_pydantic_model
-
-
-class HasStateMixin:
-    def __init__(
-        self,
-        state: BaseStateModel,
-    ):
-        self.state = state
-        self.first_user_message = False
-
-    def update_state(self, **kwargs: Any) -> None:
-        if self.first_user_message:
-            old_state = self.state.model_dump()
-            new_state = old_state | kwargs
-            self.state = self.state.__class__(**new_state)
-        else:
-            raise StateUpdateError(
-                "cannot update any state field until you get the first customer message in the current conversation. Remember, the current conversation starts after <cutoff_msg>"
-            )
-
-    def get_state(self) -> BaseStateModel:
-        return self.state
-
-    def update_first_user_message(self) -> None:
-        self.first_user_message = True
 
 
 class Direction(StrEnum):

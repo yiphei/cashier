@@ -10,10 +10,9 @@ from cashier.graph.new_classes import (
     HasGraphMixin,
     HasGraphSchemaMixin,
     HasIdMixin,
-    HasStateMixin,
-    HasStateSchemaMixin,
 )
 from cashier.graph.node_schema import NodeSchema
+from cashier.graph.state import HasStateMixin, HasStateSchemaMixin
 
 
 class GraphSchema(
