@@ -44,10 +44,10 @@ class Graph(HasGraphMixin, HasStateMixin):
     ):
         node_schema = self.graph_schema.start_node_schema
         edge_schema = None
-        next_edge_schemas = self.graph_schema.from_node_schema_id_to_edge_schema[node_schema.id]
-        while (
-            next_edge_schemas
-        ):
+        next_edge_schemas = self.graph_schema.from_node_schema_id_to_edge_schema[
+            node_schema.id
+        ]
+        while next_edge_schemas:
             passed_check = False
             for next_edge_schema in next_edge_schemas:
                 if next_edge_schema.check_transition_config(
@@ -59,7 +59,11 @@ class Graph(HasGraphMixin, HasStateMixin):
                     passed_check = True
                     node_schema = next_edge_schema.to_node_schema
                     edge_schema = next_edge_schema
-                    next_edge_schemas = self.graph_schema.from_node_schema_id_to_edge_schema[node_schema.id]
+                    next_edge_schemas = (
+                        self.graph_schema.from_node_schema_id_to_edge_schema[
+                            node_schema.id
+                        ]
+                    )
 
             if not passed_check:
                 break

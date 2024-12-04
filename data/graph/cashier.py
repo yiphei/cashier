@@ -69,7 +69,6 @@ take_order_node_schema = NodeSchema(
 class ConfirmOrderState(BaseStateModel):
     resettable_fields = ["has_confirmed_order"]
 
-
     has_confirmed_order: bool = Field(  # type: ignore
         description="whether the customer has confirmed their order",
         default=False,
@@ -95,7 +94,7 @@ take_to_confirm_edge_schema = EdgeSchema(
         state_check_fn_map={
             "has_finished_ordering": lambda val: val,
             "order": lambda val: val is not None,
-        }
+        },
     ),
     new_input_fn=lambda state: state.order,  # type: ignore
 )
