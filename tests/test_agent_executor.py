@@ -1,7 +1,6 @@
 import uuid
 from collections import defaultdict, deque
 from contextlib import ExitStack, contextmanager
-from io import StringIO
 from typing import Any, Dict
 from unittest.mock import Mock, call, patch
 
@@ -45,8 +44,6 @@ class TurnArgs(BaseModel):
 class TestAgent:
     @pytest.fixture(autouse=True)
     def setup(self):
-        # self.stdout_patcher = patch("sys.stdout", new_callable=StringIO)
-        # self.stdout_patcher.start()
         Node._counter = 0
         self.start_node_schema = cashier_graph_schema.start_node_schema
         self.rand_tool_ids = deque()
@@ -58,7 +55,6 @@ class TestAgent:
 
         self.rand_tool_ids.clear()
         self.rand_uuids.clear()
-        # self.stdout_patcher.stop()
         self.model_chat_patcher.stop()
 
     @contextmanager
