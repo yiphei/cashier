@@ -15,8 +15,6 @@ from cashier.graph.state import HasStateMixin, HasStateSchemaMixin
 class GraphSchema(
     HasIdMixin, HasGraphSchemaMixin, HasStateSchemaMixin, metaclass=AutoMixinInit
 ):
-    _counter = 0
-
     def __init__(
         self,
         output_schema: Type[BaseModel],
