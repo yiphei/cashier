@@ -9,13 +9,12 @@ from cashier.graph.edge_schema import (
     FunctionTransitionConfig,
     StateTransitionConfig,
 )
+from cashier.graph.graph_mixin import HasGraphMixin, HasGraphSchemaMixin
 from cashier.graph.new_classes import (
     AutoMixinInit,
     Direction,
     HasActionableMixin,
     HasActionableSchemaMixin,
-    HasGraphMixin,
-    HasGraphSchemaMixin,
 )
 from cashier.graph.state import BaseStateModel
 from cashier.logger import logger

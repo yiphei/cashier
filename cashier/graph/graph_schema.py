@@ -5,10 +5,9 @@ from typing import List, Type
 from pydantic import BaseModel
 
 from cashier.graph.edge_schema import EdgeSchema
+from cashier.graph.graph_mixin import HasGraphMixin, HasGraphSchemaMixin
 from cashier.graph.new_classes import (
     AutoMixinInit,
-    HasGraphMixin,
-    HasGraphSchemaMixin,
     HasIdMixin,
 )
 from cashier.graph.node_schema import NodeSchema
