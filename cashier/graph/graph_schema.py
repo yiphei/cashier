@@ -37,4 +37,4 @@ class Graph(HasGraphMixin, HasStateMixin):
         graph_schema: HasGraphSchemaMixin,
     ):
         HasGraphMixin.__init__(self, graph_schema)
-        HasStateMixin.__init__(self, graph_schema.state_pydantic_model(**input))
+        HasStateMixin.__init__(self, graph_schema.state_pydantic_model(**(input or {})))

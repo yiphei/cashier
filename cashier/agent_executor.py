@@ -326,7 +326,7 @@ class AgentExecutor:
             self.request_graph.get_graph_schemas(msg)
             if len(self.request_graph.graph_schema_sequence) > 0:
                 self.curr_graph_schema = self.request_graph.graph_schema_sequence[0]
-                self.graph = Graph(graph_schema=self.curr_graph_schema)
+                self.graph = Graph(input=None,graph_schema=self.curr_graph_schema)
                 self.init_next_node(
                     self.curr_graph_schema.start_node_schema, None, None
                 )

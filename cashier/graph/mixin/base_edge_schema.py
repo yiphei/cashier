@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from enum import StrEnum
-from typing import TYPE_CHECKING, Any, Callable, NamedTuple, Optional
+from typing import TYPE_CHECKING, Any, Callable, Dict, NamedTuple, Optional
 
 from pydantic import BaseModel
 
@@ -42,7 +42,7 @@ class FunctionTransitionConfig(BaseTransitionConfig):
 
 
 class StateTransitionConfig(BaseTransitionConfig):
-    state_check_fn: Callable[[BaseStateModel], bool]
+    state_check_fn_map: Dict[str,Callable[[Any], bool]]
 
 
 class BaseEdgeSchema:
@@ -93,8 +93,11 @@ class BaseEdgeSchema:
                     and is_fn_call_success
                 )
         elif isinstance(self.transition_config, StateTransitionConfig):
-            return self.transition_config.state_check_fn(state)
-
+            for field_name, state_check_fn in self.transition_config.state_check_fn_map.items():
+                field_value = getattr(state, field_name)
+                if not state_check_fn(field_value):
+                    return False
+            return True
 
 class Edge(NamedTuple):
     from_node: Node
