@@ -123,9 +123,12 @@ class AgentExecutor:
     ) -> None:
         if self.curr_node:
             self.curr_node.mark_as_completed()
+            old_state = self.graph.state.model_dump()
+            new_state = old_state | self.curr_node.state.model_dump(exclude=self.curr_node.state.resettable_fields)
+            self.graph.state = self.graph.state.__class__(**new_state)
 
         if input is None and edge_schema:
-            input = edge_schema.new_input_fn(self.curr_node.state, self.curr_node.input)
+            input = edge_schema.new_input_fn(self.graph.state)
 
         if edge_schema:
             edge_schema, input = self.graph.compute_next_edge_schema(
@@ -327,8 +330,9 @@ class AgentExecutor:
             if len(self.request_graph.graph_schema_sequence) > 0:
                 self.curr_graph_schema = self.request_graph.graph_schema_sequence[0]
                 self.graph = Graph(input=None,graph_schema=self.curr_graph_schema)
+                new_node_schema, new_edge_schema = self.graph.compute_init_node_edge_schema()
                 self.init_next_node(
-                    self.curr_graph_schema.start_node_schema, None, None
+                    new_node_schema, new_edge_schema, None
                 )
 
     def execute_function_call(
@@ -455,8 +459,7 @@ class AgentExecutor:
                     self.graph = Graph(
                         input=new_input, graph_schema=self.curr_graph_schema
                     )
-                    self.new_node_schema = self.curr_graph_schema.start_node_schema
-                    self.new_edge_schema = None
+                    self.new_node_schema, self.new_edge_schema = self.graph.compute_init_node_edge_schema()
 
                 self.init_next_node(
                     self.new_node_schema,

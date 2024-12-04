@@ -22,7 +22,7 @@ class EdgeSchema(BaseEdgeSchema, HasIdMixin, metaclass=AutoMixinInit):
             return True, skip_type
         elif (
             skip_type == FwdSkipType.SKIP_IF_INPUT_UNCHANGED
-            and self.new_input_fn(from_node.state, from_node.input) == to_node.input
+            and self.new_input_fn(from_node.state) == to_node.input
         ):
             return True, skip_type
         return False, skip_type

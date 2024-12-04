@@ -82,7 +82,7 @@ class BaseEdgeSchema:
         )
 
     def check_transition_config(
-        self, state: BaseStateModel, fn_call, is_fn_call_success
+        self, state: BaseStateModel, fn_call, is_fn_call_success, check_resettable_fields=True
     ) -> bool:
         if isinstance(self.transition_config, FunctionTransitionConfig):
             if self.transition_config.state == FunctionState.CALLED:
@@ -93,7 +93,11 @@ class BaseEdgeSchema:
                     and is_fn_call_success
                 )
         elif isinstance(self.transition_config, StateTransitionConfig):
+            resettable_fields = self.from_node_schema.state_pydantic_model.resettable_fields
             for field_name, state_check_fn in self.transition_config.state_check_fn_map.items():
+                if resettable_fields and field_name in resettable_fields and not check_resettable_fields:
+                    continue
+
                 field_value = getattr(state, field_name)
                 if not state_check_fn(field_value):
                     return False
