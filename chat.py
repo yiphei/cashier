@@ -30,7 +30,6 @@ def get_user_input(use_audio_input: bool) -> str:
 
 def run_chat(args: Namespace) -> None:
     AE = AgentExecutor(
-        None,
         args.audio_output,
         args.remove_prev_tool_calls,
         request_graph_schema=REQUEST_GRAPH_SCHEMA,
