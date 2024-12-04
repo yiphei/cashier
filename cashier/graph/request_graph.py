@@ -11,11 +11,7 @@ from cashier.graph.edge_schema import (
     StateTransitionConfig,
 )
 from cashier.graph.graph_mixin import HasGraphMixin, HasGraphSchemaMixin
-from cashier.graph.has_chat_mixin import (
-    Direction,
-    HasChatMixin,
-    HasChatSchemaMixin,
-)
+from cashier.graph.has_chat_mixin import Direction, HasChatMixin, HasChatSchemaMixin
 from cashier.graph.state import BaseStateModel
 from cashier.logger import logger
 from cashier.model.model_util import CustomJSONEncoder
