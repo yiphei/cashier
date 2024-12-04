@@ -3,11 +3,15 @@ from __future__ import annotations
 import json
 from typing import Any, Optional
 
+from cashier.graph.edge_schema import EdgeSchema
 from cashier.graph.mixin.auto_mixin_init import AutoMixinInit
 from cashier.graph.mixin.base_edge_schema import BaseEdgeSchema
-from cashier.graph.edge_schema import EdgeSchema
 from cashier.graph.mixin.graph_mixin import HasGraphMixin, HasGraphSchemaMixin
-from cashier.graph.mixin.has_chat_mixin import Direction, HasChatMixin, HasChatSchemaMixin
+from cashier.graph.mixin.has_chat_mixin import (
+    Direction,
+    HasChatMixin,
+    HasChatSchemaMixin,
+)
 from cashier.graph.mixin.has_id_mixin import HasIdMixin
 from cashier.graph.state import BaseStateModel
 from cashier.logger import logger

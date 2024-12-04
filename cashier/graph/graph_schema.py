@@ -4,8 +4,8 @@ from typing import List, Type
 
 from pydantic import BaseModel
 
-from cashier.graph.mixin.auto_mixin_init import AutoMixinInit
 from cashier.graph.edge_schema import EdgeSchema
+from cashier.graph.mixin.auto_mixin_init import AutoMixinInit
 from cashier.graph.mixin.graph_mixin import HasGraphMixin, HasGraphSchemaMixin
 from cashier.graph.mixin.has_id_mixin import HasIdMixin
 from cashier.graph.node_schema import NodeSchema
