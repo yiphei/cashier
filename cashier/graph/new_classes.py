@@ -51,6 +51,13 @@ class AutoMixinInit(type):
         return instance
 
 
+class HasIdMixin:
+    _counter = 0
+
+    def __init__(self):
+        self.__class__._counter += 1
+        self.id = self.__class__._counter
+
 class StateSchemaMixin:
     def __init__(self, state_pydantic_model: Optional[Type[BaseStateModel]]):
         self.state_pydantic_model = state_pydantic_model
