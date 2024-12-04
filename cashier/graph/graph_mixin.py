@@ -1,9 +1,8 @@
+from collections import defaultdict, deque
+from typing import Any, List, Literal, Optional, Set, Tuple, overload
+
 from cashier.graph.edge_schema import Edge, EdgeSchema, FwdSkipType
 from cashier.graph.new_classes import Direction, HasActionableMixin
-
-
-from collections import defaultdict, deque
-from typing import Any, List, Literal, Set, Tuple, overload, Optional
 
 
 class HasGraphSchemaMixin:
