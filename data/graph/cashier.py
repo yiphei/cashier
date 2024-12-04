@@ -20,6 +20,8 @@ class CashierNodeSystemPrompt(NodeSystemPrompt):
 
 
 class TakeOrderState(BaseStateModel):
+    resettable_fields = ["has_finished_ordering"]
+
     order: Optional[Order] = None
     has_finished_ordering: bool = Field(  # type: ignore
         description=(
@@ -28,7 +30,6 @@ class TakeOrderState(BaseStateModel):
             " by asking questions like 'Anything else?'."
         ),
         default=False,
-        json_schema_extra={"resettable": True},
     )
 
 
@@ -66,10 +67,12 @@ take_order_node_schema = NodeSchema(
 
 
 class ConfirmOrderState(BaseStateModel):
+    resettable_fields = ["has_confirmed_order"]
+
+
     has_confirmed_order: bool = Field(  # type: ignore
         description="whether the customer has confirmed their order",
         default=False,
-        json_schema_extra={"resettable": True},
     )
 
 
@@ -99,10 +102,11 @@ take_to_confirm_edge_schema = EdgeSchema(
 
 
 class TerminalOrderState(BaseStateModel):
+    resettable_fields = ["has_said_goodbye"]
+
     has_said_goodbye: bool = Field(  # type: ignore
         description="whether the customer has said goodbye",
         default=False,
-        json_schema_extra={"resettable": True},
     )
 
 

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import copy
-from typing import Any, Optional, Type
+from typing import Any, ClassVar, List, Optional, Type
 
 from pydantic import BaseModel, ConfigDict
 
@@ -9,6 +9,7 @@ from cashier.tool.function_call_context import StateUpdateError
 
 
 class BaseStateModel(BaseModel):
+    resettable_fields: ClassVar[Optional[List[str]]] = None
     model_config = ConfigDict(extra="forbid")
 
     def copy_resume(self) -> BaseStateModel:
@@ -17,9 +18,7 @@ class BaseStateModel(BaseModel):
         # Iterate through fields and reset those marked as resettable
         for field_name, field_info in self.model_fields.items():
             # Check if field has the resettable marker in its metadata
-            if field_info.json_schema_extra and field_info.json_schema_extra.get(
-                "resettable"
-            ):
+            if field_name in self.resettable_fields:
                 new_data[field_name] = field_info.default
 
         return self.__class__(**new_data)
