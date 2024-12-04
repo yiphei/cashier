@@ -16,10 +16,11 @@ class BaseStateModel(BaseModel):
         new_data = copy.deepcopy(dict(self))
 
         # Iterate through fields and reset those marked as resettable
-        for field_name, field_info in self.model_fields.items():
-            # Check if field has the resettable marker in its metadata
-            if field_name in self.resettable_fields:
-                new_data[field_name] = field_info.default
+        if self.resettable_fields:
+            for field_name, field_info in self.model_fields.items():
+                # Check if field has the resettable marker in its metadata
+                if field_name in self.resettable_fields:
+                    new_data[field_name] = field_info.default
 
         return self.__class__(**new_data)
 
