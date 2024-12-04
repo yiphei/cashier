@@ -2,13 +2,13 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, NamedTuple, Optional, Tuple
 
-from cashier.graph.has_id_mixin import HasIdMixin
+from cashier.graph.mixin.has_id_mixin import HasIdMixin
 
 if TYPE_CHECKING:
     from cashier.graph.node_schema import Node
 
-from cashier.graph.auto_mixin_init import AutoMixinInit
-from cashier.graph.base_edge_schema import BaseEdgeSchema, FwdSkipType
+from cashier.graph.mixin.auto_mixin_init import AutoMixinInit
+from cashier.graph.mixin.base_edge_schema import BaseEdgeSchema, FwdSkipType
 
 
 class EdgeSchema(BaseEdgeSchema, HasIdMixin, metaclass=AutoMixinInit):

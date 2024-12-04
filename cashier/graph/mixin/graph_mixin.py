@@ -2,7 +2,7 @@ from collections import defaultdict, deque
 from typing import Any, List, Literal, Optional, Set, Tuple, overload
 
 from cashier.graph.edge_schema import Edge, EdgeSchema, FwdSkipType
-from cashier.graph.has_chat_mixin import Direction, HasChatMixin
+from cashier.graph.mixin.has_chat_mixin import Direction, HasChatMixin
 
 
 class HasGraphSchemaMixin:
