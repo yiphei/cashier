@@ -452,7 +452,7 @@ class AgentExecutor:
             ):
                 if isinstance(self.new_node_schema, GraphSchema):
                     new_input = self.new_edge_schema.new_input_fn(
-                        self.graph.state, None
+                        self.graph.state
                     )
                     self.request_graph.current_graph_schema_idx += 1
                     self.curr_graph_schema = self.request_graph.graph_schema_sequence[
