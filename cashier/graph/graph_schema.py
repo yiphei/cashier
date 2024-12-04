@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import List, Type
+from typing import Any, List, Type
 
 from pydantic import BaseModel
 
@@ -33,7 +33,8 @@ class GraphSchema(
 class Graph(HasGraphMixin, HasStateMixin):
     def __init__(
         self,
+        input: Any,
         graph_schema: HasGraphSchemaMixin,
     ):
         HasGraphMixin.__init__(self, graph_schema)
-        HasStateMixin.__init__(self, graph_schema.state_pydantic_model)
+        HasStateMixin.__init__(self, graph_schema.state_pydantic_model(**input))
