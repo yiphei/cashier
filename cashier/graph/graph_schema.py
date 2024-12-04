@@ -64,6 +64,7 @@ class Graph(HasGraphMixin, HasStateMixin):
                             node_schema.id
                         ]
                     )
+                    break
 
             if not passed_check:
                 break
