@@ -16,7 +16,9 @@ from cashier.graph.new_classes import (
 from cashier.graph.node_schema import NodeSchema
 
 
-class GraphSchema(HasIdMixin, GraphSchemaMixin, StateSchemaMixin, metaclass=AutoMixinInit):
+class GraphSchema(
+    HasIdMixin, GraphSchemaMixin, StateSchemaMixin, metaclass=AutoMixinInit
+):
     _counter = 0
 
     def __init__(

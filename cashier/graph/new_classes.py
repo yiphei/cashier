@@ -58,6 +58,7 @@ class HasIdMixin:
         self.__class__._counter += 1
         self.id = self.__class__._counter
 
+
 class StateSchemaMixin:
     def __init__(self, state_pydantic_model: Optional[Type[BaseStateModel]]):
         self.state_pydantic_model = state_pydantic_model
