@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, NamedTuple, Optional, Tuple
 
-
 from cashier.graph.has_id_mixin import HasIdMixin
 
 if TYPE_CHECKING:
