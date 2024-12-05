@@ -57,17 +57,19 @@ class AgentExecutor:
         self.TC = TurnContainer()
 
         self.need_user_input = True
-        self.next_edge_schemas: Set[EdgeSchema] = set()
-        self.bwd_skip_edge_schemas: Set[EdgeSchema] = set()
+        # self.next_edge_schemas: Set[EdgeSchema] = set()
+        # self.bwd_skip_edge_schemas: Set[EdgeSchema] = set()
 
         self.graph = None
-        self.init_node_core(
+        self.request_graph.init_node_core(
             self.request_graph_schema.start_node_schema,
             None,
             None,
             None,
             None,
             Direction.FWD,
+            self.TC,
+            self.remove_prev_tool_calls
         )
         self.force_tool_choice = None
         self.new_edge_schema = None
@@ -262,94 +264,12 @@ class AgentExecutor:
     ) -> None:
         MessageDisplay.print_msg("user", msg)
         self.TC.add_user_turn(msg)
-        if self.graph is not None:
-            if not OffTopicPrompt.run(
-                "claude-3.5",
-                current_node_schema=self.graph.curr_node.schema,
-                tc=self.TC,
-            ):
-                has_new_task = (
-                    self.request_graph.add_tasks(msg, self.TC)
-                    if self.request_graph
-                    else False
-                )
-                if has_new_task:
-                    fake_fn_call = FunctionCall.create(
-                        api_id_model_provider=None,
-                        api_id=None,
-                        name="think",
-                        args={
-                            "thought": "At least part of the customer request/question is off-topic for the current conversation and will actually be addressed later. According to the policies, I must tell the customer that 1) their off-topic request/question will be addressed later and 2) we must finish the current business before we can get to it. I must refuse to engage with the off-topic request/question in any way."
-                        },
-                    )
-                    self.TC.add_assistant_turn(
-                        None,
-                        model_provider
+        model_provider = (model_provider
                         or self.last_model_provider
-                        or ModelProvider.OPENAI,
-                        self.graph.curr_node.schema.tool_registry,
-                        [fake_fn_call],
-                        {fake_fn_call.id: None},
-                    )
-                else:
-                    edge_schema, node_schema, is_wait = self.handle_is_off_topic()
-                    if edge_schema and node_schema:
-                        if is_wait:
-                            fake_fn_call = FunctionCall.create(
-                                api_id_model_provider=None,
-                                api_id=None,
-                                name="think",
-                                args={
-                                    "thought": "At least part of the customer request/question is off-topic for the current conversation and will actually be addressed later. According to the policies, I must tell the customer that 1) their off-topic request/question will be addressed later and 2) we must finish the current business before we can get to it. I must refuse to engage with the off-topic request/question in any way."
-                                },
-                            )
-                            self.TC.add_assistant_turn(
-                                None,
-                                model_provider
-                                or self.last_model_provider
-                                or ModelProvider.OPENAI,
-                                self.graph.curr_node.schema.tool_registry,
-                                [fake_fn_call],
-                                {fake_fn_call.id: None},
-                            )
-                        else:
-                            self.init_skip_node(
-                                node_schema,
-                                edge_schema,
-                            )
-
-                            fake_fn_call = FunctionCall.create(
-                                api_id=None,
-                                api_id_model_provider=None,
-                                name="get_state",
-                                args={},
-                            )
-                            self.TC.add_assistant_turn(
-                                None,
-                                model_provider
-                                or self.last_model_provider
-                                or ModelProvider.OPENAI,
-                                self.graph.curr_node.schema.tool_registry,
-                                [fake_fn_call],
-                                {fake_fn_call.id: self.graph.curr_node.get_state()},
-                            )
-            self.graph.curr_node.update_first_user_message()
-        else:
-            self.request_graph.get_graph_schemas(msg)
-            if len(self.request_graph.graph_schema_sequence) > 0:
-                self.curr_graph_schema = self.request_graph.graph_schema_sequence[0]
-                self.graph = Graph(
-                    input=None,
-                    request=self.request_graph.tasks[
-                        self.request_graph.current_graph_schema_idx
-                    ],
-                    graph_schema=self.curr_graph_schema,
-                )
-                self.request_graph.curr_node = self.graph
-                new_node_schema, new_edge_schema = (
-                    self.graph.compute_init_node_edge_schema()
-                )
-                self.init_next_node(new_node_schema, new_edge_schema, None)
+                        or ModelProvider.OPENAI)
+        self.request_graph.handle_user_turn(msg, self.TC, model_provider, self.remove_prev_tool_calls)
+        if isinstance(self.request_graph.curr_node, Graph):
+            self.graph = self.request_graph.curr_node
 
     def execute_function_call(
         self, fn_call: FunctionCall, fn_callback: Optional[Callable] = None
@@ -430,8 +350,8 @@ class AgentExecutor:
                             self.curr_graph_schema.id
                         ]
                         if self.graph.curr_node.schema
-                        == self.curr_graph_schema.last_node_schema
-                        else self.next_edge_schemas
+                        == self.graph.graph_schema.last_node_schema
+                        else self.graph.next_edge_schemas
                     )
                     for edge_schema in edge_schemas:
                         if edge_schema.check_transition_config(
@@ -482,9 +402,11 @@ class AgentExecutor:
                     self.new_edge_schema = None
                     input = temp_edge_schema.new_input_fn(self.graph.state)
 
-                self.init_next_node(
+                self.request_graph.curr_node.init_next_node(
                     self.new_node_schema,
                     self.new_edge_schema,
+                    self.TC,
+                    self.remove_prev_tool_calls,
                     input,
                 )
                 self.new_edge_schema = None
@@ -499,17 +421,18 @@ class AgentExecutor:
     def get_model_completion_kwargs(self) -> Dict[str, Any]:
         force_tool_choice = self.force_tool_choice
         self.force_tool_choice = None
+        target_graph = self.graph or self.request_graph or None
         return {
             "turn_container": self.TC,
             "tool_registry": (
-                self.graph.curr_node.schema.tool_registry
-                if self.graph is not None
+                target_graph.curr_node.schema.tool_registry
+                if target_graph is not None
                 else None
             ),
             "force_tool_choice": force_tool_choice,
             "exclude_update_state_fns": (
-                not self.graph.curr_node.first_user_message
-                if self.graph.curr_node is not None
+                not target_graph.curr_node.first_user_message
+                if target_graph.curr_node is not None
                 else False
             ),
         }
