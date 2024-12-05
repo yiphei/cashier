@@ -1,8 +1,13 @@
 from collections import defaultdict, deque
 from typing import Any, List, Literal, Optional, Set, Tuple, overload
+from venv import logger
+
+from colorama import Style
 
 from cashier.graph.edge_schema import Edge, EdgeSchema, FwdSkipType
-from cashier.graph.node_schema import Direction, Node
+from cashier.graph.node_schema import Direction, Node, NodeSchema
+from cashier.gui import MessageDisplay
+from cashier.model.model_turn import AssistantTurn
 
 
 class HasGraphSchemaMixin:
@@ -38,6 +43,9 @@ class HasGraphMixin:
         self.edge_schema_id_to_edges = defaultdict(list)
         self.from_node_schema_id_to_last_edge_schema_id = defaultdict(lambda: None)
         self.edge_schema_id_to_from_node = {}
+        self.curr_node = None
+        self.next_edge_schemas: Set[EdgeSchema] = set()
+        self.bwd_skip_edge_schemas: Set[EdgeSchema] = set()
 
     def add_fwd_edge(
         self,
@@ -238,3 +246,124 @@ class HasGraphMixin:
                 self.add_fwd_edge(from_node, new_node, new_node.in_edge_schema.id)
 
             self.edge_schema_id_to_from_node[edge_schema.id] = new_node
+
+    def init_node_core(
+        self,
+        node_schema: NodeSchema,
+        edge_schema: Optional[EdgeSchema],
+        input: Any,
+        last_msg: Optional[str],
+        prev_node: Optional[Node],
+        direction: Direction,
+        TC,
+        remove_prev_tool_calls,
+        is_skip: bool = False,
+    ) -> None:
+        logger.debug(
+            f"[NODE_SCHEMA] Initializing node with {Style.BRIGHT}node_schema_id: {node_schema.id}{Style.NORMAL}"
+        )
+        new_node = node_schema.create_node(
+            input, last_msg, edge_schema, prev_node, direction, self.request if self.__class__.__name__ == "Graph" else None  # type: ignore
+        )
+
+        TC.add_node_turn(
+            new_node,
+            remove_prev_tool_calls=remove_prev_tool_calls,
+            is_skip=is_skip,
+        )
+        MessageDisplay.print_msg("system", new_node.prompt)
+
+        if node_schema.first_turn and prev_node is None:
+            assert isinstance(node_schema.first_turn, AssistantTurn)
+            TC.add_assistant_direct_turn(node_schema.first_turn)
+            MessageDisplay.print_msg("assistant", node_schema.first_turn.msg_content)
+
+        if edge_schema:
+            self.add_edge(self.curr_node, new_node, edge_schema, direction)
+
+        self.curr_node = new_node
+
+        if self.__class__.__name__ == "Graph":  # TODO: remove this after refactor
+            self.next_edge_schemas = set(
+                self.graph_schema.from_node_schema_id_to_edge_schema.get(
+                    new_node.schema.id, []
+                )
+            )
+            self.bwd_skip_edge_schemas = self.compute_bwd_skip_edge_schemas(
+                self.curr_node, self.bwd_skip_edge_schemas
+            )
+
+    def init_next_node(
+        self,
+        node_schema: NodeSchema,
+        edge_schema: Optional[EdgeSchema],
+        TC,
+        remove_prev_tool_calls,
+        input: Any = None,
+    ) -> None:
+        if self.curr_node:
+            self.curr_node.mark_as_completed()
+            if self.curr_node.state is not None:
+                old_state = self.state.model_dump()
+                new_state = old_state | self.curr_node.state.model_dump(
+                    exclude=self.curr_node.state.resettable_fields
+                )
+                self.state = self.state.__class__(**new_state)
+
+        if input is None and edge_schema:
+            input = edge_schema.new_input_fn(self.state)
+
+        if edge_schema:
+            edge_schema, input = self.compute_next_edge_schema(
+                edge_schema, input, self.curr_node
+            )
+            node_schema = edge_schema.to_node_schema
+
+        direction = Direction.FWD
+        prev_node = self.get_prev_node(edge_schema, direction)
+
+        last_msg = TC.get_user_message(content_only=True)
+
+        self.init_node_core(
+            node_schema,
+            edge_schema,
+            input,
+            last_msg,
+            prev_node,
+            direction,
+            TC,
+            remove_prev_tool_calls,
+            False,
+        )
+
+    def init_skip_node(
+        self,
+        node_schema: NodeSchema,
+        edge_schema: EdgeSchema,
+        TC,
+        remove_prev_tool_calls,
+    ) -> None:
+        direction = Direction.FWD
+        if edge_schema and edge_schema.from_node_schema == node_schema:
+            direction = Direction.BWD
+
+        if direction == Direction.BWD:
+            self.bwd_skip_edge_schemas.clear()
+
+        prev_node = self.get_prev_node(edge_schema, direction)
+        assert prev_node is not None
+        input = prev_node.input
+
+        last_msg = TC.get_asst_message(content_only=True)
+
+        self.init_node_core(
+            node_schema,
+            edge_schema,
+            input,
+            last_msg,
+            prev_node,
+            direction,
+            TC,
+            remove_prev_tool_calls,
+            True,
+        )
