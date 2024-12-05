@@ -6,8 +6,7 @@ from colorama import Style
 from cashier.audio import get_speech_from_text
 from cashier.graph.edge_schema import EdgeSchema
 from cashier.graph.graph_schema import Graph, GraphSchema
-from cashier.graph.node_schema import Direction
-from cashier.graph.node_schema import Node, NodeSchema
+from cashier.graph.node_schema import Direction, Node, NodeSchema
 from cashier.graph.request_graph import GraphEdgeSchema, RequestGraph
 from cashier.gui import MessageDisplay
 from cashier.logger import logger
