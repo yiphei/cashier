@@ -410,7 +410,7 @@ class AgentExecutor:
                     self.need_user_input = False
 
                     edge_schemas = (
-                        self.request_graph_schema.from_graph_schema_id_to_graph_edge_schemas[
+                        self.request_graph_schema.from_node_schema_id_to_edge_schema[
                             self.curr_graph_schema.id
                         ]
                         if self.curr_node.schema
