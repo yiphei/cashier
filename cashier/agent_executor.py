@@ -1,42 +1,21 @@
 import json
-from typing import Any, Callable, Dict, Optional, Set, Tuple, Union, cast
+from typing import Any, Callable, Dict, Optional, Tuple, cast
 
 from colorama import Style
 
 from cashier.audio import get_speech_from_text
-from cashier.graph.edge_schema import EdgeSchema
 from cashier.graph.graph_schema import Graph, GraphSchema
-from cashier.graph.node_schema import Direction, Node, NodeSchema
+from cashier.graph.node_schema import Direction
 from cashier.graph.request_graph import GraphEdgeSchema, RequestGraph
 from cashier.gui import MessageDisplay
 from cashier.logger import logger
 from cashier.model.model_completion import ModelOutput
-from cashier.model.model_turn import AssistantTurn
 from cashier.model.model_util import CustomJSONEncoder, FunctionCall, ModelProvider
-from cashier.prompts.node_schema_selection import NodeSchemaSelectionPrompt
 from cashier.tool.function_call_context import (
     FunctionCallContext,
     InexistentFunctionError,
 )
 from cashier.turn_container import TurnContainer
-
-
-def should_change_node_schema(
-    TM: TurnContainer,
-    current_node_schema: NodeSchema,
-    all_node_schemas: Set[NodeSchema],
-    is_wait: bool,
-) -> Optional[int]:
-    if len(all_node_schemas) == 1:
-        return None
-    return NodeSchemaSelectionPrompt.run(
-        "claude-3.5",
-        current_node_schema=current_node_schema,
-        tc=TM,
-        all_node_schemas=all_node_schemas,
-        is_wait=is_wait,
-    )
-
 
 class AgentExecutor:
 
@@ -73,190 +52,6 @@ class AgentExecutor:
         self.force_tool_choice = None
         self.new_edge_schema = None
         self.new_node_schema = None
-
-    def init_node_core(
-        self,
-        node_schema: NodeSchema,
-        edge_schema: Optional[EdgeSchema],
-        input: Any,
-        last_msg: Optional[str],
-        prev_node: Optional[Node],
-        direction: Direction,
-        is_skip: bool = False,
-    ) -> None:
-        logger.debug(
-            f"[NODE_SCHEMA] Initializing node with {Style.BRIGHT}node_schema_id: {node_schema.id}{Style.NORMAL}"
-        )
-        new_node = node_schema.create_node(
-            input, last_msg, edge_schema, prev_node, direction, self.graph.request if isinstance(self.graph, Graph) else None  # type: ignore
-        )
-
-        self.TC.add_node_turn(
-            new_node,
-            remove_prev_tool_calls=self.remove_prev_tool_calls,
-            is_skip=is_skip,
-        )
-        MessageDisplay.print_msg("system", new_node.prompt)
-
-        if node_schema.first_turn and prev_node is None:
-            assert isinstance(node_schema.first_turn, AssistantTurn)
-            self.TC.add_assistant_direct_turn(node_schema.first_turn)
-            MessageDisplay.print_msg("assistant", node_schema.first_turn.msg_content)
-
-        if edge_schema:
-            self.graph.add_edge(self.graph.curr_node, new_node, edge_schema, direction)
-
-        if self.graph:
-            self.graph.curr_node = new_node
-        else:
-            self.request_graph.curr_node = new_node
-        if self.graph:  # TODO: remove this after refactor
-            self.next_edge_schemas = set(
-                self.graph.graph_schema.from_node_schema_id_to_edge_schema.get(
-                    new_node.schema.id, []
-                )
-            )
-            self.bwd_skip_edge_schemas = self.graph.compute_bwd_skip_edge_schemas(
-                self.graph.curr_node, self.bwd_skip_edge_schemas
-            )
-
-    def init_next_node(
-        self,
-        node_schema: NodeSchema,
-        edge_schema: Optional[EdgeSchema],
-        input: Any = None,
-    ) -> None:
-        if self.graph.curr_node:
-            self.graph.curr_node.mark_as_completed()
-            if self.graph.curr_node.state is not None:
-                old_state = self.graph.state.model_dump()
-                new_state = old_state | self.graph.curr_node.state.model_dump(
-                    exclude=self.graph.curr_node.state.resettable_fields
-                )
-                self.graph.state = self.graph.state.__class__(**new_state)
-
-        if input is None and edge_schema:
-            input = edge_schema.new_input_fn(self.graph.state)
-
-        if edge_schema:
-            edge_schema, input = self.graph.compute_next_edge_schema(
-                edge_schema, input, self.graph.curr_node
-            )
-            node_schema = edge_schema.to_node_schema
-
-        direction = Direction.FWD
-        prev_node = self.graph.get_prev_node(edge_schema, direction)
-
-        last_msg = self.TC.get_user_message(content_only=True)
-
-        self.init_node_core(
-            node_schema, edge_schema, input, last_msg, prev_node, direction, False
-        )
-
-    def init_skip_node(
-        self,
-        node_schema: NodeSchema,
-        edge_schema: EdgeSchema,
-    ) -> None:
-        direction = Direction.FWD
-        if edge_schema and edge_schema.from_node_schema == node_schema:
-            direction = Direction.BWD
-
-        if direction == Direction.BWD:
-            self.bwd_skip_edge_schemas.clear()
-
-        prev_node = self.graph.get_prev_node(edge_schema, direction)
-        assert prev_node is not None
-        input = prev_node.input
-
-        last_msg = self.TC.get_asst_message(content_only=True)
-
-        self.init_node_core(
-            node_schema, edge_schema, input, last_msg, prev_node, direction, True
-        )
-
-    def handle_skip(
-        self,
-        fwd_skip_edge_schemas: Set[EdgeSchema],
-        bwd_skip_edge_schemas: Set[EdgeSchema],
-    ) -> Union[Tuple[EdgeSchema, NodeSchema], Tuple[None, None]]:
-        all_node_schemas = {self.graph.curr_node.schema}
-        all_node_schemas.update(edge.to_node_schema for edge in fwd_skip_edge_schemas)
-        all_node_schemas.update(edge.from_node_schema for edge in bwd_skip_edge_schemas)
-
-        node_schema_id = should_change_node_schema(
-            self.TC, self.graph.curr_node.schema, all_node_schemas, False
-        )
-
-        if node_schema_id is not None:
-            for edge_schema in fwd_skip_edge_schemas:
-                if edge_schema.to_node_schema.id == node_schema_id:
-                    return (
-                        edge_schema,
-                        self.graph.graph_schema.node_schema_id_to_node_schema[
-                            node_schema_id
-                        ],
-                    )
-
-            for edge_schema in bwd_skip_edge_schemas:
-                if edge_schema.from_node_schema.id == node_schema_id:
-                    return (
-                        edge_schema,
-                        self.graph.graph_schema.node_schema_id_to_node_schema[
-                            node_schema_id
-                        ],
-                    )
-
-        return None, None
-
-    def handle_wait(
-        self,
-        fwd_skip_edge_schemas: Set[EdgeSchema],
-        bwd_skip_edge_schemas: Set[EdgeSchema],
-    ) -> Union[Tuple[EdgeSchema, NodeSchema], Tuple[None, None]]:
-        remaining_edge_schemas = (
-            set(self.curr_graph_schema.edge_schemas)
-            - fwd_skip_edge_schemas
-            - bwd_skip_edge_schemas
-        )
-
-        all_node_schemas = {self.graph.curr_node.schema}
-        all_node_schemas.update(edge.to_node_schema for edge in remaining_edge_schemas)
-
-        node_schema_id = should_change_node_schema(
-            self.TC, self.graph.curr_node.schema, all_node_schemas, True
-        )
-
-        if node_schema_id is not None:
-            for edge_schema in remaining_edge_schemas:
-                if edge_schema.to_node_schema.id == node_schema_id:
-                    return (
-                        edge_schema,
-                        self.graph.graph_schema.node_schema_id_to_node_schema[
-                            node_schema_id
-                        ],
-                    )
-
-        return None, None
-
-    def handle_is_off_topic(
-        self,
-    ) -> Union[Tuple[EdgeSchema, NodeSchema, bool], Tuple[None, None, bool]]:
-        fwd_skip_edge_schemas = self.graph.compute_fwd_skip_edge_schemas(
-            self.graph.curr_node, self.next_edge_schemas
-        )
-        bwd_skip_edge_schemas = self.bwd_skip_edge_schemas
-
-        edge_schema, node_schema = self.handle_wait(
-            fwd_skip_edge_schemas, bwd_skip_edge_schemas
-        )
-        if edge_schema:
-            return edge_schema, node_schema, True  # type: ignore
-
-        edge_schema, node_schema = self.handle_skip(
-            fwd_skip_edge_schemas, bwd_skip_edge_schemas
-        )
-        return edge_schema, node_schema, False  # type: ignore
 
     def add_user_turn(
         self, msg: str, model_provider: Optional[ModelProvider] = None
