@@ -1,11 +1,9 @@
 from __future__ import annotations
 
 import copy
-from typing import Any, ClassVar, List, Optional, Type
+from typing import ClassVar, List, Optional
 
 from pydantic import BaseModel, ConfigDict
-
-from cashier.tool.function_call_context import StateUpdateError
 
 
 class BaseStateModel(BaseModel):
