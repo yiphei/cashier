@@ -451,6 +451,7 @@ class AgentExecutor:
                 not self.curr_node.schema.run_assistant_turn_before_transition
                 or self.curr_node.has_run_assistant_turn_before_transition
             ):
+                input = None
                 if isinstance(self.new_node_schema, GraphSchema):
                     new_input = self.new_edge_schema.new_input_fn(self.graph.state)
                     self.request_graph.current_graph_schema_idx += 1
@@ -460,13 +461,16 @@ class AgentExecutor:
                     self.graph = Graph(
                         input=new_input, graph_schema=self.curr_graph_schema
                     )
-                    self.new_node_schema, self.new_edge_schema = (
+                    self.new_node_schema, temp_edge_schema = (
                         self.graph.compute_init_node_edge_schema()
                     )
+                    self.new_edge_schema = None
+                    input = temp_edge_schema.new_input_fn(self.graph.state)
 
                 self.init_next_node(
                     self.new_node_schema,
                     self.new_edge_schema,
+                    input,
                 )
                 self.new_edge_schema = None
                 self.new_node_schema = None
