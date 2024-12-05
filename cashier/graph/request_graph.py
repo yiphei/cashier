@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from typing import Any, Optional
+from typing import Any, List, Optional, Type
 
 from cashier.graph.edge_schema import EdgeSchema
 from cashier.graph.mixin.auto_mixin_init import AutoMixinInit
@@ -14,29 +14,22 @@ from cashier.graph.mixin.has_chat_mixin import (
 )
 from cashier.graph.mixin.has_id_mixin import HasIdMixin
 from cashier.graph.mixin.state_mixin import BaseStateModel
+from cashier.graph.node_schema import NodeSchema
 from cashier.logger import logger
 from cashier.model.model_util import CustomJSONEncoder
 from cashier.prompts.graph_schema_addition import GraphSchemaAdditionPrompt
 from cashier.prompts.graph_schema_selection import GraphSchemaSelectionPrompt
+from cashier.prompts.node_system import NodeSystemPrompt
 
 
-class RequestGraph(HasGraphMixin, HasChatMixin):
+class RequestGraph(HasGraphMixin):
 
     def __init__(
         self,
-        schema: RequestGraphSchema,
         input: Any,
-        state: BaseStateModel,
-        prompt: str,
-        in_edge_schema: Optional[EdgeSchema],
-        direction: Direction = Direction.FWD,
+        graph_schema: HasGraphSchemaMixin,
     ):
-
-        HasGraphMixin.__init__(self, schema)
-        HasChatMixin.__init__(
-            self, schema, input, state, prompt, in_edge_schema, direction
-        )
-
+        HasGraphMixin.__init__(self, graph_schema)
         self.tasks = []
         self.graph_schema_sequence = []
         self.current_graph_schema_idx = 0
@@ -44,11 +37,11 @@ class RequestGraph(HasGraphMixin, HasChatMixin):
 
     def get_graph_schemas(self, request):
         agent_selections = GraphSchemaSelectionPrompt.run(
-            "claude-3.5", request=request, graph_schemas=self.schema.node_schemas
+            "claude-3.5", request=request, graph_schemas=self.graph_schema.node_schemas
         )
         for agent_selection in agent_selections:
             self.graph_schema_sequence.append(
-                self.schema.node_schema_id_to_node_schema[agent_selection.agent_id]
+                self.graph_schema.node_schema_id_to_node_schema[agent_selection.agent_id]
             )
             self.tasks.append(agent_selection.task)
             self.graph_schema_id_to_task[agent_selection.agent_id] = (
@@ -62,7 +55,7 @@ class RequestGraph(HasGraphMixin, HasChatMixin):
     def add_tasks(self, request, tc):
         agent_selection = GraphSchemaAdditionPrompt.run(
             "claude-3.5",
-            graph_schemas=self.schema.node_schemas,
+            graph_schemas=self.graph_schema.node_schemas,
             curr_agent_id=self.graph_schema_sequence[self.current_graph_schema_idx].id,
             curr_task=self.tasks[self.current_graph_schema_idx],
             tc=tc,
@@ -74,7 +67,7 @@ class RequestGraph(HasGraphMixin, HasChatMixin):
         )
         if agent_selection is not None:
             self.graph_schema_sequence.append(
-                self.schema.node_schema_id_to_node_schema[agent_selection.agent_id]
+                self.graph_schema.node_schema_id_to_node_schema[agent_selection.agent_id]
             )
             self.tasks.append(agent_selection.task)
             self.graph_schema_id_to_task[agent_selection.agent_id] = (
@@ -85,9 +78,17 @@ class RequestGraph(HasGraphMixin, HasChatMixin):
 
 
 class RequestGraphSchema(
-    HasGraphSchemaMixin, HasChatSchemaMixin, metaclass=AutoMixinInit
+    HasGraphSchemaMixin, metaclass=AutoMixinInit
 ):
-    instance_cls = RequestGraph
+    def __init__(
+        self,
+        node_prompt: str,
+        node_system_prompt: Type[NodeSystemPrompt],
+        description: str,
+        edge_schemas: List[EdgeSchema],
+        node_schemas: List[NodeSchema],
+    ):
+        self.start_node_schema = NodeSchema(node_prompt, node_system_prompt)
 
 
 class GraphEdgeSchema(BaseEdgeSchema, HasIdMixin, metaclass=AutoMixinInit):
