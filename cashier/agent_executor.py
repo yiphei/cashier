@@ -88,7 +88,7 @@ class AgentExecutor:
             f"[NODE_SCHEMA] Initializing node with {Style.BRIGHT}node_schema_id: {node_schema.id}{Style.NORMAL}"
         )
         new_node = node_schema.create_node(
-            input, last_msg, edge_schema, prev_node, direction, self.request_graph.tasks[self.request_graph.current_graph_schema_idx] if self.request_graph.tasks else None  # type: ignore
+            input, last_msg, edge_schema, prev_node, direction, self.graph.request if isinstance(self.graph, Graph) else None  # type: ignore
         )
 
         self.TC.add_node_turn(
@@ -334,7 +334,7 @@ class AgentExecutor:
             self.request_graph.get_graph_schemas(msg)
             if len(self.request_graph.graph_schema_sequence) > 0:
                 self.curr_graph_schema = self.request_graph.graph_schema_sequence[0]
-                self.graph = Graph(input=None, graph_schema=self.curr_graph_schema)
+                self.graph = Graph(input=None, request =self.request_graph.tasks[self.request_graph.current_graph_schema_idx] ,graph_schema=self.curr_graph_schema)
                 new_node_schema, new_edge_schema = (
                     self.graph.compute_init_node_edge_schema()
                 )

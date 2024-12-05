@@ -32,10 +32,12 @@ class Graph(HasGraphMixin):
     def __init__(
         self,
         input: Any,
+        request: str,
         graph_schema: HasGraphSchemaMixin,
     ):
         HasGraphMixin.__init__(self, graph_schema)
         self.state = graph_schema.state_pydantic_model(**(input or {}))
+        self.request = request
 
     def compute_init_node_edge_schema(
         self,
