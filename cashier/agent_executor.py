@@ -264,7 +264,9 @@ class AgentExecutor:
         self.TC.add_user_turn(msg)
         if self.graph is not None:
             if not OffTopicPrompt.run(
-                "claude-3.5", current_node_schema=self.graph.curr_node.schema, tc=self.TC
+                "claude-3.5",
+                current_node_schema=self.graph.curr_node.schema,
+                tc=self.TC,
             ):
                 has_new_task = (
                     self.request_graph.add_tasks(msg, self.TC)
@@ -372,7 +374,9 @@ class AgentExecutor:
                 ):
                     fn_output = json.loads(fn_output)
             else:
-                fn = self.graph.curr_node.schema.tool_registry.fn_name_to_fn[fn_call.name]
+                fn = self.graph.curr_node.schema.tool_registry.fn_name_to_fn[
+                    fn_call.name
+                ]
                 fn_output = fn(**function_args)
 
         if fn_call_context.has_exception():
@@ -497,7 +501,9 @@ class AgentExecutor:
         return {
             "turn_container": self.TC,
             "tool_registry": (
-                self.graph.curr_node.schema.tool_registry if self.graph is not None else None
+                self.graph.curr_node.schema.tool_registry
+                if self.graph is not None
+                else None
             ),
             "force_tool_choice": force_tool_choice,
             "exclude_update_state_fns": (
