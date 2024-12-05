@@ -5,9 +5,9 @@ from pydantic import Field
 from cashier.graph.edge_schema import EdgeSchema
 from cashier.graph.graph_schema import GraphSchema
 from cashier.graph.mixin.base_edge_schema import StateTransitionConfig
+from cashier.graph.mixin.state_mixin import BaseStateModel
 from cashier.graph.node_schema import NodeSchema
 from cashier.graph.request_graph import RequestGraphSchema
-from cashier.graph.mixin.state_mixin import BaseStateModel
 from cashier.model.model_turn import AssistantTurn
 from cashier.model.model_util import ModelProvider
 from cashier.prompts.node_system import NodeSystemPrompt
