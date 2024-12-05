@@ -1,19 +1,23 @@
 from __future__ import annotations
+
 from enum import StrEnum
 from typing import Any, List, Literal, Optional, Type, Union, cast, overload
 
+from openai.types.chat.chat_completion_tool_param import ChatCompletionToolParam
 from pydantic import BaseModel
 
 from cashier.graph.edge_schema import EdgeSchema
 from cashier.graph.mixin.auto_mixin_init import AutoMixinInit
 from cashier.graph.mixin.base_edge_schema import BwdStateInit, FwdStateInit
-from cashier.graph.mixin.has_chat_mixin import Direction, HasChatMixin, HasChatSchemaMixin
+from cashier.graph.mixin.has_chat_mixin import (
+    Direction,
+    HasChatMixin,
+    HasChatSchemaMixin,
+)
 from cashier.graph.mixin.has_id_mixin import HasIdMixin
 from cashier.graph.mixin.state_mixin import BaseStateModel
 from cashier.model.model_turn import ModelTurn
 from cashier.prompts.node_system import NodeSystemPrompt
-from openai.types.chat.chat_completion_tool_param import ChatCompletionToolParam
-
 from cashier.tool.function_call_context import StateUpdateError
 from cashier.tool.tool_registry import ToolRegistry
 
@@ -92,7 +96,6 @@ class Node(HasIdMixin, metaclass=AutoMixinInit):
 
     def update_first_user_message(self) -> None:
         self.first_user_message = True
-
 
 
 class NodeSchema(HasIdMixin, metaclass=AutoMixinInit):
