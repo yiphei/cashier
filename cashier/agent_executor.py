@@ -63,7 +63,14 @@ class AgentExecutor:
         self.bwd_skip_edge_schemas: Set[EdgeSchema] = set()
 
         self.graph = None
-        self.init_node_core(self.request_graph_schema.start_node_schema, None, None, None, None, Direction.FWD)
+        self.init_node_core(
+            self.request_graph_schema.start_node_schema,
+            None,
+            None,
+            None,
+            None,
+            Direction.FWD,
+        )
         self.force_tool_choice = None
         self.new_edge_schema = None
         self.new_node_schema = None
@@ -101,7 +108,7 @@ class AgentExecutor:
             self.graph.add_edge(self.curr_node, new_node, edge_schema, direction)
 
         self.curr_node = new_node
-        if self.graph: #TODO: remove this after refactor
+        if self.graph:  # TODO: remove this after refactor
             self.next_edge_schemas = set(
                 self.graph.graph_schema.from_node_schema_id_to_edge_schema.get(
                     new_node.schema.id, []

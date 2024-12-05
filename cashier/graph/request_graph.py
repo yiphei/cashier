@@ -1,19 +1,13 @@
 from __future__ import annotations
 
 import json
-from typing import Any, List, Optional, Type
+from typing import Any, List, Type
 
 from cashier.graph.edge_schema import EdgeSchema
 from cashier.graph.mixin.auto_mixin_init import AutoMixinInit
 from cashier.graph.mixin.base_edge_schema import BaseEdgeSchema
 from cashier.graph.mixin.graph_mixin import HasGraphMixin, HasGraphSchemaMixin
-from cashier.graph.mixin.has_chat_mixin import (
-    Direction,
-    HasChatMixin,
-    HasChatSchemaMixin,
-)
 from cashier.graph.mixin.has_id_mixin import HasIdMixin
-from cashier.graph.mixin.state_mixin import BaseStateModel
 from cashier.graph.node_schema import NodeSchema
 from cashier.logger import logger
 from cashier.model.model_util import CustomJSONEncoder
@@ -41,7 +35,9 @@ class RequestGraph(HasGraphMixin):
         )
         for agent_selection in agent_selections:
             self.graph_schema_sequence.append(
-                self.graph_schema.node_schema_id_to_node_schema[agent_selection.agent_id]
+                self.graph_schema.node_schema_id_to_node_schema[
+                    agent_selection.agent_id
+                ]
             )
             self.tasks.append(agent_selection.task)
             self.graph_schema_id_to_task[agent_selection.agent_id] = (
@@ -67,7 +63,9 @@ class RequestGraph(HasGraphMixin):
         )
         if agent_selection is not None:
             self.graph_schema_sequence.append(
-                self.graph_schema.node_schema_id_to_node_schema[agent_selection.agent_id]
+                self.graph_schema.node_schema_id_to_node_schema[
+                    agent_selection.agent_id
+                ]
             )
             self.tasks.append(agent_selection.task)
             self.graph_schema_id_to_task[agent_selection.agent_id] = (
@@ -77,9 +75,7 @@ class RequestGraph(HasGraphMixin):
         return True if agent_selection else False
 
 
-class RequestGraphSchema(
-    HasGraphSchemaMixin, metaclass=AutoMixinInit
-):
+class RequestGraphSchema(HasGraphSchemaMixin, metaclass=AutoMixinInit):
     def __init__(
         self,
         node_prompt: str,
