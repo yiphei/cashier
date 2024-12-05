@@ -490,5 +490,9 @@ class AgentExecutor:
                 self.curr_node.schema.tool_registry if self.graph is not None else None
             ),
             "force_tool_choice": force_tool_choice,
-            "exclude_update_state_fns": not self.curr_node.first_user_message if self.curr_node is not None else False
+            "exclude_update_state_fns": (
+                not self.curr_node.first_user_message
+                if self.curr_node is not None
+                else False
+            ),
         }

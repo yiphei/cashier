@@ -132,7 +132,11 @@ class TestAgent:
                 "turn_container": TC,
                 "tool_registry": tool_registry,
                 "force_tool_choice": None,
-                "exclude_update_state_fns": not agent_executor.curr_node.first_user_message if agent_executor.curr_node is not None else False,
+                "exclude_update_state_fns": (
+                    not agent_executor.curr_node.first_user_message
+                    if agent_executor.curr_node is not None
+                    else False
+                ),
             },
         )
 
