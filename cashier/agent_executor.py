@@ -345,6 +345,7 @@ class AgentExecutor:
                     ],
                     graph_schema=self.curr_graph_schema,
                 )
+                self.request_graph.curr_node = self.graph
                 new_node_schema, new_edge_schema = (
                     self.graph.compute_init_node_edge_schema()
                 )
