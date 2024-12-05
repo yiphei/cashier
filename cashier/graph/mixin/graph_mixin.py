@@ -172,6 +172,7 @@ class HasGraphMixin:
                 from_node = curr_node
 
             can_skip, skip_type = next_edge_schema.can_skip(
+                self.state,
                 from_node,
                 to_node,
                 self.is_prev_from_node_completed(
