@@ -123,11 +123,12 @@ class AgentExecutor:
     ) -> None:
         if self.curr_node:
             self.curr_node.mark_as_completed()
-            old_state = self.graph.state.model_dump()
-            new_state = old_state | self.curr_node.state.model_dump(
-                exclude=self.curr_node.state.resettable_fields
-            )
-            self.graph.state = self.graph.state.__class__(**new_state)
+            if self.curr_node.state is not None:
+                old_state = self.graph.state.model_dump()
+                new_state = old_state | self.curr_node.state.model_dump(
+                    exclude=self.curr_node.state.resettable_fields
+                )
+                self.graph.state = self.graph.state.__class__(**new_state)
 
         if input is None and edge_schema:
             input = edge_schema.new_input_fn(self.graph.state)
