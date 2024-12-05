@@ -36,8 +36,6 @@ class AgentExecutor:
         self.TC = TurnContainer()
 
         self.need_user_input = True
-        # self.next_edge_schemas: Set[EdgeSchema] = set()
-        # self.bwd_skip_edge_schemas: Set[EdgeSchema] = set()
 
         self.graph = None
         self.request_graph.init_node_core(
