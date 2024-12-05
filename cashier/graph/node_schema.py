@@ -9,7 +9,7 @@ from cashier.graph.mixin.auto_mixin_init import AutoMixinInit
 from cashier.graph.mixin.base_edge_schema import BwdStateInit, FwdStateInit
 from cashier.graph.mixin.has_chat_mixin import Direction, HasChatMixin, HasChatSchemaMixin
 from cashier.graph.mixin.has_id_mixin import HasIdMixin
-from cashier.graph.mixin.state_mixin import BaseStateModel, HasStateSchemaMixin
+from cashier.graph.mixin.state_mixin import BaseStateModel
 from cashier.model.model_turn import ModelTurn
 from cashier.prompts.node_system import NodeSystemPrompt
 from openai.types.chat.chat_completion_tool_param import ChatCompletionToolParam
@@ -95,7 +95,7 @@ class Node(HasIdMixin, metaclass=AutoMixinInit):
 
 
 
-class NodeSchema(HasIdMixin, HasStateSchemaMixin, metaclass=AutoMixinInit):
+class NodeSchema(HasIdMixin, metaclass=AutoMixinInit):
     def __init__(
         self,
         node_prompt: str,
