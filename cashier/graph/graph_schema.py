@@ -60,6 +60,11 @@ class Graph(HasGraphMixin):
         self.state = graph_schema.state_pydantic_model(**(input or {}))
         self.request = request
 
+
+    @property
+    def curr_executable(self):
+        return self.curr_node
+
     def compute_init_node_edge_schema(
         self,
     ):

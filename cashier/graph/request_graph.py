@@ -18,6 +18,26 @@ from cashier.prompts.node_system import NodeSystemPrompt
 from cashier.prompts.off_topic import OffTopicPrompt
 
 
+class Ref:
+    def __init__(self, obj, attr):
+        self._obj = obj
+        self._attr = attr
+    
+    def __get__(self, instance, owner):
+        return getattr(self._obj, self._attr)
+    
+    def __set__(self, instance, value):
+        setattr(self._obj, self._attr, value)
+    # Optional: make it behave more like a regular variable
+    def __repr__(self):
+        return repr(self.__get__(None, None))
+    
+    def __getattr__(self, name):
+        # Get the current value and access the requested attribute
+        value = self.__get__(None, None)
+        return getattr(value, name)
+
+
 class RequestGraph(HasGraphMixin):
 
     def __init__(
@@ -30,6 +50,7 @@ class RequestGraph(HasGraphMixin):
         self.graph_schema_sequence = []
         self.current_graph_schema_idx = 0
         self.graph_schema_id_to_task = {}
+        self.curr_executable = None
 
     def get_graph_schemas(self, request):
         agent_selections = GraphSchemaSelectionPrompt.run(
@@ -117,6 +138,7 @@ class RequestGraph(HasGraphMixin):
                     request=self.tasks[self.current_graph_schema_idx],
                     graph_schema=self.graph_schema_sequence[0],
                 )
+                self.curr_executable = Ref(self.graph, "curr_executable")
                 self.curr_node = self.graph
                 new_node_schema, new_edge_schema = (
                     self.graph.compute_init_node_edge_schema()
