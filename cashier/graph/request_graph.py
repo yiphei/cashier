@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from typing import Any, List, Optional, Set, Type
+from typing import Any, List, Type
 
 from cashier.graph.edge_schema import EdgeSchema
 from cashier.graph.graph_schema import Graph
@@ -14,10 +14,8 @@ from cashier.logger import logger
 from cashier.model.model_util import CustomJSONEncoder, FunctionCall
 from cashier.prompts.graph_schema_addition import GraphSchemaAdditionPrompt
 from cashier.prompts.graph_schema_selection import GraphSchemaSelectionPrompt
-from cashier.prompts.node_schema_selection import NodeSchemaSelectionPrompt
 from cashier.prompts.node_system import NodeSystemPrompt
 from cashier.prompts.off_topic import OffTopicPrompt
-from cashier.turn_container import TurnContainer
 
 
 class RequestGraph(HasGraphMixin):
@@ -77,7 +75,6 @@ class RequestGraph(HasGraphMixin):
             )
 
         return True if agent_selection else False
-    
 
     def handle_user_turn(self, msg, TC, model_provider, remove_prev_tool_calls):
         if isinstance(self.curr_node, Graph):
@@ -86,9 +83,7 @@ class RequestGraph(HasGraphMixin):
                 current_node_schema=self.curr_node.curr_node.schema,
                 tc=TC,
             ):
-                has_new_task = (
-                    self.add_tasks(msg, TC)
-                )
+                has_new_task = self.add_tasks(msg, TC)
                 if has_new_task:
                     fake_fn_call = FunctionCall.create(
                         api_id_model_provider=None,
@@ -106,23 +101,29 @@ class RequestGraph(HasGraphMixin):
                         {fake_fn_call.id: None},
                     )
                 else:
-                    self.curr_node.handle_user_turn(msg, TC, model_provider, remove_prev_tool_calls, run_off_topic_check=False)
-            self.curr_node.curr_node.update_first_user_message() # TODO: remove this after refactor
+                    self.curr_node.handle_user_turn(
+                        msg,
+                        TC,
+                        model_provider,
+                        remove_prev_tool_calls,
+                        run_off_topic_check=False,
+                    )
+            self.curr_node.curr_node.update_first_user_message()  # TODO: remove this after refactor
         else:
             self.get_graph_schemas(msg)
             if len(self.graph_schema_sequence) > 0:
                 self.graph = Graph(
                     input=None,
-                    request=self.tasks[
-                        self.current_graph_schema_idx
-                    ],
+                    request=self.tasks[self.current_graph_schema_idx],
                     graph_schema=self.graph_schema_sequence[0],
                 )
                 self.curr_node = self.graph
                 new_node_schema, new_edge_schema = (
                     self.graph.compute_init_node_edge_schema()
                 )
-                self.curr_node.init_next_node(new_node_schema, new_edge_schema, TC, remove_prev_tool_calls, None) # TODO: remove True after refactor
+                self.curr_node.init_next_node(
+                    new_node_schema, new_edge_schema, TC, remove_prev_tool_calls, None
+                )  # TODO: remove True after refactor
 
 
 class RequestGraphSchema(HasGraphSchemaMixin, metaclass=AutoMixinInit):

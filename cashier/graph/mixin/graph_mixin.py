@@ -247,8 +247,6 @@ class HasGraphMixin:
 
             self.edge_schema_id_to_from_node[edge_schema.id] = new_node
 
-
-
     def init_node_core(
         self,
         node_schema: NodeSchema,
@@ -327,7 +325,15 @@ class HasGraphMixin:
         last_msg = TC.get_user_message(content_only=True)
 
         self.init_node_core(
-            node_schema, edge_schema, input, last_msg, prev_node, direction,TC,remove_prev_tool_calls, False
+            node_schema,
+            edge_schema,
+            input,
+            last_msg,
+            prev_node,
+            direction,
+            TC,
+            remove_prev_tool_calls,
+            False,
         )
 
     def init_skip_node(
@@ -351,5 +357,13 @@ class HasGraphMixin:
         last_msg = TC.get_asst_message(content_only=True)
 
         self.init_node_core(
-            node_schema, edge_schema, input, last_msg, prev_node, direction, TC, remove_prev_tool_calls,True
+            node_schema,
+            edge_schema,
+            input,
+            last_msg,
+            prev_node,
+            direction,
+            TC,
+            remove_prev_tool_calls,
+            True,
         )

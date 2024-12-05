@@ -9,7 +9,7 @@ from cashier.graph.mixin.auto_mixin_init import AutoMixinInit
 from cashier.graph.mixin.graph_mixin import HasGraphMixin, HasGraphSchemaMixin
 from cashier.graph.mixin.has_id_mixin import HasIdMixin
 from cashier.graph.node_schema import NodeSchema
-from cashier.model.model_util import FunctionCall, ModelProvider
+from cashier.model.model_util import FunctionCall
 from cashier.prompts.node_schema_selection import NodeSchemaSelectionPrompt
 from cashier.prompts.off_topic import OffTopicPrompt
 from cashier.turn_container import TurnContainer
@@ -30,6 +30,7 @@ def should_change_node_schema(
         all_node_schemas=all_node_schemas,
         is_wait=is_wait,
     )
+
 
 class GraphSchema(HasIdMixin, HasGraphSchemaMixin, metaclass=AutoMixinInit):
     def __init__(
@@ -91,7 +92,6 @@ class Graph(HasGraphMixin):
 
         return node_schema, edge_schema
 
-
     def handle_skip(
         self,
         fwd_skip_edge_schemas: Set[EdgeSchema],
@@ -111,18 +111,14 @@ class Graph(HasGraphMixin):
                 if edge_schema.to_node_schema.id == node_schema_id:
                     return (
                         edge_schema,
-                        self.graph_schema.node_schema_id_to_node_schema[
-                            node_schema_id
-                        ],
+                        self.graph_schema.node_schema_id_to_node_schema[node_schema_id],
                     )
 
             for edge_schema in bwd_skip_edge_schemas:
                 if edge_schema.from_node_schema.id == node_schema_id:
                     return (
                         edge_schema,
-                        self.graph_schema.node_schema_id_to_node_schema[
-                            node_schema_id
-                        ],
+                        self.graph_schema.node_schema_id_to_node_schema[node_schema_id],
                     )
 
         return None, None
@@ -131,7 +127,7 @@ class Graph(HasGraphMixin):
         self,
         fwd_skip_edge_schemas: Set[EdgeSchema],
         bwd_skip_edge_schemas: Set[EdgeSchema],
-        TC
+        TC,
     ) -> Union[Tuple[EdgeSchema, NodeSchema], Tuple[None, None]]:
         remaining_edge_schemas = (
             set(self.graph_schema.edge_schemas)
@@ -151,9 +147,7 @@ class Graph(HasGraphMixin):
                 if edge_schema.to_node_schema.id == node_schema_id:
                     return (
                         edge_schema,
-                        self.graph_schema.node_schema_id_to_node_schema[
-                            node_schema_id
-                        ],
+                        self.graph_schema.node_schema_id_to_node_schema[node_schema_id],
                     )
 
         return None, None
@@ -178,7 +172,9 @@ class Graph(HasGraphMixin):
         )
         return edge_schema, node_schema, False  # type: ignore
 
-    def handle_user_turn(self, msg, TC, model_provider, remove_prev_tool_calls,run_off_topic_check=True):
+    def handle_user_turn(
+        self, msg, TC, model_provider, remove_prev_tool_calls, run_off_topic_check=True
+    ):
         if not run_off_topic_check or not OffTopicPrompt.run(
             "claude-3.5",
             current_node_schema=self.curr_node.schema,
@@ -207,7 +203,7 @@ class Graph(HasGraphMixin):
                         node_schema,
                         edge_schema,
                         TC,
-                        remove_prev_tool_calls, #TODO: remove this after refactor
+                        remove_prev_tool_calls,  # TODO: remove this after refactor
                     )
 
                     fake_fn_call = FunctionCall.create(

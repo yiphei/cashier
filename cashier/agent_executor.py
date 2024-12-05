@@ -14,7 +14,6 @@ from cashier.model.model_completion import ModelOutput
 from cashier.model.model_turn import AssistantTurn
 from cashier.model.model_util import CustomJSONEncoder, FunctionCall, ModelProvider
 from cashier.prompts.node_schema_selection import NodeSchemaSelectionPrompt
-from cashier.prompts.off_topic import OffTopicPrompt
 from cashier.tool.function_call_context import (
     FunctionCallContext,
     InexistentFunctionError,
@@ -69,7 +68,7 @@ class AgentExecutor:
             None,
             Direction.FWD,
             self.TC,
-            self.remove_prev_tool_calls
+            self.remove_prev_tool_calls,
         )
         self.force_tool_choice = None
         self.new_edge_schema = None
@@ -264,10 +263,12 @@ class AgentExecutor:
     ) -> None:
         MessageDisplay.print_msg("user", msg)
         self.TC.add_user_turn(msg)
-        model_provider = (model_provider
-                        or self.last_model_provider
-                        or ModelProvider.OPENAI)
-        self.request_graph.handle_user_turn(msg, self.TC, model_provider, self.remove_prev_tool_calls)
+        model_provider = (
+            model_provider or self.last_model_provider or ModelProvider.OPENAI
+        )
+        self.request_graph.handle_user_turn(
+            msg, self.TC, model_provider, self.remove_prev_tool_calls
+        )
         if isinstance(self.request_graph.curr_node, Graph):
             self.graph = self.request_graph.curr_node
 
