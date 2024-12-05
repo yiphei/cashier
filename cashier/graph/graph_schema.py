@@ -8,12 +8,11 @@ from cashier.graph.edge_schema import EdgeSchema
 from cashier.graph.mixin.auto_mixin_init import AutoMixinInit
 from cashier.graph.mixin.graph_mixin import HasGraphMixin, HasGraphSchemaMixin
 from cashier.graph.mixin.has_id_mixin import HasIdMixin
-from cashier.graph.mixin.state_mixin import HasStateMixin, HasStateSchemaMixin
 from cashier.graph.node_schema import NodeSchema
 
 
 class GraphSchema(
-    HasIdMixin, HasGraphSchemaMixin, HasStateSchemaMixin, metaclass=AutoMixinInit
+    HasIdMixin, HasGraphSchemaMixin, metaclass=AutoMixinInit
 ):
     def __init__(
         self,
@@ -25,19 +24,20 @@ class GraphSchema(
         node_schemas: List[NodeSchema],
         state_pydantic_model: Type[BaseModel],
     ):
+        self.state_pydantic_model = state_pydantic_model
         self.output_schema = output_schema
         self.start_node_schema = start_node_schema
         self.last_node_schema = last_node_schema
 
 
-class Graph(HasGraphMixin, HasStateMixin):
+class Graph(HasGraphMixin):
     def __init__(
         self,
         input: Any,
         graph_schema: HasGraphSchemaMixin,
     ):
         HasGraphMixin.__init__(self, graph_schema)
-        HasStateMixin.__init__(self, graph_schema.state_pydantic_model(**(input or {})))
+        self.state = graph_schema.state_pydantic_model(**(input or {}))
 
     def compute_init_node_edge_schema(
         self,
