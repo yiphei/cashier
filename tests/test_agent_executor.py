@@ -435,7 +435,20 @@ class TestAgent:
             agent_executor, "i want to order coffee", model_provider
         )
         return [
-            SystemTurn(msg_content=REQUEST_GRAPH_SCHEMA.node_prompt),
+            TurnArgs(
+                turn=NodeSystemTurn(
+                    msg_content=REQUEST_GRAPH_SCHEMA.start_node_schema.node_system_prompt(
+                        node_prompt=REQUEST_GRAPH_SCHEMA.start_node_schema.node_prompt,
+                        input=None,
+                        node_input_json_schema=None,
+                        state_json_schema=None,
+                        last_msg=None,
+                        curr_request=None,
+                    ),
+                    node_id=1,
+                ),
+                kwargs={"remove_prev_tool_calls": remove_prev_tool_calls},
+            ),
             ut,
             TurnArgs(
                 turn=NodeSystemTurn(
@@ -447,7 +460,7 @@ class TestAgent:
                         last_msg="i want to order coffee",
                         curr_request="customer wants to order coffee",
                     ),
-                    node_id=1,
+                    node_id=2,
                 ),
                 kwargs={"remove_prev_tool_calls": remove_prev_tool_calls},
             ),
@@ -862,7 +875,7 @@ class TestAgent:
                     last_msg="i want pecan latte",
                     curr_request="customer wants to order coffee",
                 ),
-                node_id=2,
+                node_id=3,
             ),
             kwargs={"remove_prev_tool_calls": remove_prev_tool_calls},
         )
@@ -950,7 +963,7 @@ class TestAgent:
                     last_msg="i want pecan latte",
                     curr_request="customer wants to order coffee",
                 ),
-                node_id=2,
+                node_id=3,
             ),
             kwargs={"remove_prev_tool_calls": remove_prev_tool_calls},
         )
@@ -986,7 +999,7 @@ class TestAgent:
                     last_msg="can you confirm the order?",
                     curr_request="customer wants to order coffee",
                 ),
-                node_id=3,
+                node_id=4,
             ),
             kwargs={"remove_prev_tool_calls": remove_prev_tool_calls, "is_skip": True},
         )
@@ -1094,7 +1107,7 @@ class TestAgent:
                     last_msg="i want pecan latte",
                     curr_request="customer wants to order coffee",
                 ),
-                node_id=2,
+                node_id=3,
             ),
             kwargs={"remove_prev_tool_calls": remove_prev_tool_calls},
         )
@@ -1150,7 +1163,7 @@ class TestAgent:
                     last_msg="i confirm",
                     curr_request="customer wants to order coffee",
                 ),
-                node_id=3,
+                node_id=4,
             ),
             kwargs={"remove_prev_tool_calls": remove_prev_tool_calls},
         )
@@ -1185,7 +1198,7 @@ class TestAgent:
                     last_msg="thanks for confirming",
                     curr_request="customer wants to order coffee",
                 ),
-                node_id=4,
+                node_id=5,
             ),
             kwargs={"remove_prev_tool_calls": remove_prev_tool_calls, "is_skip": True},
         )
@@ -1231,7 +1244,7 @@ class TestAgent:
                     last_msg="what do you want to change?",
                     curr_request="customer wants to order coffee",
                 ),
-                node_id=5,
+                node_id=6,
             ),
             kwargs={"remove_prev_tool_calls": remove_prev_tool_calls, "is_skip": True},
         )

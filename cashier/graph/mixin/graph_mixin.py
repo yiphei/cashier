@@ -2,7 +2,7 @@ from collections import defaultdict, deque
 from typing import Any, List, Literal, Optional, Set, Tuple, overload
 
 from cashier.graph.edge_schema import Edge, EdgeSchema, FwdSkipType
-from cashier.graph.mixin.has_chat_mixin import Direction, HasChatMixin
+from cashier.graph.node_schema import Direction, Node
 
 
 class HasGraphSchemaMixin:
@@ -10,7 +10,7 @@ class HasGraphSchemaMixin:
         self,
         description: str,
         edge_schemas: List[EdgeSchema],
-        node_schemas: List[HasChatMixin],
+        node_schemas: List[Node],
     ):
         self.description = description
         self.edge_schemas = edge_schemas
@@ -41,8 +41,8 @@ class HasGraphMixin:
 
     def add_fwd_edge(
         self,
-        from_node: HasChatMixin,
-        to_node: HasChatMixin,
+        from_node: Node,
+        to_node: Node,
         edge_schema_id: int,
     ) -> None:
         self.edge_schema_id_to_edges[edge_schema_id].append(Edge(from_node, to_node))
@@ -85,7 +85,7 @@ class HasGraphMixin:
 
     def get_prev_node(
         self, edge_schema: Optional[EdgeSchema], direction: Direction
-    ) -> Optional[HasChatMixin]:
+    ) -> Optional[Node]:
         if (
             edge_schema
             and self.get_edge_by_edge_schema_id(edge_schema.id, raise_if_none=False)
@@ -98,7 +98,7 @@ class HasGraphMixin:
 
     def compute_bwd_skip_edge_schemas(
         self,
-        start_node: HasChatMixin,
+        start_node: Node,
         curr_bwd_skip_edge_schemas: Set[EdgeSchema],
     ) -> Set[EdgeSchema]:
         from_node = start_node
@@ -116,7 +116,7 @@ class HasGraphMixin:
         return new_edge_schemas | curr_bwd_skip_edge_schemas
 
     def compute_fwd_skip_edge_schemas(
-        self, start_node: HasChatMixin, start_edge_schemas: Set[EdgeSchema]
+        self, start_node: Node, start_edge_schemas: Set[EdgeSchema]
     ) -> Set[EdgeSchema]:
         fwd_jump_edge_schemas = set()
         edge_schemas = deque(start_edge_schemas)
@@ -152,13 +152,13 @@ class HasGraphMixin:
     ) -> bool:
         idx = -1 if is_start_node else -2
         edge = self.get_edge_by_edge_schema_id(edge_schema.id, idx, raise_if_none=False)
-        return edge[0].status == HasChatMixin.Status.COMPLETED if edge else False
+        return edge[0].status == Node.Status.COMPLETED if edge else False
 
     def compute_next_edge_schema(
         self,
         start_edge_schema: EdgeSchema,
         start_input: Any,
-        curr_node: HasChatMixin,
+        curr_node: Node,
     ) -> Tuple[EdgeSchema, Any]:
         next_edge_schema = start_edge_schema
         edge_schema = start_edge_schema
@@ -193,7 +193,7 @@ class HasGraphMixin:
                     input = to_node.input
                     break
             elif skip_type == FwdSkipType.SKIP_IF_INPUT_UNCHANGED:
-                if from_node.status != HasChatMixin.Status.COMPLETED:
+                if from_node.status != Node.Status.COMPLETED:
                     input = from_node.input
                 else:
                     edge_schema = next_edge_schema
@@ -211,8 +211,8 @@ class HasGraphMixin:
 
     def add_edge(
         self,
-        curr_node: HasChatMixin,
-        new_node: HasChatMixin,
+        curr_node: Node,
+        new_node: Node,
         edge_schema: EdgeSchema,
         direction: Direction = Direction.FWD,
     ) -> None:

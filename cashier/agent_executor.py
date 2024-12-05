@@ -6,9 +6,8 @@ from colorama import Style
 from cashier.audio import get_speech_from_text
 from cashier.graph.edge_schema import EdgeSchema
 from cashier.graph.graph_schema import Graph, GraphSchema
-from cashier.graph.mixin.has_chat_mixin import Direction
-from cashier.graph.node_schema import Node, NodeSchema
-from cashier.graph.request_graph import GraphEdgeSchema
+from cashier.graph.node_schema import Direction, Node, NodeSchema
+from cashier.graph.request_graph import GraphEdgeSchema, RequestGraph
 from cashier.gui import MessageDisplay
 from cashier.logger import logger
 from cashier.model.model_completion import ModelOutput
@@ -49,12 +48,7 @@ class AgentExecutor:
         request_graph_schema=None,
     ):
         self.request_graph_schema = request_graph_schema
-        self.request_graph = request_graph_schema.create_node(
-            input=None,
-            last_msg=None,
-            edge_schema=None,
-            prev_node=None,
-        )
+        self.request_graph = RequestGraph(None, self.request_graph_schema)
         self.curr_graph_schema = None
 
         self.remove_prev_tool_calls = remove_prev_tool_calls
@@ -68,7 +62,14 @@ class AgentExecutor:
         self.bwd_skip_edge_schemas: Set[EdgeSchema] = set()
 
         self.graph = None
-        self.TC.add_system_turn(request_graph_schema.node_prompt)
+        self.init_node_core(
+            self.request_graph_schema.start_node_schema,
+            None,
+            None,
+            None,
+            None,
+            Direction.FWD,
+        )
         self.force_tool_choice = None
         self.new_edge_schema = None
         self.new_node_schema = None
@@ -87,7 +88,7 @@ class AgentExecutor:
             f"[NODE_SCHEMA] Initializing node with {Style.BRIGHT}node_schema_id: {node_schema.id}{Style.NORMAL}"
         )
         new_node = node_schema.create_node(
-            input, last_msg, edge_schema, prev_node, direction, self.request_graph.tasks[self.request_graph.current_graph_schema_idx]  # type: ignore
+            input, last_msg, edge_schema, prev_node, direction, self.request_graph.tasks[self.request_graph.current_graph_schema_idx] if self.request_graph.tasks else None  # type: ignore
         )
 
         self.TC.add_node_turn(
@@ -106,14 +107,15 @@ class AgentExecutor:
             self.graph.add_edge(self.curr_node, new_node, edge_schema, direction)
 
         self.curr_node = new_node
-        self.next_edge_schemas = set(
-            self.graph.graph_schema.from_node_schema_id_to_edge_schema.get(
-                new_node.schema.id, []
+        if self.graph:  # TODO: remove this after refactor
+            self.next_edge_schemas = set(
+                self.graph.graph_schema.from_node_schema_id_to_edge_schema.get(
+                    new_node.schema.id, []
+                )
             )
-        )
-        self.bwd_skip_edge_schemas = self.graph.compute_bwd_skip_edge_schemas(
-            self.curr_node, self.bwd_skip_edge_schemas
-        )
+            self.bwd_skip_edge_schemas = self.graph.compute_bwd_skip_edge_schemas(
+                self.curr_node, self.bwd_skip_edge_schemas
+            )
 
     def init_next_node(
         self,
