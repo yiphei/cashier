@@ -56,7 +56,6 @@ class AgentExecutor:
         self.last_model_provider = None
         self.TC = TurnContainer()
 
-        self.curr_node = None  # type: Node # type: ignore
         self.need_user_input = True
         self.next_edge_schemas: Set[EdgeSchema] = set()
         self.bwd_skip_edge_schemas: Set[EdgeSchema] = set()
@@ -104,9 +103,12 @@ class AgentExecutor:
             MessageDisplay.print_msg("assistant", node_schema.first_turn.msg_content)
 
         if edge_schema:
-            self.graph.add_edge(self.curr_node, new_node, edge_schema, direction)
+            self.graph.add_edge(self.graph.curr_node, new_node, edge_schema, direction)
 
-        self.curr_node = new_node
+        if self.graph:
+            self.graph.curr_node = new_node
+        else:
+            self.request_graph.curr_node = new_node
         if self.graph:  # TODO: remove this after refactor
             self.next_edge_schemas = set(
                 self.graph.graph_schema.from_node_schema_id_to_edge_schema.get(
@@ -114,7 +116,7 @@ class AgentExecutor:
                 )
             )
             self.bwd_skip_edge_schemas = self.graph.compute_bwd_skip_edge_schemas(
-                self.curr_node, self.bwd_skip_edge_schemas
+                self.graph.curr_node, self.bwd_skip_edge_schemas
             )
 
     def init_next_node(
@@ -123,12 +125,12 @@ class AgentExecutor:
         edge_schema: Optional[EdgeSchema],
         input: Any = None,
     ) -> None:
-        if self.curr_node:
-            self.curr_node.mark_as_completed()
-            if self.curr_node.state is not None:
+        if self.graph.curr_node:
+            self.graph.curr_node.mark_as_completed()
+            if self.graph.curr_node.state is not None:
                 old_state = self.graph.state.model_dump()
-                new_state = old_state | self.curr_node.state.model_dump(
-                    exclude=self.curr_node.state.resettable_fields
+                new_state = old_state | self.graph.curr_node.state.model_dump(
+                    exclude=self.graph.curr_node.state.resettable_fields
                 )
                 self.graph.state = self.graph.state.__class__(**new_state)
 
@@ -137,7 +139,7 @@ class AgentExecutor:
 
         if edge_schema:
             edge_schema, input = self.graph.compute_next_edge_schema(
-                edge_schema, input, self.curr_node
+                edge_schema, input, self.graph.curr_node
             )
             node_schema = edge_schema.to_node_schema
 
@@ -177,12 +179,12 @@ class AgentExecutor:
         fwd_skip_edge_schemas: Set[EdgeSchema],
         bwd_skip_edge_schemas: Set[EdgeSchema],
     ) -> Union[Tuple[EdgeSchema, NodeSchema], Tuple[None, None]]:
-        all_node_schemas = {self.curr_node.schema}
+        all_node_schemas = {self.graph.curr_node.schema}
         all_node_schemas.update(edge.to_node_schema for edge in fwd_skip_edge_schemas)
         all_node_schemas.update(edge.from_node_schema for edge in bwd_skip_edge_schemas)
 
         node_schema_id = should_change_node_schema(
-            self.TC, self.curr_node.schema, all_node_schemas, False
+            self.TC, self.graph.curr_node.schema, all_node_schemas, False
         )
 
         if node_schema_id is not None:
@@ -217,11 +219,11 @@ class AgentExecutor:
             - bwd_skip_edge_schemas
         )
 
-        all_node_schemas = {self.curr_node.schema}
+        all_node_schemas = {self.graph.curr_node.schema}
         all_node_schemas.update(edge.to_node_schema for edge in remaining_edge_schemas)
 
         node_schema_id = should_change_node_schema(
-            self.TC, self.curr_node.schema, all_node_schemas, True
+            self.TC, self.graph.curr_node.schema, all_node_schemas, True
         )
 
         if node_schema_id is not None:
@@ -240,7 +242,7 @@ class AgentExecutor:
         self,
     ) -> Union[Tuple[EdgeSchema, NodeSchema, bool], Tuple[None, None, bool]]:
         fwd_skip_edge_schemas = self.graph.compute_fwd_skip_edge_schemas(
-            self.curr_node, self.next_edge_schemas
+            self.graph.curr_node, self.next_edge_schemas
         )
         bwd_skip_edge_schemas = self.bwd_skip_edge_schemas
 
@@ -262,7 +264,7 @@ class AgentExecutor:
         self.TC.add_user_turn(msg)
         if self.graph is not None:
             if not OffTopicPrompt.run(
-                "claude-3.5", current_node_schema=self.curr_node.schema, tc=self.TC
+                "claude-3.5", current_node_schema=self.graph.curr_node.schema, tc=self.TC
             ):
                 has_new_task = (
                     self.request_graph.add_tasks(msg, self.TC)
@@ -283,7 +285,7 @@ class AgentExecutor:
                         model_provider
                         or self.last_model_provider
                         or ModelProvider.OPENAI,
-                        self.curr_node.schema.tool_registry,
+                        self.graph.curr_node.schema.tool_registry,
                         [fake_fn_call],
                         {fake_fn_call.id: None},
                     )
@@ -304,7 +306,7 @@ class AgentExecutor:
                                 model_provider
                                 or self.last_model_provider
                                 or ModelProvider.OPENAI,
-                                self.curr_node.schema.tool_registry,
+                                self.graph.curr_node.schema.tool_registry,
                                 [fake_fn_call],
                                 {fake_fn_call.id: None},
                             )
@@ -325,11 +327,11 @@ class AgentExecutor:
                                 model_provider
                                 or self.last_model_provider
                                 or ModelProvider.OPENAI,
-                                self.curr_node.schema.tool_registry,
+                                self.graph.curr_node.schema.tool_registry,
                                 [fake_fn_call],
-                                {fake_fn_call.id: self.curr_node.get_state()},
+                                {fake_fn_call.id: self.graph.curr_node.get_state()},
                             )
-            self.curr_node.update_first_user_message()
+            self.graph.curr_node.update_first_user_message()
         else:
             self.request_graph.get_graph_schemas(msg)
             if len(self.request_graph.graph_schema_sequence) > 0:
@@ -354,13 +356,13 @@ class AgentExecutor:
             f"[FUNCTION_CALL] {Style.BRIGHT}name: {fn_call.name}, id: {fn_call.id}{Style.NORMAL} with args:\n{json.dumps(function_args, indent=4)}"
         )
         with FunctionCallContext() as fn_call_context:
-            if fn_call.name not in self.curr_node.schema.tool_registry.tool_names:
+            if fn_call.name not in self.graph.curr_node.schema.tool_registry.tool_names:
                 raise InexistentFunctionError(fn_call.name)
 
             if fn_call.name.startswith("get_state"):
-                fn_output = getattr(self.curr_node, fn_call.name)(**function_args)
+                fn_output = getattr(self.graph.curr_node, fn_call.name)(**function_args)
             elif fn_call.name.startswith("update_state"):
-                fn_output = self.curr_node.update_state(**function_args)  # type: ignore
+                fn_output = self.graph.curr_node.update_state(**function_args)  # type: ignore
             elif fn_callback is not None:
                 # TODO: this exists for benchmarking. remove this once done
                 fn_output = fn_callback(**function_args)
@@ -370,7 +372,7 @@ class AgentExecutor:
                 ):
                     fn_output = json.loads(fn_output)
             else:
-                fn = self.curr_node.schema.tool_registry.fn_name_to_fn[fn_call.name]
+                fn = self.graph.curr_node.schema.tool_registry.fn_name_to_fn[fn_call.name]
                 fn_output = fn(**function_args)
 
         if fn_call_context.has_exception():
@@ -391,9 +393,9 @@ class AgentExecutor:
     ) -> None:
         if (
             self.new_edge_schema is not None
-            and self.curr_node.schema.run_assistant_turn_before_transition
+            and self.graph.curr_node.schema.run_assistant_turn_before_transition
         ):
-            self.curr_node.has_run_assistant_turn_before_transition = True
+            self.graph.curr_node.has_run_assistant_turn_before_transition = True
 
         self.last_model_provider = model_completion.model_provider
         message = model_completion.get_or_stream_message()
@@ -422,13 +424,13 @@ class AgentExecutor:
                         self.request_graph_schema.from_node_schema_id_to_edge_schema[
                             self.curr_graph_schema.id
                         ]
-                        if self.curr_node.schema
+                        if self.graph.curr_node.schema
                         == self.curr_graph_schema.last_node_schema
                         else self.next_edge_schemas
                     )
                     for edge_schema in edge_schemas:
                         if edge_schema.check_transition_config(
-                            self.curr_node.state, function_call, is_success
+                            self.graph.curr_node.state, function_call, is_success
                         ):
                             if isinstance(edge_schema, GraphEdgeSchema):
                                 fake_fn_call = FunctionCall.create(
@@ -451,13 +453,13 @@ class AgentExecutor:
             self.TC.add_assistant_turn(
                 model_completion.msg_content,
                 model_completion.model_provider,
-                self.curr_node.schema.tool_registry,
+                self.graph.curr_node.schema.tool_registry,
                 fn_calls,
                 fn_id_to_output,
             )
             if self.new_edge_schema and (
-                not self.curr_node.schema.run_assistant_turn_before_transition
-                or self.curr_node.has_run_assistant_turn_before_transition
+                not self.graph.curr_node.schema.run_assistant_turn_before_transition
+                or self.graph.curr_node.has_run_assistant_turn_before_transition
             ):
                 input = None
                 if isinstance(self.new_node_schema, GraphSchema):
@@ -495,12 +497,12 @@ class AgentExecutor:
         return {
             "turn_container": self.TC,
             "tool_registry": (
-                self.curr_node.schema.tool_registry if self.graph is not None else None
+                self.graph.curr_node.schema.tool_registry if self.graph is not None else None
             ),
             "force_tool_choice": force_tool_choice,
             "exclude_update_state_fns": (
-                not self.curr_node.first_user_message
-                if self.curr_node is not None
+                not self.graph.curr_node.first_user_message
+                if self.graph.curr_node is not None
                 else False
             ),
         }

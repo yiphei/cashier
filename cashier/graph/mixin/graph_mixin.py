@@ -38,6 +38,7 @@ class HasGraphMixin:
         self.edge_schema_id_to_edges = defaultdict(list)
         self.from_node_schema_id_to_last_edge_schema_id = defaultdict(lambda: None)
         self.edge_schema_id_to_from_node = {}
+        self.curr_node = None
 
     def add_fwd_edge(
         self,
