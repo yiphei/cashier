@@ -9,17 +9,17 @@ from pydantic import BaseModel
 from cashier.graph.edge_schema import EdgeSchema
 from cashier.graph.mixin.auto_mixin_init import AutoMixinInit
 from cashier.graph.mixin.base_edge_schema import BwdStateInit, FwdStateInit
-from cashier.graph.mixin.has_chat_mixin import (
-    Direction,
-    HasChatMixin,
-    HasChatSchemaMixin,
-)
 from cashier.graph.mixin.has_id_mixin import HasIdMixin
 from cashier.graph.mixin.state_mixin import BaseStateModel
 from cashier.model.model_turn import ModelTurn
 from cashier.prompts.node_system import NodeSystemPrompt
 from cashier.tool.function_call_context import StateUpdateError
 from cashier.tool.tool_registry import ToolRegistry
+
+
+class Direction(StrEnum):
+    FWD = "FWD"
+    BWD = "BWD"
 
 
 class Node(HasIdMixin, metaclass=AutoMixinInit):
@@ -29,7 +29,7 @@ class Node(HasIdMixin, metaclass=AutoMixinInit):
 
     def __init__(
         self,
-        schema: HasChatSchemaMixin,
+        schema: NodeSchema,
         input: Any,
         state: BaseStateModel,
         prompt: str,
@@ -50,7 +50,7 @@ class Node(HasIdMixin, metaclass=AutoMixinInit):
     def init_state(
         cls,
         state_pydantic_model: Optional[Type[BaseStateModel]],
-        prev_node: Optional[HasChatMixin],
+        prev_node: Optional[Node],
         edge_schema: Optional[EdgeSchema],
         direction: Direction,
         input: Any,
@@ -157,7 +157,7 @@ class NodeSchema(HasIdMixin, metaclass=AutoMixinInit):
         prev_node: Literal[None] = None,
         direction: Literal[Direction.FWD] = Direction.FWD,
         curr_request: Optional[str] = None,
-    ) -> HasChatMixin: ...
+    ) -> Node: ...
 
     @overload
     def create_node(  # noqa: E704
@@ -168,7 +168,7 @@ class NodeSchema(HasIdMixin, metaclass=AutoMixinInit):
         prev_node: Literal[None] = None,
         direction: Literal[Direction.FWD] = Direction.FWD,
         curr_request: Optional[str] = None,
-    ) -> HasChatMixin: ...
+    ) -> Node: ...
 
     @overload
     def create_node(  # noqa: E704
@@ -176,21 +176,21 @@ class NodeSchema(HasIdMixin, metaclass=AutoMixinInit):
         input: Any,
         last_msg: str,
         edge_schema: EdgeSchema,
-        prev_node: HasChatMixin,
+        prev_node: Node,
         direction: Direction = Direction.FWD,
         curr_request: Optional[str] = None,
-    ) -> HasChatMixin: ...
+    ) -> Node: ...
 
     def create_node(
         self,
         input: Any,
         last_msg: Optional[str] = None,
         edge_schema: Optional[EdgeSchema] = None,
-        prev_node: Optional[HasChatMixin] = None,
+        prev_node: Optional[Node] = None,
         direction: Direction = Direction.FWD,
         curr_request: Optional[str] = None,
-    ) -> HasChatMixin:
-        state = HasChatMixin.init_state(
+    ) -> Node:
+        state = Node.init_state(
             self.state_pydantic_model, prev_node, edge_schema, direction, input
         )
 
