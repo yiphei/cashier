@@ -173,7 +173,7 @@ class ToolRegistry:
         self,
         tool_names: Optional[List[str]] = None,
         model_provider: ModelProvider = ModelProvider.OPENAI,
-        exclude_update_state_fns: bool=False
+        exclude_update_state_fns: bool = False,
     ) -> Union[List[ChatCompletionToolParam], List[Dict]]:
         if tool_names:
             return [  # type: ignore
@@ -181,11 +181,12 @@ class ToolRegistry:
                 for tool_name in tool_names
             ]
         elif exclude_update_state_fns:
-                        return [  # type: ignore
+            return [  # type: ignore
                 tool_def
-                for tool_name, tool_def in self.model_provider_to_tool_def[model_provider].items()
+                for tool_name, tool_def in self.model_provider_to_tool_def[
+                    model_provider
+                ].items()
                 if not tool_name.startswith("update_state_")
-
             ]
         else:
             return list(self.model_provider_to_tool_def[model_provider].values())  # type: ignore

@@ -91,7 +91,7 @@ class Model:
         stream: bool = False,
         logprobs: bool = False,
         response_format: Optional[Type[BaseModel]] = None,
-        exclude_update_state_fns: bool=False,
+        exclude_update_state_fns: bool = False,
         **kwargs: Any,
     ) -> ModelOutput: ...
 
@@ -109,7 +109,7 @@ class Model:
         stream: bool = False,
         logprobs: bool = False,
         response_format: Optional[Type[BaseModel]] = None,
-        exclude_update_state_fns: bool=False,
+        exclude_update_state_fns: bool = False,
         **kwargs: Any,
     ) -> ModelOutput: ...
 
@@ -127,7 +127,7 @@ class Model:
         stream: bool = False,
         logprobs: bool = False,
         response_format: Optional[Type[BaseModel]] = None,
-        exclude_update_state_fns: bool=False,
+        exclude_update_state_fns: bool = False,
         **kwargs: Any,
     ) -> ModelOutput: ...
 
@@ -144,7 +144,7 @@ class Model:
         stream: bool = False,
         logprobs: bool = False,
         response_format: Optional[Type[BaseModel]] = None,
-        exclude_update_state_fns: bool=False,
+        exclude_update_state_fns: bool = False,
         **kwargs: Any,
     ) -> ModelOutput:
         if model_name in cls.alias_to_model_name:
@@ -153,7 +153,10 @@ class Model:
 
         tools = None
         if tool_registry is not None:
-            tools = tool_registry.get_tool_defs(model_provider=model_provider, exclude_update_state_fns=exclude_update_state_fns)
+            tools = tool_registry.get_tool_defs(
+                model_provider=model_provider,
+                exclude_update_state_fns=exclude_update_state_fns,
+            )
 
         messages: Union[MessageList, List]
         message_manager = None
