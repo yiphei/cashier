@@ -13,7 +13,7 @@ from cashier.graph.mixin.has_chat_mixin import (
     HasChatSchemaMixin,
 )
 from cashier.graph.mixin.has_id_mixin import HasIdMixin
-from cashier.graph.state import BaseStateModel
+from cashier.graph.mixin.state_mixin import BaseStateModel
 from cashier.logger import logger
 from cashier.model.model_util import CustomJSONEncoder
 from cashier.prompts.graph_schema_addition import GraphSchemaAdditionPrompt
