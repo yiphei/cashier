@@ -232,7 +232,7 @@ class Graph(HasGraphMixin):
                     )
         self.curr_node.update_first_user_message()
 
-    def check_transition(self, fn_call, is_fn_call_success):
+    def check_self_transition(self, fn_call, is_fn_call_success):
         new_edge_schema = None
         new_node_schema = None
         if self.curr_node.schema == self.schema.last_node_schema:
