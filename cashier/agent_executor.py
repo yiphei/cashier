@@ -23,7 +23,7 @@ class AgentExecutor:
         self,
         audio_output: bool,
         remove_prev_tool_calls: bool,
-        request_graph_schema=None,
+        graph_schema=None,
     ):
 
         self.remove_prev_tool_calls = remove_prev_tool_calls
@@ -33,9 +33,9 @@ class AgentExecutor:
 
         self.need_user_input = True
 
-        self.graph = RequestGraph(None, request_graph_schema)
+        self.graph = RequestGraph(None, graph_schema)
         self.graph.init_node_core(
-            request_graph_schema.start_node_schema,
+            graph_schema.start_node_schema,
             None,
             None,
             None,

@@ -407,7 +407,7 @@ class TestAgent:
     @pytest.fixture
     def agent_executor(self, remove_prev_tool_calls):
         return AgentExecutor(
-            request_graph_schema=REQUEST_GRAPH_SCHEMA,
+            graph_schema=REQUEST_GRAPH_SCHEMA,
             audio_output=False,
             remove_prev_tool_calls=remove_prev_tool_calls,
         )
