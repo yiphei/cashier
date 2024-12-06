@@ -181,28 +181,12 @@ class AgentExecutor:
                 not self.graph.curr_node.schema.run_assistant_turn_before_transition
                 or self.graph.curr_node.has_run_assistant_turn_before_transition
             ):
-                input = None
-                if isinstance(self.new_node_schema, GraphSchema):
-                    new_input = self.new_edge_schema.new_input_fn(self.graph.state)
-                    self.request_graph.current_graph_schema_idx += 1
-                    self.curr_graph_schema = self.request_graph.graph_schema_sequence[
-                        self.request_graph.current_graph_schema_idx
-                    ]
-                    self.graph = Graph(
-                        input=new_input, graph_schema=self.curr_graph_schema
-                    )
-                    self.new_node_schema, temp_edge_schema = (
-                        self.graph.compute_init_node_edge_schema()
-                    )
-                    self.new_edge_schema = None
-                    input = temp_edge_schema.new_input_fn(self.graph.state)
-
-                self.request_graph.curr_node.init_next_node(
+                self.request_graph.init_next_node(
                     self.new_node_schema,
                     self.new_edge_schema,
                     self.TC,
                     self.remove_prev_tool_calls,
-                    input,
+                    None,
                 )
                 self.new_edge_schema = None
                 self.new_node_schema = None
