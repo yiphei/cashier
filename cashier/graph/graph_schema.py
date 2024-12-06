@@ -259,14 +259,7 @@ class Graph(HasGraphMixin):
                     None,
                 )
 
-        for edge_schema in self.next_edge_schemas:
-            if edge_schema.check_transition_config(
-                self.curr_node.state, fn_call, is_fn_call_success
-            ):
-                new_edge_schema = edge_schema
-                new_node_schema = edge_schema.to_node_schema
-                break
-
+        new_edge_schema, new_node_schema = self.check_single_transition(self.curr_node.state, fn_call, is_fn_call_success, self.next_edge_schemas)
         return new_edge_schema, new_node_schema, False, None, None
 
     def init_node_core(
