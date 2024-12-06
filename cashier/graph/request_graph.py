@@ -165,7 +165,6 @@ class RequestGraph(HasGraphMixin):
         self,
         node_schema: ConversationNodeSchema,
         edge_schema: Optional[EdgeSchema],
-        parent_node,
         input: Any,
         last_msg: Optional[str],
         prev_node: Optional[ConversationNode],
@@ -174,22 +173,22 @@ class RequestGraph(HasGraphMixin):
         remove_prev_tool_calls,
         is_skip: bool = False,
     ) -> None:
-        parent_node.current_graph_schema_idx += 1
+        self.current_graph_schema_idx += 1
 
         graph = Graph(
             input=input,
-            request=parent_node.tasks[parent_node.current_graph_schema_idx],
+            request=self.tasks[self.current_graph_schema_idx],
             graph_schema=node_schema,
         )
-        parent_node.curr_conversation_node = Ref(graph, "curr_conversation_node")
+        self.curr_conversation_node = Ref(graph, "curr_conversation_node")
 
         if edge_schema:
-            parent_node.add_edge(parent_node.curr_node, graph, edge_schema, direction)
+            self.add_edge(self.curr_node, graph, edge_schema, direction)
 
-        parent_node.curr_node = graph
+        self.curr_node = graph
 
         node_schema, edge_schema = graph.compute_init_node_edge_schema()
-        parent_node.curr_node.init_next_node(
+        self.curr_node.init_next_node(
             node_schema, edge_schema, TC, remove_prev_tool_calls, None
         )
 
@@ -197,7 +196,6 @@ class RequestGraph(HasGraphMixin):
         self,
         node_schema: ConversationNodeSchema,
         edge_schema: Optional[EdgeSchema],
-        parent_node,
         input: Any,
         last_msg: Optional[str],
         prev_node: Optional[ConversationNode],
@@ -210,7 +208,6 @@ class RequestGraph(HasGraphMixin):
             self.init_graph_core(
                 node_schema,
                 edge_schema,
-                parent_node,
                 input,
                 last_msg,
                 prev_node,
@@ -223,7 +220,6 @@ class RequestGraph(HasGraphMixin):
             self.init_conversation_core(
                 node_schema,
                 edge_schema,
-                parent_node,
                 input,
                 last_msg,
                 prev_node,

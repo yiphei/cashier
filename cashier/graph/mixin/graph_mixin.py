@@ -264,7 +264,6 @@ class HasGraphMixin:
         self,
         node_schema: ConversationNodeSchema,
         edge_schema: Optional[EdgeSchema],
-        parent_node,
         input: Any,
         last_msg: Optional[str],
         prev_node: Optional[ConversationNode],
@@ -277,7 +276,7 @@ class HasGraphMixin:
             f"[NODE_SCHEMA] Initializing node with {Style.BRIGHT}node_schema_id: {node_schema.id}{Style.NORMAL}"
         )
         new_node = node_schema.create_node(
-            input, last_msg, edge_schema, prev_node, direction, parent_node.request if parent_node.__class__.__name__ == "Graph" else None  # type: ignore
+            input, last_msg, edge_schema, prev_node, direction, self.request if self.__class__.__name__ == "Graph" else None  # type: ignore
         )
 
         TC.add_node_turn(
@@ -293,25 +292,59 @@ class HasGraphMixin:
             MessageDisplay.print_msg("assistant", node_schema.first_turn.msg_content)
 
         if edge_schema:
-            parent_node.add_edge(
-                parent_node.curr_node, new_node, edge_schema, direction
+            self.add_edge(
+                self.curr_node, new_node, edge_schema, direction
             )
 
-        parent_node.curr_node = new_node
+        self.curr_node = new_node
 
         if (
-            parent_node.__class__.__name__ == "Graph"
+            self.__class__.__name__ == "Graph"
         ):  # TODO: remove this after refactor
-            parent_node.next_edge_schemas = set(
-                parent_node.schema.from_node_schema_id_to_edge_schema.get(
+            self.next_edge_schemas = set(
+                self.schema.from_node_schema_id_to_edge_schema.get(
                     new_node.schema.id, []
                 )
             )
-            parent_node.bwd_skip_edge_schemas = (
-                parent_node.compute_bwd_skip_edge_schemas(
-                    parent_node.curr_node, parent_node.bwd_skip_edge_schemas
+            self.bwd_skip_edge_schemas = (
+                self.compute_bwd_skip_edge_schemas(
+                    self.curr_node, self.bwd_skip_edge_schemas
                 )
             )
+
+    def _init_next_node(
+           self, 
+                    node_schema,
+            edge_schema,
+            TC,
+            direction,
+            last_msg,
+            remove_prev_tool_calls,
+            input,
+    ) -> None:
+        if input is None and edge_schema:
+            input = edge_schema.new_input_fn(self.state)
+
+        if edge_schema:
+            edge_schema, input = self.compute_next_edge_schema(
+                edge_schema, input, self.curr_node
+            )
+            node_schema = edge_schema.to_node_schema
+
+        prev_node = self.get_prev_node(edge_schema, direction)
+
+        self.init_node_core(
+            node_schema,
+            edge_schema,
+            input,
+            last_msg,
+            prev_node,
+            direction,
+            TC,
+            remove_prev_tool_calls,
+            False,
+        )
+
 
     def init_next_node(
         self,
@@ -337,31 +370,47 @@ class HasGraphMixin:
                 )
                 parent_node.state = parent_node.state.__class__(**new_state)
 
-        if input is None and edge_schema:
-            input = edge_schema.new_input_fn(parent_node.state)
-
-        if edge_schema:
-            edge_schema, input = parent_node.compute_next_edge_schema(
-                edge_schema, input, curr_node
-            )
-            node_schema = edge_schema.to_node_schema
-
         direction = Direction.FWD
-        prev_node = parent_node.get_prev_node(edge_schema, direction)
-
         last_msg = TC.get_user_message(content_only=True)
 
+        parent_node._init_next_node(
+            node_schema,
+            edge_schema,
+            TC,
+            direction,
+            last_msg,
+            remove_prev_tool_calls,
+            input,
+        )
+
+    def _init_skip_node(
+        self,
+        node_schema: ConversationNodeSchema,
+        edge_schema: EdgeSchema,
+        direction,
+        last_msg,
+        TC,
+        remove_prev_tool_calls,
+    ) -> None:
+
+        if direction == Direction.BWD:
+            self.bwd_skip_edge_schemas.clear()
+
+        prev_node = self.get_prev_node(edge_schema, direction)
+        assert prev_node is not None
+        input = prev_node.input
+
+        last_msg = TC.get_asst_message(content_only=True)
         self.init_node_core(
             node_schema,
             edge_schema,
-            parent_node,
             input,
             last_msg,
             prev_node,
             direction,
             TC,
             remove_prev_tool_calls,
-            False,
+            True,
         )
 
     def init_skip_node(
@@ -380,25 +429,14 @@ class HasGraphMixin:
         if edge_schema and edge_schema.from_node_schema == node_schema:
             direction = Direction.BWD
 
-        if direction == Direction.BWD:
-            parent_node.bwd_skip_edge_schemas.clear()
-
-        prev_node = parent_node.get_prev_node(edge_schema, direction)
-        assert prev_node is not None
-        input = prev_node.input
-
         last_msg = TC.get_asst_message(content_only=True)
-        self.init_node_core(
+        parent_node._init_skip_node(
             node_schema,
             edge_schema,
-            parent_node,
-            input,
-            last_msg,
-            prev_node,
             direction,
+            last_msg,
             TC,
             remove_prev_tool_calls,
-            True,
         )
 
     def check_transition(self, fn_call, is_fn_call_success):

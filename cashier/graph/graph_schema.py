@@ -268,7 +268,6 @@ class Graph(HasGraphMixin):
         self,
         node_schema: ConversationNodeSchema,
         edge_schema: Optional[EdgeSchema],
-        parent_node,
         input: Any,
         last_msg: Optional[str],
         prev_node: Optional[ConversationNode],
@@ -280,7 +279,6 @@ class Graph(HasGraphMixin):
         self.init_conversation_core(
             node_schema,
             edge_schema,
-            parent_node,
             input,
             last_msg,
             prev_node,

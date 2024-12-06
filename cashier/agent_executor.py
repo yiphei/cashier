@@ -37,7 +37,6 @@ class AgentExecutor:
         self.graph.init_node_core(
             graph_schema.start_node_schema,
             None,
-            self,
             None,
             None,
             None,
