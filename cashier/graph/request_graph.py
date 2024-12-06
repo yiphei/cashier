@@ -142,37 +142,6 @@ class RequestGraph(HasGraphMixin):
                     None,
                 )
 
-    def init_next_node(
-        self,
-        node_schema: ConversationNodeSchema,
-        edge_schema: Optional[EdgeSchema],
-        TC,
-        remove_prev_tool_calls,
-        input: Any = None,
-    ) -> None:
-        if isinstance(node_schema, GraphSchema):
-            if input is None and edge_schema is not None:
-                input = edge_schema.new_input_fn(self.state)
-            self.init_graph_core(
-                node_schema,
-                edge_schema,
-                input,
-                None,
-                None,
-                Direction.FWD,
-                TC,
-                remove_prev_tool_calls,
-                False,
-            )
-        elif node_schema in self.schema.node_schemas:
-            super().init_next_node(
-                node_schema, edge_schema, TC, remove_prev_tool_calls, input
-            )
-        else:
-            self.curr_node.init_next_node(
-                node_schema, edge_schema, TC, remove_prev_tool_calls, input
-            )
-
     def check_transition(self, fn_call, is_fn_call_success):
         if isinstance(self.curr_node, Graph):
             (
@@ -218,6 +187,7 @@ class RequestGraph(HasGraphMixin):
         self,
         node_schema: ConversationNodeSchema,
         edge_schema: Optional[EdgeSchema],
+        parent_node,
         input: Any,
         last_msg: Optional[str],
         prev_node: Optional[ConversationNode],
@@ -226,24 +196,65 @@ class RequestGraph(HasGraphMixin):
         remove_prev_tool_calls,
         is_skip: bool = False,
     ) -> None:
-        self.current_graph_schema_idx += 1
+        parent_node.current_graph_schema_idx += 1
 
         graph = Graph(
             input=input,
-            request=self.tasks[self.current_graph_schema_idx],
+            request=parent_node.tasks[parent_node.current_graph_schema_idx],
             graph_schema=node_schema,
         )
-        self.curr_executable = Ref(graph, "curr_executable")
+        parent_node.curr_executable = Ref(graph, "curr_executable")
 
         if edge_schema:
-            self.add_edge(self.curr_node, graph, edge_schema, direction)
+            parent_node.add_edge(parent_node.curr_node, graph, edge_schema, direction)
 
-        self.curr_node = graph
+        parent_node.curr_node = graph
 
         node_schema, edge_schema = graph.compute_init_node_edge_schema()
-        self.curr_node.init_next_node(
+        parent_node.curr_node.init_next_node(
             node_schema, edge_schema, TC, remove_prev_tool_calls, None
         )
+
+
+    def init_node_core(
+        self,
+        node_schema: ConversationNodeSchema,
+        edge_schema: Optional[EdgeSchema],
+        parent_node,
+        input: Any,
+        last_msg: Optional[str],
+        prev_node: Optional[ConversationNode],
+        direction: Direction,
+        TC,
+        remove_prev_tool_calls,
+        is_skip: bool = False,
+    ) -> None:
+        if isinstance(node_schema, GraphSchema):
+            self.init_graph_core(
+                node_schema,
+                edge_schema,
+                parent_node,
+                input,
+                last_msg,
+                prev_node,
+                direction,
+                TC,
+                remove_prev_tool_calls,
+                is_skip,
+            )
+        else:
+            self.init_conversation_core(
+                node_schema,
+                edge_schema,
+                parent_node,
+                input,
+                last_msg,
+                prev_node,
+                direction,
+                TC,
+                remove_prev_tool_calls,
+                is_skip,
+            )
 
 
 class RequestGraphSchema(HasGraphSchemaMixin, metaclass=AutoMixinInit):

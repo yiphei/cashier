@@ -4,7 +4,7 @@ from typing import Any, List, Optional, Set, Tuple, Type, Union
 
 from pydantic import BaseModel
 
-from cashier.graph.conversation_node import ConversationNodeSchema
+from cashier.graph.conversation_node import ConversationNode, ConversationNodeSchema, Direction
 from cashier.graph.edge_schema import EdgeSchema
 from cashier.graph.mixin.auto_mixin_init import AutoMixinInit
 from cashier.graph.mixin.base_edge_schema import BaseTransitionConfig, FunctionState
@@ -264,3 +264,29 @@ class Graph(HasGraphMixin):
                 break
 
         return new_edge_schema, new_node_schema, False, None, None
+
+    def init_node_core(
+        self,
+        node_schema: ConversationNodeSchema,
+        edge_schema: Optional[EdgeSchema],
+        parent_node,
+        input: Any,
+        last_msg: Optional[str],
+        prev_node: Optional[ConversationNode],
+        direction: Direction,
+        TC,
+        remove_prev_tool_calls,
+        is_skip: bool = False,
+    ) -> None:
+        self.init_conversation_core(
+            node_schema,
+            edge_schema,
+            parent_node,
+            input,
+            last_msg,
+            prev_node,
+            direction,
+            TC,
+            remove_prev_tool_calls,
+            is_skip,
+        )
