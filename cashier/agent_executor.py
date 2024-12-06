@@ -4,7 +4,6 @@ from typing import Any, Callable, Dict, Optional, Tuple, cast
 from colorama import Style
 
 from cashier.audio import get_speech_from_text
-from cashier.graph.graph_schema import Graph
 from cashier.graph.node_schema import Direction
 from cashier.graph.request_graph import RequestGraph
 from cashier.gui import MessageDisplay
@@ -72,11 +71,16 @@ class AgentExecutor:
             f"[FUNCTION_CALL] {Style.BRIGHT}name: {fn_call.name}, id: {fn_call.id}{Style.NORMAL} with args:\n{json.dumps(function_args, indent=4)}"
         )
         with FunctionCallContext() as fn_call_context:
-            if fn_call.name not in self.graph.curr_executable.schema.tool_registry.tool_names:
+            if (
+                fn_call.name
+                not in self.graph.curr_executable.schema.tool_registry.tool_names
+            ):
                 raise InexistentFunctionError(fn_call.name)
 
             if fn_call.name.startswith("get_state"):
-                fn_output = getattr(self.graph.curr_executable, fn_call.name)(**function_args)
+                fn_output = getattr(self.graph.curr_executable, fn_call.name)(
+                    **function_args
+                )
             elif fn_call.name.startswith("update_state"):
                 fn_output = self.graph.curr_executable.update_state(**function_args)  # type: ignore
             elif fn_callback is not None:
@@ -180,9 +184,7 @@ class AgentExecutor:
         return {
             "turn_container": self.TC,
             "tool_registry": (
-                target_graph.schema.tool_registry
-                if target_graph is not None
-                else None
+                target_graph.schema.tool_registry if target_graph is not None else None
             ),
             "force_tool_choice": force_tool_choice,
             "exclude_update_state_fns": (

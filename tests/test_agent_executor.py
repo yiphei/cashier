@@ -268,7 +268,8 @@ class TestAgent:
                     model_provider,
                     None,
                     False,
-                    fwd_skip_node_schema_id or agent_executor.graph.curr_executable.schema.id,
+                    fwd_skip_node_schema_id
+                    or agent_executor.graph.curr_executable.schema.id,
                     0.5,
                 )
                 model_chat_side_effects.append(is_wait_model_completion)
