@@ -4,7 +4,7 @@ from typing import Any, Callable, Dict, Optional, Tuple, cast
 from colorama import Style
 
 from cashier.audio import get_speech_from_text
-from cashier.graph.node_schema import Direction
+from cashier.graph.conversation_node import Direction
 from cashier.graph.request_graph import RequestGraph
 from cashier.gui import MessageDisplay
 from cashier.logger import logger

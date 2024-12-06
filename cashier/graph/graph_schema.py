@@ -9,7 +9,7 @@ from cashier.graph.mixin.auto_mixin_init import AutoMixinInit
 from cashier.graph.mixin.base_edge_schema import BaseTransitionConfig, FunctionState
 from cashier.graph.mixin.graph_mixin import HasGraphMixin, HasGraphSchemaMixin
 from cashier.graph.mixin.has_id_mixin import HasIdMixin
-from cashier.graph.node_schema import NodeSchema
+from cashier.graph.conversation_node import ConversationNodeSchema
 from cashier.model.model_util import FunctionCall
 from cashier.prompts.node_schema_selection import NodeSchemaSelectionPrompt
 from cashier.prompts.off_topic import OffTopicPrompt
@@ -18,8 +18,8 @@ from cashier.turn_container import TurnContainer
 
 def should_change_node_schema(
     TM: TurnContainer,
-    current_node_schema: NodeSchema,
-    all_node_schemas: Set[NodeSchema],
+    current_node_schema: ConversationNodeSchema,
+    all_node_schemas: Set[ConversationNodeSchema],
     is_wait: bool,
 ) -> Optional[int]:
     if len(all_node_schemas) == 1:
@@ -38,10 +38,10 @@ class GraphSchema(HasIdMixin, HasGraphSchemaMixin, metaclass=AutoMixinInit):
         self,
         output_schema: Type[BaseModel],
         description: str,
-        start_node_schema: NodeSchema,
-        last_node_schema: NodeSchema,
+        start_node_schema: ConversationNodeSchema,
+        last_node_schema: ConversationNodeSchema,
         edge_schemas: List[EdgeSchema],
-        node_schemas: List[NodeSchema],
+        node_schemas: List[ConversationNodeSchema],
         state_pydantic_model: Type[BaseModel],
         completion_config: BaseTransitionConfig,
     ):
@@ -104,7 +104,7 @@ class Graph(HasGraphMixin):
         fwd_skip_edge_schemas: Set[EdgeSchema],
         bwd_skip_edge_schemas: Set[EdgeSchema],
         TC,
-    ) -> Union[Tuple[EdgeSchema, NodeSchema], Tuple[None, None]]:
+    ) -> Union[Tuple[EdgeSchema, ConversationNodeSchema], Tuple[None, None]]:
         all_node_schemas = {self.curr_node.schema}
         all_node_schemas.update(edge.to_node_schema for edge in fwd_skip_edge_schemas)
         all_node_schemas.update(edge.from_node_schema for edge in bwd_skip_edge_schemas)
@@ -135,7 +135,7 @@ class Graph(HasGraphMixin):
         fwd_skip_edge_schemas: Set[EdgeSchema],
         bwd_skip_edge_schemas: Set[EdgeSchema],
         TC,
-    ) -> Union[Tuple[EdgeSchema, NodeSchema], Tuple[None, None]]:
+    ) -> Union[Tuple[EdgeSchema, ConversationNodeSchema], Tuple[None, None]]:
         remaining_edge_schemas = (
             set(self.graph_schema.edge_schemas)
             - fwd_skip_edge_schemas
@@ -162,7 +162,7 @@ class Graph(HasGraphMixin):
     def handle_is_off_topic(
         self,
         TC,
-    ) -> Union[Tuple[EdgeSchema, NodeSchema, bool], Tuple[None, None, bool]]:
+    ) -> Union[Tuple[EdgeSchema, ConversationNodeSchema, bool], Tuple[None, None, bool]]:
         fwd_skip_edge_schemas = self.compute_fwd_skip_edge_schemas(
             self.curr_node, self.next_edge_schemas
         )

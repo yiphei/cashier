@@ -9,7 +9,7 @@ from deepdiff import DeepDiff
 from pydantic import BaseModel, Field
 
 from cashier.agent_executor import AgentExecutor
-from cashier.graph.node_schema import Node
+from cashier.graph.conversation_node import ConversationNode
 from cashier.model.message_list import MessageList
 from cashier.model.model_completion import AnthropicModelOutput, OAIModelOutput
 from cashier.model.model_turn import (
@@ -44,7 +44,7 @@ class TurnArgs(BaseModel):
 class TestAgent:
     @pytest.fixture(autouse=True)
     def setup(self):
-        Node._counter = 0
+        ConversationNode._counter = 0
         self.start_node_schema = cashier_graph_schema.start_node_schema
         self.rand_tool_ids = deque()
         self.rand_uuids = deque()

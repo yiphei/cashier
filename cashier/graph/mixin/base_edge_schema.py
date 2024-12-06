@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any, Callable, Dict, NamedTuple, Optional
 from pydantic import BaseModel
 
 if TYPE_CHECKING:
-    from cashier.graph.node_schema import Node, NodeSchema
+    from cashier.graph.conversation_node import ConversationNode, ConversationNodeSchema
 
 from cashier.graph.mixin.state_mixin import BaseStateModel
 
@@ -48,8 +48,8 @@ class StateTransitionConfig(BaseTransitionConfig):
 class BaseEdgeSchema:
     def __init__(
         self,
-        from_node_schema: NodeSchema,
-        to_node_schema: NodeSchema,
+        from_node_schema: ConversationNodeSchema,
+        to_node_schema: ConversationNodeSchema,
         transition_config: BaseTransitionConfig,
         new_input_fn: Callable[[BaseStateModel], Any],
         bwd_state_init: BwdStateInit = BwdStateInit.RESUME,
@@ -118,5 +118,5 @@ class BaseEdgeSchema:
 
 
 class Edge(NamedTuple):
-    from_node: Node
-    to_node: Node
+    from_node: ConversationNode
+    to_node: ConversationNode

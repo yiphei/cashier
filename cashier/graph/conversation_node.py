@@ -22,14 +22,14 @@ class Direction(StrEnum):
     BWD = "BWD"
 
 
-class Node(HasIdMixin, metaclass=AutoMixinInit):
+class ConversationNode(HasIdMixin, metaclass=AutoMixinInit):
     class Status(StrEnum):
         IN_PROGRESS = "IN_PROGRESS"
         COMPLETED = "COMPLETED"
 
     def __init__(
         self,
-        schema: NodeSchema,
+        schema: ConversationNodeSchema,
         input: Any,
         state: BaseStateModel,
         prompt: str,
@@ -50,7 +50,7 @@ class Node(HasIdMixin, metaclass=AutoMixinInit):
     def init_state(
         cls,
         state_pydantic_model: Optional[Type[BaseStateModel]],
-        prev_node: Optional[Node],
+        prev_node: Optional[ConversationNode],
         edge_schema: Optional[EdgeSchema],
         direction: Direction,
         input: Any,
@@ -98,7 +98,7 @@ class Node(HasIdMixin, metaclass=AutoMixinInit):
         self.first_user_message = True
 
 
-class NodeSchema(HasIdMixin, metaclass=AutoMixinInit):
+class ConversationNodeSchema(HasIdMixin, metaclass=AutoMixinInit):
     def __init__(
         self,
         node_prompt: str,
@@ -157,7 +157,7 @@ class NodeSchema(HasIdMixin, metaclass=AutoMixinInit):
         prev_node: Literal[None] = None,
         direction: Literal[Direction.FWD] = Direction.FWD,
         curr_request: Optional[str] = None,
-    ) -> Node: ...
+    ) -> ConversationNode: ...
 
     @overload
     def create_node(  # noqa: E704
@@ -168,7 +168,7 @@ class NodeSchema(HasIdMixin, metaclass=AutoMixinInit):
         prev_node: Literal[None] = None,
         direction: Literal[Direction.FWD] = Direction.FWD,
         curr_request: Optional[str] = None,
-    ) -> Node: ...
+    ) -> ConversationNode: ...
 
     @overload
     def create_node(  # noqa: E704
@@ -176,21 +176,21 @@ class NodeSchema(HasIdMixin, metaclass=AutoMixinInit):
         input: Any,
         last_msg: str,
         edge_schema: EdgeSchema,
-        prev_node: Node,
+        prev_node: ConversationNode,
         direction: Direction = Direction.FWD,
         curr_request: Optional[str] = None,
-    ) -> Node: ...
+    ) -> ConversationNode: ...
 
     def create_node(
         self,
         input: Any,
         last_msg: Optional[str] = None,
         edge_schema: Optional[EdgeSchema] = None,
-        prev_node: Optional[Node] = None,
+        prev_node: Optional[ConversationNode] = None,
         direction: Direction = Direction.FWD,
         curr_request: Optional[str] = None,
-    ) -> Node:
-        state = Node.init_state(
+    ) -> ConversationNode:
+        state = ConversationNode.init_state(
             self.state_pydantic_model, prev_node, edge_schema, direction, input
         )
 
@@ -220,7 +220,7 @@ class NodeSchema(HasIdMixin, metaclass=AutoMixinInit):
             in_edge_schema = prev_node.in_edge_schema
         else:
             in_edge_schema = edge_schema
-        return Node(
+        return ConversationNode(
             schema=self,
             input=input,
             state=state,

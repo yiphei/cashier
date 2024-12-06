@@ -9,7 +9,7 @@ from cashier.graph.mixin.auto_mixin_init import AutoMixinInit
 from cashier.graph.mixin.base_edge_schema import BaseEdgeSchema
 from cashier.graph.mixin.graph_mixin import HasGraphMixin, HasGraphSchemaMixin
 from cashier.graph.mixin.has_id_mixin import HasIdMixin
-from cashier.graph.node_schema import NodeSchema
+from cashier.graph.conversation_node import ConversationNodeSchema
 from cashier.logger import logger
 from cashier.model.model_util import CustomJSONEncoder, FunctionCall
 from cashier.prompts.graph_schema_addition import GraphSchemaAdditionPrompt
@@ -144,7 +144,7 @@ class RequestGraph(HasGraphMixin):
 
     def init_next_node(
         self,
-        node_schema: NodeSchema,
+        node_schema: ConversationNodeSchema,
         edge_schema: Optional[EdgeSchema],
         TC,
         remove_prev_tool_calls,
@@ -227,9 +227,9 @@ class RequestGraphSchema(HasGraphSchemaMixin, metaclass=AutoMixinInit):
         node_system_prompt: Type[NodeSystemPrompt],
         description: str,
         edge_schemas: List[EdgeSchema],
-        node_schemas: List[NodeSchema],
+        node_schemas: List[ConversationNodeSchema],
     ):
-        self.start_node_schema = NodeSchema(node_prompt, node_system_prompt)
+        self.start_node_schema = ConversationNodeSchema(node_prompt, node_system_prompt)
 
 
 class GraphEdgeSchema(BaseEdgeSchema, HasIdMixin, metaclass=AutoMixinInit):

@@ -6,7 +6,7 @@ from cashier.graph.edge_schema import EdgeSchema
 from cashier.graph.graph_schema import GraphSchema
 from cashier.graph.mixin.base_edge_schema import StateTransitionConfig
 from cashier.graph.mixin.state_mixin import BaseStateModel
-from cashier.graph.node_schema import NodeSchema
+from cashier.graph.conversation_node import ConversationNodeSchema
 from cashier.graph.request_graph import RequestGraphSchema
 from cashier.model.model_turn import AssistantTurn
 from cashier.model.model_util import ModelProvider
@@ -33,7 +33,7 @@ class TakeOrderState(BaseStateModel):
     )
 
 
-take_order_node_schema = NodeSchema(
+take_order_node_schema = ConversationNodeSchema(
     node_prompt=(
         "First, greet the customer. Then, your main job is to take their orders, which"
         " also includes answering reasonable questions about the shop & menu only and"
@@ -75,7 +75,7 @@ class ConfirmOrderState(BaseStateModel):
     )
 
 
-confirm_order_node_schema = NodeSchema(
+confirm_order_node_schema = ConversationNodeSchema(
     node_prompt=(
         "Confirm the order with the customer. You do this by"
         " repeating the order back to them and get their confirmation."
@@ -109,7 +109,7 @@ class TerminalOrderState(BaseStateModel):
     )
 
 
-terminal_order_node_schema = NodeSchema(
+terminal_order_node_schema = ConversationNodeSchema(
     node_prompt=("Order has been successfully placed. Thank the customer."),
     node_system_prompt=CashierNodeSystemPrompt,
     tool_names=None,
