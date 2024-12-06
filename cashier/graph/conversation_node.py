@@ -103,7 +103,7 @@ class ConversationNodeSchema(HasIdMixin, metaclass=AutoMixinInit):
         self,
         node_prompt: str,
         node_system_prompt: Type[NodeSystemPrompt],
-        input_pydantic_model: Optional[Type[BaseModel]] = None,
+        input_schema: Optional[Type[BaseModel]] = None,
         state_schema: Optional[Type[BaseStateModel]] = None,
         tool_registry_or_tool_defs: Optional[
             Union[ToolRegistry, List[ChatCompletionToolParam]]
@@ -115,7 +115,7 @@ class ConversationNodeSchema(HasIdMixin, metaclass=AutoMixinInit):
         self.state_schema = state_schema
         self.node_prompt = node_prompt
         self.node_system_prompt = node_system_prompt
-        self.input_pydantic_model = input_pydantic_model
+        self.input_schema = input_schema
         self.first_turn = first_turn
         self.run_assistant_turn_before_transition = run_assistant_turn_before_transition
         if tool_registry_or_tool_defs is not None and isinstance(
@@ -198,12 +198,12 @@ class ConversationNodeSchema(HasIdMixin, metaclass=AutoMixinInit):
             node_prompt=self.node_prompt,
             input=(
                 input.model_dump_json()
-                if self.input_pydantic_model is not None
+                if self.input_schema is not None
                 else None
             ),
             node_input_json_schema=(
-                self.input_pydantic_model.model_json_schema()
-                if self.input_pydantic_model
+                self.input_schema.model_json_schema()
+                if self.input_schema
                 else None
             ),
             state_json_schema=(
