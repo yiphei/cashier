@@ -4,8 +4,12 @@ from venv import logger
 
 from colorama import Style
 
+from cashier.graph.conversation_node import (
+    ConversationNode,
+    ConversationNodeSchema,
+    Direction,
+)
 from cashier.graph.edge_schema import Edge, EdgeSchema, FwdSkipType
-from cashier.graph.conversation_node import Direction, ConversationNode, ConversationNodeSchema
 from cashier.gui import MessageDisplay
 from cashier.model.model_turn import AssistantTurn
 

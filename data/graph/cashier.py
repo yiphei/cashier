@@ -2,11 +2,11 @@ from typing import Optional
 
 from pydantic import Field
 
+from cashier.graph.conversation_node import ConversationNodeSchema
 from cashier.graph.edge_schema import EdgeSchema
 from cashier.graph.graph_schema import GraphSchema
 from cashier.graph.mixin.base_edge_schema import StateTransitionConfig
 from cashier.graph.mixin.state_mixin import BaseStateModel
-from cashier.graph.conversation_node import ConversationNodeSchema
 from cashier.graph.request_graph import RequestGraphSchema
 from cashier.model.model_turn import AssistantTurn
 from cashier.model.model_util import ModelProvider

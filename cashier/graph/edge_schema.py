@@ -13,7 +13,11 @@ from cashier.graph.mixin.base_edge_schema import BaseEdgeSchema, FwdSkipType
 
 class EdgeSchema(BaseEdgeSchema, HasIdMixin, metaclass=AutoMixinInit):
     def _can_skip(
-        self, state, skip_type: Optional[FwdSkipType], from_node: ConversationNode, to_node: ConversationNode
+        self,
+        state,
+        skip_type: Optional[FwdSkipType],
+        from_node: ConversationNode,
+        to_node: ConversationNode,
     ) -> Tuple[bool, Optional[FwdSkipType]]:
         if skip_type is None:
             return False, skip_type
@@ -28,7 +32,11 @@ class EdgeSchema(BaseEdgeSchema, HasIdMixin, metaclass=AutoMixinInit):
         return False, skip_type
 
     def can_skip(
-        self, state, from_node: ConversationNode, to_node: ConversationNode, is_prev_from_node_completed: bool
+        self,
+        state,
+        from_node: ConversationNode,
+        to_node: ConversationNode,
+        is_prev_from_node_completed: bool,
     ) -> Tuple[bool, Optional[FwdSkipType]]:
         from cashier.graph.conversation_node import ConversationNode
 

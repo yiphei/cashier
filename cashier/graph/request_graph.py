@@ -3,13 +3,13 @@ from __future__ import annotations
 import json
 from typing import Any, List, Optional, Type
 
+from cashier.graph.conversation_node import ConversationNodeSchema
 from cashier.graph.edge_schema import EdgeSchema
 from cashier.graph.graph_schema import Graph, GraphSchema
 from cashier.graph.mixin.auto_mixin_init import AutoMixinInit
 from cashier.graph.mixin.base_edge_schema import BaseEdgeSchema
 from cashier.graph.mixin.graph_mixin import HasGraphMixin, HasGraphSchemaMixin
 from cashier.graph.mixin.has_id_mixin import HasIdMixin
-from cashier.graph.conversation_node import ConversationNodeSchema
 from cashier.logger import logger
 from cashier.model.model_util import CustomJSONEncoder, FunctionCall
 from cashier.prompts.graph_schema_addition import GraphSchemaAdditionPrompt

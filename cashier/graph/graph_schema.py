@@ -4,12 +4,12 @@ from typing import Any, List, Optional, Set, Tuple, Type, Union
 
 from pydantic import BaseModel
 
+from cashier.graph.conversation_node import ConversationNodeSchema
 from cashier.graph.edge_schema import EdgeSchema
 from cashier.graph.mixin.auto_mixin_init import AutoMixinInit
 from cashier.graph.mixin.base_edge_schema import BaseTransitionConfig, FunctionState
 from cashier.graph.mixin.graph_mixin import HasGraphMixin, HasGraphSchemaMixin
 from cashier.graph.mixin.has_id_mixin import HasIdMixin
-from cashier.graph.conversation_node import ConversationNodeSchema
 from cashier.model.model_util import FunctionCall
 from cashier.prompts.node_schema_selection import NodeSchemaSelectionPrompt
 from cashier.prompts.off_topic import OffTopicPrompt
@@ -162,7 +162,9 @@ class Graph(HasGraphMixin):
     def handle_is_off_topic(
         self,
         TC,
-    ) -> Union[Tuple[EdgeSchema, ConversationNodeSchema, bool], Tuple[None, None, bool]]:
+    ) -> Union[
+        Tuple[EdgeSchema, ConversationNodeSchema, bool], Tuple[None, None, bool]
+    ]:
         fwd_skip_edge_schemas = self.compute_fwd_skip_edge_schemas(
             self.curr_node, self.next_edge_schemas
         )
