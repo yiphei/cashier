@@ -97,9 +97,7 @@ class BaseEdgeSchema:
                     and is_fn_call_success
                 )
         elif isinstance(self.transition_config, StateTransitionConfig):
-            resettable_fields = (
-                self.from_node_schema.state_schema.resettable_fields
-            )
+            resettable_fields = self.from_node_schema.state_schema.resettable_fields
             for (
                 field_name,
                 state_check_fn,

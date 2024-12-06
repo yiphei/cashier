@@ -207,9 +207,7 @@ class ConversationNodeSchema(HasIdMixin, metaclass=AutoMixinInit):
                 else None
             ),
             state_json_schema=(
-                self.state_schema.model_json_schema()
-                if self.state_schema
-                else None
+                self.state_schema.model_json_schema() if self.state_schema else None
             ),
             last_msg=last_msg,
             curr_request=curr_request,
