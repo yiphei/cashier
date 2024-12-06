@@ -59,9 +59,7 @@ class RequestGraph(HasGraphMixin):
         )
         for agent_selection in agent_selections:
             self.graph_schema_sequence.append(
-                self.schema.node_schema_id_to_node_schema[
-                    agent_selection.agent_id
-                ]
+                self.schema.node_schema_id_to_node_schema[agent_selection.agent_id]
             )
             self.tasks.append(agent_selection.task)
             self.graph_schema_id_to_task[agent_selection.agent_id] = (
@@ -87,9 +85,7 @@ class RequestGraph(HasGraphMixin):
         )
         if agent_selection is not None:
             self.graph_schema_sequence.append(
-                self.schema.node_schema_id_to_node_schema[
-                    agent_selection.agent_id
-                ]
+                self.schema.node_schema_id_to_node_schema[agent_selection.agent_id]
             )
             self.tasks.append(agent_selection.task)
             self.graph_schema_id_to_task[agent_selection.agent_id] = (

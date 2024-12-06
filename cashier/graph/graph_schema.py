@@ -87,11 +87,9 @@ class Graph(HasGraphMixin):
                     passed_check = True
                     node_schema = next_edge_schema.to_node_schema
                     edge_schema = next_edge_schema
-                    next_edge_schemas = (
-                        self.schema.from_node_schema_id_to_edge_schema[
-                            node_schema.id
-                        ]
-                    )
+                    next_edge_schemas = self.schema.from_node_schema_id_to_edge_schema[
+                        node_schema.id
+                    ]
                     break
 
             if not passed_check:
