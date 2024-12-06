@@ -274,7 +274,7 @@ class HasGraphMixin:
             f"[NODE_SCHEMA] Initializing node with {Style.BRIGHT}node_schema_id: {node_schema.id}{Style.NORMAL}"
         )
         new_node = node_schema.create_node(
-            input, last_msg, edge_schema, prev_node, direction, self.request if self.__class__.__name__ == "Graph" else None  # type: ignore
+            input, last_msg, edge_schema, prev_node, direction, self.request  # type: ignore
         )
 
         TC.add_node_turn(
