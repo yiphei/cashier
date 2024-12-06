@@ -129,58 +129,51 @@ class AgentExecutor:
                 MessageDisplay.display_assistant_message(message)
             self.need_user_input = True
 
-        if self.graph is not None:
-            fn_id_to_output = {}
-            fn_calls = []
-            if self.new_edge_schema is None:
-                for function_call in model_completion.get_or_stream_fn_calls():
-                    fn_id_to_output[function_call.id], is_success = (
-                        self.execute_function_call(function_call, fn_callback)
-                    )
-                    fn_calls.append(function_call)
-                    self.need_user_input = False
-
-                    (
-                        new_edge_schema,
-                        new_node_schema,
-                        is_completed,
-                        fake_fn_call,
-                        fake_fn_output,
-                    ) = self.request_graph.check_transition(function_call, is_success)
-                    if new_node_schema is not None:
-                        self.new_edge_schema = new_edge_schema
-                        self.new_node_schema = new_node_schema
-                        if fake_fn_call is not None:
-                            fn_id_to_output[fake_fn_call.id] = fake_fn_output
-                            fn_calls.append(fake_fn_call)
-                        break
-
-            self.TC.add_assistant_turn(
-                model_completion.msg_content,
-                model_completion.model_provider,
-                self.graph.curr_node.schema.tool_registry,
-                fn_calls,
-                fn_id_to_output,
-            )
-            if self.new_edge_schema and (
-                not self.graph.curr_node.schema.run_assistant_turn_before_transition
-                or self.graph.curr_node.has_run_assistant_turn_before_transition
-            ):
-                self.request_graph.init_next_node(
-                    self.new_node_schema,
-                    self.new_edge_schema,
-                    self.TC,
-                    self.remove_prev_tool_calls,
-                    None,
+        fn_id_to_output = {}
+        fn_calls = []
+        if self.new_edge_schema is None:
+            for function_call in model_completion.get_or_stream_fn_calls():
+                fn_id_to_output[function_call.id], is_success = (
+                    self.execute_function_call(function_call, fn_callback)
                 )
-                self.new_edge_schema = None
-                self.new_node_schema = None
+                fn_calls.append(function_call)
+                self.need_user_input = False
 
-        else:
-            self.TC.add_assistant_turn(
-                model_completion.msg_content, model_completion.model_provider
+                (
+                    new_edge_schema,
+                    new_node_schema,
+                    is_completed,
+                    fake_fn_call,
+                    fake_fn_output,
+                ) = self.request_graph.check_transition(function_call, is_success)
+                if new_node_schema is not None:
+                    self.new_edge_schema = new_edge_schema
+                    self.new_node_schema = new_node_schema
+                    if fake_fn_call is not None:
+                        fn_id_to_output[fake_fn_call.id] = fake_fn_output
+                        fn_calls.append(fake_fn_call)
+                    break
+
+        self.TC.add_assistant_turn(
+            model_completion.msg_content,
+            model_completion.model_provider,
+            self.graph.curr_node.schema.tool_registry,
+            fn_calls,
+            fn_id_to_output,
+        )
+        if self.new_edge_schema and (
+            not self.graph.curr_node.schema.run_assistant_turn_before_transition
+            or self.graph.curr_node.has_run_assistant_turn_before_transition
+        ):
+            self.request_graph.init_next_node(
+                self.new_node_schema,
+                self.new_edge_schema,
+                self.TC,
+                self.remove_prev_tool_calls,
+                None,
             )
             self.new_edge_schema = None
+            self.new_node_schema = None
 
     def get_model_completion_kwargs(self) -> Dict[str, Any]:
         force_tool_choice = self.force_tool_choice
