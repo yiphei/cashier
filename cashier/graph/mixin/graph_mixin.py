@@ -365,14 +365,28 @@ class HasGraphMixin:
         )
 
     def check_transition(self, fn_call, is_fn_call_success):
-        if getattr(self, "curr_node", None) is None or not isinstance(self.curr_node, HasGraphMixin):
+        if getattr(self, "curr_node", None) is None or not isinstance(
+            self.curr_node, HasGraphMixin
+        ):
             return self.check_self_transition(fn_call, is_fn_call_success)
         else:
-            new_edge_schema, new_node_schema, is_completed, fake_fn_call, fake_fn_output = self.curr_node.check_transition(fn_call, is_fn_call_success)
-            if is_completed:        
+            (
+                new_edge_schema,
+                new_node_schema,
+                is_completed,
+                fake_fn_call,
+                fake_fn_output,
+            ) = self.curr_node.check_transition(fn_call, is_fn_call_success)
+            if is_completed:
                 return self.check_self_transition(fn_call, is_fn_call_success)
             else:
-                return new_edge_schema, new_node_schema, is_completed, fake_fn_call, fake_fn_output
+                return (
+                    new_edge_schema,
+                    new_node_schema,
+                    is_completed,
+                    fake_fn_call,
+                    fake_fn_output,
+                )
 
     def init_skip_node(
         self,
