@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from typing import Any, List, Optional, Type
 
-from cashier.graph.conversation_node import ConversationNodeSchema
+from cashier.graph.conversation_node import ConversationNode, ConversationNodeSchema, Direction
 from cashier.graph.edge_schema import EdgeSchema
 from cashier.graph.graph_schema import Graph, GraphSchema
 from cashier.graph.mixin.auto_mixin_init import AutoMixinInit
@@ -147,23 +147,10 @@ class RequestGraph(HasGraphMixin):
         input: Any = None,
     ) -> None:
         if isinstance(node_schema, GraphSchema):
-            self.current_graph_schema_idx += 1
             if input is None and edge_schema is not None:
                 input = edge_schema.new_input_fn(self.state)
-
-            graph = Graph(
-                input=input,
-                request=self.tasks[self.current_graph_schema_idx],
-                graph_schema=node_schema,
-            )
-            self.curr_executable = Ref(graph, "curr_executable")
-            self.curr_node = graph
-            node_schema, edge_schema = graph.compute_init_node_edge_schema()
-            input = None
-            if edge_schema is not None:
-                input = edge_schema.new_input_fn(self.curr_node.state)
-            self.curr_node.init_next_node(
-                node_schema, edge_schema, TC, remove_prev_tool_calls, input
+            self.init_graph_core(
+                node_schema, edge_schema, input, None, None, Direction.FWD, TC, remove_prev_tool_calls, False
             )
         elif node_schema in self.schema.node_schemas:
             super().init_next_node(
@@ -214,6 +201,38 @@ class RequestGraph(HasGraphMixin):
                     break
 
             return new_edge_schema, new_node_schema, False, None, None
+        
+
+    def init_graph_core(
+        self,
+        node_schema: ConversationNodeSchema,
+        edge_schema: Optional[EdgeSchema],
+        input: Any,
+        last_msg: Optional[str],
+        prev_node: Optional[ConversationNode],
+        direction: Direction,
+        TC,
+        remove_prev_tool_calls,
+        is_skip: bool = False,
+    ) -> None:
+        self.current_graph_schema_idx += 1
+
+        graph = Graph(
+            input=input,
+            request=self.tasks[self.current_graph_schema_idx],
+            graph_schema=node_schema,
+        )
+        self.curr_executable = Ref(graph, "curr_executable")
+
+        if edge_schema:
+            self.add_edge(self.curr_node, graph, edge_schema, direction)
+
+        self.curr_node = graph
+
+        node_schema, edge_schema = graph.compute_init_node_edge_schema()
+        self.curr_node.init_next_node(
+            node_schema, edge_schema, TC, remove_prev_tool_calls, None
+        )
 
 
 class RequestGraphSchema(HasGraphSchemaMixin, metaclass=AutoMixinInit):
