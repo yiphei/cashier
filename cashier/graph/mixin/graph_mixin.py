@@ -401,7 +401,6 @@ class HasGraphMixin:
             True,
         )
 
-
     def check_transition(self, fn_call, is_fn_call_success):
         if getattr(self, "curr_node", None) is None or not isinstance(
             self.curr_node, HasGraphMixin
