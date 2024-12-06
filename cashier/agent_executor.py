@@ -25,9 +25,6 @@ class AgentExecutor:
         remove_prev_tool_calls: bool,
         request_graph_schema=None,
     ):
-        # self.request_graph_schema = request_graph_schema
-        # self.request_graph = RequestGraph(None, self.request_graph_schema)
-        # self.curr_graph_schema = None
 
         self.remove_prev_tool_calls = remove_prev_tool_calls
         self.audio_output = audio_output
