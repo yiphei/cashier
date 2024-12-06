@@ -100,8 +100,8 @@ class OffTopicPrompt(BasePrompt):
             background_prompt=current_node_schema.node_system_prompt.BACKGROUND_PROMPT(),  # type: ignore
             node_prompt=current_node_schema.node_prompt,
             state_json_schema=str(
-                current_node_schema.state_pydantic_model.model_json_schema()
-                if current_node_schema.state_pydantic_model
+                current_node_schema.state_schema.model_json_schema()
+                if current_node_schema.state_schema
                 else None
             ),
             tool_defs=json.dumps(

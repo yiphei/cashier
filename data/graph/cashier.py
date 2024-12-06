@@ -59,7 +59,7 @@ take_order_node_schema = ConversationNodeSchema(
     ],
     tool_registry_or_tool_defs=CASHIER_TOOL_REGISTRY,
     input_pydantic_model=None,
-    state_pydantic_model=TakeOrderState,
+    state_schema=TakeOrderState,
     first_turn=AssistantTurn(
         msg_content="hi, welcome to Heaven Coffee", model_provider=ModelProvider.NONE
     ),
@@ -84,7 +84,7 @@ confirm_order_node_schema = ConversationNodeSchema(
     tool_names=None,
     tool_registry_or_tool_defs=None,
     input_pydantic_model=Order,
-    state_pydantic_model=ConfirmOrderState,
+    state_schema=ConfirmOrderState,
 )
 take_to_confirm_edge_schema = EdgeSchema(
     from_node_schema=take_order_node_schema,
@@ -115,7 +115,7 @@ terminal_order_node_schema = ConversationNodeSchema(
     tool_names=None,
     tool_registry_or_tool_defs=None,
     input_pydantic_model=None,
-    state_pydantic_model=TerminalOrderState,
+    state_schema=TerminalOrderState,
 )
 confirm_to_terminal_edge_schema = EdgeSchema(
     from_node_schema=confirm_order_node_schema,
@@ -142,7 +142,7 @@ cashier_graph_schema = GraphSchema(
         confirm_order_node_schema,
         terminal_order_node_schema,
     ],
-    state_pydantic_model=GraphState,
+    state_schema=GraphState,
     completion_config=StateTransitionConfig(
         need_user_msg=True,
         state_check_fn_map={"has_said_goodbye": lambda val: bool(val)},

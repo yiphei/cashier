@@ -42,10 +42,10 @@ class GraphSchema(HasIdMixin, HasGraphSchemaMixin, metaclass=AutoMixinInit):
         last_node_schema: ConversationNodeSchema,
         edge_schemas: List[EdgeSchema],
         node_schemas: List[ConversationNodeSchema],
-        state_pydantic_model: Type[BaseModel],
+        state_schema: Type[BaseModel],
         completion_config: BaseTransitionConfig,
     ):
-        self.state_pydantic_model = state_pydantic_model
+        self.state_schema = state_schema
         self.output_schema = output_schema
         self.start_node_schema = start_node_schema
         self.last_node_schema = last_node_schema
@@ -60,7 +60,7 @@ class Graph(HasGraphMixin):
         graph_schema: HasGraphSchemaMixin,
     ):
         HasGraphMixin.__init__(self, graph_schema)
-        self.state = graph_schema.state_pydantic_model(**(input or {}))
+        self.state = graph_schema.state_schema(**(input or {}))
         self.request = request
 
     @property

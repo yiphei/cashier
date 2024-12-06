@@ -51,9 +51,9 @@ class NodeSchemaSelectionPrompt(BasePrompt):
                 "</instructions>\n\n"
                 + (
                     "<state>\n"
-                    f"{node_schema.state_pydantic_model.model_json_schema()}\n"
+                    f"{node_schema.state_schema.model_json_schema()}\n"
                     "</state>\n\n"
-                    if node_schema.state_pydantic_model
+                    if node_schema.state_schema
                     else ""
                 )
                 + "<tools>\n"

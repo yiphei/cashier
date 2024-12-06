@@ -98,7 +98,7 @@ class BaseEdgeSchema:
                 )
         elif isinstance(self.transition_config, StateTransitionConfig):
             resettable_fields = (
-                self.from_node_schema.state_pydantic_model.resettable_fields
+                self.from_node_schema.state_schema.resettable_fields
             )
             for (
                 field_name,

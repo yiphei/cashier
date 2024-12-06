@@ -207,7 +207,7 @@ class TestAgent:
                 args = {}
             elif fn_name.startswith("update_state"):
                 field_name = fn_name.removeprefix("update_state_")
-                model_fields = node.schema.state_pydantic_model.model_fields
+                model_fields = node.schema.state_schema.model_fields
                 field_info = model_fields[field_name]
 
                 # Get default value or call default_factory if it exists
@@ -457,7 +457,7 @@ class TestAgent:
                         node_prompt=cashier_graph_schema.start_node_schema.node_prompt,
                         input=None,
                         node_input_json_schema=None,
-                        state_json_schema=self.start_node_schema.state_pydantic_model.model_json_schema(),
+                        state_json_schema=self.start_node_schema.state_schema.model_json_schema(),
                         last_msg="i want to order coffee",
                         curr_request="customer wants to order coffee",
                     ),
@@ -872,7 +872,7 @@ class TestAgent:
                     node_prompt=next_node_schema.node_prompt,
                     input=order.model_dump_json(),
                     node_input_json_schema=next_node_schema.input_pydantic_model.model_json_schema(),
-                    state_json_schema=next_node_schema.state_pydantic_model.model_json_schema(),
+                    state_json_schema=next_node_schema.state_schema.model_json_schema(),
                     last_msg="i want pecan latte",
                     curr_request="customer wants to order coffee",
                 ),
@@ -960,7 +960,7 @@ class TestAgent:
                     node_prompt=next_node_schema.node_prompt,
                     input=order.model_dump_json(),
                     node_input_json_schema=next_node_schema.input_pydantic_model.model_json_schema(),
-                    state_json_schema=next_node_schema.state_pydantic_model.model_json_schema(),
+                    state_json_schema=next_node_schema.state_schema.model_json_schema(),
                     last_msg="i want pecan latte",
                     curr_request="customer wants to order coffee",
                 ),
@@ -996,7 +996,7 @@ class TestAgent:
                     node_prompt=cashier_graph_schema.start_node_schema.node_prompt,
                     input=None,
                     node_input_json_schema=None,
-                    state_json_schema=self.start_node_schema.state_pydantic_model.model_json_schema(),
+                    state_json_schema=self.start_node_schema.state_schema.model_json_schema(),
                     last_msg="can you confirm the order?",
                     curr_request="customer wants to order coffee",
                 ),
@@ -1104,7 +1104,7 @@ class TestAgent:
                     node_prompt=next_node_schema.node_prompt,
                     input=order.model_dump_json(),
                     node_input_json_schema=next_node_schema.input_pydantic_model.model_json_schema(),
-                    state_json_schema=next_node_schema.state_pydantic_model.model_json_schema(),
+                    state_json_schema=next_node_schema.state_schema.model_json_schema(),
                     last_msg="i want pecan latte",
                     curr_request="customer wants to order coffee",
                 ),
@@ -1160,7 +1160,7 @@ class TestAgent:
                     node_prompt=next_next_node_schema.node_prompt,
                     input=None,
                     node_input_json_schema=None,
-                    state_json_schema=next_next_node_schema.state_pydantic_model.model_json_schema(),
+                    state_json_schema=next_next_node_schema.state_schema.model_json_schema(),
                     last_msg="i confirm",
                     curr_request="customer wants to order coffee",
                 ),
@@ -1195,7 +1195,7 @@ class TestAgent:
                     node_prompt=cashier_graph_schema.start_node_schema.node_prompt,
                     input=None,
                     node_input_json_schema=None,
-                    state_json_schema=self.start_node_schema.state_pydantic_model.model_json_schema(),
+                    state_json_schema=self.start_node_schema.state_schema.model_json_schema(),
                     last_msg="thanks for confirming",
                     curr_request="customer wants to order coffee",
                 ),
@@ -1241,7 +1241,7 @@ class TestAgent:
                     node_prompt=next_node_schema.node_prompt,
                     input=order.model_dump_json(),
                     node_input_json_schema=next_node_schema.input_pydantic_model.model_json_schema(),
-                    state_json_schema=next_node_schema.state_pydantic_model.model_json_schema(),
+                    state_json_schema=next_node_schema.state_schema.model_json_schema(),
                     last_msg="what do you want to change?",
                     curr_request="customer wants to order coffee",
                 ),

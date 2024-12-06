@@ -49,13 +49,13 @@ class ConversationNode(HasIdMixin, metaclass=AutoMixinInit):
     @classmethod
     def init_state(
         cls,
-        state_pydantic_model: Optional[Type[BaseStateModel]],
+        state_schema: Optional[Type[BaseStateModel]],
         prev_node: Optional[ConversationNode],
         edge_schema: Optional[EdgeSchema],
         direction: Direction,
         input: Any,
     ) -> Optional[BaseStateModel]:
-        if state_pydantic_model is None:
+        if state_schema is None:
             return None
 
         if prev_node is not None:
@@ -68,7 +68,7 @@ class ConversationNode(HasIdMixin, metaclass=AutoMixinInit):
             )
 
             if state_init_val == state_init_enum_cls.RESET:  # type: ignore
-                return state_pydantic_model()
+                return state_schema()
             elif state_init_val == state_init_enum_cls.RESUME or (  # type: ignore
                 direction == Direction.FWD
                 and state_init_val == state_init_enum_cls.RESUME_IF_INPUT_UNCHANGED  # type: ignore
@@ -76,7 +76,7 @@ class ConversationNode(HasIdMixin, metaclass=AutoMixinInit):
             ):
                 return prev_node.state.copy_resume()
 
-        return state_pydantic_model()
+        return state_schema()
 
     def mark_as_completed(self) -> None:
         self.status = self.Status.COMPLETED
@@ -104,7 +104,7 @@ class ConversationNodeSchema(HasIdMixin, metaclass=AutoMixinInit):
         node_prompt: str,
         node_system_prompt: Type[NodeSystemPrompt],
         input_pydantic_model: Optional[Type[BaseModel]] = None,
-        state_pydantic_model: Optional[Type[BaseStateModel]] = None,
+        state_schema: Optional[Type[BaseStateModel]] = None,
         tool_registry_or_tool_defs: Optional[
             Union[ToolRegistry, List[ChatCompletionToolParam]]
         ] = None,
@@ -112,7 +112,7 @@ class ConversationNodeSchema(HasIdMixin, metaclass=AutoMixinInit):
         run_assistant_turn_before_transition: bool = False,
         tool_names: Optional[List[str]] = None,
     ):
-        self.state_pydantic_model = state_pydantic_model
+        self.state_schema = state_schema
         self.node_prompt = node_prompt
         self.node_system_prompt = node_system_prompt
         self.input_pydantic_model = input_pydantic_model
@@ -129,11 +129,11 @@ class ConversationNodeSchema(HasIdMixin, metaclass=AutoMixinInit):
         else:
             self.tool_registry = ToolRegistry(tool_registry_or_tool_defs)
 
-        if self.state_pydantic_model is not None:
+        if self.state_schema is not None:
             for (
                 field_name,
                 field_info,
-            ) in self.state_pydantic_model.model_fields.items():
+            ) in self.state_schema.model_fields.items():
                 new_tool_fn_name = f"update_state_{field_name}"
                 field_args = {field_name: (field_info.annotation, field_info)}
                 self.tool_registry.add_tool_def(
@@ -191,7 +191,7 @@ class ConversationNodeSchema(HasIdMixin, metaclass=AutoMixinInit):
         curr_request: Optional[str] = None,
     ) -> ConversationNode:
         state = ConversationNode.init_state(
-            self.state_pydantic_model, prev_node, edge_schema, direction, input
+            self.state_schema, prev_node, edge_schema, direction, input
         )
 
         prompt = self.node_system_prompt(
@@ -207,8 +207,8 @@ class ConversationNodeSchema(HasIdMixin, metaclass=AutoMixinInit):
                 else None
             ),
             state_json_schema=(
-                self.state_pydantic_model.model_json_schema()
-                if self.state_pydantic_model
+                self.state_schema.model_json_schema()
+                if self.state_schema
                 else None
             ),
             last_msg=last_msg,
