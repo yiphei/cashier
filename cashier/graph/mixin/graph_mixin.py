@@ -254,9 +254,7 @@ class HasGraphMixin:
     @classmethod
     def check_single_transition(cls, state, fn_call, is_fn_call_success, edge_schemas):
         for edge_schema in edge_schemas:
-            if edge_schema.check_transition_config(
-                state, fn_call, is_fn_call_success
-            ):
+            if edge_schema.check_transition_config(state, fn_call, is_fn_call_success):
                 new_edge_schema = edge_schema
                 new_node_schema = edge_schema.to_node_schema
                 return new_edge_schema, new_node_schema

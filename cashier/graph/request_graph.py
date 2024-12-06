@@ -155,7 +155,12 @@ class RequestGraph(HasGraphMixin):
                 edge_schemas = self.schema.from_node_schema_id_to_edge_schema[
                     self.curr_node.schema.id
                 ]
-                new_edge_schema, new_node_schema = self.check_single_transition(self.curr_node.curr_node.state, fn_call, is_fn_call_success, edge_schemas)
+                new_edge_schema, new_node_schema = self.check_single_transition(
+                    self.curr_node.curr_node.state,
+                    fn_call,
+                    is_fn_call_success,
+                    edge_schemas,
+                )
                 if new_node_schema is not None:
                     fake_fn_call = FunctionCall.create(
                         api_id_model_provider=None,
@@ -167,7 +172,12 @@ class RequestGraph(HasGraphMixin):
                     )
             return new_edge_schema, new_node_schema, False, fake_fn_call, None
         else:
-            new_edge_schema, new_node_schema = self.check_single_transition(self.curr_node.state, fn_call, is_fn_call_success, self.next_edge_schemas)
+            new_edge_schema, new_node_schema = self.check_single_transition(
+                self.curr_node.state,
+                fn_call,
+                is_fn_call_success,
+                self.next_edge_schemas,
+            )
             return new_edge_schema, new_node_schema, False, None, None
 
     def init_graph_core(
