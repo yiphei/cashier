@@ -42,6 +42,7 @@ class HasGraphMixin:
     def __init__(
         self,
         schema: HasGraphSchemaMixin,
+        request=None
     ):
         self.schema = schema
         self.edge_schema_id_to_edges = defaultdict(list)
@@ -50,6 +51,7 @@ class HasGraphMixin:
         self.curr_node = None
         self.next_edge_schemas: Set[EdgeSchema] = set()
         self.bwd_skip_edge_schemas: Set[EdgeSchema] = set()
+        self.request = request
 
     def add_fwd_edge(
         self,

@@ -63,9 +63,8 @@ class Graph(HasGraphMixin):
         request: str,
         graph_schema: HasGraphSchemaMixin,
     ):
-        HasGraphMixin.__init__(self, graph_schema)
+        HasGraphMixin.__init__(self, graph_schema, request)
         self.state = graph_schema.state_schema(**(input or {}))
-        self.request = request
 
     @property
     def curr_conversation_node(self):
