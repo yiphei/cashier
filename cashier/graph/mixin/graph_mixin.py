@@ -39,11 +39,7 @@ class HasGraphSchemaMixin:
 
 
 class HasGraphMixin:
-    def __init__(
-        self,
-        schema: HasGraphSchemaMixin,
-        request=None
-    ):
+    def __init__(self, schema: HasGraphSchemaMixin, request=None):
         self.schema = schema
         self.edge_schema_id_to_edges = defaultdict(list)
         self.from_node_schema_id_to_last_edge_schema_id = defaultdict(lambda: None)
