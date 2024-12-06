@@ -41,9 +41,9 @@ class HasGraphSchemaMixin:
 class HasGraphMixin:
     def __init__(
         self,
-        graph_schema: HasGraphSchemaMixin,
+        schema: HasGraphSchemaMixin,
     ):
-        self.graph_schema = graph_schema
+        self.schema = schema
         self.edge_schema_id_to_edges = defaultdict(list)
         self.from_node_schema_id_to_last_edge_schema_id = defaultdict(lambda: None)
         self.edge_schema_id_to_from_node = {}
@@ -90,7 +90,7 @@ class HasGraphMixin:
     ) -> Optional[EdgeSchema]:
         edge_schema_id = self.from_node_schema_id_to_last_edge_schema_id[node_schema_id]
         return (
-            self.graph_schema.edge_schema_id_to_edge_schema[edge_schema_id]
+            self.schema.edge_schema_id_to_edge_schema[edge_schema_id]
             if edge_schema_id
             else None
         )
@@ -289,7 +289,7 @@ class HasGraphMixin:
 
         if self.__class__.__name__ == "Graph":  # TODO: remove this after refactor
             self.next_edge_schemas = set(
-                self.graph_schema.from_node_schema_id_to_edge_schema.get(
+                self.schema.from_node_schema_id_to_edge_schema.get(
                     new_node.schema.id, []
                 )
             )

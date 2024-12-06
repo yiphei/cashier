@@ -44,9 +44,9 @@ class RequestGraph(HasGraphMixin):
     def __init__(
         self,
         input: Any,
-        graph_schema: HasGraphSchemaMixin,
+        schema: HasGraphSchemaMixin,
     ):
-        HasGraphMixin.__init__(self, graph_schema)
+        HasGraphMixin.__init__(self, schema)
         self.tasks = []
         self.graph_schema_sequence = []
         self.current_graph_schema_idx = -1
@@ -55,11 +55,11 @@ class RequestGraph(HasGraphMixin):
 
     def get_graph_schemas(self, request):
         agent_selections = GraphSchemaSelectionPrompt.run(
-            "claude-3.5", request=request, graph_schemas=self.graph_schema.node_schemas
+            "claude-3.5", request=request, graph_schemas=self.schema.node_schemas
         )
         for agent_selection in agent_selections:
             self.graph_schema_sequence.append(
-                self.graph_schema.node_schema_id_to_node_schema[
+                self.schema.node_schema_id_to_node_schema[
                     agent_selection.agent_id
                 ]
             )
@@ -75,7 +75,7 @@ class RequestGraph(HasGraphMixin):
     def add_tasks(self, request, tc):
         agent_selection = GraphSchemaAdditionPrompt.run(
             "claude-3.5",
-            graph_schemas=self.graph_schema.node_schemas,
+            graph_schemas=self.schema.node_schemas,
             curr_agent_id=self.graph_schema_sequence[self.current_graph_schema_idx].id,
             curr_task=self.tasks[self.current_graph_schema_idx],
             tc=tc,
@@ -87,7 +87,7 @@ class RequestGraph(HasGraphMixin):
         )
         if agent_selection is not None:
             self.graph_schema_sequence.append(
-                self.graph_schema.node_schema_id_to_node_schema[
+                self.schema.node_schema_id_to_node_schema[
                     agent_selection.agent_id
                 ]
             )
@@ -169,7 +169,7 @@ class RequestGraph(HasGraphMixin):
             self.curr_node.init_next_node(
                 node_schema, edge_schema, TC, remove_prev_tool_calls, input
             )
-        elif node_schema in self.graph_schema.node_schemas:
+        elif node_schema in self.schema.node_schemas:
             super().init_next_node(
                 node_schema, edge_schema, TC, remove_prev_tool_calls, input
             )
@@ -188,8 +188,8 @@ class RequestGraph(HasGraphMixin):
                 fake_fn_output,
             ) = self.curr_node.check_transition(fn_call, is_fn_call_success)
             if is_completed:
-                edge_schemas = self.graph_schema.from_node_schema_id_to_edge_schema[
-                    self.curr_node.graph_schema.id
+                edge_schemas = self.schema.from_node_schema_id_to_edge_schema[
+                    self.curr_node.schema.id
                 ]
                 for edge_schema in edge_schemas:
                     if edge_schema.check_transition_config(

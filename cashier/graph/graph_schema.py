@@ -70,9 +70,9 @@ class Graph(HasGraphMixin):
     def compute_init_node_edge_schema(
         self,
     ):
-        node_schema = self.graph_schema.start_node_schema
+        node_schema = self.schema.start_node_schema
         edge_schema = None
-        next_edge_schemas = self.graph_schema.from_node_schema_id_to_edge_schema[
+        next_edge_schemas = self.schema.from_node_schema_id_to_edge_schema[
             node_schema.id
         ]
         while next_edge_schemas:
@@ -88,7 +88,7 @@ class Graph(HasGraphMixin):
                     node_schema = next_edge_schema.to_node_schema
                     edge_schema = next_edge_schema
                     next_edge_schemas = (
-                        self.graph_schema.from_node_schema_id_to_edge_schema[
+                        self.schema.from_node_schema_id_to_edge_schema[
                             node_schema.id
                         ]
                     )
@@ -118,14 +118,14 @@ class Graph(HasGraphMixin):
                 if edge_schema.to_node_schema.id == node_schema_id:
                     return (
                         edge_schema,
-                        self.graph_schema.node_schema_id_to_node_schema[node_schema_id],
+                        self.schema.node_schema_id_to_node_schema[node_schema_id],
                     )
 
             for edge_schema in bwd_skip_edge_schemas:
                 if edge_schema.from_node_schema.id == node_schema_id:
                     return (
                         edge_schema,
-                        self.graph_schema.node_schema_id_to_node_schema[node_schema_id],
+                        self.schema.node_schema_id_to_node_schema[node_schema_id],
                     )
 
         return None, None
@@ -137,7 +137,7 @@ class Graph(HasGraphMixin):
         TC,
     ) -> Union[Tuple[EdgeSchema, ConversationNodeSchema], Tuple[None, None]]:
         remaining_edge_schemas = (
-            set(self.graph_schema.edge_schemas)
+            set(self.schema.edge_schemas)
             - fwd_skip_edge_schemas
             - bwd_skip_edge_schemas
         )
@@ -154,7 +154,7 @@ class Graph(HasGraphMixin):
                 if edge_schema.to_node_schema.id == node_schema_id:
                     return (
                         edge_schema,
-                        self.graph_schema.node_schema_id_to_node_schema[node_schema_id],
+                        self.schema.node_schema_id_to_node_schema[node_schema_id],
                     )
 
         return None, None
@@ -233,24 +233,24 @@ class Graph(HasGraphMixin):
     def check_transition(self, fn_call, is_fn_call_success):
         new_edge_schema = None
         new_node_schema = None
-        if self.curr_node.schema == self.graph_schema.last_node_schema:
-            if self.graph_schema.completion_config.state == FunctionState.CALLED:
+        if self.curr_node.schema == self.schema.last_node_schema:
+            if self.schema.completion_config.state == FunctionState.CALLED:
                 return (
                     None,
                     None,
-                    fn_call.name == self.graph_schema.completion_config.fn_name,
+                    fn_call.name == self.schema.completion_config.fn_name,
                     None,
                     None,
                 )
             elif (
-                self.graph_schema.completion_config.state
+                self.schema.completion_config.state
                 == FunctionState.CALLED_AND_SUCCEEDED
             ):
                 return (
                     None,
                     None,
                     (
-                        fn_call.name == self.graph_schema.completion_config.fn_name
+                        fn_call.name == self.schema.completion_config.fn_name
                         and is_fn_call_success
                     ),
                     None,
