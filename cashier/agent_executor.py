@@ -178,16 +178,13 @@ class AgentExecutor:
     def get_model_completion_kwargs(self) -> Dict[str, Any]:
         force_tool_choice = self.force_tool_choice
         self.force_tool_choice = None
-        target_graph = self.graph.curr_executable
         return {
             "turn_container": self.TC,
             "tool_registry": (
-                target_graph.schema.tool_registry if target_graph is not None else None
+                self.graph.curr_executable.schema.tool_registry
             ),
             "force_tool_choice": force_tool_choice,
             "exclude_update_state_fns": (
-                not target_graph.first_user_message
-                if target_graph is not None
-                else False
+                not self.graph.curr_executable.first_user_message
             ),
         }
