@@ -6,6 +6,7 @@ from pydantic import BaseModel
 
 from cashier.graph.edge_schema import EdgeSchema
 from cashier.graph.mixin.auto_mixin_init import AutoMixinInit
+from cashier.graph.mixin.base_edge_schema import BaseTransitionConfig, FunctionState
 from cashier.graph.mixin.graph_mixin import HasGraphMixin, HasGraphSchemaMixin
 from cashier.graph.mixin.has_id_mixin import HasIdMixin
 from cashier.graph.node_schema import NodeSchema
@@ -42,11 +43,13 @@ class GraphSchema(HasIdMixin, HasGraphSchemaMixin, metaclass=AutoMixinInit):
         edge_schemas: List[EdgeSchema],
         node_schemas: List[NodeSchema],
         state_pydantic_model: Type[BaseModel],
+        completion_config: BaseTransitionConfig,
     ):
         self.state_pydantic_model = state_pydantic_model
         self.output_schema = output_schema
         self.start_node_schema = start_node_schema
         self.last_node_schema = last_node_schema
+        self.completion_config = completion_config
 
 
 class Graph(HasGraphMixin):
@@ -224,3 +227,25 @@ class Graph(HasGraphMixin):
                         {fake_fn_call.id: self.curr_node.get_state()},
                     )
         self.curr_node.update_first_user_message()
+
+    def check_transition(self, fn_call, is_fn_call_success):
+        new_edge_schema = None
+        new_node_schema = None
+        if self.curr_node.schema == self.graph_schema.last_node_schema:
+            if self.graph_schema.completion_config.state == FunctionState.CALLED:
+                return None, None, fn_call.name == self.graph_schema.completion_config.fn_name, None, None
+            elif self.graph_schema.completion_config.state == FunctionState.CALLED_AND_SUCCEEDED:
+                return None, None, (
+                    fn_call.name == self.graph_schema.completion_config.fn_name
+                    and is_fn_call_success
+                ), None, None
+
+        for edge_schema in self.next_edge_schemas:
+            if edge_schema.check_transition_config(
+                self.curr_node.state, fn_call, is_fn_call_success
+            ):
+                new_edge_schema = edge_schema
+                new_node_schema = edge_schema.to_node_schema
+                break
+        
+        return new_edge_schema, new_node_schema, False, None, None

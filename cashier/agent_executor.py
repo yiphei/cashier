@@ -140,32 +140,15 @@ class AgentExecutor:
                     fn_calls.append(function_call)
                     self.need_user_input = False
 
-                    edge_schemas = (
-                        self.request_graph_schema.from_node_schema_id_to_edge_schema[
-                            self.curr_graph_schema.id
-                        ]
-                        if self.graph.curr_node.schema
-                        == self.graph.graph_schema.last_node_schema
-                        else self.graph.next_edge_schemas
-                    )
-                    for edge_schema in edge_schemas:
-                        if edge_schema.check_transition_config(
-                            self.graph.curr_node.state, function_call, is_success
-                        ):
-                            if isinstance(edge_schema, GraphEdgeSchema):
-                                fake_fn_call = FunctionCall.create(
-                                    api_id_model_provider=None,
-                                    api_id=None,
-                                    name="think",
-                                    args={
-                                        "thought": f"I just completed the current request. The next request to be addressed is: {self.request_graph.tasks[self.request_graph.current_graph_schema_idx + 1]}. I must explicitly inform the customer that the current request is completed and that I will address the next request right away. Only after I informed the customer do I receive the tools to address the next request."
-                                    },
-                                )
-                                fn_id_to_output[fake_fn_call.id] = None
-                                fn_calls.append(fake_fn_call)
-                            self.new_edge_schema = edge_schema
-                            self.new_node_schema = edge_schema.to_node_schema
-                            break
+
+                    new_edge_schema, new_node_schema, is_completed, fake_fn_call, fake_fn_output = self.request_graph.check_transition(function_call, is_success)
+                    if new_node_schema is not None:
+                        self.new_edge_schema = new_edge_schema
+                        self.new_node_schema = new_node_schema
+                        if fake_fn_call is not None:
+                            fn_id_to_output[fake_fn_call.id] = fake_fn_output
+                            fn_calls.append(fake_fn_call)
+                        break
 
             self.TC.add_assistant_turn(
                 model_completion.msg_content,

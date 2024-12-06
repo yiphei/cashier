@@ -178,6 +178,43 @@ class RequestGraph(HasGraphMixin):
                 node_schema, edge_schema, TC, remove_prev_tool_calls, input
             )
 
+    def check_transition(self, fn_call, is_fn_call_success):
+        if isinstance(self.curr_node, Graph):
+            new_edge_schema, new_node_schema, is_completed, fake_fn_call, fake_fn_output = self.curr_node.check_transition(fn_call, is_fn_call_success)
+            if is_completed:
+                edge_schemas = (
+                    self.graph_schema.from_node_schema_id_to_edge_schema[
+                        self.curr_node.graph_schema.id
+                    ]
+                )
+                for edge_schema in edge_schemas:
+                    if edge_schema.check_transition_config(
+                        self.curr_node.curr_node.state, fn_call, is_fn_call_success
+                    ):
+                        fake_fn_call = FunctionCall.create(
+                            api_id_model_provider=None,
+                            api_id=None,
+                            name="think",
+                            args={
+                                "thought": f"I just completed the current request. The next request to be addressed is: {self.tasks[self.current_graph_schema_idx + 1]}. I must explicitly inform the customer that the current request is completed and that I will address the next request right away. Only after I informed the customer do I receive the tools to address the next request."
+                            },
+                        )
+                        new_edge_schema = edge_schema
+                        new_node_schema = edge_schema.to_node_schema
+                        break
+
+            return new_edge_schema, new_node_schema, False, fake_fn_call, None
+        else:
+            for edge_schema in self.next_edge_schemas:
+                if edge_schema.check_transition_config(
+                    self.curr_node.state, fn_call, is_fn_call_success
+                ):
+                    new_edge_schema = edge_schema
+                    new_node_schema = edge_schema.to_node_schema
+                    break
+            
+            return new_edge_schema, new_node_schema, False, None, None
+
 
 class RequestGraphSchema(HasGraphSchemaMixin, metaclass=AutoMixinInit):
     def __init__(
