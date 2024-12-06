@@ -71,16 +71,16 @@ class AgentExecutor:
         with FunctionCallContext() as fn_call_context:
             if (
                 fn_call.name
-                not in self.graph.curr_executable.schema.tool_registry.tool_names
+                not in self.graph.curr_conversation_node.schema.tool_registry.tool_names
             ):
                 raise InexistentFunctionError(fn_call.name)
 
             if fn_call.name.startswith("get_state"):
-                fn_output = getattr(self.graph.curr_executable, fn_call.name)(
+                fn_output = getattr(self.graph.curr_conversation_node, fn_call.name)(
                     **function_args
                 )
             elif fn_call.name.startswith("update_state"):
-                fn_output = self.graph.curr_executable.update_state(**function_args)  # type: ignore
+                fn_output = self.graph.curr_conversation_node.update_state(**function_args)  # type: ignore
             elif fn_callback is not None:
                 # TODO: this exists for benchmarking. remove this once done
                 fn_output = fn_callback(**function_args)
@@ -90,7 +90,7 @@ class AgentExecutor:
                 ):
                     fn_output = json.loads(fn_output)
             else:
-                fn = self.graph.curr_executable.schema.tool_registry.fn_name_to_fn[
+                fn = self.graph.curr_conversation_node.schema.tool_registry.fn_name_to_fn[
                     fn_call.name
                 ]
                 fn_output = fn(**function_args)
@@ -157,13 +157,13 @@ class AgentExecutor:
         self.TC.add_assistant_turn(
             model_completion.msg_content,
             model_completion.model_provider,
-            self.graph.curr_executable.schema.tool_registry,
+            self.graph.curr_conversation_node.schema.tool_registry,
             fn_calls,
             fn_id_to_output,
         )
         if self.new_edge_schema and (
-            not self.graph.curr_executable.schema.run_assistant_turn_before_transition
-            or self.graph.curr_executable.has_run_assistant_turn_before_transition
+            not self.graph.curr_conversation_node.schema.run_assistant_turn_before_transition
+            or self.graph.curr_conversation_node.has_run_assistant_turn_before_transition
         ):
             self.graph.init_next_node(
                 self.new_node_schema,
@@ -181,10 +181,10 @@ class AgentExecutor:
         return {
             "turn_container": self.TC,
             "tool_registry": (
-                self.graph.curr_executable.schema.tool_registry
+                self.graph.curr_conversation_node.schema.tool_registry
             ),
             "force_tool_choice": force_tool_choice,
             "exclude_update_state_fns": (
-                not self.graph.curr_executable.first_user_message
+                not self.graph.curr_conversation_node.first_user_message
             ),
         }

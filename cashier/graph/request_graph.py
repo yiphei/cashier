@@ -55,7 +55,7 @@ class RequestGraph(HasGraphMixin):
         self.graph_schema_sequence = []
         self.current_graph_schema_idx = -1
         self.graph_schema_id_to_task = {}
-        self.curr_executable = None
+        self.curr_conversation_node = None
 
     def get_graph_schemas(self, request):
         agent_selections = GraphSchemaSelectionPrompt.run(
@@ -181,7 +181,7 @@ class RequestGraph(HasGraphMixin):
             request=parent_node.tasks[parent_node.current_graph_schema_idx],
             graph_schema=node_schema,
         )
-        parent_node.curr_executable = Ref(graph, "curr_executable")
+        parent_node.curr_conversation_node = Ref(graph, "curr_conversation_node")
 
         if edge_schema:
             parent_node.add_edge(parent_node.curr_node, graph, edge_schema, direction)

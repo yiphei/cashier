@@ -68,7 +68,7 @@ class Graph(HasGraphMixin):
         self.request = request
 
     @property
-    def curr_executable(self):
+    def curr_conversation_node(self):
         return self.curr_node
 
     def compute_init_node_edge_schema(
