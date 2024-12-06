@@ -3,7 +3,11 @@ from __future__ import annotations
 import json
 from typing import Any, List, Optional, Type
 
-from cashier.graph.conversation_node import ConversationNode, ConversationNodeSchema, Direction
+from cashier.graph.conversation_node import (
+    ConversationNode,
+    ConversationNodeSchema,
+    Direction,
+)
 from cashier.graph.edge_schema import EdgeSchema
 from cashier.graph.graph_schema import Graph, GraphSchema
 from cashier.graph.mixin.auto_mixin_init import AutoMixinInit
@@ -150,7 +154,15 @@ class RequestGraph(HasGraphMixin):
             if input is None and edge_schema is not None:
                 input = edge_schema.new_input_fn(self.state)
             self.init_graph_core(
-                node_schema, edge_schema, input, None, None, Direction.FWD, TC, remove_prev_tool_calls, False
+                node_schema,
+                edge_schema,
+                input,
+                None,
+                None,
+                Direction.FWD,
+                TC,
+                remove_prev_tool_calls,
+                False,
             )
         elif node_schema in self.schema.node_schemas:
             super().init_next_node(
@@ -201,7 +213,6 @@ class RequestGraph(HasGraphMixin):
                     break
 
             return new_edge_schema, new_node_schema, False, None, None
-        
 
     def init_graph_core(
         self,
