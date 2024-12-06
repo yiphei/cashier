@@ -294,16 +294,6 @@ class HasGraphMixin:
 
         self.curr_node = new_node
 
-        if self.__class__.__name__ == "Graph":  # TODO: remove this after refactor
-            self.next_edge_schemas = set(
-                self.schema.from_node_schema_id_to_edge_schema.get(
-                    new_node.schema.id, []
-                )
-            )
-            self.bwd_skip_edge_schemas = self.compute_bwd_skip_edge_schemas(
-                self.curr_node, self.bwd_skip_edge_schemas
-            )
-
     def _init_next_node(
         self,
         node_schema,

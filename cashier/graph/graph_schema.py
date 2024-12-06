@@ -263,6 +263,38 @@ class Graph(HasGraphMixin):
         )
         return new_edge_schema, new_node_schema, False, None, None
 
+    def init_conversation_core(
+        self,
+        node_schema: ConversationNodeSchema,
+        edge_schema: Optional[EdgeSchema],
+        input: Any,
+        last_msg: Optional[str],
+        prev_node: Optional[ConversationNode],
+        direction: Direction,
+        TC,
+        remove_prev_tool_calls,
+        is_skip: bool = False,
+    ) -> None:
+        super().init_conversation_core(
+            node_schema,
+            edge_schema,
+            input,
+            last_msg,
+            prev_node,
+            direction,
+            TC,
+            remove_prev_tool_calls,
+            is_skip,
+        )
+        self.next_edge_schemas = set(
+            self.schema.from_node_schema_id_to_edge_schema.get(
+                self.curr_node.schema.id, []
+            )
+        )
+        self.bwd_skip_edge_schemas = self.compute_bwd_skip_edge_schemas(
+            self.curr_node, self.bwd_skip_edge_schemas
+        )
+
     def init_node_core(
         self,
         node_schema: ConversationNodeSchema,
