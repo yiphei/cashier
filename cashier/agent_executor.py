@@ -180,9 +180,7 @@ class AgentExecutor:
         self.force_tool_choice = None
         return {
             "turn_container": self.TC,
-            "tool_registry": (
-                self.graph.curr_conversation_node.schema.tool_registry
-            ),
+            "tool_registry": (self.graph.curr_conversation_node.schema.tool_registry),
             "force_tool_choice": force_tool_choice,
             "exclude_update_state_fns": (
                 not self.graph.curr_conversation_node.first_user_message
