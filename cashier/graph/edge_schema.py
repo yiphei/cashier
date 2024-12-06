@@ -7,8 +7,8 @@ from cashier.graph.mixin.has_id_mixin import HasIdMixin
 if TYPE_CHECKING:
     from cashier.graph.conversation_node import ConversationNode
 
-from cashier.graph.mixin.auto_mixin_init import AutoMixinInit
 from cashier.graph.base.base_edge_schema import BaseEdgeSchema, FwdSkipType
+from cashier.graph.mixin.auto_mixin_init import AutoMixinInit
 
 
 class EdgeSchema(BaseEdgeSchema, HasIdMixin, metaclass=AutoMixinInit):
