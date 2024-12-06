@@ -12,7 +12,7 @@ from cashier.graph.edge_schema import EdgeSchema
 from cashier.graph.graph_schema import Graph, GraphSchema
 from cashier.graph.mixin.auto_mixin_init import AutoMixinInit
 from cashier.graph.mixin.base_edge_schema import BaseEdgeSchema
-from cashier.graph.mixin.graph_mixin import HasGraphMixin, HasGraphSchemaMixin
+from cashier.graph.mixin.graph_mixin import BaseGraph, BaseGraphSchema
 from cashier.graph.mixin.has_id_mixin import HasIdMixin
 from cashier.logger import logger
 from cashier.model.model_util import CustomJSONEncoder, FunctionCall
@@ -43,14 +43,14 @@ class Ref:
         return getattr(value, name)
 
 
-class RequestGraph(HasGraphMixin):
+class RequestGraph(BaseGraph):
 
     def __init__(
         self,
         input: Any,
-        schema: HasGraphSchemaMixin,
+        schema: BaseGraphSchema,
     ):
-        HasGraphMixin.__init__(self, schema)
+        super().__init__(schema)
         self.tasks = []
         self.graph_schema_sequence = []
         self.current_graph_schema_idx = -1
@@ -230,7 +230,7 @@ class RequestGraph(HasGraphMixin):
             )
 
 
-class RequestGraphSchema(HasGraphSchemaMixin, metaclass=AutoMixinInit):
+class RequestGraphSchema(BaseGraphSchema):
     def __init__(
         self,
         node_prompt: str,
@@ -239,6 +239,7 @@ class RequestGraphSchema(HasGraphSchemaMixin, metaclass=AutoMixinInit):
         edge_schemas: List[EdgeSchema],
         node_schemas: List[ConversationNodeSchema],
     ):
+        super().__init__(description, edge_schemas, node_schemas)
         self.start_node_schema = ConversationNodeSchema(node_prompt, node_system_prompt)
 
 

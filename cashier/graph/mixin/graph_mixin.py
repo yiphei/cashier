@@ -14,7 +14,7 @@ from cashier.gui import MessageDisplay
 from cashier.model.model_turn import AssistantTurn
 
 
-class HasGraphSchemaMixin:
+class BaseGraphSchema:
     def __init__(
         self,
         description: str,
@@ -38,8 +38,8 @@ class HasGraphSchemaMixin:
             ].append(edge_schema)
 
 
-class HasGraphMixin:
-    def __init__(self, schema: HasGraphSchemaMixin, request=None):
+class BaseGraph:
+    def __init__(self, schema: BaseGraphSchema, request=None):
         self.schema = schema
         self.edge_schema_id_to_edges = defaultdict(list)
         self.from_node_schema_id_to_last_edge_schema_id = defaultdict(lambda: None)
@@ -422,7 +422,7 @@ class HasGraphMixin:
 
     def check_transition(self, fn_call, is_fn_call_success):
         if getattr(self, "curr_node", None) is None or not isinstance(
-            self.curr_node, HasGraphMixin
+            self.curr_node, BaseGraph
         ):
             return self.check_self_transition(fn_call, is_fn_call_success)
         else:

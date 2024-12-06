@@ -12,7 +12,7 @@ from cashier.graph.conversation_node import (
 from cashier.graph.edge_schema import EdgeSchema
 from cashier.graph.mixin.auto_mixin_init import AutoMixinInit
 from cashier.graph.mixin.base_edge_schema import BaseTransitionConfig, FunctionState
-from cashier.graph.mixin.graph_mixin import HasGraphMixin, HasGraphSchemaMixin
+from cashier.graph.mixin.graph_mixin import BaseGraph, BaseGraphSchema
 from cashier.graph.mixin.has_id_mixin import HasIdMixin
 from cashier.model.model_util import FunctionCall
 from cashier.prompts.node_schema_selection import NodeSchemaSelectionPrompt
@@ -37,7 +37,7 @@ def should_change_node_schema(
     )
 
 
-class GraphSchema(HasIdMixin, HasGraphSchemaMixin, metaclass=AutoMixinInit):
+class GraphSchema(HasIdMixin, BaseGraphSchema, metaclass=AutoMixinInit):
     def __init__(
         self,
         output_schema: Type[BaseModel],
@@ -49,6 +49,7 @@ class GraphSchema(HasIdMixin, HasGraphSchemaMixin, metaclass=AutoMixinInit):
         state_schema: Type[BaseModel],
         completion_config: BaseTransitionConfig,
     ):
+        BaseGraphSchema.__init__(self, description, edge_schemas, node_schemas)
         self.state_schema = state_schema
         self.output_schema = output_schema
         self.start_node_schema = start_node_schema
@@ -56,14 +57,14 @@ class GraphSchema(HasIdMixin, HasGraphSchemaMixin, metaclass=AutoMixinInit):
         self.completion_config = completion_config
 
 
-class Graph(HasGraphMixin):
+class Graph(BaseGraph):
     def __init__(
         self,
         input: Any,
         request: str,
-        graph_schema: HasGraphSchemaMixin,
+        graph_schema: BaseGraphSchema,
     ):
-        HasGraphMixin.__init__(self, graph_schema, request)
+        super().__init__(graph_schema, request)
         self.state = graph_schema.state_schema(**(input or {}))
 
     @property
