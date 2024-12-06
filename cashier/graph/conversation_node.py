@@ -8,7 +8,7 @@ from pydantic import BaseModel
 
 from cashier.graph.edge_schema import EdgeSchema
 from cashier.graph.mixin.auto_mixin_init import AutoMixinInit
-from cashier.graph.mixin.base_edge_schema import BwdStateInit, FwdStateInit
+from cashier.graph.base.base_edge_schema import BwdStateInit, FwdStateInit
 from cashier.graph.mixin.has_id_mixin import HasIdMixin
 from cashier.graph.mixin.state_mixin import BaseStateModel
 from cashier.model.model_turn import ModelTurn

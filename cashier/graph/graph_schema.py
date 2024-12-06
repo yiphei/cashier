@@ -11,8 +11,8 @@ from cashier.graph.conversation_node import (
 )
 from cashier.graph.edge_schema import EdgeSchema
 from cashier.graph.mixin.auto_mixin_init import AutoMixinInit
-from cashier.graph.mixin.base_edge_schema import BaseTransitionConfig, FunctionState
-from cashier.graph.mixin.graph_mixin import BaseGraph, BaseGraphSchema
+from cashier.graph.base.base_edge_schema import BaseTransitionConfig, FunctionState
+from cashier.graph.base.graph_base import BaseGraph, BaseGraphSchema
 from cashier.graph.mixin.has_id_mixin import HasIdMixin
 from cashier.model.model_util import FunctionCall
 from cashier.prompts.node_schema_selection import NodeSchemaSelectionPrompt
