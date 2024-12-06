@@ -135,7 +135,11 @@ class RequestGraph(HasGraphMixin):
             self.get_graph_schemas(msg)
             if len(self.graph_schema_sequence) > 0:
                 self.init_next_node(
-                    self.graph_schema_sequence[0],None, TC, remove_prev_tool_calls, None
+                    self.graph_schema_sequence[0],
+                    None,
+                    TC,
+                    remove_prev_tool_calls,
+                    None,
                 )
 
     def init_next_node(
@@ -158,9 +162,7 @@ class RequestGraph(HasGraphMixin):
             )
             self.curr_executable = Ref(graph, "curr_executable")
             self.curr_node = graph
-            node_schema, edge_schema = (
-                graph.compute_init_node_edge_schema()
-            )
+            node_schema, edge_schema = graph.compute_init_node_edge_schema()
             input = None
             if edge_schema is not None:
                 input = edge_schema.new_input_fn(self.curr_node.state)
