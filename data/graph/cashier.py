@@ -4,7 +4,9 @@ from pydantic import Field
 
 from cashier.graph.edge_schema import EdgeSchema
 from cashier.graph.graph_schema import GraphSchema
-from cashier.graph.mixin.base_edge_schema import FunctionTransitionConfig, StateTransitionConfig
+from cashier.graph.mixin.base_edge_schema import (
+    StateTransitionConfig,
+)
 from cashier.graph.mixin.state_mixin import BaseStateModel
 from cashier.graph.node_schema import NodeSchema
 from cashier.graph.request_graph import RequestGraphSchema
@@ -143,10 +145,10 @@ cashier_graph_schema = GraphSchema(
         terminal_order_node_schema,
     ],
     state_pydantic_model=GraphState,
-    completion_config = StateTransitionConfig(
+    completion_config=StateTransitionConfig(
         need_user_msg=True,
-        state_check_fn_map = {"has_said_goodbye": lambda val: bool(val)}
-    )
+        state_check_fn_map={"has_said_goodbye": lambda val: bool(val)},
+    ),
 )
 
 

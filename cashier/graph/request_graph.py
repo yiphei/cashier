@@ -180,13 +180,17 @@ class RequestGraph(HasGraphMixin):
 
     def check_transition(self, fn_call, is_fn_call_success):
         if isinstance(self.curr_node, Graph):
-            new_edge_schema, new_node_schema, is_completed, fake_fn_call, fake_fn_output = self.curr_node.check_transition(fn_call, is_fn_call_success)
+            (
+                new_edge_schema,
+                new_node_schema,
+                is_completed,
+                fake_fn_call,
+                fake_fn_output,
+            ) = self.curr_node.check_transition(fn_call, is_fn_call_success)
             if is_completed:
-                edge_schemas = (
-                    self.graph_schema.from_node_schema_id_to_edge_schema[
-                        self.curr_node.graph_schema.id
-                    ]
-                )
+                edge_schemas = self.graph_schema.from_node_schema_id_to_edge_schema[
+                    self.curr_node.graph_schema.id
+                ]
                 for edge_schema in edge_schemas:
                     if edge_schema.check_transition_config(
                         self.curr_node.curr_node.state, fn_call, is_fn_call_success
@@ -212,7 +216,7 @@ class RequestGraph(HasGraphMixin):
                     new_edge_schema = edge_schema
                     new_node_schema = edge_schema.to_node_schema
                     break
-            
+
             return new_edge_schema, new_node_schema, False, None, None
 
 

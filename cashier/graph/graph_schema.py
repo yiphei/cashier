@@ -233,12 +233,27 @@ class Graph(HasGraphMixin):
         new_node_schema = None
         if self.curr_node.schema == self.graph_schema.last_node_schema:
             if self.graph_schema.completion_config.state == FunctionState.CALLED:
-                return None, None, fn_call.name == self.graph_schema.completion_config.fn_name, None, None
-            elif self.graph_schema.completion_config.state == FunctionState.CALLED_AND_SUCCEEDED:
-                return None, None, (
-                    fn_call.name == self.graph_schema.completion_config.fn_name
-                    and is_fn_call_success
-                ), None, None
+                return (
+                    None,
+                    None,
+                    fn_call.name == self.graph_schema.completion_config.fn_name,
+                    None,
+                    None,
+                )
+            elif (
+                self.graph_schema.completion_config.state
+                == FunctionState.CALLED_AND_SUCCEEDED
+            ):
+                return (
+                    None,
+                    None,
+                    (
+                        fn_call.name == self.graph_schema.completion_config.fn_name
+                        and is_fn_call_success
+                    ),
+                    None,
+                    None,
+                )
 
         for edge_schema in self.next_edge_schemas:
             if edge_schema.check_transition_config(
@@ -247,5 +262,5 @@ class Graph(HasGraphMixin):
                 new_edge_schema = edge_schema
                 new_node_schema = edge_schema.to_node_schema
                 break
-        
+
         return new_edge_schema, new_node_schema, False, None, None

@@ -6,7 +6,7 @@ from colorama import Style
 from cashier.audio import get_speech_from_text
 from cashier.graph.graph_schema import Graph
 from cashier.graph.node_schema import Direction
-from cashier.graph.request_graph import GraphEdgeSchema, RequestGraph
+from cashier.graph.request_graph import RequestGraph
 from cashier.gui import MessageDisplay
 from cashier.logger import logger
 from cashier.model.model_completion import ModelOutput
@@ -140,8 +140,13 @@ class AgentExecutor:
                     fn_calls.append(function_call)
                     self.need_user_input = False
 
-
-                    new_edge_schema, new_node_schema, is_completed, fake_fn_call, fake_fn_output = self.request_graph.check_transition(function_call, is_success)
+                    (
+                        new_edge_schema,
+                        new_node_schema,
+                        is_completed,
+                        fake_fn_call,
+                        fake_fn_output,
+                    ) = self.request_graph.check_transition(function_call, is_success)
                     if new_node_schema is not None:
                         self.new_edge_schema = new_edge_schema
                         self.new_node_schema = new_node_schema
