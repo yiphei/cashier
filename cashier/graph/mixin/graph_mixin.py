@@ -292,35 +292,29 @@ class HasGraphMixin:
             MessageDisplay.print_msg("assistant", node_schema.first_turn.msg_content)
 
         if edge_schema:
-            self.add_edge(
-                self.curr_node, new_node, edge_schema, direction
-            )
+            self.add_edge(self.curr_node, new_node, edge_schema, direction)
 
         self.curr_node = new_node
 
-        if (
-            self.__class__.__name__ == "Graph"
-        ):  # TODO: remove this after refactor
+        if self.__class__.__name__ == "Graph":  # TODO: remove this after refactor
             self.next_edge_schemas = set(
                 self.schema.from_node_schema_id_to_edge_schema.get(
                     new_node.schema.id, []
                 )
             )
-            self.bwd_skip_edge_schemas = (
-                self.compute_bwd_skip_edge_schemas(
-                    self.curr_node, self.bwd_skip_edge_schemas
-                )
+            self.bwd_skip_edge_schemas = self.compute_bwd_skip_edge_schemas(
+                self.curr_node, self.bwd_skip_edge_schemas
             )
 
     def _init_next_node(
-           self, 
-                    node_schema,
-            edge_schema,
-            TC,
-            direction,
-            last_msg,
-            remove_prev_tool_calls,
-            input,
+        self,
+        node_schema,
+        edge_schema,
+        TC,
+        direction,
+        last_msg,
+        remove_prev_tool_calls,
+        input,
     ) -> None:
         if input is None and edge_schema:
             input = edge_schema.new_input_fn(self.state)
@@ -344,7 +338,6 @@ class HasGraphMixin:
             remove_prev_tool_calls,
             False,
         )
-
 
     def init_next_node(
         self,
