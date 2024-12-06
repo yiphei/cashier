@@ -4,7 +4,11 @@ from typing import Any, List, Optional, Set, Tuple, Type, Union
 
 from pydantic import BaseModel
 
-from cashier.graph.conversation_node import ConversationNode, ConversationNodeSchema, Direction
+from cashier.graph.conversation_node import (
+    ConversationNode,
+    ConversationNodeSchema,
+    Direction,
+)
 from cashier.graph.edge_schema import EdgeSchema
 from cashier.graph.mixin.auto_mixin_init import AutoMixinInit
 from cashier.graph.mixin.base_edge_schema import BaseTransitionConfig, FunctionState

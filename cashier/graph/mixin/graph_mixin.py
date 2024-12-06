@@ -284,18 +284,24 @@ class HasGraphMixin:
             MessageDisplay.print_msg("assistant", node_schema.first_turn.msg_content)
 
         if edge_schema:
-            parent_node.add_edge(parent_node.curr_node, new_node, edge_schema, direction)
+            parent_node.add_edge(
+                parent_node.curr_node, new_node, edge_schema, direction
+            )
 
         parent_node.curr_node = new_node
 
-        if parent_node.__class__.__name__ == "Graph":  # TODO: remove this after refactor
+        if (
+            parent_node.__class__.__name__ == "Graph"
+        ):  # TODO: remove this after refactor
             parent_node.next_edge_schemas = set(
                 parent_node.schema.from_node_schema_id_to_edge_schema.get(
                     new_node.schema.id, []
                 )
             )
-            parent_node.bwd_skip_edge_schemas = parent_node.compute_bwd_skip_edge_schemas(
-                parent_node.curr_node, parent_node.bwd_skip_edge_schemas
+            parent_node.bwd_skip_edge_schemas = (
+                parent_node.compute_bwd_skip_edge_schemas(
+                    parent_node.curr_node, parent_node.bwd_skip_edge_schemas
+                )
             )
 
     def init_next_node(
@@ -321,7 +327,7 @@ class HasGraphMixin:
                     exclude=curr_node.state.resettable_fields
                 )
                 parent_node.state = parent_node.state.__class__(**new_state)
-        
+
         if input is None and edge_schema:
             input = edge_schema.new_input_fn(parent_node.state)
 

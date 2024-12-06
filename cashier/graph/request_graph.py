@@ -215,7 +215,6 @@ class RequestGraph(HasGraphMixin):
             node_schema, edge_schema, TC, remove_prev_tool_calls, None
         )
 
-
     def init_node_core(
         self,
         node_schema: ConversationNodeSchema,
