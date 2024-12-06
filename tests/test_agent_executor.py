@@ -133,8 +133,8 @@ class TestAgent:
                 "tool_registry": tool_registry,
                 "force_tool_choice": None,
                 "exclude_update_state_fns": (
-                    not agent_executor.graph.curr_node.first_user_message
-                    if agent_executor.graph.curr_node is not None
+                    not agent_executor.graph.curr_executable.first_user_message
+                    if agent_executor.graph.curr_executable is not None
                     else False
                 ),
             },
@@ -268,7 +268,8 @@ class TestAgent:
                     model_provider,
                     None,
                     False,
-                    fwd_skip_node_schema_id or agent_executor.graph.curr_node.schema.id,
+                    fwd_skip_node_schema_id
+                    or agent_executor.graph.curr_executable.schema.id,
                     0.5,
                 )
                 model_chat_side_effects.append(is_wait_model_completion)
@@ -322,7 +323,7 @@ class TestAgent:
     ):
         if tool_names is not None:
             fn_calls, fn_call_id_to_fn_output = self.create_fake_fn_calls(
-                model_provider, tool_names, agent_executor.graph.curr_node
+                model_provider, tool_names, agent_executor.graph.curr_executable
             )
 
         model_completion = self.create_mock_model_completion(
@@ -339,7 +340,7 @@ class TestAgent:
             else []
         )
 
-        tool_registry = agent_executor.graph.curr_node.schema.tool_registry
+        tool_registry = agent_executor.graph.curr_executable.schema.tool_registry
 
         fn_calls = fn_calls or []
         expected_calls_map = defaultdict(list)
@@ -353,22 +354,22 @@ class TestAgent:
                 for fn_call in fn_calls
             },
         ) as patched_fn_name_to_fn, ExitStack() as stack:
-            curr_node = agent_executor.graph.curr_node
+            curr_node = agent_executor.graph.curr_executable
             if get_state_fn_call is not None:
                 stack.enter_context(
                     patch.object(
-                        agent_executor.graph.curr_node,
+                        agent_executor.graph.curr_executable,
                         "get_state",
-                        wraps=agent_executor.graph.curr_node.get_state,
+                        wraps=agent_executor.graph.curr_executable.get_state,
                     )
                 )
 
             if update_state_fn_calls:
                 stack.enter_context(
                     patch.object(
-                        agent_executor.graph.curr_node,
+                        agent_executor.graph.curr_executable,
                         "update_state",
-                        wraps=agent_executor.graph.curr_node.update_state,
+                        wraps=agent_executor.graph.curr_executable.update_state,
                     )
                 )
 
@@ -782,7 +783,7 @@ class TestAgent:
         start_turns,
     ):
         fn_calls, fn_call_id_to_fn_output = self.create_fake_fn_calls(
-            model_provider, other_fn_names, agent_executor.graph.curr_node
+            model_provider, other_fn_names, agent_executor.graph.curr_executable
         )
         fn_call = FunctionCall.create(
             name="update_state_order",
@@ -1021,7 +1022,7 @@ class TestAgent:
             tool_registry=self.start_node_schema.tool_registry,
             fn_calls=[get_state_fn_call],
             fn_call_id_to_fn_output={
-                get_state_fn_call.id: agent_executor.graph.curr_node.state
+                get_state_fn_call.id: agent_executor.graph.curr_executable.state
             },
         )
         self.build_messages_from_turn(t7, model_provider)
@@ -1215,7 +1216,7 @@ class TestAgent:
             tool_registry=self.start_node_schema.tool_registry,
             fn_calls=[get_state_fn_call],
             fn_call_id_to_fn_output={
-                get_state_fn_call.id: agent_executor.graph.curr_node.state
+                get_state_fn_call.id: agent_executor.graph.curr_executable.state
             },
         )
         self.build_messages_from_turn(t10, model_provider)
@@ -1261,7 +1262,7 @@ class TestAgent:
             tool_registry=next_node_schema.tool_registry,
             fn_calls=[get_state_fn_call],
             fn_call_id_to_fn_output={
-                get_state_fn_call.id: agent_executor.graph.curr_node.state
+                get_state_fn_call.id: agent_executor.graph.curr_executable.state
             },
         )
         self.build_messages_from_turn(t13, model_provider)
