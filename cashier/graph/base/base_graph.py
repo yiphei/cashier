@@ -166,7 +166,6 @@ class BaseGraph:
         self,
         start_edge_schema: EdgeSchema,
         start_input: Any,
-        curr_node: ConversationNode,
     ) -> Tuple[EdgeSchema, Any]:
         next_edge_schema = start_edge_schema
         edge_schema = start_edge_schema
@@ -176,15 +175,15 @@ class BaseGraph:
             is not None
         ):
             from_node, to_node = self.get_edge_by_edge_schema_id(next_edge_schema.id)
-            if from_node.schema == curr_node.schema:
-                from_node = curr_node
+            if from_node.schema == self.curr_node.schema:
+                from_node = self.curr_node
 
             can_skip, skip_type = next_edge_schema.can_skip(
                 self.state,  # TODO: this class does not explicitly have a state
                 from_node,
                 to_node,
                 self.is_prev_from_node_completed(
-                    next_edge_schema, from_node == curr_node
+                    next_edge_schema, from_node == self.curr_node
                 ),
             )
 
@@ -205,13 +204,13 @@ class BaseGraph:
                     input = from_node.input
                 else:
                     edge_schema = next_edge_schema
-                    if from_node != curr_node:
+                    if from_node != self.curr_node:
                         input = edge_schema.new_input_fn(
                             from_node.state, from_node.input
                         )
                 break
             else:
-                if from_node != curr_node:
+                if from_node != self.curr_node:
                     input = from_node.input
                 break
 
@@ -367,7 +366,7 @@ class BaseGraph:
 
         if edge_schema:
             edge_schema, input = self.compute_next_edge_schema(
-                edge_schema, input, self.curr_node
+                edge_schema, input
             )
             node_schema = edge_schema.to_node_schema
 
