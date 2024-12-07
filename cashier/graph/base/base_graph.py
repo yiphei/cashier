@@ -11,10 +11,10 @@ from cashier.graph.conversation_node import (
     Direction,
 )
 from cashier.graph.edge_schema import Edge, EdgeSchema, FwdSkipType
+from cashier.graph.mixin.has_status_mixin import Status
 from cashier.gui import MessageDisplay
 from cashier.model.model_turn import AssistantTurn
 from cashier.ref import Ref
-from cashier.graph.mixin.has_status_mixin import Status
 
 
 class BaseGraphSchema:
