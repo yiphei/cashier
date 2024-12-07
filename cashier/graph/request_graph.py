@@ -35,7 +35,7 @@ class RequestGraph(BaseGraph):
 
     def get_graph_schemas(self, request):
         agent_selections = GraphSchemaSelectionPrompt.run(
-            "claude-3.5", request=request, graph_schemas=self.schema.node_schemas
+            request=request, graph_schemas=self.schema.node_schemas
         )
         for agent_selection in agent_selections:
             self.graph_schema_sequence.append(
@@ -52,7 +52,6 @@ class RequestGraph(BaseGraph):
 
     def add_tasks(self, request, tc):
         agent_selection = GraphSchemaAdditionPrompt.run(
-            "claude-3.5",
             graph_schemas=self.schema.node_schemas,
             curr_agent_id=self.graph_schema_sequence[self.current_graph_schema_idx].id,
             curr_task=self.requests[self.current_graph_schema_idx],
@@ -77,7 +76,6 @@ class RequestGraph(BaseGraph):
     def handle_user_turn(self, msg, TC, model_provider):
         if isinstance(self.curr_node, Graph):
             if not OffTopicPrompt.run(
-                "claude-3.5",
                 current_node_schema=self.curr_node.curr_node.schema,
                 tc=TC,
             ):
