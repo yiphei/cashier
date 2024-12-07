@@ -314,9 +314,7 @@ class BaseGraph(ABC):
         self.curr_node = graph
 
         node_schema, edge_schema = graph.compute_init_node_edge_schema()
-        self.curr_node.init_next_node(
-            node_schema, edge_schema, TC, None
-        )
+        self.curr_node.init_next_node(node_schema, edge_schema, TC, None)
 
     def init_node_core(
         self,

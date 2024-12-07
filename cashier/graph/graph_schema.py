@@ -181,9 +181,7 @@ class Graph(BaseGraph):
         edge_schema, node_schema = self.handle_skip(fwd_skip_edge_schemas, TC)
         return edge_schema, node_schema, False  # type: ignore
 
-    def handle_user_turn(
-        self, msg, TC, model_provider, run_off_topic_check=True
-    ):
+    def handle_user_turn(self, msg, TC, model_provider, run_off_topic_check=True):
         if not run_off_topic_check or not OffTopicPrompt.run(
             "claude-3.5",
             current_node_schema=self.curr_node.schema,

@@ -26,7 +26,7 @@ class AgentExecutor:
     ):
         self.audio_output = audio_output
         self.last_model_provider = None
-        self.TC = TurnContainer(remove_prev_tool_calls = remove_prev_tool_calls)
+        self.TC = TurnContainer(remove_prev_tool_calls=remove_prev_tool_calls)
 
         self.need_user_input = True
 
@@ -48,9 +48,7 @@ class AgentExecutor:
         model_provider = (
             model_provider or self.last_model_provider or ModelProvider.OPENAI
         )
-        self.graph.handle_user_turn(
-            msg, self.TC, model_provider
-        )
+        self.graph.handle_user_turn(msg, self.TC, model_provider)
 
     def execute_function_call(
         self, fn_call: FunctionCall, fn_callback: Optional[Callable] = None
