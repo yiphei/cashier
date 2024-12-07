@@ -123,7 +123,7 @@ class RequestGraph(BaseGraph):
         edge_schemas = self.schema.from_node_schema_id_to_edge_schema[
             self.curr_node.schema.id
         ]
-        new_edge_schema, new_node_schema = self.check_single_transition(
+        new_edge_schema, new_node_schema = self.check_node_transition(
             self.curr_node.state, fn_call, is_fn_call_success, edge_schemas
         )
         if new_node_schema is not None and isinstance(self.curr_node, Graph):

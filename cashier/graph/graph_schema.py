@@ -244,7 +244,7 @@ class Graph(BaseGraph):
                 None,
             )
 
-        new_edge_schema, new_node_schema = self.check_single_transition(
+        new_edge_schema, new_node_schema = self.check_node_transition(
             self.curr_node.state, fn_call, is_fn_call_success, self.next_edge_schemas
         )
         return new_edge_schema, new_node_schema, False, None, None
