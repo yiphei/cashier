@@ -140,8 +140,3 @@ class BaseEdgeSchema:
             check_resettable_fields,
             self.from_node_schema.state_schema.resettable_fields,
         )
-
-
-class Edge(NamedTuple):
-    from_node: ConversationNode
-    to_node: ConversationNode
