@@ -118,15 +118,13 @@ class BaseGraph(ABC, HasStatusMixin):
         new_edge_schemas = set()
         curr_bwd_skip_edge_schemas = self.bwd_skip_edge_schemas
         while self.to_node_id_to_edge[from_node.id] is not None:
+            edge = self.to_node_id_to_edge[from_node.id]
             if (
-                self.to_node_id_to_edge[from_node.id].schema
+                edge.schema
                 in curr_bwd_skip_edge_schemas
             ):
                 break
-            new_edge_schemas.add(self.to_node_id_to_edge[from_node.id].schema)
-            edge = self.get_edge_by_edge_schema_id(
-                self.to_node_id_to_edge[from_node.id].schema.id
-            )
+            new_edge_schemas.add(edge.schema)
             assert from_node == edge.to_node
             from_node = edge.from_node
 
@@ -242,10 +240,8 @@ class BaseGraph(ABC, HasStatusMixin):
                 from_node = self.edge_schema_id_to_from_node[edge_schema.id]
                 immediate_from_node = from_node
                 while from_node.schema != curr_node.schema:
-                    prev_edge_schema = self.to_node_id_to_edge[from_node.id].schema
-                    edge = self.get_edge_by_edge_schema_id(
-                        prev_edge_schema.id  # type: ignore
-                    )
+                    edge = self.to_node_id_to_edge[from_node.id]
+                    prev_edge_schema = edge.schema
                     from_node = edge.from_node
                     to_node = edge.to_node
 
@@ -254,9 +250,7 @@ class BaseGraph(ABC, HasStatusMixin):
             self.add_fwd_edge(immediate_from_node, new_node, edge_schema)
         elif direction == Direction.BWD:
             if self.to_node_id_to_edge[new_node.id]:
-                edge = self.get_edge_by_edge_schema_id(
-                    self.to_node_id_to_edge[new_node.id].schema.id
-                )
+                edge = self.to_node_id_to_edge[new_node.id]
                 self.add_fwd_edge(
                     edge.from_node,
                     new_node,
