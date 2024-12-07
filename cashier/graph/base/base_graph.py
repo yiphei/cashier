@@ -60,7 +60,7 @@ class BaseGraph(ABC, HasStatusMixin):
         edge_schema: EdgeSchema,
     ) -> None:
         self.edge_schema_id_to_edges[edge_schema.id].append(
-            Edge(from_node, to_node, schema=edge_schema)
+            Edge(from_node, to_node, edge_schema)
         )
         self.from_node_schema_id_to_last_edge_schema_id[from_node.schema.id] = (
             edge_schema.id
@@ -107,8 +107,8 @@ class BaseGraph(ABC, HasStatusMixin):
             and self.get_edge_by_edge_schema_id(edge_schema.id, raise_if_none=False)
             is not None
         ):
-            from_node, to_node = self.get_edge_by_edge_schema_id(edge_schema.id)
-            return to_node if direction == Direction.FWD else from_node
+            edge = self.get_edge_by_edge_schema_id(edge_schema.id)
+            return edge.to_node if direction == Direction.FWD else edge.from_node
         else:
             return None
 
@@ -120,11 +120,11 @@ class BaseGraph(ABC, HasStatusMixin):
             if from_node.in_edge_schema in curr_bwd_skip_edge_schemas:
                 break
             new_edge_schemas.add(from_node.in_edge_schema)
-            new_from_node, to_node = self.get_edge_by_edge_schema_id(
+            edge = self.get_edge_by_edge_schema_id(
                 from_node.in_edge_schema.id
             )
-            assert from_node == to_node
-            from_node = new_from_node
+            assert from_node == edge.to_node
+            from_node = edge.from_node
 
         self.bwd_skip_edge_schemas = new_edge_schemas | curr_bwd_skip_edge_schemas
 
@@ -139,7 +139,9 @@ class BaseGraph(ABC, HasStatusMixin):
                 self.get_edge_by_edge_schema_id(edge_schema.id, raise_if_none=False)
                 is not None
             ):
-                from_node, to_node = self.get_edge_by_edge_schema_id(edge_schema.id)
+                edge = self.get_edge_by_edge_schema_id(edge_schema.id)
+                from_node = edge.from_node
+                to_node = edge.to_node
                 if from_node.schema == start_node.schema:
                     from_node = start_node
 
@@ -165,7 +167,7 @@ class BaseGraph(ABC, HasStatusMixin):
     ) -> bool:
         idx = -1 if is_start_node else -2
         edge = self.get_edge_by_edge_schema_id(edge_schema.id, idx, raise_if_none=False)
-        return edge[0].status == Status.COMPLETED if edge else False
+        return edge.from_node.status == Status.COMPLETED if edge else False
 
     def compute_next_edge_schema(
         self,
@@ -179,7 +181,9 @@ class BaseGraph(ABC, HasStatusMixin):
             self.get_edge_by_edge_schema_id(next_edge_schema.id, raise_if_none=False)
             is not None
         ):
-            from_node, to_node = self.get_edge_by_edge_schema_id(next_edge_schema.id)
+            edge = self.get_edge_by_edge_schema_id(next_edge_schema.id)
+            from_node = edge.from_node
+            to_node = edge.to_node
             if from_node.schema == self.curr_node.schema:
                 from_node = self.curr_node
 
@@ -235,18 +239,21 @@ class BaseGraph(ABC, HasStatusMixin):
                 immediate_from_node = from_node
                 while from_node.schema != curr_node.schema:
                     prev_edge_schema = from_node.in_edge_schema
-                    from_node, to_node = self.get_edge_by_edge_schema_id(
+                    edge = self.get_edge_by_edge_schema_id(
                         prev_edge_schema.id  # type: ignore
                     )
+                    from_node = edge.from_node
+                    to_node = edge.to_node
 
                 self.add_fwd_edge(curr_node, to_node, prev_edge_schema)  # type: ignore
 
             self.add_fwd_edge(immediate_from_node, new_node, edge_schema)
         elif direction == Direction.BWD:
             if new_node.in_edge_schema:
-                from_node, _ = self.get_edge_by_edge_schema_id(
+                edge = self.get_edge_by_edge_schema_id(
                     new_node.in_edge_schema.id
                 )
+                from_node = edge.from_node
                 self.add_fwd_edge(from_node, new_node, new_node.in_edge_schema)
 
             self.edge_schema_id_to_from_node[edge_schema.id] = new_node

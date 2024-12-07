@@ -71,7 +71,8 @@ class EdgeSchema(BaseEdgeSchema, HasIdMixin, metaclass=AutoMixinInit):
             return False, None
 
 
-class Edge(NamedTuple):
-    from_node: ConversationNode
-    to_node: ConversationNode
-    schema: EdgeSchema
+class Edge:
+    def __init__(self, from_node, to_node, schema):
+        self.from_node = from_node
+        self.to_node = to_node
+        self.schema = schema
