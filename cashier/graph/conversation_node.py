@@ -30,13 +30,11 @@ class ConversationNode(HasIdMixin, HasStatusMixin, metaclass=AutoMixinInit):
         input: Any,
         state: BaseStateModel,
         prompt: str,
-        in_edge_schema: Optional[EdgeSchema],
         direction: Direction = Direction.FWD,
     ):
         self.prompt = prompt
         self.input = input
         self.schema = schema
-        self.in_edge_schema = in_edge_schema
         self.direction = direction
         self.has_run_assistant_turn_before_transition = False
         self.state = state
@@ -199,17 +197,10 @@ class ConversationNodeSchema(HasIdMixin, metaclass=AutoMixinInit):
             last_msg=last_msg,
             curr_request=curr_request,
         )
-
-        if direction == Direction.BWD:
-            assert prev_node is not None
-            in_edge_schema = prev_node.in_edge_schema
-        else:
-            in_edge_schema = edge_schema
         return ConversationNode(
             schema=self,
             input=input,
             state=state,
             prompt=cast(str, prompt),
-            in_edge_schema=in_edge_schema,
             direction=direction,
         )
