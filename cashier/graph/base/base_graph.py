@@ -306,7 +306,7 @@ class BaseGraph(ABC, HasStatusMixin):
         self.current_graph_schema_idx += 1
 
         graph = node_schema.create_node(
-            input=input, request=self.tasks[self.current_graph_schema_idx]
+            input=input, request=self.requests[self.current_graph_schema_idx]
         )
         self.curr_conversation_node = Ref(graph, "curr_conversation_node")
 

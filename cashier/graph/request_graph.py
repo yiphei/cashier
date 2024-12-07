@@ -27,7 +27,7 @@ class RequestGraph(BaseGraph):
     ):
         super().__init__(schema)
         self.input = input
-        self.tasks = []
+        self.requests = []
         self.graph_schema_sequence = []
         self.current_graph_schema_idx = -1
         self.graph_schema_id_to_task = {}
@@ -41,7 +41,7 @@ class RequestGraph(BaseGraph):
             self.graph_schema_sequence.append(
                 self.schema.node_schema_id_to_node_schema[agent_selection.agent_id]
             )
-            self.tasks.append(agent_selection.task)
+            self.requests.append(agent_selection.task)
             self.graph_schema_id_to_task[agent_selection.agent_id] = (
                 agent_selection.task
             )
@@ -55,9 +55,9 @@ class RequestGraph(BaseGraph):
             "claude-3.5",
             graph_schemas=self.schema.node_schemas,
             curr_agent_id=self.graph_schema_sequence[self.current_graph_schema_idx].id,
-            curr_task=self.tasks[self.current_graph_schema_idx],
+            curr_task=self.requests[self.current_graph_schema_idx],
             tc=tc,
-            all_tasks=self.tasks,
+            all_tasks=self.requests,
         )
 
         logger.debug(
@@ -67,7 +67,7 @@ class RequestGraph(BaseGraph):
             self.graph_schema_sequence.append(
                 self.schema.node_schema_id_to_node_schema[agent_selection.agent_id]
             )
-            self.tasks.append(agent_selection.task)
+            self.requests.append(agent_selection.task)
             self.graph_schema_id_to_task[agent_selection.agent_id] = (
                 agent_selection.task
             )
@@ -122,10 +122,10 @@ class RequestGraph(BaseGraph):
         if (
             new_node_schema is not None
             and isinstance(self.curr_node, Graph)
-            and self.current_graph_schema_idx < len(self.tasks) - 1
+            and self.current_graph_schema_idx < len(self.requests) - 1
         ):
             fake_fn_call = create_think_fn_call(
-                f"I just completed the current request. The next request to be addressed is: {self.tasks[self.current_graph_schema_idx + 1]}. I must explicitly inform the customer that the current request is completed and that I will address the next request right away. Only after I informed the customer do I receive the tools to address the next request."
+                f"I just completed the current request. The next request to be addressed is: {self.requests[self.current_graph_schema_idx + 1]}. I must explicitly inform the customer that the current request is completed and that I will address the next request right away. Only after I informed the customer do I receive the tools to address the next request."
             )
         return new_edge_schema, new_node_schema, False, fake_fn_call, None
 
