@@ -168,7 +168,6 @@ class Graph(BaseGraph):
         Tuple[EdgeSchema, ConversationNodeSchema, bool], Tuple[None, None, bool]
     ]:
         fwd_skip_edge_schemas = self.compute_fwd_skip_edge_schemas(
-            self.curr_node, self.next_edge_schemas
         )
         bwd_skip_edge_schemas = self.bwd_skip_edge_schemas
 

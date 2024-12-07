@@ -125,8 +125,10 @@ class BaseGraph:
         self.bwd_skip_edge_schemas = new_edge_schemas | curr_bwd_skip_edge_schemas
 
     def compute_fwd_skip_edge_schemas(
-        self, start_node: ConversationNode, start_edge_schemas: Set[EdgeSchema]
+        self
     ) -> Set[EdgeSchema]:
+        start_node = self.curr_node
+        start_edge_schemas = self.next_edge_schemas
         fwd_jump_edge_schemas = set()
         edge_schemas = deque(start_edge_schemas)
         while edge_schemas:
