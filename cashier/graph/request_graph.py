@@ -1,17 +1,13 @@
 from __future__ import annotations
 
 import json
-from typing import Any, List, Optional, Type
+from typing import Any, List, Type
 
 from cashier.graph.base.base_edge_schema import BaseEdgeSchema
 from cashier.graph.base.graph_base import BaseGraph, BaseGraphSchema
-from cashier.graph.conversation_node import (
-    ConversationNode,
-    ConversationNodeSchema,
-    Direction,
-)
+from cashier.graph.conversation_node import ConversationNodeSchema
 from cashier.graph.edge_schema import EdgeSchema
-from cashier.graph.graph_schema import Graph, GraphSchema
+from cashier.graph.graph_schema import Graph
 from cashier.graph.mixin.auto_mixin_init import AutoMixinInit
 from cashier.graph.mixin.has_id_mixin import HasIdMixin
 from cashier.logger import logger
@@ -20,27 +16,6 @@ from cashier.prompts.graph_schema_addition import GraphSchemaAdditionPrompt
 from cashier.prompts.graph_schema_selection import GraphSchemaSelectionPrompt
 from cashier.prompts.node_system import NodeSystemPrompt
 from cashier.prompts.off_topic import OffTopicPrompt
-
-
-class Ref:
-    def __init__(self, obj, attr):
-        self._obj = obj
-        self._attr = attr
-
-    def __get__(self, instance, owner):
-        return getattr(self._obj, self._attr)
-
-    def __set__(self, instance, value):
-        setattr(self._obj, self._attr, value)
-
-    # Optional: make it behave more like a regular variable
-    def __repr__(self):
-        return repr(self.__get__(None, None))
-
-    def __getattr__(self, name):
-        # Get the current value and access the requested attribute
-        value = self.__get__(None, None)
-        return getattr(value, name)
 
 
 class RequestGraph(BaseGraph):
@@ -148,10 +123,14 @@ class RequestGraph(BaseGraph):
         edge_schemas = self.schema.from_node_schema_id_to_edge_schema[
             self.curr_node.schema.id
         ]
-        new_edge_schema, new_node_schema = self.check_single_transition(
+        new_edge_schema, new_node_schema = self.check_node_transition(
             self.curr_node.state, fn_call, is_fn_call_success, edge_schemas
         )
-        if new_node_schema is not None and isinstance(self.curr_node, Graph):
+        if (
+            new_node_schema is not None
+            and isinstance(self.curr_node, Graph)
+            and self.current_graph_schema_idx < len(self.tasks) - 1
+        ):
             fake_fn_call = FunctionCall.create(
                 api_id_model_provider=None,
                 api_id=None,
@@ -161,74 +140,6 @@ class RequestGraph(BaseGraph):
                 },
             )
         return new_edge_schema, new_node_schema, False, fake_fn_call, None
-
-    def init_graph_core(
-        self,
-        node_schema: ConversationNodeSchema,
-        edge_schema: Optional[EdgeSchema],
-        input: Any,
-        last_msg: Optional[str],
-        prev_node: Optional[ConversationNode],
-        direction: Direction,
-        TC,
-        remove_prev_tool_calls,
-        is_skip: bool = False,
-    ) -> None:
-        self.current_graph_schema_idx += 1
-
-        graph = Graph(
-            input=input,
-            request=self.tasks[self.current_graph_schema_idx],
-            graph_schema=node_schema,
-        )
-        self.curr_conversation_node = Ref(graph, "curr_conversation_node")
-
-        if edge_schema:
-            self.add_edge(self.curr_node, graph, edge_schema, direction)
-
-        self.curr_node = graph
-
-        node_schema, edge_schema = graph.compute_init_node_edge_schema()
-        self.curr_node.init_next_node(
-            node_schema, edge_schema, TC, remove_prev_tool_calls, None
-        )
-
-    def init_node_core(
-        self,
-        node_schema: ConversationNodeSchema,
-        edge_schema: Optional[EdgeSchema],
-        input: Any,
-        last_msg: Optional[str],
-        prev_node: Optional[ConversationNode],
-        direction: Direction,
-        TC,
-        remove_prev_tool_calls,
-        is_skip: bool = False,
-    ) -> None:
-        if isinstance(node_schema, GraphSchema):
-            self.init_graph_core(
-                node_schema,
-                edge_schema,
-                input,
-                last_msg,
-                prev_node,
-                direction,
-                TC,
-                remove_prev_tool_calls,
-                is_skip,
-            )
-        else:
-            self.init_conversation_core(
-                node_schema,
-                edge_schema,
-                input,
-                last_msg,
-                prev_node,
-                direction,
-                TC,
-                remove_prev_tool_calls,
-                is_skip,
-            )
 
 
 class RequestGraphSchema(BaseGraphSchema):

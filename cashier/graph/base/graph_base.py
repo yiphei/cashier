@@ -12,6 +12,7 @@ from cashier.graph.conversation_node import (
 from cashier.graph.edge_schema import Edge, EdgeSchema, FwdSkipType
 from cashier.gui import MessageDisplay
 from cashier.model.model_turn import AssistantTurn
+from cashier.ref import Ref
 
 
 class BaseGraphSchema:
@@ -247,7 +248,7 @@ class BaseGraph:
             self.edge_schema_id_to_from_node[edge_schema.id] = new_node
 
     @classmethod
-    def check_single_transition(cls, state, fn_call, is_fn_call_success, edge_schemas):
+    def check_node_transition(cls, state, fn_call, is_fn_call_success, edge_schemas):
         for edge_schema in edge_schemas:
             if edge_schema.check_transition_config(state, fn_call, is_fn_call_success):
                 new_edge_schema = edge_schema
@@ -290,6 +291,66 @@ class BaseGraph:
             self.add_edge(self.curr_node, new_node, edge_schema, direction)
 
         self.curr_node = new_node
+
+    def init_graph_core(
+        self,
+        node_schema: ConversationNodeSchema,
+        edge_schema: Optional[EdgeSchema],
+        input: Any,
+        last_msg: Optional[str],
+        prev_node: Optional[ConversationNode],
+        direction: Direction,
+        TC,
+        remove_prev_tool_calls,
+        is_skip: bool = False,
+    ) -> None:
+        self.current_graph_schema_idx += 1
+
+        graph = node_schema.create_node(
+            input=input, request=self.tasks[self.current_graph_schema_idx]
+        )
+        self.curr_conversation_node = Ref(graph, "curr_conversation_node")
+
+        if edge_schema:
+            self.add_edge(self.curr_node, graph, edge_schema, direction)
+
+        self.curr_node = graph
+
+        node_schema, edge_schema = graph.compute_init_node_edge_schema()
+        self.curr_node.init_next_node(
+            node_schema, edge_schema, TC, remove_prev_tool_calls, None
+        )
+
+    def init_node_core(
+        self,
+        node_schema: ConversationNodeSchema,
+        edge_schema: Optional[EdgeSchema],
+        input: Any,
+        last_msg: Optional[str],
+        prev_node: Optional[ConversationNode],
+        direction: Direction,
+        TC,
+        remove_prev_tool_calls,
+        is_skip: bool = False,
+    ) -> None:
+        from cashier.graph.graph_schema import GraphSchema
+
+        if isinstance(node_schema, GraphSchema):
+            fn = self.init_graph_core
+        else:
+            fn = self.init_conversation_core
+
+        fn(
+            node_schema,
+            edge_schema,
+            input,
+            last_msg,
+            prev_node,
+            direction,
+            TC,
+            remove_prev_tool_calls,
+            is_skip,
+        )
 
     def _init_next_node(
         self,
@@ -423,20 +484,8 @@ class BaseGraph:
         ):
             return self.check_self_transition(fn_call, is_fn_call_success)
         else:
-            (
-                new_edge_schema,
-                new_node_schema,
-                is_completed,
-                fake_fn_call,
-                fake_fn_output,
-            ) = self.curr_node.check_transition(fn_call, is_fn_call_success)
-            if is_completed:
+            tuple_output = self.curr_node.check_transition(fn_call, is_fn_call_success)
+            if tuple_output[2]:
                 return self.check_self_transition(fn_call, is_fn_call_success)
             else:
-                return (
-                    new_edge_schema,
-                    new_node_schema,
-                    is_completed,
-                    fake_fn_call,
-                    fake_fn_output,
-                )
+                return tuple_output

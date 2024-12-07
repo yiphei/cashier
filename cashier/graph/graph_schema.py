@@ -56,16 +56,23 @@ class GraphSchema(HasIdMixin, BaseGraphSchema, metaclass=AutoMixinInit):
         self.last_node_schema = last_node_schema
         self.completion_config = completion_config
 
+    def create_node(self, input, request):
+        return Graph(
+            input=input,
+            request=request,
+            schema=self,
+        )
+
 
 class Graph(BaseGraph):
     def __init__(
         self,
         input: Any,
         request: str,
-        graph_schema: BaseGraphSchema,
+        schema: BaseGraphSchema,
     ):
-        super().__init__(graph_schema, request)
-        self.state = graph_schema.state_schema(**(input or {}))
+        super().__init__(schema, request)
+        self.state = schema.state_schema(**(input or {}))
 
     @property
     def curr_conversation_node(self):
@@ -79,7 +86,8 @@ class Graph(BaseGraph):
         next_edge_schemas = self.schema.from_node_schema_id_to_edge_schema[
             node_schema.id
         ]
-        while next_edge_schemas:
+        passed_check = True
+        while passed_check:
             passed_check = False
             for next_edge_schema in next_edge_schemas:
                 if next_edge_schema.check_transition_config(
@@ -95,9 +103,6 @@ class Graph(BaseGraph):
                         node_schema.id
                     ]
                     break
-
-            if not passed_check:
-                break
 
         return node_schema, edge_schema
 
@@ -239,7 +244,7 @@ class Graph(BaseGraph):
                 None,
             )
 
-        new_edge_schema, new_node_schema = self.check_single_transition(
+        new_edge_schema, new_node_schema = self.check_node_transition(
             self.curr_node.state, fn_call, is_fn_call_success, self.next_edge_schemas
         )
         return new_edge_schema, new_node_schema, False, None, None
@@ -273,27 +278,3 @@ class Graph(BaseGraph):
             )
         )
         self.compute_bwd_skip_edge_schemas()
-
-    def init_node_core(
-        self,
-        node_schema: ConversationNodeSchema,
-        edge_schema: Optional[EdgeSchema],
-        input: Any,
-        last_msg: Optional[str],
-        prev_node: Optional[ConversationNode],
-        direction: Direction,
-        TC,
-        remove_prev_tool_calls,
-        is_skip: bool = False,
-    ) -> None:
-        self.init_conversation_core(
-            node_schema,
-            edge_schema,
-            input,
-            last_msg,
-            prev_node,
-            direction,
-            TC,
-            remove_prev_tool_calls,
-            is_skip,
-        )
