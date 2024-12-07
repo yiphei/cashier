@@ -25,7 +25,6 @@ class AgentExecutor:
         remove_prev_tool_calls: bool,
         graph_schema=None,
     ):
-
         self.remove_prev_tool_calls = remove_prev_tool_calls
         self.audio_output = audio_output
         self.last_model_provider = None
