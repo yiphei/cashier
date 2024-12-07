@@ -74,3 +74,4 @@ class EdgeSchema(BaseEdgeSchema, HasIdMixin, metaclass=AutoMixinInit):
 class Edge(NamedTuple):
     from_node: ConversationNode
     to_node: ConversationNode
+    schema: EdgeSchema
