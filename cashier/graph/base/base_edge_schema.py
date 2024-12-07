@@ -43,6 +43,7 @@ class BaseTransitionConfig(BaseModel):
         elif isinstance(self, StateTransitionConfig):
             return self.check(state, check_resettable_fields, resettable_fields)
 
+
 class FunctionState(StrEnum):
     CALLED = "CALLED"
     CALLED_AND_SUCCEEDED = "CALLED_AND_SUCCEEDED"
