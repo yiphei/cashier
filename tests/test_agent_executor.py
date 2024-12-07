@@ -84,7 +84,11 @@ class TestAgent:
             add_fn = None
             if isinstance(turn_args, TurnArgs):
                 turn = turn_args.turn
-                kwargs = {"turn": turn_args.turn, "remove_prev_tool_calls": remove_prev_tool_calls, **turn_args.kwargs}
+                kwargs = {
+                    "turn": turn_args.turn,
+                    "remove_prev_tool_calls": remove_prev_tool_calls,
+                    **turn_args.kwargs,
+                }
             else:
                 turn = turn_args
                 kwargs = {"turn": turn_args}
@@ -1253,7 +1257,7 @@ class TestAgent:
                 ),
                 node_id=6,
             ),
-            kwargs={ "is_skip": True},
+            kwargs={"is_skip": True},
         )
         self.build_messages_from_turn(
             node_turn_4,
