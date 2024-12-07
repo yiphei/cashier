@@ -104,12 +104,11 @@ class Graph(BaseGraph):
     def handle_skip(
         self,
         fwd_skip_edge_schemas: Set[EdgeSchema],
-        bwd_skip_edge_schemas: Set[EdgeSchema],
         TC,
     ) -> Union[Tuple[EdgeSchema, ConversationNodeSchema], Tuple[None, None]]:
         all_node_schemas = {self.curr_node.schema}
         all_node_schemas.update(edge.to_node_schema for edge in fwd_skip_edge_schemas)
-        all_node_schemas.update(edge.from_node_schema for edge in bwd_skip_edge_schemas)
+        all_node_schemas.update(edge.from_node_schema for edge in self.bwd_skip_edge_schemas)
 
         node_schema_id = should_change_node_schema(
             TC, self.curr_node.schema, all_node_schemas, False
@@ -123,7 +122,7 @@ class Graph(BaseGraph):
                         self.schema.node_schema_id_to_node_schema[node_schema_id],
                     )
 
-            for edge_schema in bwd_skip_edge_schemas:
+            for edge_schema in self.bwd_skip_edge_schemas:
                 if edge_schema.from_node_schema.id == node_schema_id:
                     return (
                         edge_schema,
@@ -135,13 +134,12 @@ class Graph(BaseGraph):
     def handle_wait(
         self,
         fwd_skip_edge_schemas: Set[EdgeSchema],
-        bwd_skip_edge_schemas: Set[EdgeSchema],
         TC,
     ) -> Union[Tuple[EdgeSchema, ConversationNodeSchema], Tuple[None, None]]:
         remaining_edge_schemas = (
             set(self.schema.edge_schemas)
             - fwd_skip_edge_schemas
-            - bwd_skip_edge_schemas
+            - self.bwd_skip_edge_schemas
         )
 
         all_node_schemas = {self.curr_node.schema}
@@ -169,16 +167,15 @@ class Graph(BaseGraph):
     ]:
         fwd_skip_edge_schemas = self.compute_fwd_skip_edge_schemas(
         )
-        bwd_skip_edge_schemas = self.bwd_skip_edge_schemas
 
         edge_schema, node_schema = self.handle_wait(
-            fwd_skip_edge_schemas, bwd_skip_edge_schemas, TC
+            fwd_skip_edge_schemas, TC
         )
         if edge_schema:
             return edge_schema, node_schema, True  # type: ignore
 
         edge_schema, node_schema = self.handle_skip(
-            fwd_skip_edge_schemas, bwd_skip_edge_schemas, TC
+            fwd_skip_edge_schemas, TC
         )
         return edge_schema, node_schema, False  # type: ignore
 
