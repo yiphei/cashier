@@ -56,10 +56,7 @@ class GraphSchema(HasIdMixin, BaseGraphSchema, metaclass=AutoMixinInit):
         self.last_node_schema = last_node_schema
         self.completion_config = completion_config
 
-
-    def create_node(
-                self, input, request 
-            ):
+    def create_node(self, input, request):
         return Graph(
             input=input,
             request=request,

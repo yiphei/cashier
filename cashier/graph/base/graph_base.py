@@ -307,8 +307,7 @@ class BaseGraph:
         self.current_graph_schema_idx += 1
 
         graph = node_schema.create_node(
-            input=input,
-            request=self.tasks[self.current_graph_schema_idx]
+            input=input, request=self.tasks[self.current_graph_schema_idx]
         )
         self.curr_conversation_node = Ref(graph, "curr_conversation_node")
 
@@ -335,6 +334,7 @@ class BaseGraph:
         is_skip: bool = False,
     ) -> None:
         from cashier.graph.graph_schema import GraphSchema
+
         if isinstance(node_schema, GraphSchema):
             self.init_graph_core(
                 node_schema,

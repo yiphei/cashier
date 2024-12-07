@@ -1,17 +1,15 @@
 from __future__ import annotations
 
 import json
-from typing import Any, List, Optional, Type
+from typing import Any, List, Type
 
 from cashier.graph.base.base_edge_schema import BaseEdgeSchema
 from cashier.graph.base.graph_base import BaseGraph, BaseGraphSchema
 from cashier.graph.conversation_node import (
-    ConversationNode,
     ConversationNodeSchema,
-    Direction,
 )
 from cashier.graph.edge_schema import EdgeSchema
-from cashier.graph.graph_schema import Graph, GraphSchema
+from cashier.graph.graph_schema import Graph
 from cashier.graph.mixin.auto_mixin_init import AutoMixinInit
 from cashier.graph.mixin.has_id_mixin import HasIdMixin
 from cashier.logger import logger
@@ -20,7 +18,6 @@ from cashier.prompts.graph_schema_addition import GraphSchemaAdditionPrompt
 from cashier.prompts.graph_schema_selection import GraphSchemaSelectionPrompt
 from cashier.prompts.node_system import NodeSystemPrompt
 from cashier.prompts.off_topic import OffTopicPrompt
-from cashier.ref import Ref
 
 
 class RequestGraph(BaseGraph):
