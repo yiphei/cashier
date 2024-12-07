@@ -1,7 +1,7 @@
+from abc import ABC, abstractmethod
 from collections import defaultdict, deque
 from typing import Any, List, Literal, Optional, Set, Tuple, overload
 from venv import logger
-from abc import ABC, abstractmethod
 
 from colorama import Style
 
