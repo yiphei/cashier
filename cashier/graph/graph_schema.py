@@ -79,7 +79,8 @@ class Graph(BaseGraph):
         next_edge_schemas = self.schema.from_node_schema_id_to_edge_schema[
             node_schema.id
         ]
-        while next_edge_schemas:
+        passed_check = True
+        while passed_check:
             passed_check = False
             for next_edge_schema in next_edge_schemas:
                 if next_edge_schema.check_transition_config(
@@ -95,9 +96,6 @@ class Graph(BaseGraph):
                         node_schema.id
                     ]
                     break
-
-            if not passed_check:
-                break
 
         return node_schema, edge_schema
 
