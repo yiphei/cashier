@@ -249,8 +249,7 @@ class BaseGraph(ABC, HasStatusMixin):
         elif direction == Direction.BWD:
             if new_node.in_edge_schema:
                 edge = self.get_edge_by_edge_schema_id(new_node.in_edge_schema.id)
-                from_node = edge.from_node
-                self.add_fwd_edge(from_node, new_node, new_node.in_edge_schema)
+                self.add_fwd_edge(edge.from_node, new_node, new_node.in_edge_schema)
 
             self.edge_schema_id_to_from_node[edge_schema.id] = new_node
 
