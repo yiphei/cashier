@@ -376,6 +376,18 @@ class BaseGraph(ABC, HasStatusMixin):
             False,
         )
 
+    def handle_curr_node_completion(self):
+        self.curr_node.mark_as_completed()
+        if self.curr_node.state is not None and self.state is not None:
+            old_state = self.state.model_dump()
+            new_state = old_state | self.curr_node.state.model_dump(
+                exclude=self.curr_node.state.resettable_fields
+            )
+            self.state = self.state.__class__(**new_state)
+
+        if isinstance(self.curr_node, BaseGraph):
+            self.curr_node.handle_curr_node_completion()
+
     def init_next_node(
         self,
         node_schema: ConversationNodeSchema,
@@ -390,13 +402,7 @@ class BaseGraph(ABC, HasStatusMixin):
                 parent_node = curr_node
                 curr_node = curr_node.curr_node
 
-            curr_node.mark_as_completed()
-            if curr_node.state is not None and parent_node.state is not None:
-                old_state = parent_node.state.model_dump()
-                new_state = old_state | curr_node.state.model_dump(
-                    exclude=curr_node.state.resettable_fields
-                )
-                parent_node.state = parent_node.state.__class__(**new_state)
+            parent_node.handle_curr_node_completion()
 
         direction = Direction.FWD
         last_msg = TC.get_user_message(content_only=True)
