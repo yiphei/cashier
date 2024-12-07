@@ -4,7 +4,7 @@ from typing import Any, List, Optional, Set, Tuple, Type, Union
 
 from pydantic import BaseModel
 
-from cashier.graph.base.base_edge_schema import BaseTransitionConfig, FunctionState
+from cashier.graph.base.base_edge_schema import BaseTransitionConfig
 from cashier.graph.base.graph_base import BaseGraph, BaseGraphSchema
 from cashier.graph.conversation_node import (
     ConversationNode,
@@ -228,8 +228,16 @@ class Graph(BaseGraph):
     def check_self_transition(self, fn_call, is_fn_call_success):
         new_edge_schema = None
         new_node_schema = None
-        if self.curr_node.schema == self.schema.last_node_schema:            
-            return None, None,self.schema.completion_config.check(self.state, fn_call, is_fn_call_success), None, None
+        if self.curr_node.schema == self.schema.last_node_schema:
+            return (
+                None,
+                None,
+                self.schema.completion_config.check(
+                    self.state, fn_call, is_fn_call_success
+                ),
+                None,
+                None,
+            )
 
         new_edge_schema, new_node_schema = self.check_single_transition(
             self.curr_node.state, fn_call, is_fn_call_success, self.next_edge_schemas

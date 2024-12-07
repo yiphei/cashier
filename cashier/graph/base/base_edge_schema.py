@@ -40,20 +40,31 @@ class FunctionTransitionConfig(BaseTransitionConfig):
     fn_name: str
     state: FunctionState
 
-    def check(self, state, fn_call, is_fn_call_success, check_resettable_fields=True, resettable_fields=None):
+    def check(
+        self,
+        state,
+        fn_call,
+        is_fn_call_success,
+        check_resettable_fields=True,
+        resettable_fields=None,
+    ):
         if self.state == FunctionState.CALLED:
             return fn_call.name == self.fn_name
         elif self.state == FunctionState.CALLED_AND_SUCCEEDED:
-            return (
-                fn_call.name == self.fn_name
-                and is_fn_call_success
-            )
+            return fn_call.name == self.fn_name and is_fn_call_success
 
 
 class StateTransitionConfig(BaseTransitionConfig):
     state_check_fn_map: Dict[str, Callable[[Any], bool]]
 
-    def check(self, state, fn_call, is_fn_call_success, check_resettable_fields=True, resettable_fields=None):
+    def check(
+        self,
+        state,
+        fn_call,
+        is_fn_call_success,
+        check_resettable_fields=True,
+        resettable_fields=None,
+    ):
         for (
             field_name,
             state_check_fn,
@@ -114,7 +125,13 @@ class BaseEdgeSchema:
         is_fn_call_success,
         check_resettable_fields=True,
     ) -> bool:
-        return self.transition_config.check(state, fn_call, is_fn_call_success, check_resettable_fields, self.from_node_schema.state_schema.resettable_fields)
+        return self.transition_config.check(
+            state,
+            fn_call,
+            is_fn_call_success,
+            check_resettable_fields,
+            self.from_node_schema.state_schema.resettable_fields,
+        )
 
 
 class Edge(NamedTuple):
