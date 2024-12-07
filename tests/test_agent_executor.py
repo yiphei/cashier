@@ -84,7 +84,7 @@ class TestAgent:
             add_fn = None
             if isinstance(turn_args, TurnArgs):
                 turn = turn_args.turn
-                kwargs = {"turn": turn_args.turn, **turn_args.kwargs}
+                kwargs = {"turn": turn_args.turn, "remove_prev_tool_calls": remove_prev_tool_calls, **turn_args.kwargs}
             else:
                 turn = turn_args
                 kwargs = {"turn": turn_args}
@@ -448,7 +448,6 @@ class TestAgent:
                     ),
                     node_id=1,
                 ),
-                kwargs={"remove_prev_tool_calls": remove_prev_tool_calls},
             ),
             ut,
             TurnArgs(
@@ -463,7 +462,6 @@ class TestAgent:
                     ),
                     node_id=2,
                 ),
-                kwargs={"remove_prev_tool_calls": remove_prev_tool_calls},
             ),
             cashier_graph_schema.start_node_schema.first_turn,
         ]
@@ -888,7 +886,6 @@ class TestAgent:
                 ),
                 node_id=3,
             ),
-            kwargs={"remove_prev_tool_calls": remove_prev_tool_calls},
         )
         self.build_messages_from_turn(
             node_turn,
@@ -977,7 +974,6 @@ class TestAgent:
                 ),
                 node_id=3,
             ),
-            kwargs={"remove_prev_tool_calls": remove_prev_tool_calls},
         )
         self.build_messages_from_turn(
             node_turn_1,
@@ -1013,7 +1009,7 @@ class TestAgent:
                 ),
                 node_id=4,
             ),
-            kwargs={"remove_prev_tool_calls": remove_prev_tool_calls, "is_skip": True},
+            kwargs={"is_skip": True},
         )
         self.build_messages_from_turn(
             node_turn_2,
@@ -1122,7 +1118,6 @@ class TestAgent:
                 ),
                 node_id=3,
             ),
-            kwargs={"remove_prev_tool_calls": remove_prev_tool_calls},
         )
         self.build_messages_from_turn(
             node_turn_1,
@@ -1178,7 +1173,6 @@ class TestAgent:
                 ),
                 node_id=4,
             ),
-            kwargs={"remove_prev_tool_calls": remove_prev_tool_calls},
         )
         self.build_messages_from_turn(
             node_turn_2,
@@ -1213,7 +1207,7 @@ class TestAgent:
                 ),
                 node_id=5,
             ),
-            kwargs={"remove_prev_tool_calls": remove_prev_tool_calls, "is_skip": True},
+            kwargs={"is_skip": True},
         )
         self.build_messages_from_turn(
             node_turn_3,
@@ -1259,7 +1253,7 @@ class TestAgent:
                 ),
                 node_id=6,
             ),
-            kwargs={"remove_prev_tool_calls": remove_prev_tool_calls, "is_skip": True},
+            kwargs={ "is_skip": True},
         )
         self.build_messages_from_turn(
             node_turn_4,
