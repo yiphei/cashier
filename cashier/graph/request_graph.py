@@ -179,7 +179,7 @@ class RequestGraph(BaseGraph):
         graph = Graph(
             input=input,
             request=self.tasks[self.current_graph_schema_idx],
-            graph_schema=node_schema,
+            schema=node_schema,
         )
         self.curr_conversation_node = Ref(graph, "curr_conversation_node")
 

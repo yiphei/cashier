@@ -62,10 +62,10 @@ class Graph(BaseGraph):
         self,
         input: Any,
         request: str,
-        graph_schema: BaseGraphSchema,
+        schema: BaseGraphSchema,
     ):
-        super().__init__(graph_schema, request)
-        self.state = graph_schema.state_schema(**(input or {}))
+        super().__init__(schema, request)
+        self.state = schema.state_schema(**(input or {}))
 
     @property
     def curr_conversation_node(self):
