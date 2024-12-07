@@ -119,7 +119,7 @@ class BasePrompt(metaclass=CallableMeta):
         return chat_completion
 
     @classmethod
-    def run(cls, model_name: ModelName, **kwargs: Any) -> Any:
+    def run(cls, model_name: ModelName = "claude-3.5", **kwargs: Any) -> Any:
         input = cls.run_input_kwargs(**kwargs)
         model_provider = Model.get_model_provider(model_name)
         args = cls.get_model_completion_args(model_provider, input)

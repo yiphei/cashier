@@ -29,7 +29,6 @@ def should_change_node_schema(
     if len(all_node_schemas) == 1:
         return None
     return NodeSchemaSelectionPrompt.run(
-        "claude-3.5",
         current_node_schema=current_node_schema,
         tc=TM,
         all_node_schemas=all_node_schemas,
@@ -183,7 +182,6 @@ class Graph(BaseGraph):
 
     def handle_user_turn(self, msg, TC, model_provider, run_off_topic_check=True):
         if not run_off_topic_check or not OffTopicPrompt.run(
-            "claude-3.5",
             current_node_schema=self.curr_node.schema,
             tc=TC,
         ):
