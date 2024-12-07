@@ -182,7 +182,7 @@ class Graph(BaseGraph):
         return edge_schema, node_schema, False  # type: ignore
 
     def handle_user_turn(
-        self, msg, TC, model_provider, remove_prev_tool_calls, run_off_topic_check=True
+        self, msg, TC, model_provider, run_off_topic_check=True
     ):
         if not run_off_topic_check or not OffTopicPrompt.run(
             "claude-3.5",
@@ -207,7 +207,6 @@ class Graph(BaseGraph):
                         node_schema,
                         edge_schema,
                         TC,
-                        remove_prev_tool_calls,  # TODO: remove this after refactor
                     )
 
                     fake_fn_call = FunctionCall.create(
@@ -253,7 +252,6 @@ class Graph(BaseGraph):
         prev_node: Optional[ConversationNode],
         direction: Direction,
         TC,
-        remove_prev_tool_calls,
         is_skip: bool = False,
     ) -> None:
         super().init_conversation_core(
@@ -264,7 +262,6 @@ class Graph(BaseGraph):
             prev_node,
             direction,
             TC,
-            remove_prev_tool_calls,
             is_skip,
         )
         self.next_edge_schemas = set(

@@ -265,7 +265,6 @@ class BaseGraph(ABC):
         prev_node: Optional[ConversationNode],
         direction: Direction,
         TC,
-        remove_prev_tool_calls,
         is_skip: bool = False,
     ) -> None:
         logger.debug(
@@ -277,7 +276,6 @@ class BaseGraph(ABC):
 
         TC.add_node_turn(
             new_node,
-            remove_prev_tool_calls=remove_prev_tool_calls,
             is_skip=is_skip,
         )
         MessageDisplay.print_msg("system", new_node.prompt)
@@ -301,7 +299,6 @@ class BaseGraph(ABC):
         prev_node: Optional[ConversationNode],
         direction: Direction,
         TC,
-        remove_prev_tool_calls,
         is_skip: bool = False,
     ) -> None:
         self.current_graph_schema_idx += 1
@@ -318,7 +315,7 @@ class BaseGraph(ABC):
 
         node_schema, edge_schema = graph.compute_init_node_edge_schema()
         self.curr_node.init_next_node(
-            node_schema, edge_schema, TC, remove_prev_tool_calls, None
+            node_schema, edge_schema, TC, None
         )
 
     def init_node_core(
@@ -330,7 +327,6 @@ class BaseGraph(ABC):
         prev_node: Optional[ConversationNode],
         direction: Direction,
         TC,
-        remove_prev_tool_calls,
         is_skip: bool = False,
     ) -> None:
         from cashier.graph.graph_schema import GraphSchema
@@ -348,7 +344,6 @@ class BaseGraph(ABC):
             prev_node,
             direction,
             TC,
-            remove_prev_tool_calls,
             is_skip,
         )
 
@@ -359,7 +354,6 @@ class BaseGraph(ABC):
         TC,
         direction,
         last_msg,
-        remove_prev_tool_calls,
         input,
     ) -> None:
         if input is None and edge_schema:
@@ -379,7 +373,6 @@ class BaseGraph(ABC):
             prev_node,
             direction,
             TC,
-            remove_prev_tool_calls,
             False,
         )
 
@@ -388,7 +381,6 @@ class BaseGraph(ABC):
         node_schema: ConversationNodeSchema,
         edge_schema: Optional[EdgeSchema],
         TC,
-        remove_prev_tool_calls,
         input: Any = None,
     ) -> None:
         curr_node = self.curr_node
@@ -416,7 +408,6 @@ class BaseGraph(ABC):
             TC,
             direction,
             last_msg,
-            remove_prev_tool_calls,
             input,
         )
 
@@ -427,7 +418,6 @@ class BaseGraph(ABC):
         direction,
         last_msg,
         TC,
-        remove_prev_tool_calls,
     ) -> None:
 
         if direction == Direction.BWD:
@@ -446,7 +436,6 @@ class BaseGraph(ABC):
             prev_node,
             direction,
             TC,
-            remove_prev_tool_calls,
             True,
         )
 
@@ -455,7 +444,6 @@ class BaseGraph(ABC):
         node_schema: ConversationNodeSchema,
         edge_schema: EdgeSchema,
         TC,
-        remove_prev_tool_calls,
     ) -> None:
         parent_node = self
 
@@ -473,7 +461,6 @@ class BaseGraph(ABC):
             direction,
             last_msg,
             TC,
-            remove_prev_tool_calls,
         )
 
     @abstractmethod

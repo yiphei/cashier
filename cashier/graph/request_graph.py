@@ -74,7 +74,7 @@ class RequestGraph(BaseGraph):
 
         return True if agent_selection else False
 
-    def handle_user_turn(self, msg, TC, model_provider, remove_prev_tool_calls):
+    def handle_user_turn(self, msg, TC, model_provider):
         if isinstance(self.curr_node, Graph):
             if not OffTopicPrompt.run(
                 "claude-3.5",
@@ -98,7 +98,6 @@ class RequestGraph(BaseGraph):
                         msg,
                         TC,
                         model_provider,
-                        remove_prev_tool_calls,
                         run_off_topic_check=False,
                     )
             self.curr_node.curr_node.update_first_user_message()  # TODO: remove this after refactor
@@ -109,7 +108,6 @@ class RequestGraph(BaseGraph):
                     self.graph_schema_sequence[0],
                     None,
                     TC,
-                    remove_prev_tool_calls,
                     None,
                 )
 

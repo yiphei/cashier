@@ -78,8 +78,8 @@ class TestAgent:
         ), patch("cashier.model.model_util.uuid.uuid4", side_effect=capture_uuid_call):
             yield
 
-    def create_turn_container(self, turn_args_list):
-        TC = TurnContainer()
+    def create_turn_container(self, turn_args_list, remove_prev_tool_calls):
+        TC = TurnContainer(remove_prev_tool_calls=remove_prev_tool_calls)
         for turn_args in turn_args_list:
             add_fn = None
             if isinstance(turn_args, TurnArgs):
@@ -665,7 +665,7 @@ class TestAgent:
     def test_graph_initialization(
         self, model_provider, remove_prev_tool_calls, agent_executor, start_turns
     ):
-        TC = self.create_turn_container(start_turns)
+        TC = self.create_turn_container(start_turns, remove_prev_tool_calls)
         self.run_assertions(
             agent_executor,
             TC,
@@ -678,7 +678,7 @@ class TestAgent:
     ):
         user_turn = self.add_user_turn(agent_executor, "hello", model_provider, True)
 
-        TC = self.create_turn_container([*start_turns, user_turn])
+        TC = self.create_turn_container([*start_turns, user_turn], remove_prev_tool_calls)
         self.run_assertions(
             agent_executor, TC, self.start_node_schema.tool_registry, model_provider
         )
@@ -710,7 +710,7 @@ class TestAgent:
         )
         self.build_messages_from_turn(assistant_turn, model_provider)
 
-        TC = self.create_turn_container([*start_turns, user_turn, assistant_turn])
+        TC = self.create_turn_container([*start_turns, user_turn, assistant_turn], remove_prev_tool_calls)
 
         self.run_assertions(
             agent_executor, TC, self.start_node_schema.tool_registry, model_provider
@@ -730,7 +730,7 @@ class TestAgent:
             agent_executor, model_provider, "hello back", is_stream
         )
 
-        TC = self.create_turn_container([*start_turns, user_turn, assistant_turn])
+        TC = self.create_turn_container([*start_turns, user_turn, assistant_turn], remove_prev_tool_calls)
 
         self.run_assertions(
             agent_executor, TC, self.start_node_schema.tool_registry, model_provider
@@ -750,7 +750,7 @@ class TestAgent:
             agent_executor, model_provider, None, is_stream, tool_names=fn_names
         )
 
-        TC = self.create_turn_container([*start_turns, user_turn, assistant_turn])
+        TC = self.create_turn_container([*start_turns, user_turn, assistant_turn], remove_prev_tool_calls)
 
         self.run_assertions(
             agent_executor, TC, self.start_node_schema.tool_registry, model_provider
@@ -807,7 +807,7 @@ class TestAgent:
             fn_call_id_to_fn_output,
         )
 
-        TC = self.create_turn_container([*start_turns, assistant_turn])
+        TC = self.create_turn_container([*start_turns, assistant_turn], remove_prev_tool_calls)
 
         self.run_assertions(
             agent_executor, TC, self.start_node_schema.tool_registry, model_provider
@@ -894,7 +894,7 @@ class TestAgent:
                 t3,
                 t4,
                 node_turn,
-            ]
+            ], remove_prev_tool_calls
         )
 
         self.run_assertions(
@@ -1039,7 +1039,7 @@ class TestAgent:
                 t6,
                 node_turn_2,
                 t7,
-            ],
+            ], remove_prev_tool_calls
         )
 
         self.run_assertions(
@@ -1287,7 +1287,7 @@ class TestAgent:
                 t12,
                 node_turn_4,
                 t13,
-            ],
+            ], remove_prev_tool_calls
         )
 
         self.run_assertions(

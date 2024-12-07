@@ -24,10 +24,9 @@ class AgentExecutor:
         remove_prev_tool_calls: bool,
         graph_schema=None,
     ):
-        self.remove_prev_tool_calls = remove_prev_tool_calls
         self.audio_output = audio_output
         self.last_model_provider = None
-        self.TC = TurnContainer()
+        self.TC = TurnContainer(remove_prev_tool_calls = remove_prev_tool_calls)
 
         self.need_user_input = True
 
@@ -36,7 +35,6 @@ class AgentExecutor:
             graph_schema.start_node_schema,
             None,
             self.TC,
-            self.remove_prev_tool_calls,
         )
         self.force_tool_choice = None
         self.new_edge_schema = None
@@ -51,7 +49,7 @@ class AgentExecutor:
             model_provider or self.last_model_provider or ModelProvider.OPENAI
         )
         self.graph.handle_user_turn(
-            msg, self.TC, model_provider, self.remove_prev_tool_calls
+            msg, self.TC, model_provider
         )
 
     def execute_function_call(
@@ -162,7 +160,6 @@ class AgentExecutor:
                 self.new_node_schema,
                 self.new_edge_schema,
                 self.TC,
-                self.remove_prev_tool_calls,
                 None,
             )
             self.new_edge_schema = None
