@@ -255,12 +255,12 @@ class BaseGraph(ABC, HasStatusMixin):
         elif direction == Direction.BWD:
             if self.to_node_id_to_edge[new_node.id]:
                 edge = self.get_edge_by_edge_schema_id(
-                    self.to_node_id_to_edge[from_node.id].schema.id
+                    self.to_node_id_to_edge[new_node.id].schema.id
                 )
                 self.add_fwd_edge(
                     edge.from_node,
                     new_node,
-                    self.to_node_id_to_edge[from_node.id].schema,
+                    self.to_node_id_to_edge[new_node.id].schema,
                 )
 
             self.edge_schema_id_to_from_node[edge_schema.id] = new_node
