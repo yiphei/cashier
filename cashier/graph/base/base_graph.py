@@ -59,7 +59,9 @@ class BaseGraph(ABC, HasStatusMixin):
         to_node: ConversationNode,
         edge_schema: EdgeSchema,
     ) -> None:
-        self.edge_schema_id_to_edges[edge_schema.id].append(Edge(from_node, to_node, schema=edge_schema))
+        self.edge_schema_id_to_edges[edge_schema.id].append(
+            Edge(from_node, to_node, schema=edge_schema)
+        )
         self.from_node_schema_id_to_last_edge_schema_id[from_node.schema.id] = (
             edge_schema.id
         )
