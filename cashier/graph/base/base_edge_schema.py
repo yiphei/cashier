@@ -40,9 +40,35 @@ class FunctionTransitionConfig(BaseTransitionConfig):
     fn_name: str
     state: FunctionState
 
+    def check(self, state, fn_call, is_fn_call_success, check_resettable_fields=True, resettable_fields=None):
+        if self.state == FunctionState.CALLED:
+            return fn_call.name == self.fn_name
+        elif self.state == FunctionState.CALLED_AND_SUCCEEDED:
+            return (
+                fn_call.name == self.fn_name
+                and is_fn_call_success
+            )
+
 
 class StateTransitionConfig(BaseTransitionConfig):
     state_check_fn_map: Dict[str, Callable[[Any], bool]]
+
+    def check(self, state, fn_call, is_fn_call_success, check_resettable_fields=True, resettable_fields=None):
+        for (
+            field_name,
+            state_check_fn,
+        ) in self.state_check_fn_map.items():
+            if (
+                resettable_fields
+                and field_name in resettable_fields
+                and not check_resettable_fields
+            ):
+                continue
+
+            field_value = getattr(state, field_name)
+            if not state_check_fn(field_value):
+                return False
+        return True
 
 
 class BaseEdgeSchema:
@@ -88,31 +114,7 @@ class BaseEdgeSchema:
         is_fn_call_success,
         check_resettable_fields=True,
     ) -> bool:
-        if isinstance(self.transition_config, FunctionTransitionConfig):
-            if self.transition_config.state == FunctionState.CALLED:
-                return fn_call.name == self.transition_config.fn_name
-            elif self.transition_config.state == FunctionState.CALLED_AND_SUCCEEDED:
-                return (
-                    fn_call.name == self.transition_config.fn_name
-                    and is_fn_call_success
-                )
-        elif isinstance(self.transition_config, StateTransitionConfig):
-            resettable_fields = self.from_node_schema.state_schema.resettable_fields
-            for (
-                field_name,
-                state_check_fn,
-            ) in self.transition_config.state_check_fn_map.items():
-                if (
-                    resettable_fields
-                    and field_name in resettable_fields
-                    and not check_resettable_fields
-                ):
-                    continue
-
-                field_value = getattr(state, field_name)
-                if not state_check_fn(field_value):
-                    return False
-            return True
+        return self.transition_config.check(state, fn_call, is_fn_call_success, check_resettable_fields, self.from_node_schema.state_schema.resettable_fields)
 
 
 class Edge(NamedTuple):

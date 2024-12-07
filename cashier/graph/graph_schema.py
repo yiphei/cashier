@@ -228,29 +228,8 @@ class Graph(BaseGraph):
     def check_self_transition(self, fn_call, is_fn_call_success):
         new_edge_schema = None
         new_node_schema = None
-        if self.curr_node.schema == self.schema.last_node_schema:
-            if self.schema.completion_config.state == FunctionState.CALLED:
-                return (
-                    None,
-                    None,
-                    fn_call.name == self.schema.completion_config.fn_name,
-                    None,
-                    None,
-                )
-            elif (
-                self.schema.completion_config.state
-                == FunctionState.CALLED_AND_SUCCEEDED
-            ):
-                return (
-                    None,
-                    None,
-                    (
-                        fn_call.name == self.schema.completion_config.fn_name
-                        and is_fn_call_success
-                    ),
-                    None,
-                    None,
-                )
+        if self.curr_node.schema == self.schema.last_node_schema:            
+            return None, None,self.schema.completion_config.check(self.state, fn_call, is_fn_call_success), None, None
 
         new_edge_schema, new_node_schema = self.check_single_transition(
             self.curr_node.state, fn_call, is_fn_call_success, self.next_edge_schemas
