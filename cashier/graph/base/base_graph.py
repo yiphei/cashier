@@ -1,6 +1,7 @@
 from collections import defaultdict, deque
 from typing import Any, List, Literal, Optional, Set, Tuple, overload
 from venv import logger
+from abc import ABC, abstractmethod
 
 from colorama import Style
 
@@ -39,7 +40,7 @@ class BaseGraphSchema:
             ].append(edge_schema)
 
 
-class BaseGraph:
+class BaseGraph(ABC):
     def __init__(self, schema: BaseGraphSchema, request=None):
         self.schema = schema
         self.edge_schema_id_to_edges = defaultdict(list)
@@ -474,6 +475,10 @@ class BaseGraph:
             TC,
             remove_prev_tool_calls,
         )
+
+    @abstractmethod
+    def check_self_transition(self, fn_call, is_fn_call_sucess):
+        raise NotImplementedError()
 
     def check_transition(self, fn_call, is_fn_call_success):
         if getattr(self, "curr_node", None) is None or not isinstance(
