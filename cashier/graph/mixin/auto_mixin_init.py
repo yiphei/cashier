@@ -1,5 +1,6 @@
 from inspect import signature
 
+
 class AutoMixinInit(type):
     """Metaclass that automatically initializes mixins in the correct order."""
 
@@ -23,8 +24,8 @@ class AutoMixinInit(type):
                 mixin.__init__(instance, **mixin_kwargs)
 
     def __new__(mcs, name, bases, attrs):
-        original_init = attrs.get('__init__')
-        
+        original_init = attrs.get("__init__")
+
         def wrapped_init(self, *args, **kwargs):
             # Call the mixin initialization
             self.__class__._initialize_mixins(self, args, kwargs)
@@ -33,6 +34,6 @@ class AutoMixinInit(type):
                 original_init(self, *args, **kwargs)
             else:
                 super(self.__class__, self).__init__(*args, **kwargs)
-        
-        attrs['__init__'] = wrapped_init
+
+        attrs["__init__"] = wrapped_init
         return super().__new__(mcs, name, bases, attrs)
