@@ -106,9 +106,7 @@ class BaseGraph:
         else:
             return None
 
-    def compute_bwd_skip_edge_schemas(
-        self
-    ) -> Set[EdgeSchema]:
+    def compute_bwd_skip_edge_schemas(self) -> Set[EdgeSchema]:
         from_node = self.curr_node
         new_edge_schemas = set()
         curr_bwd_skip_edge_schemas = self.bwd_skip_edge_schemas
@@ -124,9 +122,7 @@ class BaseGraph:
 
         self.bwd_skip_edge_schemas = new_edge_schemas | curr_bwd_skip_edge_schemas
 
-    def compute_fwd_skip_edge_schemas(
-        self
-    ) -> Set[EdgeSchema]:
+    def compute_fwd_skip_edge_schemas(self) -> Set[EdgeSchema]:
         start_node = self.curr_node
         start_edge_schemas = self.next_edge_schemas
         fwd_jump_edge_schemas = set()

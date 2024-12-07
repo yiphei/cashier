@@ -108,7 +108,9 @@ class Graph(BaseGraph):
     ) -> Union[Tuple[EdgeSchema, ConversationNodeSchema], Tuple[None, None]]:
         all_node_schemas = {self.curr_node.schema}
         all_node_schemas.update(edge.to_node_schema for edge in fwd_skip_edge_schemas)
-        all_node_schemas.update(edge.from_node_schema for edge in self.bwd_skip_edge_schemas)
+        all_node_schemas.update(
+            edge.from_node_schema for edge in self.bwd_skip_edge_schemas
+        )
 
         node_schema_id = should_change_node_schema(
             TC, self.curr_node.schema, all_node_schemas, False
@@ -165,18 +167,13 @@ class Graph(BaseGraph):
     ) -> Union[
         Tuple[EdgeSchema, ConversationNodeSchema, bool], Tuple[None, None, bool]
     ]:
-        fwd_skip_edge_schemas = self.compute_fwd_skip_edge_schemas(
-        )
+        fwd_skip_edge_schemas = self.compute_fwd_skip_edge_schemas()
 
-        edge_schema, node_schema = self.handle_wait(
-            fwd_skip_edge_schemas, TC
-        )
+        edge_schema, node_schema = self.handle_wait(fwd_skip_edge_schemas, TC)
         if edge_schema:
             return edge_schema, node_schema, True  # type: ignore
 
-        edge_schema, node_schema = self.handle_skip(
-            fwd_skip_edge_schemas, TC
-        )
+        edge_schema, node_schema = self.handle_skip(fwd_skip_edge_schemas, TC)
         return edge_schema, node_schema, False  # type: ignore
 
     def handle_user_turn(
