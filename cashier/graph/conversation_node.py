@@ -11,6 +11,7 @@ from cashier.graph.base.base_state import BaseStateModel
 from cashier.graph.edge_schema import EdgeSchema
 from cashier.graph.mixin.auto_mixin_init import AutoMixinInit
 from cashier.graph.mixin.has_id_mixin import HasIdMixin
+from cashier.graph.mixin.has_status_mixin import HasStatusMixin
 from cashier.model.model_turn import ModelTurn
 from cashier.prompts.node_system import NodeSystemPrompt
 from cashier.tool.function_call_context import StateUpdateError
@@ -22,11 +23,7 @@ class Direction(StrEnum):
     BWD = "BWD"
 
 
-class ConversationNode(HasIdMixin, metaclass=AutoMixinInit):
-    class Status(StrEnum):
-        IN_PROGRESS = "IN_PROGRESS"
-        COMPLETED = "COMPLETED"
-
+class ConversationNode(HasIdMixin, HasStatusMixin, metaclass=AutoMixinInit):
     def __init__(
         self,
         schema: ConversationNodeSchema,
@@ -39,7 +36,6 @@ class ConversationNode(HasIdMixin, metaclass=AutoMixinInit):
         self.prompt = prompt
         self.input = input
         self.schema = schema
-        self.status = self.Status.IN_PROGRESS
         self.in_edge_schema = in_edge_schema
         self.direction = direction
         self.has_run_assistant_turn_before_transition = False
@@ -77,9 +73,6 @@ class ConversationNode(HasIdMixin, metaclass=AutoMixinInit):
                 return prev_node.state.copy_resume()
 
         return state_schema()
-
-    def mark_as_completed(self) -> None:
-        self.status = self.Status.COMPLETED
 
     def update_state(self, **kwargs: Any) -> None:
         if self.first_user_message:

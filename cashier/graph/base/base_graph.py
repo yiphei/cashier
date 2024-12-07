@@ -14,6 +14,7 @@ from cashier.graph.edge_schema import Edge, EdgeSchema, FwdSkipType
 from cashier.gui import MessageDisplay
 from cashier.model.model_turn import AssistantTurn
 from cashier.ref import Ref
+from cashier.graph.mixin.has_status_mixin import Status
 
 
 class BaseGraphSchema:
@@ -161,7 +162,7 @@ class BaseGraph(ABC):
     ) -> bool:
         idx = -1 if is_start_node else -2
         edge = self.get_edge_by_edge_schema_id(edge_schema.id, idx, raise_if_none=False)
-        return edge[0].status == ConversationNode.Status.COMPLETED if edge else False
+        return edge[0].status == Status.COMPLETED if edge else False
 
     def compute_next_edge_schema(
         self,
@@ -201,7 +202,7 @@ class BaseGraph(ABC):
                     input = to_node.input
                     break
             elif skip_type == FwdSkipType.SKIP_IF_INPUT_UNCHANGED:
-                if from_node.status != ConversationNode.Status.COMPLETED:
+                if from_node.status != Status.COMPLETED:
                     input = from_node.input
                 else:
                     edge_schema = next_edge_schema

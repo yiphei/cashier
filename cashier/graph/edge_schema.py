@@ -9,6 +9,7 @@ if TYPE_CHECKING:
 
 from cashier.graph.base.base_edge_schema import BaseEdgeSchema, FwdSkipType
 from cashier.graph.mixin.auto_mixin_init import AutoMixinInit
+from cashier.graph.mixin.has_status_mixin import Status
 
 
 class EdgeSchema(BaseEdgeSchema, HasIdMixin, metaclass=AutoMixinInit):
@@ -37,13 +38,11 @@ class EdgeSchema(BaseEdgeSchema, HasIdMixin, metaclass=AutoMixinInit):
         to_node: ConversationNode,
         is_prev_from_node_completed: bool,
     ) -> Tuple[bool, Optional[FwdSkipType]]:
-        from cashier.graph.conversation_node import ConversationNode
-
         assert from_node.schema == self.from_node_schema
         assert to_node.schema == self.to_node_schema
 
-        if from_node.status == ConversationNode.Status.COMPLETED:
-            if to_node.status == ConversationNode.Status.COMPLETED:
+        if from_node.status == Status.COMPLETED:
+            if to_node.status == Status.COMPLETED:
                 return self._can_skip(
                     state,
                     self.skip_from_complete_to_prev_complete,
@@ -56,7 +55,7 @@ class EdgeSchema(BaseEdgeSchema, HasIdMixin, metaclass=AutoMixinInit):
                     to_node,
                 )
         elif is_prev_from_node_completed:
-            if to_node.status == ConversationNode.Status.COMPLETED:
+            if to_node.status == Status.COMPLETED:
                 return self._can_skip(
                     state,
                     self.skip_from_incomplete_to_prev_complete,
