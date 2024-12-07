@@ -126,7 +126,11 @@ class RequestGraph(BaseGraph):
         new_edge_schema, new_node_schema = self.check_node_transition(
             self.curr_node.state, fn_call, is_fn_call_success, edge_schemas
         )
-        if new_node_schema is not None and isinstance(self.curr_node, Graph) and self.current_graph_schema_idx < len(self.tasks)-1:
+        if (
+            new_node_schema is not None
+            and isinstance(self.curr_node, Graph)
+            and self.current_graph_schema_idx < len(self.tasks) - 1
+        ):
             fake_fn_call = FunctionCall.create(
                 api_id_model_provider=None,
                 api_id=None,
