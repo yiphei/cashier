@@ -11,7 +11,7 @@ from cashier.graph.conversation_node import (
     Direction,
 )
 from cashier.graph.edge_schema import Edge, EdgeSchema, FwdSkipType
-from cashier.graph.mixin.has_status_mixin import Status
+from cashier.graph.mixin.has_status_mixin import HasStatusMixin, Status
 from cashier.gui import MessageDisplay
 from cashier.model.model_turn import AssistantTurn
 from cashier.ref import Ref
@@ -41,8 +41,9 @@ class BaseGraphSchema:
             ].append(edge_schema)
 
 
-class BaseGraph(ABC):
+class BaseGraph(ABC, HasStatusMixin):
     def __init__(self, schema: BaseGraphSchema, request=None):
+        HasStatusMixin.__init__(self)
         self.schema = schema
         self.edge_schema_id_to_edges = defaultdict(list)
         self.from_node_schema_id_to_last_edge_schema_id = defaultdict(lambda: None)
@@ -389,8 +390,7 @@ class BaseGraph(ABC):
                 parent_node = curr_node
                 curr_node = curr_node.curr_node
 
-            if isinstance(curr_node, ConversationNode):
-                curr_node.mark_as_completed()
+            curr_node.mark_as_completed()
             if curr_node.state is not None and parent_node.state is not None:
                 old_state = parent_node.state.model_dump()
                 new_state = old_state | curr_node.state.model_dump(
