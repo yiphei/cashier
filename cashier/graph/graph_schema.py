@@ -292,9 +292,7 @@ class Graph(BaseGraph):
                 self.curr_node.schema.id, []
             )
         )
-        self.bwd_skip_edge_schemas = self.compute_bwd_skip_edge_schemas(
-            self.curr_node, self.bwd_skip_edge_schemas
-        )
+        self.compute_bwd_skip_edge_schemas()
 
     def init_node_core(
         self,

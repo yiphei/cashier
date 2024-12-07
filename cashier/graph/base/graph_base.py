@@ -107,12 +107,11 @@ class BaseGraph:
             return None
 
     def compute_bwd_skip_edge_schemas(
-        self,
-        start_node: ConversationNode,
-        curr_bwd_skip_edge_schemas: Set[EdgeSchema],
+        self
     ) -> Set[EdgeSchema]:
-        from_node = start_node
+        from_node = self.curr_node
         new_edge_schemas = set()
+        curr_bwd_skip_edge_schemas = self.bwd_skip_edge_schemas
         while from_node.in_edge_schema is not None:
             if from_node.in_edge_schema in curr_bwd_skip_edge_schemas:
                 break
@@ -123,7 +122,7 @@ class BaseGraph:
             assert from_node == to_node
             from_node = new_from_node
 
-        return new_edge_schemas | curr_bwd_skip_edge_schemas
+        self.bwd_skip_edge_schemas = new_edge_schemas | curr_bwd_skip_edge_schemas
 
     def compute_fwd_skip_edge_schemas(
         self, start_node: ConversationNode, start_edge_schemas: Set[EdgeSchema]
