@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 from enum import StrEnum
-from typing import TYPE_CHECKING, Any, Callable, Dict, NamedTuple, Optional
+from typing import TYPE_CHECKING, Any, Callable, Dict, Optional
 
 from pydantic import BaseModel
 
 if TYPE_CHECKING:
-    from cashier.graph.conversation_node import ConversationNode, ConversationNodeSchema
+    from cashier.graph.conversation_node import ConversationNodeSchema
 
 from cashier.graph.base.base_state import BaseStateModel
 
