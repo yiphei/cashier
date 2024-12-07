@@ -3,13 +3,17 @@ from __future__ import annotations
 import json
 from typing import Any, List, Optional, Type
 
+from cashier.graph.base.base_edge_schema import BaseEdgeSchema
+from cashier.graph.base.graph_base import BaseGraph, BaseGraphSchema
+from cashier.graph.conversation_node import (
+    ConversationNode,
+    ConversationNodeSchema,
+    Direction,
+)
 from cashier.graph.edge_schema import EdgeSchema
 from cashier.graph.graph_schema import Graph, GraphSchema
 from cashier.graph.mixin.auto_mixin_init import AutoMixinInit
-from cashier.graph.mixin.base_edge_schema import BaseEdgeSchema
-from cashier.graph.mixin.graph_mixin import HasGraphMixin, HasGraphSchemaMixin
 from cashier.graph.mixin.has_id_mixin import HasIdMixin
-from cashier.graph.node_schema import NodeSchema
 from cashier.logger import logger
 from cashier.model.model_util import CustomJSONEncoder, FunctionCall
 from cashier.prompts.graph_schema_addition import GraphSchemaAdditionPrompt
@@ -39,29 +43,28 @@ class Ref:
         return getattr(value, name)
 
 
-class RequestGraph(HasGraphMixin):
+class RequestGraph(BaseGraph):
 
     def __init__(
         self,
         input: Any,
-        graph_schema: HasGraphSchemaMixin,
+        schema: BaseGraphSchema,
     ):
-        HasGraphMixin.__init__(self, graph_schema)
+        super().__init__(schema)
+        self.input = input
         self.tasks = []
         self.graph_schema_sequence = []
         self.current_graph_schema_idx = -1
         self.graph_schema_id_to_task = {}
-        self.curr_executable = None
+        self.curr_conversation_node = None
 
     def get_graph_schemas(self, request):
         agent_selections = GraphSchemaSelectionPrompt.run(
-            "claude-3.5", request=request, graph_schemas=self.graph_schema.node_schemas
+            "claude-3.5", request=request, graph_schemas=self.schema.node_schemas
         )
         for agent_selection in agent_selections:
             self.graph_schema_sequence.append(
-                self.graph_schema.node_schema_id_to_node_schema[
-                    agent_selection.agent_id
-                ]
+                self.schema.node_schema_id_to_node_schema[agent_selection.agent_id]
             )
             self.tasks.append(agent_selection.task)
             self.graph_schema_id_to_task[agent_selection.agent_id] = (
@@ -75,7 +78,7 @@ class RequestGraph(HasGraphMixin):
     def add_tasks(self, request, tc):
         agent_selection = GraphSchemaAdditionPrompt.run(
             "claude-3.5",
-            graph_schemas=self.graph_schema.node_schemas,
+            graph_schemas=self.schema.node_schemas,
             curr_agent_id=self.graph_schema_sequence[self.current_graph_schema_idx].id,
             curr_task=self.tasks[self.current_graph_schema_idx],
             tc=tc,
@@ -87,9 +90,7 @@ class RequestGraph(HasGraphMixin):
         )
         if agent_selection is not None:
             self.graph_schema_sequence.append(
-                self.graph_schema.node_schema_id_to_node_schema[
-                    agent_selection.agent_id
-                ]
+                self.schema.node_schema_id_to_node_schema[agent_selection.agent_id]
             )
             self.tasks.append(agent_selection.task)
             self.graph_schema_id_to_task[agent_selection.agent_id] = (
@@ -142,94 +143,105 @@ class RequestGraph(HasGraphMixin):
                     None,
                 )
 
-    def init_next_node(
+    def check_self_transition(self, fn_call, is_fn_call_success):
+        fake_fn_call = None
+        edge_schemas = self.schema.from_node_schema_id_to_edge_schema[
+            self.curr_node.schema.id
+        ]
+        new_edge_schema, new_node_schema = self.check_single_transition(
+            self.curr_node.state, fn_call, is_fn_call_success, edge_schemas
+        )
+        if new_node_schema is not None and isinstance(self.curr_node, Graph):
+            fake_fn_call = FunctionCall.create(
+                api_id_model_provider=None,
+                api_id=None,
+                name="think",
+                args={
+                    "thought": f"I just completed the current request. The next request to be addressed is: {self.tasks[self.current_graph_schema_idx + 1]}. I must explicitly inform the customer that the current request is completed and that I will address the next request right away. Only after I informed the customer do I receive the tools to address the next request."
+                },
+            )
+        return new_edge_schema, new_node_schema, False, fake_fn_call, None
+
+    def init_graph_core(
         self,
-        node_schema: NodeSchema,
+        node_schema: ConversationNodeSchema,
         edge_schema: Optional[EdgeSchema],
+        input: Any,
+        last_msg: Optional[str],
+        prev_node: Optional[ConversationNode],
+        direction: Direction,
         TC,
         remove_prev_tool_calls,
-        input: Any = None,
+        is_skip: bool = False,
+    ) -> None:
+        self.current_graph_schema_idx += 1
+
+        graph = Graph(
+            input=input,
+            request=self.tasks[self.current_graph_schema_idx],
+            graph_schema=node_schema,
+        )
+        self.curr_conversation_node = Ref(graph, "curr_conversation_node")
+
+        if edge_schema:
+            self.add_edge(self.curr_node, graph, edge_schema, direction)
+
+        self.curr_node = graph
+
+        node_schema, edge_schema = graph.compute_init_node_edge_schema()
+        self.curr_node.init_next_node(
+            node_schema, edge_schema, TC, remove_prev_tool_calls, None
+        )
+
+    def init_node_core(
+        self,
+        node_schema: ConversationNodeSchema,
+        edge_schema: Optional[EdgeSchema],
+        input: Any,
+        last_msg: Optional[str],
+        prev_node: Optional[ConversationNode],
+        direction: Direction,
+        TC,
+        remove_prev_tool_calls,
+        is_skip: bool = False,
     ) -> None:
         if isinstance(node_schema, GraphSchema):
-            self.current_graph_schema_idx += 1
-            if input is None and edge_schema is not None:
-                input = edge_schema.new_input_fn(self.state)
-
-            graph = Graph(
-                input=input,
-                request=self.tasks[self.current_graph_schema_idx],
-                graph_schema=node_schema,
-            )
-            self.curr_executable = Ref(graph, "curr_executable")
-            self.curr_node = graph
-            node_schema, edge_schema = graph.compute_init_node_edge_schema()
-            input = None
-            if edge_schema is not None:
-                input = edge_schema.new_input_fn(self.curr_node.state)
-            self.curr_node.init_next_node(
-                node_schema, edge_schema, TC, remove_prev_tool_calls, input
-            )
-        elif node_schema in self.graph_schema.node_schemas:
-            super().init_next_node(
-                node_schema, edge_schema, TC, remove_prev_tool_calls, input
+            self.init_graph_core(
+                node_schema,
+                edge_schema,
+                input,
+                last_msg,
+                prev_node,
+                direction,
+                TC,
+                remove_prev_tool_calls,
+                is_skip,
             )
         else:
-            self.curr_node.init_next_node(
-                node_schema, edge_schema, TC, remove_prev_tool_calls, input
+            self.init_conversation_core(
+                node_schema,
+                edge_schema,
+                input,
+                last_msg,
+                prev_node,
+                direction,
+                TC,
+                remove_prev_tool_calls,
+                is_skip,
             )
 
-    def check_transition(self, fn_call, is_fn_call_success):
-        if isinstance(self.curr_node, Graph):
-            (
-                new_edge_schema,
-                new_node_schema,
-                is_completed,
-                fake_fn_call,
-                fake_fn_output,
-            ) = self.curr_node.check_transition(fn_call, is_fn_call_success)
-            if is_completed:
-                edge_schemas = self.graph_schema.from_node_schema_id_to_edge_schema[
-                    self.curr_node.graph_schema.id
-                ]
-                for edge_schema in edge_schemas:
-                    if edge_schema.check_transition_config(
-                        self.curr_node.curr_node.state, fn_call, is_fn_call_success
-                    ):
-                        fake_fn_call = FunctionCall.create(
-                            api_id_model_provider=None,
-                            api_id=None,
-                            name="think",
-                            args={
-                                "thought": f"I just completed the current request. The next request to be addressed is: {self.tasks[self.current_graph_schema_idx + 1]}. I must explicitly inform the customer that the current request is completed and that I will address the next request right away. Only after I informed the customer do I receive the tools to address the next request."
-                            },
-                        )
-                        new_edge_schema = edge_schema
-                        new_node_schema = edge_schema.to_node_schema
-                        break
 
-            return new_edge_schema, new_node_schema, False, fake_fn_call, None
-        else:
-            for edge_schema in self.next_edge_schemas:
-                if edge_schema.check_transition_config(
-                    self.curr_node.state, fn_call, is_fn_call_success
-                ):
-                    new_edge_schema = edge_schema
-                    new_node_schema = edge_schema.to_node_schema
-                    break
-
-            return new_edge_schema, new_node_schema, False, None, None
-
-
-class RequestGraphSchema(HasGraphSchemaMixin, metaclass=AutoMixinInit):
+class RequestGraphSchema(BaseGraphSchema):
     def __init__(
         self,
         node_prompt: str,
         node_system_prompt: Type[NodeSystemPrompt],
         description: str,
         edge_schemas: List[EdgeSchema],
-        node_schemas: List[NodeSchema],
+        node_schemas: List[ConversationNodeSchema],
     ):
-        self.start_node_schema = NodeSchema(node_prompt, node_system_prompt)
+        super().__init__(description, edge_schemas, node_schemas)
+        self.start_node_schema = ConversationNodeSchema(node_prompt, node_system_prompt)
 
 
 class GraphEdgeSchema(BaseEdgeSchema, HasIdMixin, metaclass=AutoMixinInit):

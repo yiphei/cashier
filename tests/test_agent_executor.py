@@ -9,7 +9,7 @@ from deepdiff import DeepDiff
 from pydantic import BaseModel, Field
 
 from cashier.agent_executor import AgentExecutor
-from cashier.graph.node_schema import Node
+from cashier.graph.conversation_node import ConversationNode
 from cashier.model.message_list import MessageList
 from cashier.model.model_completion import AnthropicModelOutput, OAIModelOutput
 from cashier.model.model_turn import (
@@ -44,7 +44,7 @@ class TurnArgs(BaseModel):
 class TestAgent:
     @pytest.fixture(autouse=True)
     def setup(self):
-        Node._counter = 0
+        ConversationNode._counter = 0
         self.start_node_schema = cashier_graph_schema.start_node_schema
         self.rand_tool_ids = deque()
         self.rand_uuids = deque()
@@ -133,8 +133,8 @@ class TestAgent:
                 "tool_registry": tool_registry,
                 "force_tool_choice": None,
                 "exclude_update_state_fns": (
-                    not agent_executor.graph.curr_executable.first_user_message
-                    if agent_executor.graph.curr_executable is not None
+                    not agent_executor.graph.curr_conversation_node.first_user_message
+                    if agent_executor.graph.curr_conversation_node is not None
                     else False
                 ),
             },
@@ -207,7 +207,7 @@ class TestAgent:
                 args = {}
             elif fn_name.startswith("update_state"):
                 field_name = fn_name.removeprefix("update_state_")
-                model_fields = node.schema.state_pydantic_model.model_fields
+                model_fields = node.schema.state_schema.model_fields
                 field_info = model_fields[field_name]
 
                 # Get default value or call default_factory if it exists
@@ -269,7 +269,7 @@ class TestAgent:
                     None,
                     False,
                     fwd_skip_node_schema_id
-                    or agent_executor.graph.curr_executable.schema.id,
+                    or agent_executor.graph.curr_conversation_node.schema.id,
                     0.5,
                 )
                 model_chat_side_effects.append(is_wait_model_completion)
@@ -323,7 +323,7 @@ class TestAgent:
     ):
         if tool_names is not None:
             fn_calls, fn_call_id_to_fn_output = self.create_fake_fn_calls(
-                model_provider, tool_names, agent_executor.graph.curr_executable
+                model_provider, tool_names, agent_executor.graph.curr_conversation_node
             )
 
         model_completion = self.create_mock_model_completion(
@@ -340,7 +340,7 @@ class TestAgent:
             else []
         )
 
-        tool_registry = agent_executor.graph.curr_executable.schema.tool_registry
+        tool_registry = agent_executor.graph.curr_conversation_node.schema.tool_registry
 
         fn_calls = fn_calls or []
         expected_calls_map = defaultdict(list)
@@ -354,22 +354,22 @@ class TestAgent:
                 for fn_call in fn_calls
             },
         ) as patched_fn_name_to_fn, ExitStack() as stack:
-            curr_node = agent_executor.graph.curr_executable
+            curr_node = agent_executor.graph.curr_conversation_node
             if get_state_fn_call is not None:
                 stack.enter_context(
                     patch.object(
-                        agent_executor.graph.curr_executable,
+                        agent_executor.graph.curr_conversation_node,
                         "get_state",
-                        wraps=agent_executor.graph.curr_executable.get_state,
+                        wraps=agent_executor.graph.curr_conversation_node.get_state,
                     )
                 )
 
             if update_state_fn_calls:
                 stack.enter_context(
                     patch.object(
-                        agent_executor.graph.curr_executable,
+                        agent_executor.graph.curr_conversation_node,
                         "update_state",
-                        wraps=agent_executor.graph.curr_executable.update_state,
+                        wraps=agent_executor.graph.curr_conversation_node.update_state,
                     )
                 )
 
@@ -407,7 +407,7 @@ class TestAgent:
     @pytest.fixture
     def agent_executor(self, remove_prev_tool_calls):
         return AgentExecutor(
-            request_graph_schema=REQUEST_GRAPH_SCHEMA,
+            graph_schema=REQUEST_GRAPH_SCHEMA,
             audio_output=False,
             remove_prev_tool_calls=remove_prev_tool_calls,
         )
@@ -457,7 +457,7 @@ class TestAgent:
                         node_prompt=cashier_graph_schema.start_node_schema.node_prompt,
                         input=None,
                         node_input_json_schema=None,
-                        state_json_schema=self.start_node_schema.state_pydantic_model.model_json_schema(),
+                        state_json_schema=self.start_node_schema.state_schema.model_json_schema(),
                         last_msg="i want to order coffee",
                         curr_request="customer wants to order coffee",
                     ),
@@ -783,7 +783,7 @@ class TestAgent:
         start_turns,
     ):
         fn_calls, fn_call_id_to_fn_output = self.create_fake_fn_calls(
-            model_provider, other_fn_names, agent_executor.graph.curr_executable
+            model_provider, other_fn_names, agent_executor.graph.curr_conversation_node
         )
         fn_call = FunctionCall.create(
             name="update_state_order",
@@ -871,8 +871,8 @@ class TestAgent:
                 msg_content=next_node_schema.node_system_prompt(
                     node_prompt=next_node_schema.node_prompt,
                     input=order.model_dump_json(),
-                    node_input_json_schema=next_node_schema.input_pydantic_model.model_json_schema(),
-                    state_json_schema=next_node_schema.state_pydantic_model.model_json_schema(),
+                    node_input_json_schema=next_node_schema.input_schema.model_json_schema(),
+                    state_json_schema=next_node_schema.state_schema.model_json_schema(),
                     last_msg="i want pecan latte",
                     curr_request="customer wants to order coffee",
                 ),
@@ -959,8 +959,8 @@ class TestAgent:
                 msg_content=next_node_schema.node_system_prompt(
                     node_prompt=next_node_schema.node_prompt,
                     input=order.model_dump_json(),
-                    node_input_json_schema=next_node_schema.input_pydantic_model.model_json_schema(),
-                    state_json_schema=next_node_schema.state_pydantic_model.model_json_schema(),
+                    node_input_json_schema=next_node_schema.input_schema.model_json_schema(),
+                    state_json_schema=next_node_schema.state_schema.model_json_schema(),
                     last_msg="i want pecan latte",
                     curr_request="customer wants to order coffee",
                 ),
@@ -996,7 +996,7 @@ class TestAgent:
                     node_prompt=cashier_graph_schema.start_node_schema.node_prompt,
                     input=None,
                     node_input_json_schema=None,
-                    state_json_schema=self.start_node_schema.state_pydantic_model.model_json_schema(),
+                    state_json_schema=self.start_node_schema.state_schema.model_json_schema(),
                     last_msg="can you confirm the order?",
                     curr_request="customer wants to order coffee",
                 ),
@@ -1022,7 +1022,7 @@ class TestAgent:
             tool_registry=self.start_node_schema.tool_registry,
             fn_calls=[get_state_fn_call],
             fn_call_id_to_fn_output={
-                get_state_fn_call.id: agent_executor.graph.curr_executable.state
+                get_state_fn_call.id: agent_executor.graph.curr_conversation_node.state
             },
         )
         self.build_messages_from_turn(t7, model_provider)
@@ -1103,8 +1103,8 @@ class TestAgent:
                 msg_content=next_node_schema.node_system_prompt(
                     node_prompt=next_node_schema.node_prompt,
                     input=order.model_dump_json(),
-                    node_input_json_schema=next_node_schema.input_pydantic_model.model_json_schema(),
-                    state_json_schema=next_node_schema.state_pydantic_model.model_json_schema(),
+                    node_input_json_schema=next_node_schema.input_schema.model_json_schema(),
+                    state_json_schema=next_node_schema.state_schema.model_json_schema(),
                     last_msg="i want pecan latte",
                     curr_request="customer wants to order coffee",
                 ),
@@ -1160,7 +1160,7 @@ class TestAgent:
                     node_prompt=next_next_node_schema.node_prompt,
                     input=None,
                     node_input_json_schema=None,
-                    state_json_schema=next_next_node_schema.state_pydantic_model.model_json_schema(),
+                    state_json_schema=next_next_node_schema.state_schema.model_json_schema(),
                     last_msg="i confirm",
                     curr_request="customer wants to order coffee",
                 ),
@@ -1195,7 +1195,7 @@ class TestAgent:
                     node_prompt=cashier_graph_schema.start_node_schema.node_prompt,
                     input=None,
                     node_input_json_schema=None,
-                    state_json_schema=self.start_node_schema.state_pydantic_model.model_json_schema(),
+                    state_json_schema=self.start_node_schema.state_schema.model_json_schema(),
                     last_msg="thanks for confirming",
                     curr_request="customer wants to order coffee",
                 ),
@@ -1216,7 +1216,7 @@ class TestAgent:
             tool_registry=self.start_node_schema.tool_registry,
             fn_calls=[get_state_fn_call],
             fn_call_id_to_fn_output={
-                get_state_fn_call.id: agent_executor.graph.curr_executable.state
+                get_state_fn_call.id: agent_executor.graph.curr_conversation_node.state
             },
         )
         self.build_messages_from_turn(t10, model_provider)
@@ -1240,8 +1240,8 @@ class TestAgent:
                 msg_content=next_node_schema.node_system_prompt(
                     node_prompt=next_node_schema.node_prompt,
                     input=order.model_dump_json(),
-                    node_input_json_schema=next_node_schema.input_pydantic_model.model_json_schema(),
-                    state_json_schema=next_node_schema.state_pydantic_model.model_json_schema(),
+                    node_input_json_schema=next_node_schema.input_schema.model_json_schema(),
+                    state_json_schema=next_node_schema.state_schema.model_json_schema(),
                     last_msg="what do you want to change?",
                     curr_request="customer wants to order coffee",
                 ),
@@ -1262,7 +1262,7 @@ class TestAgent:
             tool_registry=next_node_schema.tool_registry,
             fn_calls=[get_state_fn_call],
             fn_call_id_to_fn_output={
-                get_state_fn_call.id: agent_executor.graph.curr_executable.state
+                get_state_fn_call.id: agent_executor.graph.curr_conversation_node.state
             },
         )
         self.build_messages_from_turn(t13, model_provider)

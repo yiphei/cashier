@@ -4,7 +4,7 @@ from typing import Any, Dict
 
 from pydantic import BaseModel, ConfigDict
 
-from cashier.graph.node_schema import NodeSchema
+from cashier.graph.conversation_node import ConversationNodeSchema
 from cashier.logger import logger
 from cashier.model.model_completion import ModelOutput
 from cashier.model.model_util import ModelProvider
@@ -19,7 +19,7 @@ class Response(BaseModel):
 class RunInput(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    current_node_schema: NodeSchema
+    current_node_schema: ConversationNodeSchema
     tc: TurnContainer
 
 
@@ -100,8 +100,8 @@ class OffTopicPrompt(BasePrompt):
             background_prompt=current_node_schema.node_system_prompt.BACKGROUND_PROMPT(),  # type: ignore
             node_prompt=current_node_schema.node_prompt,
             state_json_schema=str(
-                current_node_schema.state_pydantic_model.model_json_schema()
-                if current_node_schema.state_pydantic_model
+                current_node_schema.state_schema.model_json_schema()
+                if current_node_schema.state_schema
                 else None
             ),
             tool_defs=json.dumps(

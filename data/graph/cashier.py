@@ -2,11 +2,11 @@ from typing import Optional
 
 from pydantic import Field
 
+from cashier.graph.base.base_edge_schema import StateTransitionConfig
+from cashier.graph.conversation_node import ConversationNodeSchema
 from cashier.graph.edge_schema import EdgeSchema
 from cashier.graph.graph_schema import GraphSchema
-from cashier.graph.mixin.base_edge_schema import StateTransitionConfig
 from cashier.graph.mixin.state_mixin import BaseStateModel
-from cashier.graph.node_schema import NodeSchema
 from cashier.graph.request_graph import RequestGraphSchema
 from cashier.model.model_turn import AssistantTurn
 from cashier.model.model_util import ModelProvider
@@ -33,7 +33,7 @@ class TakeOrderState(BaseStateModel):
     )
 
 
-take_order_node_schema = NodeSchema(
+take_order_node_schema = ConversationNodeSchema(
     node_prompt=(
         "First, greet the customer. Then, your main job is to take their orders, which"
         " also includes answering reasonable questions about the shop & menu only and"
@@ -58,8 +58,8 @@ take_order_node_schema = NodeSchema(
         "get_menu_item_from_name",
     ],
     tool_registry_or_tool_defs=CASHIER_TOOL_REGISTRY,
-    input_pydantic_model=None,
-    state_pydantic_model=TakeOrderState,
+    input_schema=None,
+    state_schema=TakeOrderState,
     first_turn=AssistantTurn(
         msg_content="hi, welcome to Heaven Coffee", model_provider=ModelProvider.NONE
     ),
@@ -75,7 +75,7 @@ class ConfirmOrderState(BaseStateModel):
     )
 
 
-confirm_order_node_schema = NodeSchema(
+confirm_order_node_schema = ConversationNodeSchema(
     node_prompt=(
         "Confirm the order with the customer. You do this by"
         " repeating the order back to them and get their confirmation."
@@ -83,8 +83,8 @@ confirm_order_node_schema = NodeSchema(
     node_system_prompt=CashierNodeSystemPrompt,
     tool_names=None,
     tool_registry_or_tool_defs=None,
-    input_pydantic_model=Order,
-    state_pydantic_model=ConfirmOrderState,
+    input_schema=Order,
+    state_schema=ConfirmOrderState,
 )
 take_to_confirm_edge_schema = EdgeSchema(
     from_node_schema=take_order_node_schema,
@@ -109,13 +109,13 @@ class TerminalOrderState(BaseStateModel):
     )
 
 
-terminal_order_node_schema = NodeSchema(
+terminal_order_node_schema = ConversationNodeSchema(
     node_prompt=("Order has been successfully placed. Thank the customer."),
     node_system_prompt=CashierNodeSystemPrompt,
     tool_names=None,
     tool_registry_or_tool_defs=None,
-    input_pydantic_model=None,
-    state_pydantic_model=TerminalOrderState,
+    input_schema=None,
+    state_schema=TerminalOrderState,
 )
 confirm_to_terminal_edge_schema = EdgeSchema(
     from_node_schema=confirm_order_node_schema,
@@ -142,7 +142,7 @@ cashier_graph_schema = GraphSchema(
         confirm_order_node_schema,
         terminal_order_node_schema,
     ],
-    state_pydantic_model=GraphState,
+    state_schema=GraphState,
     completion_config=StateTransitionConfig(
         need_user_msg=True,
         state_check_fn_map={"has_said_goodbye": lambda val: bool(val)},

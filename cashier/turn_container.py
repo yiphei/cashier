@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 if TYPE_CHECKING:
-    from cashier.graph.node_schema import Node
+    from cashier.graph.conversation_node import ConversationNode
 
 from cashier.model.message_list import MessageList
 from cashier.model.model_turn import (
@@ -48,7 +48,7 @@ class TurnContainer:
 
     def add_node_turn(
         self,
-        node: Node,
+        node: ConversationNode,
         remove_prev_tool_fn_return: Optional[bool] = None,
         remove_prev_tool_calls: bool = False,
         is_skip: bool = False,

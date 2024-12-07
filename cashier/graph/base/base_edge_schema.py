@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any, Callable, Dict, NamedTuple, Optional
 from pydantic import BaseModel
 
 if TYPE_CHECKING:
-    from cashier.graph.node_schema import Node, NodeSchema
+    from cashier.graph.conversation_node import ConversationNode, ConversationNodeSchema
 
 from cashier.graph.mixin.state_mixin import BaseStateModel
 
@@ -30,6 +30,19 @@ class FwdSkipType(StrEnum):
 class BaseTransitionConfig(BaseModel):
     need_user_msg: bool
 
+    def run_check(
+        self,
+        state,
+        fn_call,
+        is_fn_call_success,
+        check_resettable_fields=True,
+        resettable_fields=None,
+    ):
+        if isinstance(self, FunctionTransitionConfig):
+            return self.check(fn_call, is_fn_call_success)
+        elif isinstance(self, StateTransitionConfig):
+            return self.check(state, check_resettable_fields, resettable_fields)
+
 
 class FunctionState(StrEnum):
     CALLED = "CALLED"
@@ -40,16 +53,48 @@ class FunctionTransitionConfig(BaseTransitionConfig):
     fn_name: str
     state: FunctionState
 
+    def check(
+        self,
+        fn_call,
+        is_fn_call_success,
+    ):
+        if self.state == FunctionState.CALLED:
+            return fn_call.name == self.fn_name
+        elif self.state == FunctionState.CALLED_AND_SUCCEEDED:
+            return fn_call.name == self.fn_name and is_fn_call_success
+
 
 class StateTransitionConfig(BaseTransitionConfig):
     state_check_fn_map: Dict[str, Callable[[Any], bool]]
+
+    def check(
+        self,
+        state,
+        check_resettable_fields=True,
+        resettable_fields=None,
+    ):
+        for (
+            field_name,
+            state_check_fn,
+        ) in self.state_check_fn_map.items():
+            if (
+                resettable_fields
+                and field_name in resettable_fields
+                and not check_resettable_fields
+            ):
+                continue
+
+            field_value = getattr(state, field_name)
+            if not state_check_fn(field_value):
+                return False
+        return True
 
 
 class BaseEdgeSchema:
     def __init__(
         self,
-        from_node_schema: NodeSchema,
-        to_node_schema: NodeSchema,
+        from_node_schema: ConversationNodeSchema,
+        to_node_schema: ConversationNodeSchema,
         transition_config: BaseTransitionConfig,
         new_input_fn: Callable[[BaseStateModel], Any],
         bwd_state_init: BwdStateInit = BwdStateInit.RESUME,
@@ -88,35 +133,15 @@ class BaseEdgeSchema:
         is_fn_call_success,
         check_resettable_fields=True,
     ) -> bool:
-        if isinstance(self.transition_config, FunctionTransitionConfig):
-            if self.transition_config.state == FunctionState.CALLED:
-                return fn_call.name == self.transition_config.fn_name
-            elif self.transition_config.state == FunctionState.CALLED_AND_SUCCEEDED:
-                return (
-                    fn_call.name == self.transition_config.fn_name
-                    and is_fn_call_success
-                )
-        elif isinstance(self.transition_config, StateTransitionConfig):
-            resettable_fields = (
-                self.from_node_schema.state_pydantic_model.resettable_fields
-            )
-            for (
-                field_name,
-                state_check_fn,
-            ) in self.transition_config.state_check_fn_map.items():
-                if (
-                    resettable_fields
-                    and field_name in resettable_fields
-                    and not check_resettable_fields
-                ):
-                    continue
-
-                field_value = getattr(state, field_name)
-                if not state_check_fn(field_value):
-                    return False
-            return True
+        return self.transition_config.run_check(
+            state,
+            fn_call,
+            is_fn_call_success,
+            check_resettable_fields,
+            self.from_node_schema.state_schema.resettable_fields,
+        )
 
 
 class Edge(NamedTuple):
-    from_node: Node
-    to_node: Node
+    from_node: ConversationNode
+    to_node: ConversationNode

@@ -6,9 +6,9 @@ from typing import Any, List, Literal, Optional, Type, Union, cast, overload
 from openai.types.chat.chat_completion_tool_param import ChatCompletionToolParam
 from pydantic import BaseModel
 
+from cashier.graph.base.base_edge_schema import BwdStateInit, FwdStateInit
 from cashier.graph.edge_schema import EdgeSchema
 from cashier.graph.mixin.auto_mixin_init import AutoMixinInit
-from cashier.graph.mixin.base_edge_schema import BwdStateInit, FwdStateInit
 from cashier.graph.mixin.has_id_mixin import HasIdMixin
 from cashier.graph.mixin.state_mixin import BaseStateModel
 from cashier.model.model_turn import ModelTurn
@@ -22,14 +22,14 @@ class Direction(StrEnum):
     BWD = "BWD"
 
 
-class Node(HasIdMixin, metaclass=AutoMixinInit):
+class ConversationNode(HasIdMixin, metaclass=AutoMixinInit):
     class Status(StrEnum):
         IN_PROGRESS = "IN_PROGRESS"
         COMPLETED = "COMPLETED"
 
     def __init__(
         self,
-        schema: NodeSchema,
+        schema: ConversationNodeSchema,
         input: Any,
         state: BaseStateModel,
         prompt: str,
@@ -49,13 +49,13 @@ class Node(HasIdMixin, metaclass=AutoMixinInit):
     @classmethod
     def init_state(
         cls,
-        state_pydantic_model: Optional[Type[BaseStateModel]],
-        prev_node: Optional[Node],
+        state_schema: Optional[Type[BaseStateModel]],
+        prev_node: Optional[ConversationNode],
         edge_schema: Optional[EdgeSchema],
         direction: Direction,
         input: Any,
     ) -> Optional[BaseStateModel]:
-        if state_pydantic_model is None:
+        if state_schema is None:
             return None
 
         if prev_node is not None:
@@ -68,7 +68,7 @@ class Node(HasIdMixin, metaclass=AutoMixinInit):
             )
 
             if state_init_val == state_init_enum_cls.RESET:  # type: ignore
-                return state_pydantic_model()
+                return state_schema()
             elif state_init_val == state_init_enum_cls.RESUME or (  # type: ignore
                 direction == Direction.FWD
                 and state_init_val == state_init_enum_cls.RESUME_IF_INPUT_UNCHANGED  # type: ignore
@@ -76,7 +76,7 @@ class Node(HasIdMixin, metaclass=AutoMixinInit):
             ):
                 return prev_node.state.copy_resume()
 
-        return state_pydantic_model()
+        return state_schema()
 
     def mark_as_completed(self) -> None:
         self.status = self.Status.COMPLETED
@@ -98,13 +98,13 @@ class Node(HasIdMixin, metaclass=AutoMixinInit):
         self.first_user_message = True
 
 
-class NodeSchema(HasIdMixin, metaclass=AutoMixinInit):
+class ConversationNodeSchema(HasIdMixin, metaclass=AutoMixinInit):
     def __init__(
         self,
         node_prompt: str,
         node_system_prompt: Type[NodeSystemPrompt],
-        input_pydantic_model: Optional[Type[BaseModel]] = None,
-        state_pydantic_model: Optional[Type[BaseStateModel]] = None,
+        input_schema: Optional[Type[BaseModel]] = None,
+        state_schema: Optional[Type[BaseStateModel]] = None,
         tool_registry_or_tool_defs: Optional[
             Union[ToolRegistry, List[ChatCompletionToolParam]]
         ] = None,
@@ -112,10 +112,10 @@ class NodeSchema(HasIdMixin, metaclass=AutoMixinInit):
         run_assistant_turn_before_transition: bool = False,
         tool_names: Optional[List[str]] = None,
     ):
-        self.state_pydantic_model = state_pydantic_model
+        self.state_schema = state_schema
         self.node_prompt = node_prompt
         self.node_system_prompt = node_system_prompt
-        self.input_pydantic_model = input_pydantic_model
+        self.input_schema = input_schema
         self.first_turn = first_turn
         self.run_assistant_turn_before_transition = run_assistant_turn_before_transition
         if tool_registry_or_tool_defs is not None and isinstance(
@@ -129,11 +129,11 @@ class NodeSchema(HasIdMixin, metaclass=AutoMixinInit):
         else:
             self.tool_registry = ToolRegistry(tool_registry_or_tool_defs)
 
-        if self.state_pydantic_model is not None:
+        if self.state_schema is not None:
             for (
                 field_name,
                 field_info,
-            ) in self.state_pydantic_model.model_fields.items():
+            ) in self.state_schema.model_fields.items():
                 new_tool_fn_name = f"update_state_{field_name}"
                 field_args = {field_name: (field_info.annotation, field_info)}
                 self.tool_registry.add_tool_def(
@@ -157,7 +157,7 @@ class NodeSchema(HasIdMixin, metaclass=AutoMixinInit):
         prev_node: Literal[None] = None,
         direction: Literal[Direction.FWD] = Direction.FWD,
         curr_request: Optional[str] = None,
-    ) -> Node: ...
+    ) -> ConversationNode: ...
 
     @overload
     def create_node(  # noqa: E704
@@ -168,7 +168,7 @@ class NodeSchema(HasIdMixin, metaclass=AutoMixinInit):
         prev_node: Literal[None] = None,
         direction: Literal[Direction.FWD] = Direction.FWD,
         curr_request: Optional[str] = None,
-    ) -> Node: ...
+    ) -> ConversationNode: ...
 
     @overload
     def create_node(  # noqa: E704
@@ -176,40 +176,32 @@ class NodeSchema(HasIdMixin, metaclass=AutoMixinInit):
         input: Any,
         last_msg: str,
         edge_schema: EdgeSchema,
-        prev_node: Node,
+        prev_node: ConversationNode,
         direction: Direction = Direction.FWD,
         curr_request: Optional[str] = None,
-    ) -> Node: ...
+    ) -> ConversationNode: ...
 
     def create_node(
         self,
         input: Any,
         last_msg: Optional[str] = None,
         edge_schema: Optional[EdgeSchema] = None,
-        prev_node: Optional[Node] = None,
+        prev_node: Optional[ConversationNode] = None,
         direction: Direction = Direction.FWD,
         curr_request: Optional[str] = None,
-    ) -> Node:
-        state = Node.init_state(
-            self.state_pydantic_model, prev_node, edge_schema, direction, input
+    ) -> ConversationNode:
+        state = ConversationNode.init_state(
+            self.state_schema, prev_node, edge_schema, direction, input
         )
 
         prompt = self.node_system_prompt(
             node_prompt=self.node_prompt,
-            input=(
-                input.model_dump_json()
-                if self.input_pydantic_model is not None
-                else None
-            ),
+            input=(input.model_dump_json() if self.input_schema is not None else None),
             node_input_json_schema=(
-                self.input_pydantic_model.model_json_schema()
-                if self.input_pydantic_model
-                else None
+                self.input_schema.model_json_schema() if self.input_schema else None
             ),
             state_json_schema=(
-                self.state_pydantic_model.model_json_schema()
-                if self.state_pydantic_model
-                else None
+                self.state_schema.model_json_schema() if self.state_schema else None
             ),
             last_msg=last_msg,
             curr_request=curr_request,
@@ -220,7 +212,7 @@ class NodeSchema(HasIdMixin, metaclass=AutoMixinInit):
             in_edge_schema = prev_node.in_edge_schema
         else:
             in_edge_schema = edge_schema
-        return Node(
+        return ConversationNode(
             schema=self,
             input=input,
             state=state,

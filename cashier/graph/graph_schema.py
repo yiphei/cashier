@@ -4,12 +4,16 @@ from typing import Any, List, Optional, Set, Tuple, Type, Union
 
 from pydantic import BaseModel
 
+from cashier.graph.base.base_edge_schema import BaseTransitionConfig
+from cashier.graph.base.graph_base import BaseGraph, BaseGraphSchema
+from cashier.graph.conversation_node import (
+    ConversationNode,
+    ConversationNodeSchema,
+    Direction,
+)
 from cashier.graph.edge_schema import EdgeSchema
 from cashier.graph.mixin.auto_mixin_init import AutoMixinInit
-from cashier.graph.mixin.base_edge_schema import BaseTransitionConfig, FunctionState
-from cashier.graph.mixin.graph_mixin import HasGraphMixin, HasGraphSchemaMixin
 from cashier.graph.mixin.has_id_mixin import HasIdMixin
-from cashier.graph.node_schema import NodeSchema
 from cashier.model.model_util import FunctionCall
 from cashier.prompts.node_schema_selection import NodeSchemaSelectionPrompt
 from cashier.prompts.off_topic import OffTopicPrompt
@@ -18,8 +22,8 @@ from cashier.turn_container import TurnContainer
 
 def should_change_node_schema(
     TM: TurnContainer,
-    current_node_schema: NodeSchema,
-    all_node_schemas: Set[NodeSchema],
+    current_node_schema: ConversationNodeSchema,
+    all_node_schemas: Set[ConversationNodeSchema],
     is_wait: bool,
 ) -> Optional[int]:
     if len(all_node_schemas) == 1:
@@ -33,46 +37,46 @@ def should_change_node_schema(
     )
 
 
-class GraphSchema(HasIdMixin, HasGraphSchemaMixin, metaclass=AutoMixinInit):
+class GraphSchema(HasIdMixin, BaseGraphSchema, metaclass=AutoMixinInit):
     def __init__(
         self,
         output_schema: Type[BaseModel],
         description: str,
-        start_node_schema: NodeSchema,
-        last_node_schema: NodeSchema,
+        start_node_schema: ConversationNodeSchema,
+        last_node_schema: ConversationNodeSchema,
         edge_schemas: List[EdgeSchema],
-        node_schemas: List[NodeSchema],
-        state_pydantic_model: Type[BaseModel],
+        node_schemas: List[ConversationNodeSchema],
+        state_schema: Type[BaseModel],
         completion_config: BaseTransitionConfig,
     ):
-        self.state_pydantic_model = state_pydantic_model
+        BaseGraphSchema.__init__(self, description, edge_schemas, node_schemas)
+        self.state_schema = state_schema
         self.output_schema = output_schema
         self.start_node_schema = start_node_schema
         self.last_node_schema = last_node_schema
         self.completion_config = completion_config
 
 
-class Graph(HasGraphMixin):
+class Graph(BaseGraph):
     def __init__(
         self,
         input: Any,
         request: str,
-        graph_schema: HasGraphSchemaMixin,
+        graph_schema: BaseGraphSchema,
     ):
-        HasGraphMixin.__init__(self, graph_schema)
-        self.state = graph_schema.state_pydantic_model(**(input or {}))
-        self.request = request
+        super().__init__(graph_schema, request)
+        self.state = graph_schema.state_schema(**(input or {}))
 
     @property
-    def curr_executable(self):
+    def curr_conversation_node(self):
         return self.curr_node
 
     def compute_init_node_edge_schema(
         self,
     ):
-        node_schema = self.graph_schema.start_node_schema
+        node_schema = self.schema.start_node_schema
         edge_schema = None
-        next_edge_schemas = self.graph_schema.from_node_schema_id_to_edge_schema[
+        next_edge_schemas = self.schema.from_node_schema_id_to_edge_schema[
             node_schema.id
         ]
         while next_edge_schemas:
@@ -87,11 +91,9 @@ class Graph(HasGraphMixin):
                     passed_check = True
                     node_schema = next_edge_schema.to_node_schema
                     edge_schema = next_edge_schema
-                    next_edge_schemas = (
-                        self.graph_schema.from_node_schema_id_to_edge_schema[
-                            node_schema.id
-                        ]
-                    )
+                    next_edge_schemas = self.schema.from_node_schema_id_to_edge_schema[
+                        node_schema.id
+                    ]
                     break
 
             if not passed_check:
@@ -102,12 +104,13 @@ class Graph(HasGraphMixin):
     def handle_skip(
         self,
         fwd_skip_edge_schemas: Set[EdgeSchema],
-        bwd_skip_edge_schemas: Set[EdgeSchema],
         TC,
-    ) -> Union[Tuple[EdgeSchema, NodeSchema], Tuple[None, None]]:
+    ) -> Union[Tuple[EdgeSchema, ConversationNodeSchema], Tuple[None, None]]:
         all_node_schemas = {self.curr_node.schema}
         all_node_schemas.update(edge.to_node_schema for edge in fwd_skip_edge_schemas)
-        all_node_schemas.update(edge.from_node_schema for edge in bwd_skip_edge_schemas)
+        all_node_schemas.update(
+            edge.from_node_schema for edge in self.bwd_skip_edge_schemas
+        )
 
         node_schema_id = should_change_node_schema(
             TC, self.curr_node.schema, all_node_schemas, False
@@ -118,14 +121,14 @@ class Graph(HasGraphMixin):
                 if edge_schema.to_node_schema.id == node_schema_id:
                     return (
                         edge_schema,
-                        self.graph_schema.node_schema_id_to_node_schema[node_schema_id],
+                        self.schema.node_schema_id_to_node_schema[node_schema_id],
                     )
 
-            for edge_schema in bwd_skip_edge_schemas:
+            for edge_schema in self.bwd_skip_edge_schemas:
                 if edge_schema.from_node_schema.id == node_schema_id:
                     return (
                         edge_schema,
-                        self.graph_schema.node_schema_id_to_node_schema[node_schema_id],
+                        self.schema.node_schema_id_to_node_schema[node_schema_id],
                     )
 
         return None, None
@@ -133,13 +136,12 @@ class Graph(HasGraphMixin):
     def handle_wait(
         self,
         fwd_skip_edge_schemas: Set[EdgeSchema],
-        bwd_skip_edge_schemas: Set[EdgeSchema],
         TC,
-    ) -> Union[Tuple[EdgeSchema, NodeSchema], Tuple[None, None]]:
+    ) -> Union[Tuple[EdgeSchema, ConversationNodeSchema], Tuple[None, None]]:
         remaining_edge_schemas = (
-            set(self.graph_schema.edge_schemas)
+            set(self.schema.edge_schemas)
             - fwd_skip_edge_schemas
-            - bwd_skip_edge_schemas
+            - self.bwd_skip_edge_schemas
         )
 
         all_node_schemas = {self.curr_node.schema}
@@ -154,7 +156,7 @@ class Graph(HasGraphMixin):
                 if edge_schema.to_node_schema.id == node_schema_id:
                     return (
                         edge_schema,
-                        self.graph_schema.node_schema_id_to_node_schema[node_schema_id],
+                        self.schema.node_schema_id_to_node_schema[node_schema_id],
                     )
 
         return None, None
@@ -162,21 +164,16 @@ class Graph(HasGraphMixin):
     def handle_is_off_topic(
         self,
         TC,
-    ) -> Union[Tuple[EdgeSchema, NodeSchema, bool], Tuple[None, None, bool]]:
-        fwd_skip_edge_schemas = self.compute_fwd_skip_edge_schemas(
-            self.curr_node, self.next_edge_schemas
-        )
-        bwd_skip_edge_schemas = self.bwd_skip_edge_schemas
+    ) -> Union[
+        Tuple[EdgeSchema, ConversationNodeSchema, bool], Tuple[None, None, bool]
+    ]:
+        fwd_skip_edge_schemas = self.compute_fwd_skip_edge_schemas()
 
-        edge_schema, node_schema = self.handle_wait(
-            fwd_skip_edge_schemas, bwd_skip_edge_schemas, TC
-        )
+        edge_schema, node_schema = self.handle_wait(fwd_skip_edge_schemas, TC)
         if edge_schema:
             return edge_schema, node_schema, True  # type: ignore
 
-        edge_schema, node_schema = self.handle_skip(
-            fwd_skip_edge_schemas, bwd_skip_edge_schemas, TC
-        )
+        edge_schema, node_schema = self.handle_skip(fwd_skip_edge_schemas, TC)
         return edge_schema, node_schema, False  # type: ignore
 
     def handle_user_turn(
@@ -228,39 +225,75 @@ class Graph(HasGraphMixin):
                     )
         self.curr_node.update_first_user_message()
 
-    def check_transition(self, fn_call, is_fn_call_success):
+    def check_self_transition(self, fn_call, is_fn_call_success):
         new_edge_schema = None
         new_node_schema = None
-        if self.curr_node.schema == self.graph_schema.last_node_schema:
-            if self.graph_schema.completion_config.state == FunctionState.CALLED:
-                return (
-                    None,
-                    None,
-                    fn_call.name == self.graph_schema.completion_config.fn_name,
-                    None,
-                    None,
-                )
-            elif (
-                self.graph_schema.completion_config.state
-                == FunctionState.CALLED_AND_SUCCEEDED
-            ):
-                return (
-                    None,
-                    None,
-                    (
-                        fn_call.name == self.graph_schema.completion_config.fn_name
-                        and is_fn_call_success
-                    ),
-                    None,
-                    None,
-                )
+        if self.curr_node.schema == self.schema.last_node_schema:
+            return (
+                None,
+                None,
+                self.schema.completion_config.run_check(
+                    self.state, fn_call, is_fn_call_success
+                ),
+                None,
+                None,
+            )
 
-        for edge_schema in self.next_edge_schemas:
-            if edge_schema.check_transition_config(
-                self.curr_node.state, fn_call, is_fn_call_success
-            ):
-                new_edge_schema = edge_schema
-                new_node_schema = edge_schema.to_node_schema
-                break
-
+        new_edge_schema, new_node_schema = self.check_single_transition(
+            self.curr_node.state, fn_call, is_fn_call_success, self.next_edge_schemas
+        )
         return new_edge_schema, new_node_schema, False, None, None
+
+    def init_conversation_core(
+        self,
+        node_schema: ConversationNodeSchema,
+        edge_schema: Optional[EdgeSchema],
+        input: Any,
+        last_msg: Optional[str],
+        prev_node: Optional[ConversationNode],
+        direction: Direction,
+        TC,
+        remove_prev_tool_calls,
+        is_skip: bool = False,
+    ) -> None:
+        super().init_conversation_core(
+            node_schema,
+            edge_schema,
+            input,
+            last_msg,
+            prev_node,
+            direction,
+            TC,
+            remove_prev_tool_calls,
+            is_skip,
+        )
+        self.next_edge_schemas = set(
+            self.schema.from_node_schema_id_to_edge_schema.get(
+                self.curr_node.schema.id, []
+            )
+        )
+        self.compute_bwd_skip_edge_schemas()
+
+    def init_node_core(
+        self,
+        node_schema: ConversationNodeSchema,
+        edge_schema: Optional[EdgeSchema],
+        input: Any,
+        last_msg: Optional[str],
+        prev_node: Optional[ConversationNode],
+        direction: Direction,
+        TC,
+        remove_prev_tool_calls,
+        is_skip: bool = False,
+    ) -> None:
+        self.init_conversation_core(
+            node_schema,
+            edge_schema,
+            input,
+            last_msg,
+            prev_node,
+            direction,
+            TC,
+            remove_prev_tool_calls,
+            is_skip,
+        )

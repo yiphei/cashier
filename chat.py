@@ -32,7 +32,7 @@ def run_chat(args: Namespace) -> None:
     AE = AgentExecutor(
         args.audio_output,
         args.remove_prev_tool_calls,
-        request_graph_schema=REQUEST_GRAPH_SCHEMA,
+        graph_schema=REQUEST_GRAPH_SCHEMA,
     )
 
     while True:
