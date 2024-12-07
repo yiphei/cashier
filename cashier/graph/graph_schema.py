@@ -5,7 +5,7 @@ from typing import Any, List, Optional, Set, Tuple, Type, Union
 from pydantic import BaseModel
 
 from cashier.graph.base.base_edge_schema import BaseTransitionConfig
-from cashier.graph.base.graph_base import BaseGraph, BaseGraphSchema
+from cashier.graph.base.base_graph import BaseGraph, BaseGraphSchema
 from cashier.graph.conversation_node import (
     ConversationNode,
     ConversationNodeSchema,
@@ -14,7 +14,7 @@ from cashier.graph.conversation_node import (
 from cashier.graph.edge_schema import EdgeSchema
 from cashier.graph.mixin.auto_mixin_init import AutoMixinInit
 from cashier.graph.mixin.has_id_mixin import HasIdMixin
-from cashier.model.model_util import FunctionCall
+from cashier.model.model_util import FunctionCall, create_think_fn_call
 from cashier.prompts.node_schema_selection import NodeSchemaSelectionPrompt
 from cashier.prompts.off_topic import OffTopicPrompt
 from cashier.turn_container import TurnContainer
@@ -181,9 +181,7 @@ class Graph(BaseGraph):
         edge_schema, node_schema = self.handle_skip(fwd_skip_edge_schemas, TC)
         return edge_schema, node_schema, False  # type: ignore
 
-    def handle_user_turn(
-        self, msg, TC, model_provider, remove_prev_tool_calls, run_off_topic_check=True
-    ):
+    def handle_user_turn(self, msg, TC, model_provider, run_off_topic_check=True):
         if not run_off_topic_check or not OffTopicPrompt.run(
             "claude-3.5",
             current_node_schema=self.curr_node.schema,
@@ -192,13 +190,8 @@ class Graph(BaseGraph):
             edge_schema, node_schema, is_wait = self.handle_is_off_topic(TC)
             if edge_schema and node_schema:
                 if is_wait:
-                    fake_fn_call = FunctionCall.create(
-                        api_id_model_provider=None,
-                        api_id=None,
-                        name="think",
-                        args={
-                            "thought": "At least part of the customer request/question is off-topic for the current conversation and will actually be addressed later. According to the policies, I must tell the customer that 1) their off-topic request/question will be addressed later and 2) we must finish the current business before we can get to it. I must refuse to engage with the off-topic request/question in any way."
-                        },
+                    fake_fn_call = create_think_fn_call(
+                        "At least part of the customer request/question is off-topic for the current conversation and will actually be addressed later. According to the policies, I must tell the customer that 1) their off-topic request/question will be addressed later and 2) we must finish the current business before we can get to it. I must refuse to engage with the off-topic request/question in any way."
                     )
                     TC.add_assistant_turn(
                         None,
@@ -212,7 +205,6 @@ class Graph(BaseGraph):
                         node_schema,
                         edge_schema,
                         TC,
-                        remove_prev_tool_calls,  # TODO: remove this after refactor
                     )
 
                     fake_fn_call = FunctionCall.create(
@@ -258,7 +250,6 @@ class Graph(BaseGraph):
         prev_node: Optional[ConversationNode],
         direction: Direction,
         TC,
-        remove_prev_tool_calls,
         is_skip: bool = False,
     ) -> None:
         super().init_conversation_core(
@@ -269,7 +260,6 @@ class Graph(BaseGraph):
             prev_node,
             direction,
             TC,
-            remove_prev_tool_calls,
             is_skip,
         )
         self.next_edge_schemas = set(

@@ -32,6 +32,8 @@ class TurnContainer:
             ModelProvider.OPENAI,
             ModelProvider.ANTHROPIC,
         ],
+        remove_prev_tool_fn_return: Optional[bool] = None,
+        remove_prev_tool_calls: bool = True,
     ):
         self.model_provider_to_message_manager: Dict[ModelProvider, MessageManager] = {}
         for provider in model_providers:
@@ -39,6 +41,8 @@ class TurnContainer:
             self.model_provider_to_message_manager[provider] = mm
 
         self.turns: List[ModelTurn] = []
+        self.remove_prev_tool_fn_return = remove_prev_tool_fn_return
+        self.remove_prev_tool_calls = remove_prev_tool_calls
 
     def add_system_turn(self, msg_content: str) -> None:
         turn = SystemTurn(msg_content=msg_content)
@@ -50,14 +54,17 @@ class TurnContainer:
         self,
         node: ConversationNode,
         remove_prev_tool_fn_return: Optional[bool] = None,
-        remove_prev_tool_calls: bool = False,
+        remove_prev_tool_calls: Optional[bool] = None,
         is_skip: bool = False,
     ) -> None:
         turn = NodeSystemTurn(node_id=node.id, msg_content=node.prompt)
         self.turns.append(turn)
         for mm in self.model_provider_to_message_manager.values():
             mm.add_node_turn(
-                turn, remove_prev_tool_fn_return, remove_prev_tool_calls, is_skip
+                turn,
+                remove_prev_tool_fn_return or self.remove_prev_tool_fn_return,
+                remove_prev_tool_calls or self.remove_prev_tool_calls,
+                is_skip,
             )
 
     def add_user_turn(self, msg_content: str) -> None:

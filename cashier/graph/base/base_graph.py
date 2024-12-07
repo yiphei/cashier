@@ -1,3 +1,4 @@
+from abc import ABC, abstractmethod
 from collections import defaultdict, deque
 from typing import Any, List, Literal, Optional, Set, Tuple, overload
 from venv import logger
@@ -39,7 +40,7 @@ class BaseGraphSchema:
             ].append(edge_schema)
 
 
-class BaseGraph:
+class BaseGraph(ABC):
     def __init__(self, schema: BaseGraphSchema, request=None):
         self.schema = schema
         self.edge_schema_id_to_edges = defaultdict(list)
@@ -166,7 +167,6 @@ class BaseGraph:
         self,
         start_edge_schema: EdgeSchema,
         start_input: Any,
-        curr_node: ConversationNode,
     ) -> Tuple[EdgeSchema, Any]:
         next_edge_schema = start_edge_schema
         edge_schema = start_edge_schema
@@ -176,15 +176,15 @@ class BaseGraph:
             is not None
         ):
             from_node, to_node = self.get_edge_by_edge_schema_id(next_edge_schema.id)
-            if from_node.schema == curr_node.schema:
-                from_node = curr_node
+            if from_node.schema == self.curr_node.schema:
+                from_node = self.curr_node
 
             can_skip, skip_type = next_edge_schema.can_skip(
                 self.state,  # TODO: this class does not explicitly have a state
                 from_node,
                 to_node,
                 self.is_prev_from_node_completed(
-                    next_edge_schema, from_node == curr_node
+                    next_edge_schema, from_node == self.curr_node
                 ),
             )
 
@@ -205,13 +205,13 @@ class BaseGraph:
                     input = from_node.input
                 else:
                     edge_schema = next_edge_schema
-                    if from_node != curr_node:
+                    if from_node != self.curr_node:
                         input = edge_schema.new_input_fn(
                             from_node.state, from_node.input
                         )
                 break
             else:
-                if from_node != curr_node:
+                if from_node != self.curr_node:
                     input = from_node.input
                 break
 
@@ -265,7 +265,6 @@ class BaseGraph:
         prev_node: Optional[ConversationNode],
         direction: Direction,
         TC,
-        remove_prev_tool_calls,
         is_skip: bool = False,
     ) -> None:
         logger.debug(
@@ -277,7 +276,6 @@ class BaseGraph:
 
         TC.add_node_turn(
             new_node,
-            remove_prev_tool_calls=remove_prev_tool_calls,
             is_skip=is_skip,
         )
         MessageDisplay.print_msg("system", new_node.prompt)
@@ -301,7 +299,6 @@ class BaseGraph:
         prev_node: Optional[ConversationNode],
         direction: Direction,
         TC,
-        remove_prev_tool_calls,
         is_skip: bool = False,
     ) -> None:
         self.current_graph_schema_idx += 1
@@ -317,9 +314,7 @@ class BaseGraph:
         self.curr_node = graph
 
         node_schema, edge_schema = graph.compute_init_node_edge_schema()
-        self.curr_node.init_next_node(
-            node_schema, edge_schema, TC, remove_prev_tool_calls, None
-        )
+        self.curr_node.init_next_node(node_schema, edge_schema, TC, None)
 
     def init_node_core(
         self,
@@ -330,7 +325,6 @@ class BaseGraph:
         prev_node: Optional[ConversationNode],
         direction: Direction,
         TC,
-        remove_prev_tool_calls,
         is_skip: bool = False,
     ) -> None:
         from cashier.graph.graph_schema import GraphSchema
@@ -348,7 +342,6 @@ class BaseGraph:
             prev_node,
             direction,
             TC,
-            remove_prev_tool_calls,
             is_skip,
         )
 
@@ -359,16 +352,13 @@ class BaseGraph:
         TC,
         direction,
         last_msg,
-        remove_prev_tool_calls,
         input,
     ) -> None:
         if input is None and edge_schema:
             input = edge_schema.new_input_fn(self.state)
 
         if edge_schema:
-            edge_schema, input = self.compute_next_edge_schema(
-                edge_schema, input, self.curr_node
-            )
+            edge_schema, input = self.compute_next_edge_schema(edge_schema, input)
             node_schema = edge_schema.to_node_schema
 
         prev_node = self.get_prev_node(edge_schema, direction)
@@ -381,7 +371,6 @@ class BaseGraph:
             prev_node,
             direction,
             TC,
-            remove_prev_tool_calls,
             False,
         )
 
@@ -390,7 +379,6 @@ class BaseGraph:
         node_schema: ConversationNodeSchema,
         edge_schema: Optional[EdgeSchema],
         TC,
-        remove_prev_tool_calls,
         input: Any = None,
     ) -> None:
         curr_node = self.curr_node
@@ -418,7 +406,6 @@ class BaseGraph:
             TC,
             direction,
             last_msg,
-            remove_prev_tool_calls,
             input,
         )
 
@@ -429,7 +416,6 @@ class BaseGraph:
         direction,
         last_msg,
         TC,
-        remove_prev_tool_calls,
     ) -> None:
 
         if direction == Direction.BWD:
@@ -448,7 +434,6 @@ class BaseGraph:
             prev_node,
             direction,
             TC,
-            remove_prev_tool_calls,
             True,
         )
 
@@ -457,7 +442,6 @@ class BaseGraph:
         node_schema: ConversationNodeSchema,
         edge_schema: EdgeSchema,
         TC,
-        remove_prev_tool_calls,
     ) -> None:
         parent_node = self
 
@@ -475,8 +459,11 @@ class BaseGraph:
             direction,
             last_msg,
             TC,
-            remove_prev_tool_calls,
         )
+
+    @abstractmethod
+    def check_self_transition(self, fn_call, is_fn_call_sucess):
+        raise NotImplementedError()
 
     def check_transition(self, fn_call, is_fn_call_success):
         if getattr(self, "curr_node", None) is None or not isinstance(

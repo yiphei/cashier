@@ -4,14 +4,14 @@ import json
 from typing import Any, List, Type
 
 from cashier.graph.base.base_edge_schema import BaseEdgeSchema
-from cashier.graph.base.graph_base import BaseGraph, BaseGraphSchema
+from cashier.graph.base.base_graph import BaseGraph, BaseGraphSchema
 from cashier.graph.conversation_node import ConversationNodeSchema
 from cashier.graph.edge_schema import EdgeSchema
 from cashier.graph.graph_schema import Graph
 from cashier.graph.mixin.auto_mixin_init import AutoMixinInit
 from cashier.graph.mixin.has_id_mixin import HasIdMixin
 from cashier.logger import logger
-from cashier.model.model_util import CustomJSONEncoder, FunctionCall
+from cashier.model.model_util import CustomJSONEncoder, create_think_fn_call
 from cashier.prompts.graph_schema_addition import GraphSchemaAdditionPrompt
 from cashier.prompts.graph_schema_selection import GraphSchemaSelectionPrompt
 from cashier.prompts.node_system import NodeSystemPrompt
@@ -74,7 +74,7 @@ class RequestGraph(BaseGraph):
 
         return True if agent_selection else False
 
-    def handle_user_turn(self, msg, TC, model_provider, remove_prev_tool_calls):
+    def handle_user_turn(self, msg, TC, model_provider):
         if isinstance(self.curr_node, Graph):
             if not OffTopicPrompt.run(
                 "claude-3.5",
@@ -83,13 +83,8 @@ class RequestGraph(BaseGraph):
             ):
                 has_new_task = self.add_tasks(msg, TC)
                 if has_new_task:
-                    fake_fn_call = FunctionCall.create(
-                        api_id_model_provider=None,
-                        api_id=None,
-                        name="think",
-                        args={
-                            "thought": "At least part of the customer request/question is off-topic for the current conversation and will actually be addressed later. According to the policies, I must tell the customer that 1) their off-topic request/question will be addressed later and 2) we must finish the current business before we can get to it. I must refuse to engage with the off-topic request/question in any way."
-                        },
+                    fake_fn_call = create_think_fn_call(
+                        "At least part of the customer request/question is off-topic for the current conversation and will actually be addressed later. According to the policies, I must tell the customer that 1) their off-topic request/question will be addressed later and 2) we must finish the current business before we can get to it. I must refuse to engage with the off-topic request/question in any way."
                     )
                     TC.add_assistant_turn(
                         None,
@@ -103,7 +98,6 @@ class RequestGraph(BaseGraph):
                         msg,
                         TC,
                         model_provider,
-                        remove_prev_tool_calls,
                         run_off_topic_check=False,
                     )
             self.curr_node.curr_node.update_first_user_message()  # TODO: remove this after refactor
@@ -114,7 +108,6 @@ class RequestGraph(BaseGraph):
                     self.graph_schema_sequence[0],
                     None,
                     TC,
-                    remove_prev_tool_calls,
                     None,
                 )
 
@@ -131,13 +124,8 @@ class RequestGraph(BaseGraph):
             and isinstance(self.curr_node, Graph)
             and self.current_graph_schema_idx < len(self.tasks) - 1
         ):
-            fake_fn_call = FunctionCall.create(
-                api_id_model_provider=None,
-                api_id=None,
-                name="think",
-                args={
-                    "thought": f"I just completed the current request. The next request to be addressed is: {self.tasks[self.current_graph_schema_idx + 1]}. I must explicitly inform the customer that the current request is completed and that I will address the next request right away. Only after I informed the customer do I receive the tools to address the next request."
-                },
+            fake_fn_call = create_think_fn_call(
+                f"I just completed the current request. The next request to be addressed is: {self.tasks[self.current_graph_schema_idx + 1]}. I must explicitly inform the customer that the current request is completed and that I will address the next request right away. Only after I informed the customer do I receive the tools to address the next request."
             )
         return new_edge_schema, new_node_schema, False, fake_fn_call, None
 

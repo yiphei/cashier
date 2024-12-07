@@ -157,3 +157,12 @@ class FunctionCall(BaseModel):
     @property
     def args(self) -> Dict:
         return cast(Dict, self.input_args)
+
+
+def create_think_fn_call(thought):
+    return FunctionCall.create(
+        api_id_model_provider=None,
+        api_id=None,
+        name="think",
+        args={"thought": thought},
+    )

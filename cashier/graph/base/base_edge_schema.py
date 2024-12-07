@@ -1,14 +1,14 @@
 from __future__ import annotations
 
 from enum import StrEnum
-from typing import TYPE_CHECKING, Any, Callable, Dict, NamedTuple, Optional
+from typing import TYPE_CHECKING, Any, Callable, Dict, Optional
 
 from pydantic import BaseModel
 
 if TYPE_CHECKING:
-    from cashier.graph.conversation_node import ConversationNode, ConversationNodeSchema
+    from cashier.graph.conversation_node import ConversationNodeSchema
 
-from cashier.graph.mixin.state_mixin import BaseStateModel
+from cashier.graph.base.base_state import BaseStateModel
 
 
 class BwdStateInit(StrEnum):
@@ -140,8 +140,3 @@ class BaseEdgeSchema:
             check_resettable_fields,
             self.from_node_schema.state_schema.resettable_fields,
         )
-
-
-class Edge(NamedTuple):
-    from_node: ConversationNode
-    to_node: ConversationNode

@@ -30,7 +30,9 @@ class AutoMixinInit(type):
                 mixin.__init__(instance, **mixin_kwargs)
 
         if "__init__" in cls.__dict__:
+            # this ensure that a mixin constructor is not called twice
             cls.__init__(instance, *args, **kwargs)
         elif first_base is not None:
+            # this ensure that the base class constructor is automatically called
             first_base.__init__(instance, **kwargs)
         return instance
