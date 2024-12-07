@@ -33,13 +33,9 @@ class AgentExecutor:
         self.need_user_input = True
 
         self.graph = RequestGraph(None, graph_schema)
-        self.graph.init_node_core(
+        self.graph.init_next_node(
             graph_schema.start_node_schema,
             None,
-            None,
-            None,
-            None,
-            Direction.FWD,
             self.TC,
             self.remove_prev_tool_calls,
         )
