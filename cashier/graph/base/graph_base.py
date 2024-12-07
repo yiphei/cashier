@@ -12,6 +12,7 @@ from cashier.graph.conversation_node import (
 from cashier.graph.edge_schema import Edge, EdgeSchema, FwdSkipType
 from cashier.gui import MessageDisplay
 from cashier.model.model_turn import AssistantTurn
+from cashier.ref import Ref
 
 
 class BaseGraphSchema:
@@ -290,6 +291,74 @@ class BaseGraph:
             self.add_edge(self.curr_node, new_node, edge_schema, direction)
 
         self.curr_node = new_node
+
+    def init_graph_core(
+        self,
+        node_schema: ConversationNodeSchema,
+        edge_schema: Optional[EdgeSchema],
+        input: Any,
+        last_msg: Optional[str],
+        prev_node: Optional[ConversationNode],
+        direction: Direction,
+        TC,
+        remove_prev_tool_calls,
+        is_skip: bool = False,
+    ) -> None:
+        self.current_graph_schema_idx += 1
+
+        graph = node_schema.create_node(
+            input=input,
+            request=self.tasks[self.current_graph_schema_idx]
+        )
+        self.curr_conversation_node = Ref(graph, "curr_conversation_node")
+
+        if edge_schema:
+            self.add_edge(self.curr_node, graph, edge_schema, direction)
+
+        self.curr_node = graph
+
+        node_schema, edge_schema = graph.compute_init_node_edge_schema()
+        self.curr_node.init_next_node(
+            node_schema, edge_schema, TC, remove_prev_tool_calls, None
+        )
+
+    def init_node_core(
+        self,
+        node_schema: ConversationNodeSchema,
+        edge_schema: Optional[EdgeSchema],
+        input: Any,
+        last_msg: Optional[str],
+        prev_node: Optional[ConversationNode],
+        direction: Direction,
+        TC,
+        remove_prev_tool_calls,
+        is_skip: bool = False,
+    ) -> None:
+        from cashier.graph.graph_schema import GraphSchema
+        if isinstance(node_schema, GraphSchema):
+            self.init_graph_core(
+                node_schema,
+                edge_schema,
+                input,
+                last_msg,
+                prev_node,
+                direction,
+                TC,
+                remove_prev_tool_calls,
+                is_skip,
+            )
+        else:
+            self.init_conversation_core(
+                node_schema,
+                edge_schema,
+                input,
+                last_msg,
+                prev_node,
+                direction,
+                TC,
+                remove_prev_tool_calls,
+                is_skip,
+            )
 
     def _init_next_node(
         self,

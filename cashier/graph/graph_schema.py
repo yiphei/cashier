@@ -57,6 +57,16 @@ class GraphSchema(HasIdMixin, BaseGraphSchema, metaclass=AutoMixinInit):
         self.completion_config = completion_config
 
 
+    def create_node(
+                self, input, request 
+            ):
+        return Graph(
+            input=input,
+            request=request,
+            schema=self,
+        )
+
+
 class Graph(BaseGraph):
     def __init__(
         self,
@@ -271,27 +281,3 @@ class Graph(BaseGraph):
             )
         )
         self.compute_bwd_skip_edge_schemas()
-
-    def init_node_core(
-        self,
-        node_schema: ConversationNodeSchema,
-        edge_schema: Optional[EdgeSchema],
-        input: Any,
-        last_msg: Optional[str],
-        prev_node: Optional[ConversationNode],
-        direction: Direction,
-        TC,
-        remove_prev_tool_calls,
-        is_skip: bool = False,
-    ) -> None:
-        self.init_conversation_core(
-            node_schema,
-            edge_schema,
-            input,
-            last_msg,
-            prev_node,
-            direction,
-            TC,
-            remove_prev_tool_calls,
-            is_skip,
-        )
