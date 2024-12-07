@@ -365,9 +365,7 @@ class BaseGraph:
             input = edge_schema.new_input_fn(self.state)
 
         if edge_schema:
-            edge_schema, input = self.compute_next_edge_schema(
-                edge_schema, input
-            )
+            edge_schema, input = self.compute_next_edge_schema(edge_schema, input)
             node_schema = edge_schema.to_node_schema
 
         prev_node = self.get_prev_node(edge_schema, direction)
