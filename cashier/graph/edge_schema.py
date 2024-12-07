@@ -16,7 +16,6 @@ class EdgeSchema(BaseEdgeSchema, HasIdMixin, metaclass=AutoMixinInit):
         self,
         state,
         skip_type: Optional[FwdSkipType],
-        from_node: ConversationNode,
         to_node: ConversationNode,
     ) -> Tuple[bool, Optional[FwdSkipType]]:
         if skip_type is None:
@@ -48,14 +47,12 @@ class EdgeSchema(BaseEdgeSchema, HasIdMixin, metaclass=AutoMixinInit):
                 return self._can_skip(
                     state,
                     self.skip_from_complete_to_prev_complete,
-                    from_node,
                     to_node,
                 )
             else:
                 return self._can_skip(
                     state,
                     self.skip_from_complete_to_prev_incomplete,
-                    from_node,
                     to_node,
                 )
         elif is_prev_from_node_completed:
@@ -63,14 +60,12 @@ class EdgeSchema(BaseEdgeSchema, HasIdMixin, metaclass=AutoMixinInit):
                 return self._can_skip(
                     state,
                     self.skip_from_incomplete_to_prev_complete,
-                    from_node,
                     to_node,
                 )
             else:
                 return self._can_skip(
                     state,
                     self.skip_from_incomplete_to_prev_incomplete,
-                    from_node,
                     to_node,
                 )
         else:
