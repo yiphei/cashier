@@ -484,20 +484,8 @@ class BaseGraph:
         ):
             return self.check_self_transition(fn_call, is_fn_call_success)
         else:
-            (
-                new_edge_schema,
-                new_node_schema,
-                is_completed,
-                fake_fn_call,
-                fake_fn_output,
-            ) = self.curr_node.check_transition(fn_call, is_fn_call_success)
-            if is_completed:
+            tuple_output = self.curr_node.check_transition(fn_call, is_fn_call_success)
+            if tuple_output[2]:
                 return self.check_self_transition(fn_call, is_fn_call_success)
             else:
-                return (
-                    new_edge_schema,
-                    new_node_schema,
-                    is_completed,
-                    fake_fn_call,
-                    fake_fn_output,
-                )
+                return tuple_output
