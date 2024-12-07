@@ -232,7 +232,7 @@ class Graph(BaseGraph):
             return (
                 None,
                 None,
-                self.schema.completion_config.check(
+                self.schema.completion_config.run_check(
                     self.state, fn_call, is_fn_call_success
                 ),
                 None,

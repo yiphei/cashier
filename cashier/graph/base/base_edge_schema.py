@@ -30,6 +30,18 @@ class FwdSkipType(StrEnum):
 class BaseTransitionConfig(BaseModel):
     need_user_msg: bool
 
+    def run_check(
+        self,
+        state,
+        fn_call,
+        is_fn_call_success,
+        check_resettable_fields=True,
+        resettable_fields=None,
+    ):
+        if isinstance(self, FunctionTransitionConfig):
+            return self.check(fn_call, is_fn_call_success)
+        elif isinstance(self, StateTransitionConfig):
+            return self.check(state, check_resettable_fields, resettable_fields)
 
 class FunctionState(StrEnum):
     CALLED = "CALLED"
@@ -42,11 +54,8 @@ class FunctionTransitionConfig(BaseTransitionConfig):
 
     def check(
         self,
-        state,
         fn_call,
         is_fn_call_success,
-        check_resettable_fields=True,
-        resettable_fields=None,
     ):
         if self.state == FunctionState.CALLED:
             return fn_call.name == self.fn_name
@@ -60,8 +69,6 @@ class StateTransitionConfig(BaseTransitionConfig):
     def check(
         self,
         state,
-        fn_call,
-        is_fn_call_success,
         check_resettable_fields=True,
         resettable_fields=None,
     ):
@@ -125,7 +132,7 @@ class BaseEdgeSchema:
         is_fn_call_success,
         check_resettable_fields=True,
     ) -> bool:
-        return self.transition_config.check(
+        return self.transition_config.run_check(
             state,
             fn_call,
             is_fn_call_success,
