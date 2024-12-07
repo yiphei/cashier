@@ -5,9 +5,7 @@ from typing import Any, List, Type
 
 from cashier.graph.base.base_edge_schema import BaseEdgeSchema
 from cashier.graph.base.graph_base import BaseGraph, BaseGraphSchema
-from cashier.graph.conversation_node import (
-    ConversationNodeSchema,
-)
+from cashier.graph.conversation_node import ConversationNodeSchema
 from cashier.graph.edge_schema import EdgeSchema
 from cashier.graph.graph_schema import Graph
 from cashier.graph.mixin.auto_mixin_init import AutoMixinInit
