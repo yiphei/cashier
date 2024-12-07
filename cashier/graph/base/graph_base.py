@@ -336,20 +336,12 @@ class BaseGraph:
         from cashier.graph.graph_schema import GraphSchema
 
         if isinstance(node_schema, GraphSchema):
-            self.init_graph_core(
-                node_schema,
-                edge_schema,
-                input,
-                last_msg,
-                prev_node,
-                direction,
-                TC,
-                remove_prev_tool_calls,
-                is_skip,
-            )
+            fn = self.init_graph_core
         else:
-            self.init_conversation_core(
-                node_schema,
+            fn = self.init_conversation_core
+
+        fn(
+                            node_schema,
                 edge_schema,
                 input,
                 last_msg,
@@ -358,7 +350,7 @@ class BaseGraph:
                 TC,
                 remove_prev_tool_calls,
                 is_skip,
-            )
+        )
 
     def _init_next_node(
         self,
