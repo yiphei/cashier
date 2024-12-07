@@ -4,15 +4,9 @@ from inspect import signature
 class AutoMixinInit(type):
     """Metaclass that automatically initializes mixins in the correct order."""
 
-    def __call__(cls, *args, **kwargs):
-        instance = cls.__new__(cls)
-
+    def _initialize_mixins(cls, instance, args, kwargs):
         # Get all base classes that end with 'Mixin'
-        mixins = [base for base in cls.__bases__ if base.__name__.endswith("Mixin")]
-        first_base = next(
-            (base for base in cls.__bases__ if not base.__name__.endswith("Mixin")),
-            None,
-        )
+        mixins = [base for base in cls.__mro__ if base.__name__.endswith("Mixin")]
 
         # Initialize each mixin with matching kwargs
         for mixin in mixins:
@@ -29,10 +23,17 @@ class AutoMixinInit(type):
                 # Call the mixin's init
                 mixin.__init__(instance, **mixin_kwargs)
 
-        if "__init__" in cls.__dict__:
-            # this ensure that a mixin constructor is not called twice
-            cls.__init__(instance, *args, **kwargs)
-        elif first_base is not None:
-            # this ensure that the base class constructor is automatically called
-            first_base.__init__(instance, **kwargs)
-        return instance
+    def __new__(mcs, name, bases, attrs):
+        original_init = attrs.get("__init__")
+
+        def wrapped_init(self, *args, **kwargs):
+            # Call the mixin initialization
+            self.__class__._initialize_mixins(self, args, kwargs)
+            # Call original init if it exists
+            if original_init:
+                original_init(self, *args, **kwargs)
+            else:
+                super(self.__class__, self).__init__(*args, **kwargs)
+
+        attrs["__init__"] = wrapped_init
+        return super().__new__(mcs, name, bases, attrs)
