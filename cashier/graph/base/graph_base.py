@@ -341,15 +341,15 @@ class BaseGraph:
             fn = self.init_conversation_core
 
         fn(
-                            node_schema,
-                edge_schema,
-                input,
-                last_msg,
-                prev_node,
-                direction,
-                TC,
-                remove_prev_tool_calls,
-                is_skip,
+            node_schema,
+            edge_schema,
+            input,
+            last_msg,
+            prev_node,
+            direction,
+            TC,
+            remove_prev_tool_calls,
+            is_skip,
         )
 
     def _init_next_node(
