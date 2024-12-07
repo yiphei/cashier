@@ -6,7 +6,7 @@ class AutoMixinInit(type):
 
     def _initialize_mixins(cls, instance, args, kwargs):
         # Get all base classes that end with 'Mixin'
-        mixins = [base for base in cls.__mro__ if base.__name__.endswith("Mixin")]
+        mixins = [base for base in cls.__bases__ if base.__name__.endswith("Mixin")]
 
         # Initialize each mixin with matching kwargs
         for mixin in mixins:
