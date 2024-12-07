@@ -10,7 +10,7 @@ from cashier.graph.base.base_edge_schema import BwdStateInit, FwdStateInit
 from cashier.graph.edge_schema import EdgeSchema
 from cashier.graph.mixin.auto_mixin_init import AutoMixinInit
 from cashier.graph.mixin.has_id_mixin import HasIdMixin
-from cashier.graph.mixin.state_mixin import BaseStateModel
+from cashier.graph.base.base_state import BaseStateModel
 from cashier.model.model_turn import ModelTurn
 from cashier.prompts.node_system import NodeSystemPrompt
 from cashier.tool.function_call_context import StateUpdateError

@@ -5,7 +5,7 @@ from typing import Any, List, Optional, Set, Tuple, Type, Union
 from pydantic import BaseModel
 
 from cashier.graph.base.base_edge_schema import BaseTransitionConfig
-from cashier.graph.base.graph_base import BaseGraph, BaseGraphSchema
+from cashier.graph.base.base_graph import BaseGraph, BaseGraphSchema
 from cashier.graph.conversation_node import (
     ConversationNode,
     ConversationNodeSchema,

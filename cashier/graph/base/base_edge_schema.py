@@ -8,7 +8,7 @@ from pydantic import BaseModel
 if TYPE_CHECKING:
     from cashier.graph.conversation_node import ConversationNode, ConversationNodeSchema
 
-from cashier.graph.mixin.state_mixin import BaseStateModel
+from cashier.graph.base.base_state import BaseStateModel
 
 
 class BwdStateInit(StrEnum):
