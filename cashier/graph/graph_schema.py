@@ -71,6 +71,7 @@ class Graph(BaseGraph):
     ):
         super().__init__(schema, request)
         self.state = schema.state_schema(**(input or {}))
+        self.has_run_assistant_turn_before_transition = False
 
     @property
     def lowest_curr_node(self):
