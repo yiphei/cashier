@@ -1,18 +1,10 @@
-import json
-from typing import Any, Callable, Dict, Optional, Tuple, cast
-
-from colorama import Style
+from typing import Any, Callable, Dict, Optional, cast
 
 from cashier.audio import get_speech_from_text
 from cashier.graph.request_graph import RequestGraph
 from cashier.gui import MessageDisplay
-from cashier.logger import logger
 from cashier.model.model_completion import ModelOutput
-from cashier.model.model_util import CustomJSONEncoder, FunctionCall, ModelProvider
-from cashier.tool.function_call_context import (
-    FunctionCallContext,
-    InexistentFunctionError,
-)
+from cashier.model.model_util import ModelProvider
 from cashier.turn_container import TurnContainer
 
 
@@ -64,7 +56,9 @@ class AgentExecutor:
             self.need_user_input = True
 
         current_node = self.graph.curr_conversation_node
-        fn_calls, fn_id_to_output = self.graph.handle_assistant_turn(model_completion, self.TC, fn_callback)
+        fn_calls, fn_id_to_output = self.graph.handle_assistant_turn(
+            model_completion, self.TC, fn_callback
+        )
         if fn_calls:
             self.need_user_input = False
 

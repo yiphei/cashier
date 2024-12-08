@@ -1,12 +1,11 @@
+import json
 from abc import ABC, abstractmethod
 from collections import defaultdict, deque
-import json
-from typing import Any, Callable, List, Literal, Optional, Set, Tuple, cast, overload
+from typing import Any, Callable, List, Literal, Optional, Set, Tuple, overload
 from venv import logger
 
 from colorama import Style
 
-from cashier.audio import get_speech_from_text
 from cashier.graph.conversation_node import (
     ConversationNode,
     ConversationNodeSchema,
@@ -19,7 +18,10 @@ from cashier.model.model_completion import ModelOutput
 from cashier.model.model_turn import AssistantTurn
 from cashier.model.model_util import CustomJSONEncoder, FunctionCall
 from cashier.ref import Ref
-from cashier.tool.function_call_context import FunctionCallContext, InexistentFunctionError
+from cashier.tool.function_call_context import (
+    FunctionCallContext,
+    InexistentFunctionError,
+)
 
 
 class BaseGraphSchema:
@@ -497,7 +499,6 @@ class BaseGraph(ABC, HasStatusMixin):
                 return self.check_self_transition(fn_call, is_fn_call_success)
             else:
                 return tuple_output
-
 
     def execute_function_call(
         self, fn_call: FunctionCall, fn_callback: Optional[Callable] = None
