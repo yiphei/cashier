@@ -4,7 +4,6 @@ from typing import Any, List, Optional, Set, Tuple, Type, Union
 
 from pydantic import BaseModel
 
-from cashier.graph.base.base_edge_schema import BaseTransitionConfig
 from cashier.graph.base.base_graph import BaseGraph, BaseGraphSchema
 from cashier.graph.conversation_node import (
     ConversationNode,
@@ -54,6 +53,7 @@ class GraphSchema(HasIdMixin, BaseGraphSchema, metaclass=AutoMixinInit):
         self.start_node_schema = start_node_schema
         self.last_node_schema = last_node_schema
         self.run_assistant_turn_before_transition = run_assistant_turn_before_transition
+
     def create_node(self, input, request):
         return Graph(
             input=input,
@@ -71,7 +71,6 @@ class Graph(BaseGraph):
     ):
         super().__init__(schema, request)
         self.state = schema.state_schema(**(input or {}))
-
 
     @property
     def lowest_curr_node(self):
