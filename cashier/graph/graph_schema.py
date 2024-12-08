@@ -46,15 +46,14 @@ class GraphSchema(HasIdMixin, BaseGraphSchema, metaclass=AutoMixinInit):
         edge_schemas: List[EdgeSchema],
         node_schemas: List[ConversationNodeSchema],
         state_schema: Type[BaseModel],
-        completion_config: BaseTransitionConfig,
+        run_assistant_turn_before_transition: bool = False,
     ):
         BaseGraphSchema.__init__(self, description, edge_schemas, node_schemas)
         self.state_schema = state_schema
         self.output_schema = output_schema
         self.start_node_schema = start_node_schema
         self.last_node_schema = last_node_schema
-        self.completion_config = completion_config
-
+        self.run_assistant_turn_before_transition = run_assistant_turn_before_transition
     def create_node(self, input, request):
         return Graph(
             input=input,
@@ -72,6 +71,11 @@ class Graph(BaseGraph):
     ):
         super().__init__(schema, request)
         self.state = schema.state_schema(**(input or {}))
+
+
+    @property
+    def lowest_curr_node(self):
+        return self.curr_node
 
     @property
     def curr_conversation_node(self):
@@ -221,23 +225,13 @@ class Graph(BaseGraph):
         self.curr_node.update_first_user_message()
 
     def check_self_transition(self, fn_call, is_fn_call_success):
-        new_edge_schema = None
-        new_node_schema = None
-        if self.curr_node.schema == self.schema.last_node_schema:
-            return (
-                None,
-                None,
-                self.schema.completion_config.run_check(
-                    self.state, fn_call, is_fn_call_success
-                ),
-                None,
-                None,
-            )
-
         new_edge_schema, new_node_schema = self.check_node_transition(
             self.curr_node.state, fn_call, is_fn_call_success, self.next_edge_schemas
         )
-        return new_edge_schema, new_node_schema, False, None, None
+        is_completed = False
+        if new_edge_schema and self.curr_node.schema == self.schema.last_node_schema:
+            is_completed = True
+        return new_edge_schema, new_node_schema, is_completed, None, None
 
     def init_conversation_core(
         self,

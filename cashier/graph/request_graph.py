@@ -33,6 +33,10 @@ class RequestGraph(BaseGraph):
         self.graph_schema_id_to_task = {}
         self.curr_conversation_node = None
 
+    @property
+    def lowest_curr_node(self):
+        return self.curr_node.lowest_curr_node or self.curr_node
+
     def get_graph_schemas(self, request):
         agent_selections = GraphSchemaSelectionPrompt.run(
             request=request, graph_schemas=self.schema.node_schemas
