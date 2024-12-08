@@ -220,10 +220,11 @@ class Graph(BaseGraph):
         new_edge_schema, new_node_schema = self.check_node_transition(
             self.curr_node.state, fn_call, is_fn_call_success, self.next_edge_schemas
         )
-        is_completed = False
+        if new_edge_schema is not None:
+            self.curr_node.mark_as_transitioning()
         if new_edge_schema and self.curr_node.schema == self.schema.last_node_schema:
-            is_completed = True
-        return new_edge_schema, new_node_schema, is_completed, None, None
+            self.mark_as_transitioning()
+        return new_edge_schema, new_node_schema, None, None
 
     def init_conversation_core(
         self,

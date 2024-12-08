@@ -401,6 +401,7 @@ class BaseGraph(ABC, HasStatusMixin):
         )
 
     def handle_curr_node_completion(self):
+        assert self.curr_node.status == Status.TRANSITIONING
         self.curr_node.mark_as_completed()
         if self.curr_node.state is not None and self.state is not None:
             old_state = self.state.model_dump()
@@ -503,7 +504,7 @@ class BaseGraph(ABC, HasStatusMixin):
             return self.check_self_transition(fn_call, is_fn_call_success)
         else:
             tuple_output = self.curr_node.check_transition(fn_call, is_fn_call_success)
-            if tuple_output[2]:
+            if self.curr_node.status == Status.TRANSITIONING:
                 return self.check_self_transition(fn_call, is_fn_call_success)
             else:
                 return tuple_output
@@ -578,7 +579,6 @@ class BaseGraph(ABC, HasStatusMixin):
                 (
                     new_edge_schema,
                     new_node_schema,
-                    is_completed,
                     fake_fn_call,
                     fake_fn_output,
                 ) = self.check_transition(function_call, is_success)
