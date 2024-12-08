@@ -73,7 +73,6 @@ class Graph(BaseGraph):
         self.state = schema.state_schema(**(input or {}))
         self.has_run_assistant_turn_before_transition = False
 
-
     @property
     def curr_conversation_node(self):
         return self.curr_node
