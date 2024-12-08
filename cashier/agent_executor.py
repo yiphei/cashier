@@ -102,9 +102,9 @@ class AgentExecutor:
     ) -> None:
         if (
             self.new_edge_schema is not None
-            and self.graph.lowest_curr_node.schema.run_assistant_turn_before_transition
+            and self.graph.curr_node.schema.run_assistant_turn_before_transition
         ):
-            self.graph.lowest_curr_node.has_run_assistant_turn_before_transition = True
+            self.graph.curr_node.has_run_assistant_turn_before_transition = True
 
         self.last_model_provider = model_completion.model_provider
         message = model_completion.get_or_stream_message()
@@ -151,8 +151,8 @@ class AgentExecutor:
             fn_id_to_output,
         )
         if self.new_edge_schema and (
-            not self.graph.lowest_curr_node.schema.run_assistant_turn_before_transition
-            or self.graph.lowest_curr_node.has_run_assistant_turn_before_transition
+            not self.graph.curr_conversation_node.schema.run_assistant_turn_before_transition
+            or self.graph.curr_conversation_node.has_run_assistant_turn_before_transition
         ):
             self.graph.init_next_node(
                 self.new_node_schema,
