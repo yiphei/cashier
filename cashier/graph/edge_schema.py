@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, NamedTuple, Optional, Tuple
+from typing import TYPE_CHECKING, Optional, Tuple
 
 from cashier.graph.mixin.has_id_mixin import HasIdMixin
 
@@ -71,6 +71,8 @@ class EdgeSchema(BaseEdgeSchema, HasIdMixin, metaclass=AutoMixinInit):
             return False, None
 
 
-class Edge(NamedTuple):
-    from_node: ConversationNode
-    to_node: ConversationNode
+class Edge:
+    def __init__(self, from_node, to_node, schema):
+        self.from_node = from_node
+        self.to_node = to_node
+        self.schema = schema
