@@ -62,6 +62,15 @@ class BaseGraph(ABC, HasStatusMixin):
         self.new_edge_schema = None
         self.new_node_schema = None
 
+    @property
+    def curr_conversation_node(self):
+        from cashier.graph.graph_schema import Graph
+        return (
+            self.curr_node.curr_conversation_node
+            if isinstance(self.curr_node, Graph)
+            else self.curr_node
+        )
+
     def add_fwd_edge(
         self,
         from_node: ConversationNode,
