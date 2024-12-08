@@ -1,10 +1,12 @@
 from abc import ABC, abstractmethod
 from collections import defaultdict, deque
-from typing import Any, List, Literal, Optional, Set, Tuple, overload
+import json
+from typing import Any, Callable, List, Literal, Optional, Set, Tuple, cast, overload
 from venv import logger
 
 from colorama import Style
 
+from cashier.audio import get_speech_from_text
 from cashier.graph.conversation_node import (
     ConversationNode,
     ConversationNodeSchema,
@@ -13,8 +15,11 @@ from cashier.graph.conversation_node import (
 from cashier.graph.edge_schema import Edge, EdgeSchema, FwdSkipType
 from cashier.graph.mixin.has_status_mixin import HasStatusMixin, Status
 from cashier.gui import MessageDisplay
+from cashier.model.model_completion import ModelOutput
 from cashier.model.model_turn import AssistantTurn
+from cashier.model.model_util import CustomJSONEncoder, FunctionCall
 from cashier.ref import Ref
+from cashier.tool.function_call_context import FunctionCallContext, InexistentFunctionError
 
 
 class BaseGraphSchema:
@@ -53,6 +58,8 @@ class BaseGraph(ABC, HasStatusMixin):
         self.next_edge_schemas: Set[EdgeSchema] = set()
         self.bwd_skip_edge_schemas: Set[EdgeSchema] = set()
         self.request = request
+        self.new_edge_schema = None
+        self.new_node_schema = None
 
     def add_fwd_edge(
         self,
@@ -490,3 +497,99 @@ class BaseGraph(ABC, HasStatusMixin):
                 return self.check_self_transition(fn_call, is_fn_call_success)
             else:
                 return tuple_output
+
+
+    def execute_function_call(
+        self, fn_call: FunctionCall, fn_callback: Optional[Callable] = None
+    ) -> Tuple[Any, bool]:
+        function_args = fn_call.args
+        logger.debug(
+            f"[FUNCTION_CALL] {Style.BRIGHT}name: {fn_call.name}, id: {fn_call.id}{Style.NORMAL} with args:\n{json.dumps(function_args, indent=4)}"
+        )
+        with FunctionCallContext() as fn_call_context:
+            if (
+                fn_call.name
+                not in self.curr_conversation_node.schema.tool_registry.tool_names
+            ):
+                raise InexistentFunctionError(fn_call.name)
+
+            if fn_call.name.startswith("get_state"):
+                fn_output = getattr(self.curr_conversation_node, fn_call.name)(
+                    **function_args
+                )
+            elif fn_call.name.startswith("update_state"):
+                fn_output = self.curr_conversation_node.update_state(**function_args)  # type: ignore
+            elif fn_callback is not None:
+                # TODO: this exists for benchmarking. remove this once done
+                fn_output = fn_callback(**function_args)
+                if fn_output and (
+                    type(fn_output) is not str
+                    or not fn_output.strip().startswith("Error:")
+                ):
+                    fn_output = json.loads(fn_output)
+            else:
+                fn = self.curr_conversation_node.schema.tool_registry.fn_name_to_fn[
+                    fn_call.name
+                ]
+                fn_output = fn(**function_args)
+
+        if fn_call_context.has_exception():
+            logger.debug(
+                f"[FUNCTION_EXCEPTION] {Style.BRIGHT}name: {fn_call.name}, id: {fn_call.id}{Style.NORMAL} with exception:\n{str(fn_call_context.exception)}"
+            )
+            return fn_call_context.exception, False
+        else:
+            logger.debug(
+                f"[FUNCTION_RETURN] {Style.BRIGHT}name: {fn_call.name}, id: {fn_call.id}{Style.NORMAL} with output:\n{json.dumps(fn_output, cls=CustomJSONEncoder, indent=4)}"
+            )
+            return fn_output, (
+                type(fn_output) is not str or not fn_output.strip().startswith("Error:")
+            )
+
+    def handle_assistant_turn(
+        self, model_completion: ModelOutput, TC, fn_callback: Optional[Callable] = None
+    ) -> None:
+        if (
+            self.new_edge_schema is not None
+            and self.curr_node.schema.run_assistant_turn_before_transition
+        ):
+            self.curr_node.has_run_assistant_turn_before_transition = True
+
+        fn_id_to_output = {}
+        fn_calls = []
+        if self.new_edge_schema is None:
+            for function_call in model_completion.get_or_stream_fn_calls():
+                fn_id_to_output[function_call.id], is_success = (
+                    self.execute_function_call(function_call, fn_callback)
+                )
+                fn_calls.append(function_call)
+
+                (
+                    new_edge_schema,
+                    new_node_schema,
+                    is_completed,
+                    fake_fn_call,
+                    fake_fn_output,
+                ) = self.check_transition(function_call, is_success)
+                if new_node_schema is not None:
+                    self.new_edge_schema = new_edge_schema
+                    self.new_node_schema = new_node_schema
+                    if fake_fn_call is not None:
+                        fn_id_to_output[fake_fn_call.id] = fake_fn_output
+                        fn_calls.append(fake_fn_call)
+                    break
+
+        if self.new_edge_schema and (
+            not self.curr_conversation_node.schema.run_assistant_turn_before_transition
+            or self.curr_conversation_node.has_run_assistant_turn_before_transition
+        ):
+            self.init_next_node(
+                self.new_node_schema,
+                self.new_edge_schema,
+                TC,
+                None,
+            )
+            self.new_edge_schema = None
+            self.new_node_schema = None
+
+        return fn_calls, fn_id_to_output
