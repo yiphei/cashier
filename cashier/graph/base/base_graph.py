@@ -65,6 +65,7 @@ class BaseGraph(ABC, HasStatusMixin):
     @property
     def curr_conversation_node(self):
         from cashier.graph.graph_schema import Graph
+
         return (
             self.curr_node.curr_conversation_node
             if isinstance(self.curr_node, Graph)
