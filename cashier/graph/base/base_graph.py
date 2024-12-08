@@ -17,7 +17,6 @@ from cashier.gui import MessageDisplay
 from cashier.model.model_completion import ModelOutput
 from cashier.model.model_turn import AssistantTurn
 from cashier.model.model_util import CustomJSONEncoder, FunctionCall
-from cashier.ref import Ref
 from cashier.tool.function_call_context import (
     FunctionCallContext,
     InexistentFunctionError,

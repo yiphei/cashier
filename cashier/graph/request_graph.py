@@ -34,7 +34,11 @@ class RequestGraph(BaseGraph):
 
     @property
     def curr_conversation_node(self):
-        return self.curr_node.curr_conversation_node if isinstance(self.curr_node, Graph) else self.curr_node
+        return (
+            self.curr_node.curr_conversation_node
+            if isinstance(self.curr_node, Graph)
+            else self.curr_node
+        )
 
     def get_graph_schemas(self, request):
         agent_selections = GraphSchemaSelectionPrompt.run(
