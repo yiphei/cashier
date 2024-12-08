@@ -324,7 +324,6 @@ class BaseGraph(ABC, HasStatusMixin):
         graph = node_schema.create_node(
             input=input, request=self.requests[self.current_graph_schema_idx]
         )
-        self.curr_conversation_node = Ref(graph, "curr_conversation_node")
 
         if edge_schema:
             self.add_edge(self.curr_node, graph, edge_schema, direction)
@@ -556,6 +555,7 @@ class BaseGraph(ABC, HasStatusMixin):
         ):
             self.curr_node.has_run_assistant_turn_before_transition = True
 
+        need_user_input = True
         fn_id_to_output = {}
         fn_calls = []
         if self.new_edge_schema is None:
@@ -564,6 +564,7 @@ class BaseGraph(ABC, HasStatusMixin):
                     self.execute_function_call(function_call, fn_callback)
                 )
                 fn_calls.append(function_call)
+                need_user_input = False
 
                 (
                     new_edge_schema,
@@ -580,6 +581,14 @@ class BaseGraph(ABC, HasStatusMixin):
                         fn_calls.append(fake_fn_call)
                     break
 
+        TC.add_assistant_turn(
+            model_completion.msg_content,
+            model_completion.model_provider,
+            self.curr_conversation_node.schema.tool_registry,
+            fn_calls,
+            fn_id_to_output,
+        )
+
         if self.new_edge_schema and (
             not self.curr_conversation_node.schema.run_assistant_turn_before_transition
             or self.curr_conversation_node.has_run_assistant_turn_before_transition
@@ -593,4 +602,4 @@ class BaseGraph(ABC, HasStatusMixin):
             self.new_edge_schema = None
             self.new_node_schema = None
 
-        return fn_calls, fn_id_to_output
+        return need_user_input

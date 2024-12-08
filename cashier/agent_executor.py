@@ -55,19 +55,8 @@ class AgentExecutor:
                 MessageDisplay.display_assistant_message(message)
             self.need_user_input = True
 
-        current_node = self.graph.curr_conversation_node
-        fn_calls, fn_id_to_output = self.graph.handle_assistant_turn(
+        self.need_user_input = self.graph.handle_assistant_turn(
             model_completion, self.TC, fn_callback
-        )
-        if fn_calls:
-            self.need_user_input = False
-
-        self.TC.add_assistant_turn(
-            model_completion.msg_content,
-            model_completion.model_provider,
-            current_node.schema.tool_registry,
-            fn_calls,
-            fn_id_to_output,
         )
 
     def get_model_completion_kwargs(self) -> Dict[str, Any]:
