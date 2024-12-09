@@ -2,7 +2,7 @@ from typing import Optional
 
 from pydantic import Field
 
-from cashier.graph.base.base_edge_schema import StateTransitionConfig
+from cashier.graph.base.base_edge_schema import FunctionState, StateTransitionConfig, FunctionTransitionConfig
 from cashier.graph.base.base_state import BaseStateModel
 from cashier.graph.conversation_node import ConversationNodeSchema
 from cashier.graph.edge_schema import EdgeSchema
@@ -143,6 +143,11 @@ cashier_graph_schema = GraphSchema(
         terminal_order_node_schema,
     ],
     state_schema=GraphState,
+    transition_config=FunctionTransitionConfig(
+        need_user_msg=False,
+        fn_name="has_said_goodbye",
+        state=FunctionState.CALLED_AND_SUCCEEDED,
+    ),
 )
 
 
