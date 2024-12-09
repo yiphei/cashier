@@ -95,7 +95,6 @@ class BaseEdgeSchema:
         self,
         from_node_schema: ConversationNodeSchema,
         to_node_schema: ConversationNodeSchema,
-        transition_config: BaseTransitionConfig,
         new_input_fn: Callable[[BaseStateModel], Any],
         bwd_state_init: BwdStateInit = BwdStateInit.RESUME,
         fwd_state_init: FwdStateInit = FwdStateInit.RESET,
@@ -110,7 +109,6 @@ class BaseEdgeSchema:
     ):
         self.from_node_schema = from_node_schema
         self.to_node_schema = to_node_schema
-        self.transition_config = transition_config
         self.new_input_fn = new_input_fn
         self.bwd_state_init = bwd_state_init
         self.fwd_state_init = fwd_state_init
@@ -124,19 +122,4 @@ class BaseEdgeSchema:
         )
         self.skip_from_incomplete_to_prev_incomplete = (
             skip_from_incomplete_to_prev_incomplete
-        )
-
-    def check_transition_config(
-        self,
-        state: BaseStateModel,
-        fn_call,
-        is_fn_call_success,
-        check_resettable_fields=True,
-    ) -> bool:
-        return self.transition_config.run_check(
-            state,
-            fn_call,
-            is_fn_call_success,
-            check_resettable_fields,
-            self.from_node_schema.state_schema.resettable_fields,
         )
