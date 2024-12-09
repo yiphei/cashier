@@ -157,14 +157,13 @@ class ConversationNodeSchema(HasIdMixin, metaclass=AutoMixinInit):
             )
             self.revisit_tool_registry.add_tool_def(
                 "update_state_has_customer_confirmed_changes",
-                f"Function to update the `has_customer_confirmed_changes` field in the state",
+                "Function to update the `has_customer_confirmed_changes` field in the state",
                 field_args,
             )
 
     @property
     def tool_registry(self) -> ToolRegistry:
         return self._tool_registry
-    
 
     def get_tool_registry(self, has_prev_visited=False) -> ToolRegistry:
         return self.revisit_tool_registry if has_prev_visited else self.tool_registry

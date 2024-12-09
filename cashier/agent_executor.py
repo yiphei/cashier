@@ -63,8 +63,12 @@ class AgentExecutor:
         force_tool_choice = self.force_tool_choice
         self.force_tool_choice = None
 
-        has_prev_visited = hasattr(self.graph.curr_conversation_node.state, "has_customer_confirmed_changes")
-        tool_registry = self.graph.curr_conversation_node.schema.get_tool_registry(has_prev_visited)
+        has_prev_visited = hasattr(
+            self.graph.curr_conversation_node.state, "has_customer_confirmed_changes"
+        )
+        tool_registry = self.graph.curr_conversation_node.schema.get_tool_registry(
+            has_prev_visited
+        )
 
         return {
             "turn_container": self.TC,
