@@ -218,7 +218,10 @@ class Graph(BaseGraph):
                         model_provider,
                         self.curr_node.schema.tool_registry,
                         [fake_fn_call_1, fake_fn_call],
-                        {fake_fn_call_1.id: None, fake_fn_call.id: self.curr_node.get_state()},
+                        {
+                            fake_fn_call_1.id: None,
+                            fake_fn_call.id: self.curr_node.get_state(),
+                        },
                     )
         self.curr_node.update_first_user_message()
 
