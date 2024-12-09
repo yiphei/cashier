@@ -37,6 +37,10 @@ class RequestGraph(BaseGraph):
         agent_selections = GraphSchemaSelectionPrompt.run(
             request=request, graph_schemas=self.schema.node_schemas
         )
+        self.graph_schema_sequence = []
+        self.requests = []
+        self.graph_schema_id_to_task = {}
+        self.current_graph_schema_idx = -1
         for agent_selection in agent_selections:
             self.graph_schema_sequence.append(
                 self.schema.node_schema_id_to_node_schema[agent_selection.agent_id]
