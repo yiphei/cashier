@@ -62,9 +62,17 @@ class AgentExecutor:
     def get_model_completion_kwargs(self) -> Dict[str, Any]:
         force_tool_choice = self.force_tool_choice
         self.force_tool_choice = None
+
+        has_prev_visited = hasattr(
+            self.graph.curr_conversation_node.state, "has_customer_confirmed_changes"
+        )
+        tool_registry = self.graph.curr_conversation_node.schema.get_tool_registry(
+            has_prev_visited
+        )
+
         return {
             "turn_container": self.TC,
-            "tool_registry": (self.graph.curr_conversation_node.schema.tool_registry),
+            "tool_registry": tool_registry,
             "force_tool_choice": force_tool_choice,
             "exclude_update_state_fns": (
                 not self.graph.curr_conversation_node.first_user_message

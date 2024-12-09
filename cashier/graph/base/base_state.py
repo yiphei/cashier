@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import copy
-from typing import ClassVar, List, Optional
+from typing import ClassVar, Dict, List, Optional
 
 from pydantic import BaseModel, ConfigDict
 
@@ -21,3 +21,6 @@ class BaseStateModel(BaseModel):
                     new_data[field_name] = field_info.default
 
         return self.__class__(**new_data)
+
+    def copy_data(self) -> Dict:
+        return copy.deepcopy(dict(self))

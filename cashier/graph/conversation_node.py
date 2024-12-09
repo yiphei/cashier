@@ -4,7 +4,7 @@ from enum import StrEnum
 from typing import Any, List, Literal, Optional, Type, Union, cast, overload
 
 from openai.types.chat.chat_completion_tool_param import ChatCompletionToolParam
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, create_model
 
 from cashier.graph.base.base_edge_schema import BwdStateInit, FwdStateInit
 from cashier.graph.base.base_state import BaseStateModel
@@ -45,6 +45,7 @@ class ConversationNode(HasIdMixin, HasStatusMixin, metaclass=AutoMixinInit):
     def init_state(
         cls,
         state_schema: Optional[Type[BaseStateModel]],
+        revisit_state_schema: Optional[Type[BaseStateModel]],
         prev_node: Optional[ConversationNode],
         edge_schema: Optional[EdgeSchema],
         direction: Direction,
@@ -69,7 +70,7 @@ class ConversationNode(HasIdMixin, HasStatusMixin, metaclass=AutoMixinInit):
                 and state_init_val == state_init_enum_cls.RESUME_IF_INPUT_UNCHANGED  # type: ignore
                 and input == prev_node.input
             ):
-                return prev_node.state.copy_resume()
+                return revisit_state_schema(**prev_node.state.copy_data())
 
         return state_schema()
 
@@ -105,6 +106,17 @@ class ConversationNodeSchema(HasIdMixin, metaclass=AutoMixinInit):
         tool_names: Optional[List[str]] = None,
     ):
         self.state_schema = state_schema
+        self.revisit_state_schema = create_model(
+            "StateSchema",
+            __base__=state_schema,
+            has_customer_confirmed_changes=(
+                bool,
+                Field(
+                    default=False,
+                    description="whether the customer has explicitly confirmed the state changes",
+                ),
+            ),
+        )
         self.node_prompt = node_prompt
         self.node_system_prompt = node_system_prompt
         self.input_schema = input_schema
@@ -113,13 +125,13 @@ class ConversationNodeSchema(HasIdMixin, metaclass=AutoMixinInit):
         if tool_registry_or_tool_defs is not None and isinstance(
             tool_registry_or_tool_defs, ToolRegistry
         ):
-            self.tool_registry = (
+            self._tool_registry = (
                 tool_registry_or_tool_defs.__class__.create_from_tool_registry(
                     tool_registry_or_tool_defs, tool_names
                 )
             )
         else:
-            self.tool_registry = ToolRegistry(tool_registry_or_tool_defs)
+            self._tool_registry = ToolRegistry(tool_registry_or_tool_defs)
 
         if self.state_schema is not None:
             for (
@@ -128,17 +140,33 @@ class ConversationNodeSchema(HasIdMixin, metaclass=AutoMixinInit):
             ) in self.state_schema.model_fields.items():
                 new_tool_fn_name = f"update_state_{field_name}"
                 field_args = {field_name: (field_info.annotation, field_info)}
-                self.tool_registry.add_tool_def(
+                self._tool_registry.add_tool_def(
                     new_tool_fn_name,
                     f"Function to update the `{field_name}` field in the state",
                     field_args,
                 )
 
-            self.tool_registry.add_tool_def(
+            self._tool_registry.add_tool_def(
                 "get_state",
                 "Function to get the current state, as defined in <state>",
                 {},
             )
+
+            self.revisit_tool_registry = ToolRegistry.create_from_tool_registry(
+                self._tool_registry
+            )
+            self.revisit_tool_registry.add_tool_def(
+                "update_state_has_customer_confirmed_changes",
+                "Function to update the `has_customer_confirmed_changes` field in the state",
+                field_args,
+            )
+
+    @property
+    def tool_registry(self) -> ToolRegistry:
+        return self._tool_registry
+
+    def get_tool_registry(self, has_prev_visited=False) -> ToolRegistry:
+        return self.revisit_tool_registry if has_prev_visited else self.tool_registry
 
     @overload
     def create_node(  # noqa: E704
@@ -183,8 +211,39 @@ class ConversationNodeSchema(HasIdMixin, metaclass=AutoMixinInit):
         curr_request: Optional[str] = None,
     ) -> ConversationNode:
         state = ConversationNode.init_state(
-            self.state_schema, prev_node, edge_schema, direction, input
+            self.state_schema,
+            self.revisit_state_schema,
+            prev_node,
+            edge_schema,
+            direction,
+            input,
         )
+
+        state_json_schema = None
+        if self.state_schema is not None:
+            if prev_node is not None:
+                state_init_val = getattr(
+                    edge_schema,
+                    (
+                        "fwd_state_init"
+                        if direction == Direction.FWD
+                        else "bwd_state_init"
+                    ),
+                )
+                state_init_enum_cls = (
+                    FwdStateInit if direction == Direction.FWD else BwdStateInit
+                )
+
+                if state_init_val == state_init_enum_cls.RESET:  # type: ignore
+                    state_json_schema = self.state_schema.model_json_schema()
+                elif state_init_val == state_init_enum_cls.RESUME or (  # type: ignore
+                    direction == Direction.FWD
+                    and state_init_val == state_init_enum_cls.RESUME_IF_INPUT_UNCHANGED  # type: ignore
+                    and input == prev_node.input
+                ):
+                    state_json_schema = self.revisit_state_schema.model_json_schema()
+            else:
+                state_json_schema = self.state_schema.model_json_schema()
 
         prompt = self.node_system_prompt(
             node_prompt=self.node_prompt,
@@ -192,9 +251,7 @@ class ConversationNodeSchema(HasIdMixin, metaclass=AutoMixinInit):
             node_input_json_schema=(
                 self.input_schema.model_json_schema() if self.input_schema else None
             ),
-            state_json_schema=(
-                self.state_schema.model_json_schema() if self.state_schema else None
-            ),
+            state_json_schema=state_json_schema,
             last_msg=last_msg,
             curr_request=curr_request,
         )
