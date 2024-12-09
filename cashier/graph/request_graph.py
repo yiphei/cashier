@@ -116,14 +116,14 @@ class RequestGraph(BaseGraph):
         new_edge_schema, new_node_schema = self.check_node_transition(
             self.curr_node.state, fn_call, is_fn_call_success, edge_schemas
         )
-        if (
-            new_node_schema is not None
-        ):
+        if new_node_schema is not None:
             self.curr_node.mark_as_transitioning()
             if not isinstance(self.curr_node, Graph):
                 self.local_transition_queue.append(self.curr_node)
-            if             (isinstance(self.curr_node, Graph)
-            and self.current_graph_schema_idx < len(self.requests) - 1):
+            if (
+                isinstance(self.curr_node, Graph)
+                and self.current_graph_schema_idx < len(self.requests) - 1
+            ):
                 fake_fn_call = create_think_fn_call(
                     f"I just completed the current request. The next request to be addressed is: {self.requests[self.current_graph_schema_idx + 1]}. I must explicitly inform the customer that the current request is completed and that I will address the next request right away. Only after I informed the customer do I receive the tools to address the next request."
                 )

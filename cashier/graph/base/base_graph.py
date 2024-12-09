@@ -67,14 +67,13 @@ class BaseGraph(ABC, HasStatusMixin):
     @property
     def transition_queue(self):
         from cashier.graph.graph_schema import Graph
+
         sub_queue = (
             self.curr_node.transition_queue
             if isinstance(self.curr_node, Graph)
             else deque()
         )
-        return (
-            sub_queue + self.local_transition_queue
-        )
+        return sub_queue + self.local_transition_queue
 
     @property
     def curr_conversation_node(self):
