@@ -571,10 +571,10 @@ class BaseGraph(ABC, HasStatusMixin):
         self, model_completion: ModelOutput, TC, fn_callback: Optional[Callable] = None
     ) -> None:
         if (
-            self.new_edge_schema is not None
-            and self.curr_node.schema.run_assistant_turn_before_transition
+            self.transition_queue
+            and self.transition_queue[-1].schema.run_assistant_turn_before_transition
         ):
-            self.curr_node.has_run_assistant_turn_before_transition = True
+            self.transition_queue[-1].has_run_assistant_turn_before_transition = True
 
         need_user_input = True
         fn_id_to_output = {}
@@ -609,9 +609,9 @@ class BaseGraph(ABC, HasStatusMixin):
             fn_id_to_output,
         )
 
-        if self.new_edge_schema and (
-            not self.curr_conversation_node.schema.run_assistant_turn_before_transition
-            or self.curr_conversation_node.has_run_assistant_turn_before_transition
+        if self.transition_queue and (
+            not self.transition_queue[-1].schema.run_assistant_turn_before_transition
+            or self.transition_queue[-1].has_run_assistant_turn_before_transition
         ):
             self.init_next_node(
                 self.new_node_schema,
