@@ -107,10 +107,16 @@ class ConversationNodeSchema(HasIdMixin, metaclass=AutoMixinInit):
     ):
         self.state_schema = state_schema
         self.revisit_state_schema = create_model(
-                "StateSchema",
-                __base__=state_schema,
-                has_customer_confirmed_changes = (bool, Field(default=False,description='whether the customer has explicitly confirmed the state changes'))
-            )
+            "StateSchema",
+            __base__=state_schema,
+            has_customer_confirmed_changes=(
+                bool,
+                Field(
+                    default=False,
+                    description="whether the customer has explicitly confirmed the state changes",
+                ),
+            ),
+        )
         self.node_prompt = node_prompt
         self.node_system_prompt = node_system_prompt
         self.input_schema = input_schema
