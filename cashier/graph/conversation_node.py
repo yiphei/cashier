@@ -195,7 +195,7 @@ class ConversationNodeSchema(HasIdMixin, metaclass=AutoMixinInit):
         curr_request: Optional[str] = None,
     ) -> ConversationNode:
         state = ConversationNode.init_state(
-            self.state_schema, prev_node, edge_schema, direction, input
+            self.state_schema, self.revisit_state_schema, prev_node, edge_schema, direction, input
         )
 
         state_json_schema = None
