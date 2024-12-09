@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import copy
-from typing import ClassVar, List, Optional
+from typing import ClassVar, List, Optional, Dict
 
 from pydantic import BaseModel, ConfigDict
 
@@ -22,5 +22,5 @@ class BaseStateModel(BaseModel):
 
         return self.__class__(**new_data)
 
-    def copy_data(self) -> BaseStateModel:
+    def copy_data(self) -> Dict:
         return copy.deepcopy(dict(self))
