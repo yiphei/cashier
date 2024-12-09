@@ -125,13 +125,16 @@ class RequestGraph(BaseGraph):
                 self.local_transition_queue.append(self.curr_node)
 
         elif self.curr_node.status == Status.TRANSITIONING:
-            assert len(edge_schemas) == 1
-            new_edge_schema = edge_schemas[0]
-            new_node_schema = new_edge_schema.to_node_schema
-            if self.current_graph_schema_idx < len(self.requests) - 1:
-                fake_fn_call = create_think_fn_call(
-                    f"I just completed the current request. The next request to be addressed is: {self.requests[self.current_graph_schema_idx + 1]}. I must explicitly inform the customer that the current request is completed and that I will address the next request right away. Only after I informed the customer do I receive the tools to address the next request."
-                )
+            if len(edge_schemas) == 1:
+                new_edge_schema = edge_schemas[0]
+                new_node_schema = new_edge_schema.to_node_schema
+                if self.current_graph_schema_idx < len(self.requests) - 1:
+                    fake_fn_call = create_think_fn_call(
+                        f"I just completed the current request. The next request to be addressed is: {self.requests[self.current_graph_schema_idx + 1]}. I must explicitly inform the customer that the current request is completed and that I will address the next request right away. Only after I informed the customer do I receive the tools to address the next request."
+                    )
+            else:
+                new_edge_schema = None
+                new_node_schema = self.schema.default_node_schema
         return new_edge_schema, new_node_schema, fake_fn_call, None
 
 
@@ -146,6 +149,7 @@ class RequestGraphSchema(BaseGraphSchema):
     ):
         super().__init__(description, edge_schemas, node_schemas)
         self.start_node_schema = ConversationNodeSchema(node_prompt, node_system_prompt)
+        self.default_node_schema = ConversationNodeSchema("You have just finished helping the customer with their requests. Ask if they need anything else.", node_system_prompt)
 
 
 class GraphEdgeSchema(BaseEdgeSchema, HasIdMixin, metaclass=AutoMixinInit):
