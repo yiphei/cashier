@@ -203,7 +203,11 @@ class ConversationNodeSchema(HasIdMixin, metaclass=AutoMixinInit):
             if prev_node is not None:
                 state_init_val = getattr(
                     self,
-                    "fwd_state_init" if direction == Direction.FWD else "bwd_state_init",
+                    (
+                        "fwd_state_init"
+                        if direction == Direction.FWD
+                        else "bwd_state_init"
+                    ),
                 )
                 state_init_enum_cls = (
                     FwdStateInit if direction == Direction.FWD else BwdStateInit
