@@ -234,8 +234,11 @@ class Graph(BaseGraph):
                 self.local_transition_queue.append(self)
         else:
             new_edge_schema, new_node_schema = self.check_node_transition(
-                self.curr_node.state, fn_call, is_fn_call_success, self.next_edge_schemas
-            )   
+                self.curr_node.state,
+                fn_call,
+                is_fn_call_success,
+                self.next_edge_schemas,
+            )
             if new_edge_schema is not None:
                 self.curr_node.mark_as_transitioning()
                 self.local_transition_queue.append(self.curr_node)

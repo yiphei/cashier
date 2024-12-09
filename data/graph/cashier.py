@@ -2,7 +2,11 @@ from typing import Optional
 
 from pydantic import Field
 
-from cashier.graph.base.base_edge_schema import FunctionState, StateTransitionConfig, FunctionTransitionConfig
+from cashier.graph.base.base_edge_schema import (
+    FunctionState,
+    FunctionTransitionConfig,
+    StateTransitionConfig,
+)
 from cashier.graph.base.base_state import BaseStateModel
 from cashier.graph.conversation_node import ConversationNodeSchema
 from cashier.graph.edge_schema import EdgeSchema
