@@ -438,9 +438,7 @@ class BaseGraph(ABC, HasStatusMixin):
                 )
                 parent_node.state = parent_node.state.__class__(**new_state)
 
-        self.local_transition_queue.clear()
-        if self.curr_node and not isinstance(self.curr_node, ConversationNode):
-            self.curr_node.local_transition_queue.clear()
+            parent_node.local_transition_queue.clear()
 
         direction = Direction.FWD
         last_msg = TC.get_user_message(content_only=True)
