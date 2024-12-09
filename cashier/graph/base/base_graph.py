@@ -440,7 +440,10 @@ class BaseGraph(ABC, HasStatusMixin, HasIdMixin):
             assert curr_node.status == Status.TRANSITIONING
             curr_node.mark_as_completed()
             # TODO: this is bad. refactor this
-            if curr_node.state is not None and getattr(parent_node, "state", None) is not None:
+            if (
+                curr_node.state is not None
+                and getattr(parent_node, "state", None) is not None
+            ):
                 old_state = parent_node.state.model_dump()
                 new_state = old_state | curr_node.state.model_dump(
                     exclude=curr_node.state.resettable_fields
