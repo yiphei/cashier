@@ -128,9 +128,7 @@ class RequestGraph(BaseGraph):
             assert len(edge_schemas) == 1
             new_edge_schema = edge_schemas[0]
             new_node_schema = new_edge_schema.to_node_schema
-            if (
-                self.current_graph_schema_idx < len(self.requests) - 1
-            ):
+            if self.current_graph_schema_idx < len(self.requests) - 1:
                 fake_fn_call = create_think_fn_call(
                     f"I just completed the current request. The next request to be addressed is: {self.requests[self.current_graph_schema_idx + 1]}. I must explicitly inform the customer that the current request is completed and that I will address the next request right away. Only after I informed the customer do I receive the tools to address the next request."
                 )
