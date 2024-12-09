@@ -204,6 +204,9 @@ class Graph(BaseGraph):
                         TC,
                     )
 
+                    fake_fn_call_1 = create_think_fn_call(
+                        "I've already had this conversation before but I am returning to it to address some changes. I will call get_state to get the previously saved state. "
+                    )
                     fake_fn_call = FunctionCall.create(
                         api_id=None,
                         api_id_model_provider=None,
@@ -214,8 +217,8 @@ class Graph(BaseGraph):
                         None,
                         model_provider,
                         self.curr_node.schema.tool_registry,
-                        [fake_fn_call],
-                        {fake_fn_call.id: self.curr_node.get_state()},
+                        [fake_fn_call_1, fake_fn_call],
+                        {fake_fn_call_1.id: None, fake_fn_call.id: self.curr_node.get_state()},
                     )
         self.curr_node.update_first_user_message()
 
