@@ -125,13 +125,13 @@ class ConversationNodeSchema(HasIdMixin, metaclass=AutoMixinInit):
         if tool_registry_or_tool_defs is not None and isinstance(
             tool_registry_or_tool_defs, ToolRegistry
         ):
-            self.tool_registry = (
+            self._tool_registry = (
                 tool_registry_or_tool_defs.__class__.create_from_tool_registry(
                     tool_registry_or_tool_defs, tool_names
                 )
             )
         else:
-            self.tool_registry = ToolRegistry(tool_registry_or_tool_defs)
+            self._tool_registry = ToolRegistry(tool_registry_or_tool_defs)
 
         if self.state_schema is not None:
             for (
@@ -140,17 +140,34 @@ class ConversationNodeSchema(HasIdMixin, metaclass=AutoMixinInit):
             ) in self.state_schema.model_fields.items():
                 new_tool_fn_name = f"update_state_{field_name}"
                 field_args = {field_name: (field_info.annotation, field_info)}
-                self.tool_registry.add_tool_def(
+                self._tool_registry.add_tool_def(
                     new_tool_fn_name,
                     f"Function to update the `{field_name}` field in the state",
                     field_args,
                 )
 
-            self.tool_registry.add_tool_def(
+            self._tool_registry.add_tool_def(
                 "get_state",
                 "Function to get the current state, as defined in <state>",
                 {},
             )
+
+            self.revisit_tool_registry = ToolRegistry.create_from_tool_registry(
+                self._tool_registry
+            )
+            self.revisit_tool_registry.add_tool_def(
+                "update_state_has_customer_confirmed_changes",
+                f"Function to update the `has_customer_confirmed_changes` field in the state",
+                field_args,
+            )
+
+    @property
+    def tool_registry(self) -> ToolRegistry:
+        return self._tool_registry
+    
+
+    def get_tool_registry(self, has_prev_visited=False) -> ToolRegistry:
+        return self.revisit_tool_registry if has_prev_visited else self.tool_registry
 
     @overload
     def create_node(  # noqa: E704
