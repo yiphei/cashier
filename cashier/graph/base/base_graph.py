@@ -2,7 +2,6 @@ import json
 from abc import ABC, abstractmethod
 from collections import defaultdict, deque
 from typing import Any, Callable, List, Literal, Optional, Set, Tuple, overload
-from cashier.logger import logger
 
 from colorama import Style
 
@@ -14,6 +13,7 @@ from cashier.graph.conversation_node import (
 from cashier.graph.edge_schema import Edge, EdgeSchema, FwdSkipType
 from cashier.graph.mixin.has_status_mixin import HasStatusMixin, Status
 from cashier.gui import MessageDisplay
+from cashier.logger import logger
 from cashier.model.model_completion import ModelOutput
 from cashier.model.model_turn import AssistantTurn
 from cashier.model.model_util import CustomJSONEncoder, FunctionCall
