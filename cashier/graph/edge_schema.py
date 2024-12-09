@@ -57,6 +57,8 @@ class EdgeSchema(BaseEdgeSchema, HasIdMixin, metaclass=AutoMixinInit):
         is_fn_call_success,
         check_resettable_fields=True,
     ) -> bool:
+        if getattr(state, "has_customer_confirmed_changes", True) is False:
+            return False
         return self.transition_config.run_check(
             state,
             fn_call,

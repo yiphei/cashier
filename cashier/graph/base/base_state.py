@@ -21,3 +21,6 @@ class BaseStateModel(BaseModel):
                     new_data[field_name] = field_info.default
 
         return self.__class__(**new_data)
+
+    def copy_data(self) -> BaseStateModel:
+        return copy.deepcopy(dict(self))
