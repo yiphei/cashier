@@ -198,15 +198,35 @@ class ConversationNodeSchema(HasIdMixin, metaclass=AutoMixinInit):
             self.state_schema, prev_node, edge_schema, direction, input
         )
 
+        state_json_schema = None
+        if self.state_schema is not None:
+            if prev_node is not None:
+                state_init_val = getattr(
+                    self,
+                    "fwd_state_init" if direction == Direction.FWD else "bwd_state_init",
+                )
+                state_init_enum_cls = (
+                    FwdStateInit if direction == Direction.FWD else BwdStateInit
+                )
+
+                if state_init_val == state_init_enum_cls.RESET:  # type: ignore
+                    state_json_schema = self.state_schema.model_json_schema()
+                elif state_init_val == state_init_enum_cls.RESUME or (  # type: ignore
+                    direction == Direction.FWD
+                    and state_init_val == state_init_enum_cls.RESUME_IF_INPUT_UNCHANGED  # type: ignore
+                    and input == prev_node.input
+                ):
+                    state_json_schema = self.revisit_state_schema.model_json_schema()
+            else:
+                state_json_schema = self.state_schema.model_json_schema()
+
         prompt = self.node_system_prompt(
             node_prompt=self.node_prompt,
             input=(input.model_dump_json() if self.input_schema is not None else None),
             node_input_json_schema=(
                 self.input_schema.model_json_schema() if self.input_schema else None
             ),
-            state_json_schema=(
-                self.state_schema.model_json_schema() if self.state_schema else None
-            ),
+            state_json_schema=state_json_schema,
             last_msg=last_msg,
             curr_request=curr_request,
         )
