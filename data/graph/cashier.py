@@ -3,8 +3,6 @@ from typing import Optional
 from pydantic import Field
 
 from cashier.graph.base.base_edge_schema import (
-    FunctionState,
-    FunctionTransitionConfig,
     StateTransitionConfig,
 )
 from cashier.graph.base.base_state import BaseStateModel
