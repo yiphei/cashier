@@ -61,6 +61,20 @@ class BaseGraph(ABC, HasStatusMixin):
         self.request = request
         self.new_edge_schema = None
         self.new_node_schema = None
+        self.local_transition_queue = deque()
+        self.parent = None
+
+    @property
+    def transition_queue(self):
+        from cashier.graph.graph_schema import Graph
+        sub_queue = (
+            self.curr_node.transition_queue
+            if isinstance(self.curr_node, Graph)
+            else deque()
+        )
+        return (
+            sub_queue + self.local_transition_queue
+        )
 
     @property
     def curr_conversation_node(self):
@@ -300,6 +314,7 @@ class BaseGraph(ABC, HasStatusMixin):
         new_node = node_schema.create_node(
             input, last_msg, edge_schema, prev_node, direction, self.request  # type: ignore
         )
+        new_node.parent = self
 
         TC.add_node_turn(
             new_node,
@@ -333,6 +348,7 @@ class BaseGraph(ABC, HasStatusMixin):
         graph = node_schema.create_node(
             input=input, request=self.requests[self.current_graph_schema_idx]
         )
+        graph.parent = self
 
         if edge_schema:
             self.add_edge(self.curr_node, graph, edge_schema, direction)
@@ -400,19 +416,6 @@ class BaseGraph(ABC, HasStatusMixin):
             False,
         )
 
-    def handle_curr_node_completion(self):
-        assert self.curr_node.status == Status.TRANSITIONING
-        self.curr_node.mark_as_completed()
-        if self.curr_node.state is not None and self.state is not None:
-            old_state = self.state.model_dump()
-            new_state = old_state | self.curr_node.state.model_dump(
-                exclude=self.curr_node.state.resettable_fields
-            )
-            self.state = self.state.__class__(**new_state)
-
-        if isinstance(self.curr_node, BaseGraph):
-            self.curr_node.handle_curr_node_completion()
-
     def init_next_node(
         self,
         node_schema: ConversationNodeSchema,
@@ -422,12 +425,23 @@ class BaseGraph(ABC, HasStatusMixin):
     ) -> None:
         curr_node = self.curr_node
         parent_node = self
-        if curr_node is not None and edge_schema:
-            while curr_node.schema != edge_schema.from_node_schema:
-                parent_node = curr_node
-                curr_node = curr_node.curr_node
+        transition_queue = self.transition_queue
+        while transition_queue:
+            curr_node = transition_queue.popleft()
+            parent_node = curr_node.parent
 
-            parent_node.handle_curr_node_completion()
+            assert curr_node.status == Status.TRANSITIONING
+            curr_node.mark_as_completed()
+            if curr_node.state is not None and parent_node.state is not None:
+                old_state = parent_node.state.model_dump()
+                new_state = old_state | curr_node.state.model_dump(
+                    exclude=curr_node.state.resettable_fields
+                )
+                parent_node.state = parent_node.state.__class__(**new_state)
+
+        self.local_transition_queue.clear()
+        if self.curr_node and not isinstance(self.curr_node, ConversationNode):
+            self.curr_node.local_transition_queue.clear()
 
         direction = Direction.FWD
         last_msg = TC.get_user_message(content_only=True)

@@ -39,6 +39,7 @@ class ConversationNode(HasIdMixin, HasStatusMixin, metaclass=AutoMixinInit):
         self.has_run_assistant_turn_before_transition = False
         self.state = state
         self.first_user_message = False
+        self.parent = None
 
     @classmethod
     def init_state(

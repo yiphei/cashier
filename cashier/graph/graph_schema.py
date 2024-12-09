@@ -222,8 +222,10 @@ class Graph(BaseGraph):
         )
         if new_edge_schema is not None:
             self.curr_node.mark_as_transitioning()
+            self.local_transition_queue.append(self.curr_node)
         if new_edge_schema and self.curr_node.schema == self.schema.last_node_schema:
             self.mark_as_transitioning()
+            self.local_transition_queue.append(self)
         return new_edge_schema, new_node_schema, None, None
 
     def init_conversation_core(
