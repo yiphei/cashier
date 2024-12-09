@@ -11,6 +11,7 @@ from cashier.graph.conversation_node import (
     Direction,
 )
 from cashier.graph.edge_schema import Edge, EdgeSchema, FwdSkipType
+from cashier.graph.mixin.has_id_mixin import HasIdMixin
 from cashier.graph.mixin.has_status_mixin import HasStatusMixin, Status
 from cashier.gui import MessageDisplay
 from cashier.logger import logger
@@ -47,9 +48,10 @@ class BaseGraphSchema:
             ].append(edge_schema)
 
 
-class BaseGraph(ABC, HasStatusMixin):
+class BaseGraph(ABC, HasStatusMixin, HasIdMixin):
     def __init__(self, schema: BaseGraphSchema, request=None):
         HasStatusMixin.__init__(self)
+        HasIdMixin.__init__(self)
         self.schema = schema
         self.edge_schema_id_to_edges = defaultdict(list)
         self.from_node_schema_id_to_last_edge_schema_id = defaultdict(lambda: None)
@@ -326,7 +328,8 @@ class BaseGraph(ABC, HasStatusMixin):
             TC.add_assistant_direct_turn(node_schema.first_turn)
             MessageDisplay.print_msg("assistant", node_schema.first_turn.msg_content)
 
-        if edge_schema:
+        # TODO: this is bad. refactor this
+        if edge_schema and self.curr_node is not None:
             self.add_edge(self.curr_node, new_node, edge_schema, direction)
 
         self.curr_node = new_node
@@ -349,7 +352,8 @@ class BaseGraph(ABC, HasStatusMixin):
         )
         graph.parent = self
 
-        if edge_schema:
+        # TODO: this is bad. refactor this
+        if edge_schema and self.curr_node is not None:
             self.add_edge(self.curr_node, graph, edge_schema, direction)
 
         self.curr_node = graph
@@ -396,7 +400,11 @@ class BaseGraph(ABC, HasStatusMixin):
         input,
     ) -> None:
         if input is None and edge_schema:
-            input = edge_schema.new_input_fn(self.state)
+            # TODO: this is bad. refactor this
+            if hasattr(self, "state"):
+                input = edge_schema.new_input_fn(self.state)
+            else:
+                input = edge_schema.new_input_fn(self.curr_node.state)
 
         if edge_schema:
             edge_schema, input = self.compute_next_edge_schema(edge_schema, input)
@@ -431,7 +439,8 @@ class BaseGraph(ABC, HasStatusMixin):
 
             assert curr_node.status == Status.TRANSITIONING
             curr_node.mark_as_completed()
-            if curr_node.state is not None and parent_node.state is not None:
+            # TODO: this is bad. refactor this
+            if curr_node.state is not None and getattr(parent_node, "state", None) is not None:
                 old_state = parent_node.state.model_dump()
                 new_state = old_state | curr_node.state.model_dump(
                     exclude=curr_node.state.resettable_fields
