@@ -147,10 +147,9 @@ cashier_graph_schema = GraphSchema(
         terminal_order_node_schema,
     ],
     state_schema=GraphState,
-    transition_config=FunctionTransitionConfig(
+    transition_config=StateTransitionConfig(
         need_user_msg=False,
-        fn_name="has_said_goodbye",
-        state=FunctionState.CALLED_AND_SUCCEEDED,
+        state_check_fn_map={"has_said_goodbye": lambda val: bool(val)},
     ),
 )
 
