@@ -25,7 +25,7 @@ class EdgeSchema(BaseEdgeSchema, HasIdMixin, metaclass=AutoMixinInit):
         from_node_schema: ConversationNodeSchema,
         to_node_schema: ConversationNodeSchema,
         transition_config: BaseTransitionConfig,
-        new_input_fn: Optional[Callable[[BaseStateModel], Any]]=None,
+        new_input_fn: Optional[Callable[[BaseStateModel], Any]] = None,
         bwd_state_init: BwdStateInit = BwdStateInit.RESUME,
         fwd_state_init: FwdStateInit = FwdStateInit.RESET,
         skip_from_complete_to_prev_complete: Optional[
