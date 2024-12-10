@@ -231,23 +231,13 @@ class Graph(BaseGraph):
             self.mark_as_internally_completed()
         return self_completion
 
-    def check_self_transition(self, fn_call, is_fn_call_success):
-        new_edge_schema, new_node_schema = None, None
+    def check_self_transition(self, fn_call, is_fn_call_success, parent_edge_schemas=None, new_edge_schema=None, new_node_schema=None, fake_call=None, fake_call_output=None):
         if self.check_self_completion(fn_call, is_fn_call_success):
             self.curr_node.mark_as_transitioning()
             self.local_transition_queue.append(self.curr_node)
             self.mark_as_transitioning()
             self.local_transition_queue.append(self)
-        else:
-            new_edge_schema, new_node_schema = self.curr_node.check_self_transition(
-                fn_call,
-                is_fn_call_success,
-                self.next_edge_schemas,
-            )
-            if new_edge_schema is not None:
-                self.curr_node.mark_as_transitioning()
-                self.local_transition_queue.append(self.curr_node)
-        return new_edge_schema, new_node_schema, None, None
+        return new_edge_schema, new_node_schema, fake_call, fake_call_output
 
     def init_conversation_core(
         self,
@@ -276,3 +266,6 @@ class Graph(BaseGraph):
             )
         )
         self.compute_bwd_skip_edge_schemas()
+
+    def get_next_edge_schema(self):
+        return self.next_edge_schemas

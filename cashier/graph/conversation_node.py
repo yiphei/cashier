@@ -112,8 +112,8 @@ class ConversationNode(HasIdMixin, HasStatusMixin, metaclass=AutoMixinInit):
                     self.state, fn_call, is_fn_call_success
                 ):
                     self.mark_as_transitioning()
-                    return edge_schema, edge_schema.to_node_schema
-        return None, None
+                    return edge_schema, edge_schema.to_node_schema, None, None
+        return None, None, None, None
 
 
 class ConversationNodeSchema(HasIdMixin, metaclass=AutoMixinInit):

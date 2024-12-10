@@ -113,22 +113,12 @@ class RequestGraph(BaseGraph):
                     None,
                 )
 
-    def check_self_transition(self, fn_call, is_fn_call_success):
-        fake_fn_call = None
-        new_edge_schema = None
-        new_node_schema = None
+    def check_self_transition(self, fn_call, is_fn_call_success, parent_edge_schemas=None, new_edge_schema=None, new_node_schema=None, fake_call=None, fake_call_output=None):
         edge_schemas = self.schema.from_node_schema_id_to_edge_schema[
             self.curr_node.schema.id
         ]
-        if isinstance(self.curr_node, ConversationNode):
-            new_edge_schema, new_node_schema = self.curr_node.check_self_transition(
-                fn_call, is_fn_call_success, edge_schemas
-            )
-            if new_node_schema is not None:
-                self.curr_node.mark_as_transitioning()
-                self.local_transition_queue.append(self.curr_node)
-
-        elif self.curr_node.status == Status.TRANSITIONING:
+        fake_fn_call = fake_call
+        if self.curr_node.status == Status.TRANSITIONING:
             if len(edge_schemas) == 1:
                 new_edge_schema = edge_schemas[0]
                 new_node_schema = new_edge_schema.to_node_schema
@@ -140,6 +130,11 @@ class RequestGraph(BaseGraph):
                 new_edge_schema = None
                 new_node_schema = self.schema.default_node_schema
         return new_edge_schema, new_node_schema, fake_fn_call, None
+
+    def get_next_edge_schema(self):
+        return self.schema.from_node_schema_id_to_edge_schema[
+            self.curr_node.schema.id
+        ]
 
 
 class RequestGraphSchema(BaseGraphSchema):
