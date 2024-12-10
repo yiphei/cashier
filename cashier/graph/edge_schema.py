@@ -64,7 +64,7 @@ class EdgeSchema(BaseEdgeSchema, HasIdMixin, metaclass=AutoMixinInit):
             check_resettable_fields,
             self.from_node_schema.state_schema.resettable_fields,
         )
-    
+
     def _check_input(self, state, to_node):
         if self.new_input_fn is not None:
             return self.new_input_fn(state) == to_node.input
@@ -82,9 +82,8 @@ class EdgeSchema(BaseEdgeSchema, HasIdMixin, metaclass=AutoMixinInit):
 
         if skip_type == FwdSkipType.SKIP:
             return True, skip_type
-        elif (
-            skip_type == FwdSkipType.SKIP_IF_INPUT_UNCHANGED
-            and self._check_input(state, to_node)
+        elif skip_type == FwdSkipType.SKIP_IF_INPUT_UNCHANGED and self._check_input(
+            state, to_node
         ):
             return True, skip_type
         return False, skip_type
