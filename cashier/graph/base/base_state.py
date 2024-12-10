@@ -24,7 +24,7 @@ class BaseStateModel(BaseModel):
 
     def get_set_schema_and_fields(self):
         field_kwargs = {
-            field_name: field_info
+            field_name: (field_info.annotation, field_info)
             for field_name, field_info in self.model_fields.items()
             if field_name in self.model_fields_set
         }
