@@ -12,8 +12,6 @@ class BaseExecutable(ABC):
         parent_edge_schemas=None,
         new_edge_schema=None,
         new_node_schema=None,
-        fake_call=None,
-        fake_call_output=None,
     ):
         raise NotImplementedError()
 
@@ -23,7 +21,7 @@ class BaseExecutable(ABC):
                 fn_call, is_fn_call_success, parent_edge_schemas
             )
         else:
-            new_edge_schema, new_node_schema, fake_call, fake_call_output = (
+            new_edge_schema, new_node_schema = (
                 self.curr_node.check_transition(
                     fn_call, is_fn_call_success, self.get_next_edge_schema()
                 )
@@ -36,6 +34,4 @@ class BaseExecutable(ABC):
                 parent_edge_schemas,
                 new_edge_schema,
                 new_node_schema,
-                fake_call,
-                fake_call_output,
             )
