@@ -1,10 +1,10 @@
 import json
-from abc import ABC, abstractmethod
 from collections import defaultdict, deque
 from typing import Any, Callable, List, Literal, Optional, Set, Tuple, overload
 
 from colorama import Style
 
+from cashier.graph.base.base_executable import BaseExecutable
 from cashier.graph.conversation_node import (
     ConversationNode,
     ConversationNodeSchema,
@@ -48,7 +48,7 @@ class BaseGraphSchema:
             ].append(edge_schema)
 
 
-class BaseGraph(ABC, HasStatusMixin, HasIdMixin):
+class BaseGraph(BaseExecutable, HasStatusMixin, HasIdMixin):
     def __init__(self, schema: BaseGraphSchema, request=None):
         HasStatusMixin.__init__(self)
         HasIdMixin.__init__(self)
@@ -289,15 +289,6 @@ class BaseGraph(ABC, HasStatusMixin, HasIdMixin):
 
             self.edge_schema_id_to_from_node[edge_schema.id] = new_node
 
-    @classmethod
-    def check_node_transition(cls, state, fn_call, is_fn_call_success, edge_schemas):
-        for edge_schema in edge_schemas:
-            if edge_schema.check_transition_config(state, fn_call, is_fn_call_success):
-                new_edge_schema = edge_schema
-                new_node_schema = edge_schema.to_node_schema
-                return new_edge_schema, new_node_schema
-        return None, None
-
     def init_conversation_core(
         self,
         node_schema: ConversationNodeSchema,
@@ -515,22 +506,6 @@ class BaseGraph(ABC, HasStatusMixin, HasIdMixin):
             last_msg,
             TC,
         )
-
-    @abstractmethod
-    def check_self_transition(self, fn_call, is_fn_call_sucess):
-        raise NotImplementedError()
-
-    def check_transition(self, fn_call, is_fn_call_success):
-        if getattr(self, "curr_node", None) is None or not isinstance(
-            self.curr_node, BaseGraph
-        ):
-            return self.check_self_transition(fn_call, is_fn_call_success)
-        else:
-            tuple_output = self.curr_node.check_transition(fn_call, is_fn_call_success)
-            if self.curr_node.status == Status.TRANSITIONING:
-                return self.check_self_transition(fn_call, is_fn_call_success)
-            else:
-                return tuple_output
 
     def execute_function_call(
         self, fn_call: FunctionCall, fn_callback: Optional[Callable] = None

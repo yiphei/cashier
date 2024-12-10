@@ -3,6 +3,7 @@ from enum import StrEnum
 
 class Status(StrEnum):
     IN_PROGRESS = "IN_PROGRESS"
+    INTERNALLY_COMPLETED = "INTERNALLY_COMPLETED"
     TRANSITIONING = "TRANSITIONING"
     COMPLETED = "COMPLETED"
 
@@ -16,3 +17,6 @@ class HasStatusMixin:
 
     def mark_as_transitioning(self) -> None:
         self.status = Status.TRANSITIONING
+
+    def mark_as_internally_completed(self) -> None:
+        self.status = Status.INTERNALLY_COMPLETED
