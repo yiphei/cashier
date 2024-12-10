@@ -177,6 +177,7 @@ class ConversationNodeSchema(HasIdMixin, metaclass=AutoMixinInit):
         prev_node: Literal[None] = None,
         direction: Literal[Direction.FWD] = Direction.FWD,
         curr_request: Optional[str] = None,
+        parent_state: Optional[BaseStateModel] = None,
     ) -> ConversationNode: ...
 
     @overload
@@ -188,6 +189,7 @@ class ConversationNodeSchema(HasIdMixin, metaclass=AutoMixinInit):
         prev_node: Literal[None] = None,
         direction: Literal[Direction.FWD] = Direction.FWD,
         curr_request: Optional[str] = None,
+        parent_state: Optional[BaseStateModel] = None,
     ) -> ConversationNode: ...
 
     @overload
@@ -199,6 +201,7 @@ class ConversationNodeSchema(HasIdMixin, metaclass=AutoMixinInit):
         prev_node: ConversationNode,
         direction: Direction = Direction.FWD,
         curr_request: Optional[str] = None,
+        parent_state: Optional[BaseStateModel] = None,
     ) -> ConversationNode: ...
 
     def create_node(
@@ -209,16 +212,22 @@ class ConversationNodeSchema(HasIdMixin, metaclass=AutoMixinInit):
         prev_node: Optional[ConversationNode] = None,
         direction: Direction = Direction.FWD,
         curr_request: Optional[str] = None,
+        parent_state: Optional[BaseStateModel] = None,
     ) -> ConversationNode:
         state = ConversationNode.init_state(
             self.state_schema, prev_node, edge_schema, direction, input
         )
 
+        input_schema = self.input_schema
+        if parent_state is not None:
+            input_schema, input = parent_state.get_set_schema_and_fields()
+        
+
         prompt = self.node_system_prompt(
             node_prompt=self.node_prompt,
-            input=(input.model_dump_json() if self.input_schema is not None else None),
+            input=(input.model_dump_json() if input_schema is not None else None),
             node_input_json_schema=(
-                self.input_schema.model_json_schema() if self.input_schema else None
+                self.input_schema.model_json_schema() if input_schema else None
             ),
             state_json_schema=(
                 self.state_schema.model_json_schema() if self.state_schema else None
