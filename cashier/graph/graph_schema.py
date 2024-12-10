@@ -243,6 +243,7 @@ class Graph(BaseGraph):
             self.curr_node.mark_as_transitioning()
             self.local_transition_queue.append(self.curr_node)
             self.mark_as_transitioning()
+            return None, None
         return new_edge_schema, new_node_schema
 
     def init_conversation_core(
