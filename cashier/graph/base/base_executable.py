@@ -14,6 +14,10 @@ class BaseExecutable(ABC):
         new_node_schema=None,
     ):
         raise NotImplementedError()
+    
+    @classmethod
+    def get_next_edge_schema(self):
+        raise NotImplementedError()
 
     def check_transition(self, fn_call, is_fn_call_success, parent_edge_schemas=None):
         if getattr(self, "curr_node", None) is None:
