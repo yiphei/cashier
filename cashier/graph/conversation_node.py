@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from abc import ABCMeta
 from enum import StrEnum
 from typing import Any, List, Literal, Optional, Type, Union, cast, overload
 
@@ -12,7 +11,6 @@ from cashier.graph.base.base_edge_schema import (
     BwdStateInit,
     FwdStateInit,
 )
-from cashier.graph.base.base_executable import BaseExecutable
 from cashier.graph.base.base_state import BaseStateModel
 from cashier.graph.edge_schema import EdgeSchema
 from cashier.graph.mixin.auto_mixin_init import AutoMixinInit
@@ -29,9 +27,7 @@ class Direction(StrEnum):
     BWD = "BWD"
 
 
-class ConversationNode(
-    HasIdMixin, HasStatusMixin, metaclass=AutoMixinInit
-):
+class ConversationNode(HasIdMixin, HasStatusMixin, metaclass=AutoMixinInit):
     def __init__(
         self,
         schema: ConversationNodeSchema,

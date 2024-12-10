@@ -21,7 +21,8 @@ class BaseExecutable(ABC):
 
     def check_transition(self, fn_call, is_fn_call_success, parent_edge_schemas=None):
         from cashier.graph.conversation_node import ConversationNode
-        if getattr(self, 'curr_node', None) is not None:
+
+        if getattr(self, "curr_node", None) is not None:
             if isinstance(self.curr_node, ConversationNode):
                 new_edge_schema, new_node_schema = self.curr_node.check_self_transition(
                     fn_call, is_fn_call_success, self.get_next_edge_schema()
