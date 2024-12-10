@@ -261,3 +261,19 @@ class Graph(BaseGraph):
 
     def get_next_edge_schema(self):
         return self.next_edge_schemas
+
+    def can_merge_graph_schema(self, new_graph_schema):
+        if self.schema.pivot_node_schema.id in self.node_schema_id_to_nodes:
+            return False
+        
+        set_diff = set(new_graph_schema.before_pivot_node_schemas) - set(self.schema.before_pivot_node_schemas)
+        if len(set_diff) > 0:
+            return True
+        # even if the set_diff is empty, it is worth to merge if the final function is different
+        return False 
+    
+    def merge_graph_schema(self, new_graph_schema):
+        set_diff =set(new_graph_schema.before_pivot_node_schemas) - set(self.schema.before_pivot_node_schemas)
+        
+
+        

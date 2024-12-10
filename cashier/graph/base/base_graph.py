@@ -34,10 +34,12 @@ class BaseGraphSchema:
         description: str,
         edge_schemas: List[EdgeSchema],
         node_schemas: List[ConversationNode],
+        pivot_node_schema: Optional[ConversationNodeSchema] = None,
     ):
         self.description = description
         self.edge_schemas = edge_schemas
         self.node_schemas = node_schemas
+        self.pivot_node_schema = pivot_node_schema
 
         self.node_schema_id_to_node_schema = {
             node_schema.id: node_schema for node_schema in self.node_schemas
@@ -46,10 +48,21 @@ class BaseGraphSchema:
             edge_schema.id: edge_schema for edge_schema in self.edge_schemas
         }
         self.from_node_schema_id_to_edge_schema = defaultdict(list)
+        self.to_node_schema_id_to_edge_schema = defaultdict(list)
         for edge_schema in self.edge_schemas:
             self.from_node_schema_id_to_edge_schema[
                 edge_schema.from_node_schema.id
             ].append(edge_schema)
+            self.to_node_schema_id_to_edge_schema[
+                edge_schema.to_node_schema.id
+            ].append(edge_schema)
+
+        self.before_pivot_node_schemas = []
+        if self.pivot_node_schema is not None:
+            prev_edge_schema = self.to_node_schema_id_to_edge_schema[self.pivot_node_schema.id]
+            while prev_edge_schema is not None:
+                self.before_pivot_node_schemas.append(prev_edge_schema.from_node_schema)
+                prev_edge_schema = self.to_node_schema_id_to_edge_schema.get(prev_edge_schema.from_node_schema.id, None)
 
 
 class BaseGraph(BaseExecutable, HasStatusMixin, HasIdMixin):
@@ -59,6 +72,7 @@ class BaseGraph(BaseExecutable, HasStatusMixin, HasIdMixin):
         self.schema = schema
         self.edge_schema_id_to_edges = defaultdict(list)
         self.from_node_schema_id_to_last_edge_schema_id = defaultdict(lambda: None)
+        self.node_schema_id_to_nodes = defaultdict(list)
         self.to_node_id_to_edge = defaultdict(lambda: None)
         self.edge_schema_id_to_from_node = {}
         self.curr_node = None
@@ -311,6 +325,7 @@ class BaseGraph(BaseExecutable, HasStatusMixin, HasIdMixin):
             input, last_msg, edge_schema, prev_node, direction, self.request  # type: ignore
         )
         new_node.parent = self
+        self.node_schema_id_to_nodes[node_schema.id].append(new_node)
 
         TC.add_node_turn(
             new_node,
@@ -346,6 +361,7 @@ class BaseGraph(BaseExecutable, HasStatusMixin, HasIdMixin):
             input=input, request=self.requests[self.current_graph_schema_idx]
         )
         graph.parent = self
+        self.node_schema_id_to_nodes[node_schema.id].append(graph)
 
         # TODO: this is bad. refactor this
         if edge_schema and self.curr_node is not None:
