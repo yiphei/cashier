@@ -521,9 +521,7 @@ class BaseGraph(ABC, HasStatusMixin, HasIdMixin):
         raise NotImplementedError()
 
     def check_transition(self, fn_call, is_fn_call_success, parent_edge_schemas=None):
-        if getattr(self, "curr_node", None) is None or not isinstance(
-            self.curr_node, BaseGraph
-        ):
+        if getattr(self, "curr_node", None) is None:
             return self.check_self_transition(
                 fn_call, is_fn_call_success, parent_edge_schemas
             )
