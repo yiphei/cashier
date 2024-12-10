@@ -6,7 +6,7 @@ from typing import Any, List, Literal, Optional, Type, Union, cast, overload
 from openai.types.chat.chat_completion_tool_param import ChatCompletionToolParam
 from pydantic import BaseModel
 
-from cashier.graph.base.base_edge_schema import BwdStateInit, FwdStateInit
+from cashier.graph.base.base_edge_schema import BaseTransitionConfig, BwdStateInit, FwdStateInit
 from cashier.graph.base.base_state import BaseStateModel
 from cashier.graph.edge_schema import EdgeSchema
 from cashier.graph.mixin.auto_mixin_init import AutoMixinInit
@@ -103,6 +103,7 @@ class ConversationNodeSchema(HasIdMixin, metaclass=AutoMixinInit):
         first_turn: Optional[ModelTurn] = None,
         run_assistant_turn_before_transition: bool = False,
         tool_names: Optional[List[str]] = None,
+        completion_config: Optional[BaseTransitionConfig] = None,
     ):
         self.state_schema = state_schema
         self.node_prompt = node_prompt
@@ -110,6 +111,7 @@ class ConversationNodeSchema(HasIdMixin, metaclass=AutoMixinInit):
         self.input_schema = input_schema
         self.first_turn = first_turn
         self.run_assistant_turn_before_transition = run_assistant_turn_before_transition
+        self.completion_config = completion_config
         if tool_registry_or_tool_defs is not None and isinstance(
             tool_registry_or_tool_defs, ToolRegistry
         ):

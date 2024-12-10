@@ -143,7 +143,7 @@ cashier_graph_schema = GraphSchema(
         terminal_order_node_schema,
     ],
     state_schema=GraphState,
-    transition_config=StateTransitionConfig(
+    completion_config=StateTransitionConfig(
         need_user_msg=False,
         state_check_fn_map={"has_said_goodbye": lambda val: bool(val)},
     ),
