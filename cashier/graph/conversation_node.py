@@ -15,19 +15,23 @@ from cashier.graph.base.base_state import BaseStateModel
 from cashier.graph.edge_schema import EdgeSchema
 from cashier.graph.mixin.auto_mixin_init import AutoMixinInit
 from cashier.graph.mixin.has_id_mixin import HasIdMixin
-from cashier.graph.mixin.has_status_mixin import HasStatusMixin, Status
+from cashier.graph.mixin.has_status_mixin import HasStatusMixin
 from cashier.model.model_turn import ModelTurn
 from cashier.prompts.node_system import NodeSystemPrompt
 from cashier.tool.function_call_context import StateUpdateError
 from cashier.tool.tool_registry import ToolRegistry
+from cashier.graph.base.base_executable import BaseExecutable
+from abc import ABCMeta
 
 
 class Direction(StrEnum):
     FWD = "FWD"
     BWD = "BWD"
 
+class PolyMetaclass(ABCMeta, AutoMixinInit):
+    pass
 
-class ConversationNode(HasIdMixin, HasStatusMixin, metaclass=AutoMixinInit):
+class ConversationNode(HasIdMixin, HasStatusMixin, BaseExecutable, metaclass=PolyMetaclass):
     def __init__(
         self,
         schema: ConversationNodeSchema,
@@ -114,29 +118,6 @@ class ConversationNode(HasIdMixin, HasStatusMixin, metaclass=AutoMixinInit):
                     self.mark_as_transitioning()
                     return edge_schema, edge_schema.to_node_schema, None, None
         return None, None, None, None
-
-    def check_transition(self, fn_call, is_fn_call_success, parent_edge_schemas=None):
-        if getattr(self, "curr_node", None) is None:
-            return self.check_self_transition(
-                fn_call, is_fn_call_success, parent_edge_schemas
-            )
-        else:
-            new_edge_schema, new_node_schema, fake_call, fake_call_output = (
-                self.curr_node.check_transition(
-                    fn_call, is_fn_call_success, self.get_next_edge_schema()
-                )
-            )
-            if self.curr_node.status == Status.TRANSITIONING:
-                self.local_transition_queue.append(self.curr_node)
-            return self.check_self_transition(
-                fn_call,
-                is_fn_call_success,
-                parent_edge_schemas,
-                new_edge_schema,
-                new_node_schema,
-                fake_call,
-                fake_call_output,
-            )
 
 
 class ConversationNodeSchema(HasIdMixin, metaclass=AutoMixinInit):
