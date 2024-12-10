@@ -311,7 +311,7 @@ class BaseGraph(BaseExecutable, HasStatusMixin, HasIdMixin):
             f"[NODE_SCHEMA] Initializing node with {Style.BRIGHT}node_schema_id: {node_schema.id}{Style.NORMAL}"
         )
         new_node = node_schema.create_node(
-            input, last_msg, edge_schema, prev_node, direction, self.request, getattr(self, 'state', None)  # type: ignore
+            input, last_msg, edge_schema, prev_node, direction, self.request, getattr(self, "state", None)  # type: ignore
         )
         new_node.parent = self
 
