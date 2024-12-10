@@ -1,9 +1,7 @@
-from abc import ABC, abstractmethod
-
 from cashier.graph.mixin.has_status_mixin import Status
 
 
-class BaseExecutable(ABC):
+class BaseExecutable:
     def check_self_transition(
         self,
         fn_call,
