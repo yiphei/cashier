@@ -93,6 +93,20 @@ class ConversationNode(HasIdMixin, HasStatusMixin, metaclass=AutoMixinInit):
     def update_first_user_message(self) -> None:
         self.first_user_message = True
 
+    def check_self_completion(self, fn_call, is_fn_call_success):
+        self_completion= self.schema.completion_config.run_check(self.state, fn_call, is_fn_call_success) if self.schema.completion_config is not None else True
+        if self_completion:
+            self.mark_as_internally_completed()
+        return self_completion
+
+    def check_self_transition(self, fn_call, is_fn_call_success, edge_schemas):
+        if self.check_self_completion(fn_call, is_fn_call_success):
+            for edge_schema in edge_schemas:
+                if edge_schema.check_transition_config(self.state, fn_call, is_fn_call_success):
+                    self.mark_as_transitioning()
+                    return edge_schema, edge_schema.to_node_schema
+        return None, None
+
 
 class ConversationNodeSchema(HasIdMixin, metaclass=AutoMixinInit):
     def __init__(

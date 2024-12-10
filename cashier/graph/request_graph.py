@@ -121,8 +121,8 @@ class RequestGraph(BaseGraph):
             self.curr_node.schema.id
         ]
         if isinstance(self.curr_node, ConversationNode):
-            new_edge_schema, new_node_schema = self.check_node_transition(
-                self.curr_node.state, fn_call, is_fn_call_success, edge_schemas
+            new_edge_schema, new_node_schema = self.curr_node.check_self_transition(
+                fn_call, is_fn_call_success, edge_schemas
             )
             if new_node_schema is not None:
                 self.curr_node.mark_as_transitioning()

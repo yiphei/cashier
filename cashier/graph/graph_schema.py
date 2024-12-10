@@ -219,22 +219,22 @@ class Graph(BaseGraph):
                     )
         self.curr_node.update_first_user_message()
 
+
+    def check_self_completion(self, fn_call, is_fn_call_success):
+        self_completion= self.schema.completion_config.run_check(self.state, fn_call, is_fn_call_success) if self.schema.completion_config is not None and self.curr_node.schema == self.schema.last_node_schema else True
+        if self_completion:
+            self.mark_as_internally_completed()
+        return self_completion
+
     def check_self_transition(self, fn_call, is_fn_call_success):
         new_edge_schema, new_node_schema = None, None
-        if self.curr_node.schema == self.schema.last_node_schema:
-            passed = self.schema.completion_config.run_check(
-                self.state,
-                fn_call,
-                is_fn_call_success,
-            )
-            if passed:
-                self.curr_node.mark_as_transitioning()
-                self.local_transition_queue.append(self.curr_node)
-                self.mark_as_transitioning()
-                self.local_transition_queue.append(self)
+        if self.check_self_completion(fn_call, is_fn_call_success):
+            self.curr_node.mark_as_transitioning()
+            self.local_transition_queue.append(self.curr_node)
+            self.mark_as_transitioning()
+            self.local_transition_queue.append(self)
         else:
-            new_edge_schema, new_node_schema = self.check_node_transition(
-                self.curr_node.state,
+            new_edge_schema, new_node_schema = self.curr_node.check_self_transition(
                 fn_call,
                 is_fn_call_success,
                 self.next_edge_schemas,
