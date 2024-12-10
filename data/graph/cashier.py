@@ -63,6 +63,10 @@ take_order_node_schema = ConversationNodeSchema(
     first_turn=AssistantTurn(
         msg_content="hi, welcome to Heaven Coffee", model_provider=ModelProvider.NONE
     ),
+    completion_config=StateTransitionConfig(
+        need_user_msg=False,
+        state_check_fn_map={"has_finished_ordering": lambda val: bool(val)},
+    ),
 )
 
 
@@ -92,7 +96,6 @@ take_to_confirm_edge_schema = EdgeSchema(
     transition_config=StateTransitionConfig(
         need_user_msg=True,
         state_check_fn_map={
-            "has_finished_ordering": lambda val: val,
             "order": lambda val: val is not None,
         },
     ),
