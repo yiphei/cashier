@@ -17,7 +17,11 @@ from cashier.gui import MessageDisplay
 from cashier.logger import logger
 from cashier.model.model_completion import ModelOutput
 from cashier.model.model_turn import AssistantTurn
-from cashier.model.model_util import CustomJSONEncoder, FunctionCall, create_think_fn_call
+from cashier.model.model_util import (
+    CustomJSONEncoder,
+    FunctionCall,
+    create_think_fn_call,
+)
 from cashier.tool.function_call_context import (
     FunctionCallContext,
     InexistentFunctionError,
@@ -558,6 +562,7 @@ class BaseGraph(BaseExecutable, HasStatusMixin, HasIdMixin):
         self, model_completion: ModelOutput, TC, fn_callback: Optional[Callable] = None
     ) -> None:
         from cashier.graph.request_graph import RequestGraph
+
         if (
             self.transition_queue
             and self.transition_queue[-1].schema.run_assistant_turn_before_transition
@@ -583,10 +588,14 @@ class BaseGraph(BaseExecutable, HasStatusMixin, HasIdMixin):
                     self.new_edge_schema = new_edge_schema
                     self.new_node_schema = new_node_schema
                     if isinstance(self, RequestGraph):
-                        if not isinstance(self.curr_node, ConversationNode) and self.curr_node.status == Status.TRANSITIONING and self.current_graph_schema_idx < len(self.requests) - 1:
+                        if (
+                            not isinstance(self.curr_node, ConversationNode)
+                            and self.curr_node.status == Status.TRANSITIONING
+                            and self.current_graph_schema_idx < len(self.requests) - 1
+                        ):
                             fake_fn_call = create_think_fn_call(
-                        f"I just completed the current request. The next request to be addressed is: {self.requests[self.current_graph_schema_idx + 1]}. I must explicitly inform the customer that the current request is completed and that I will address the next request right away. Only after I informed the customer do I receive the tools to address the next request."
-                    )
+                                f"I just completed the current request. The next request to be addressed is: {self.requests[self.current_graph_schema_idx + 1]}. I must explicitly inform the customer that the current request is completed and that I will address the next request right away. Only after I informed the customer do I receive the tools to address the next request."
+                            )
                             fn_id_to_output[fake_fn_call.id] = None
                             fn_calls.append(fake_fn_call)
                     break
