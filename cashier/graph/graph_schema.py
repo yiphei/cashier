@@ -46,7 +46,7 @@ class GraphSchema(HasIdMixin, BaseGraphSchema, metaclass=AutoMixinInit):
         edge_schemas: List[EdgeSchema],
         node_schemas: List[ConversationNodeSchema],
         state_schema: Type[BaseModel],
-        transition_config: BaseTransitionConfig,
+        completion_config: BaseTransitionConfig,
         run_assistant_turn_before_transition: bool = False,
     ):
         BaseGraphSchema.__init__(self, description, edge_schemas, node_schemas)
@@ -54,7 +54,7 @@ class GraphSchema(HasIdMixin, BaseGraphSchema, metaclass=AutoMixinInit):
         self.output_schema = output_schema
         self.start_node_schema = start_node_schema
         self.last_node_schema = last_node_schema
-        self.transition_config = transition_config
+        self.completion_config = completion_config
         self.run_assistant_turn_before_transition = run_assistant_turn_before_transition
 
     def create_node(self, input, request):
@@ -219,30 +219,17 @@ class Graph(BaseGraph):
                     )
         self.curr_node.update_first_user_message()
 
-    def check_self_transition(self, fn_call, is_fn_call_success):
-        new_edge_schema, new_node_schema = None, None
-        if self.curr_node.schema == self.schema.last_node_schema:
-            passed = self.schema.transition_config.run_check(
-                self.state,
-                fn_call,
-                is_fn_call_success,
+    def check_self_completion(self, fn_call, is_fn_call_success):
+        assert self.schema.completion_config is not None
+        self_completion = (
+            self.curr_node.schema == self.schema.last_node_schema
+            and self.schema.completion_config.run_check(
+                self.state, fn_call, is_fn_call_success
             )
-            if passed:
-                self.curr_node.mark_as_transitioning()
-                self.local_transition_queue.append(self.curr_node)
-                self.mark_as_transitioning()
-                self.local_transition_queue.append(self)
-        else:
-            new_edge_schema, new_node_schema = self.check_node_transition(
-                self.curr_node.state,
-                fn_call,
-                is_fn_call_success,
-                self.next_edge_schemas,
-            )
-            if new_edge_schema is not None:
-                self.curr_node.mark_as_transitioning()
-                self.local_transition_queue.append(self.curr_node)
-        return new_edge_schema, new_node_schema, None, None
+        )
+        if self_completion:
+            self.mark_as_internally_completed()
+        return self_completion
 
     def init_conversation_core(
         self,
@@ -271,3 +258,6 @@ class Graph(BaseGraph):
             )
         )
         self.compute_bwd_skip_edge_schemas()
+
+    def get_next_edge_schema(self):
+        return self.next_edge_schemas

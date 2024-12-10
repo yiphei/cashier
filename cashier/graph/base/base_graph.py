@@ -1,10 +1,10 @@
 import json
-from abc import ABC, abstractmethod
 from collections import defaultdict, deque
 from typing import Any, Callable, List, Literal, Optional, Set, Tuple, overload
 
 from colorama import Style
 
+from cashier.graph.base.base_executable import BaseExecutable
 from cashier.graph.conversation_node import (
     ConversationNode,
     ConversationNodeSchema,
@@ -17,7 +17,11 @@ from cashier.gui import MessageDisplay
 from cashier.logger import logger
 from cashier.model.model_completion import ModelOutput
 from cashier.model.model_turn import AssistantTurn
-from cashier.model.model_util import CustomJSONEncoder, FunctionCall
+from cashier.model.model_util import (
+    CustomJSONEncoder,
+    FunctionCall,
+    create_think_fn_call,
+)
 from cashier.tool.function_call_context import (
     FunctionCallContext,
     InexistentFunctionError,
@@ -48,7 +52,7 @@ class BaseGraphSchema:
             ].append(edge_schema)
 
 
-class BaseGraph(ABC, HasStatusMixin, HasIdMixin):
+class BaseGraph(BaseExecutable, HasStatusMixin, HasIdMixin):
     def __init__(self, schema: BaseGraphSchema, request=None):
         HasStatusMixin.__init__(self)
         HasIdMixin.__init__(self)
@@ -289,15 +293,6 @@ class BaseGraph(ABC, HasStatusMixin, HasIdMixin):
 
             self.edge_schema_id_to_from_node[edge_schema.id] = new_node
 
-    @classmethod
-    def check_node_transition(cls, state, fn_call, is_fn_call_success, edge_schemas):
-        for edge_schema in edge_schemas:
-            if edge_schema.check_transition_config(state, fn_call, is_fn_call_success):
-                new_edge_schema = edge_schema
-                new_node_schema = edge_schema.to_node_schema
-                return new_edge_schema, new_node_schema
-        return None, None
-
     def init_conversation_core(
         self,
         node_schema: ConversationNodeSchema,
@@ -516,22 +511,6 @@ class BaseGraph(ABC, HasStatusMixin, HasIdMixin):
             TC,
         )
 
-    @abstractmethod
-    def check_self_transition(self, fn_call, is_fn_call_sucess):
-        raise NotImplementedError()
-
-    def check_transition(self, fn_call, is_fn_call_success):
-        if getattr(self, "curr_node", None) is None or not isinstance(
-            self.curr_node, BaseGraph
-        ):
-            return self.check_self_transition(fn_call, is_fn_call_success)
-        else:
-            tuple_output = self.curr_node.check_transition(fn_call, is_fn_call_success)
-            if self.curr_node.status == Status.TRANSITIONING:
-                return self.check_self_transition(fn_call, is_fn_call_success)
-            else:
-                return tuple_output
-
     def execute_function_call(
         self, fn_call: FunctionCall, fn_callback: Optional[Callable] = None
     ) -> Tuple[Any, bool]:
@@ -582,6 +561,8 @@ class BaseGraph(ABC, HasStatusMixin, HasIdMixin):
     def handle_assistant_turn(
         self, model_completion: ModelOutput, TC, fn_callback: Optional[Callable] = None
     ) -> None:
+        from cashier.graph.request_graph import RequestGraph
+
         if (
             self.transition_queue
             and self.transition_queue[-1].schema.run_assistant_turn_before_transition
@@ -602,15 +583,22 @@ class BaseGraph(ABC, HasStatusMixin, HasIdMixin):
                 (
                     new_edge_schema,
                     new_node_schema,
-                    fake_fn_call,
-                    fake_fn_output,
                 ) = self.check_transition(function_call, is_success)
                 if new_node_schema is not None:
                     self.new_edge_schema = new_edge_schema
                     self.new_node_schema = new_node_schema
-                    if fake_fn_call is not None:
-                        fn_id_to_output[fake_fn_call.id] = fake_fn_output
-                        fn_calls.append(fake_fn_call)
+                    if isinstance(self, RequestGraph):
+                        if (
+                            self.curr_node is not None
+                            and not isinstance(self.curr_node, ConversationNode)
+                            and self.curr_node.status == Status.TRANSITIONING
+                            and self.current_graph_schema_idx < len(self.requests) - 1
+                        ):
+                            fake_fn_call = create_think_fn_call(
+                                f"I just completed the current request. The next request to be addressed is: {self.requests[self.current_graph_schema_idx + 1]}. I must explicitly inform the customer that the current request is completed and that I will address the next request right away. Only after I informed the customer do I receive the tools to address the next request."
+                            )
+                            fn_id_to_output[fake_fn_call.id] = None
+                            fn_calls.append(fake_fn_call)
                     break
 
         TC.add_assistant_turn(
