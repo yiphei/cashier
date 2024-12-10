@@ -249,7 +249,7 @@ class BaseGraph(BaseExecutable, HasStatusMixin, HasIdMixin):
                     input = from_node.input
                 else:
                     edge_schema = next_edge_schema
-                    if from_node != self.curr_node:
+                    if from_node != self.curr_node and edge_schema.new_input_fn is not None:
                         input = edge_schema.new_input_fn(
                             from_node.state, from_node.input
                         )
@@ -396,10 +396,11 @@ class BaseGraph(BaseExecutable, HasStatusMixin, HasIdMixin):
     ) -> None:
         if input is None and edge_schema:
             # TODO: this is bad. refactor this
-            if hasattr(self, "state"):
-                input = edge_schema.new_input_fn(self.state)
-            else:
-                input = edge_schema.new_input_fn(self.curr_node.state)
+            if edge_schema.new_input_fn is not None:
+                if hasattr(self, "state"):
+                    input = edge_schema.new_input_fn(self.state)
+                else:
+                    input = edge_schema.new_input_fn(self.curr_node.state)
 
         if edge_schema:
             edge_schema, input = self.compute_next_edge_schema(edge_schema, input)
