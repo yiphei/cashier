@@ -53,16 +53,20 @@ class BaseGraphSchema:
             self.from_node_schema_id_to_edge_schema[
                 edge_schema.from_node_schema.id
             ].append(edge_schema)
-            self.to_node_schema_id_to_edge_schema[
-                edge_schema.to_node_schema.id
-            ].append(edge_schema)
+            self.to_node_schema_id_to_edge_schema[edge_schema.to_node_schema.id].append(
+                edge_schema
+            )
 
         self.before_pivot_node_schemas = []
         if self.pivot_node_schema is not None:
-            prev_edge_schema = self.to_node_schema_id_to_edge_schema[self.pivot_node_schema.id]
+            prev_edge_schema = self.to_node_schema_id_to_edge_schema[
+                self.pivot_node_schema.id
+            ]
             while prev_edge_schema is not None:
                 self.before_pivot_node_schemas.append(prev_edge_schema.from_node_schema)
-                prev_edge_schema = self.to_node_schema_id_to_edge_schema.get(prev_edge_schema.from_node_schema.id, None)
+                prev_edge_schema = self.to_node_schema_id_to_edge_schema.get(
+                    prev_edge_schema.from_node_schema.id, None
+                )
 
 
 class BaseGraph(BaseExecutable, HasStatusMixin, HasIdMixin):
