@@ -69,7 +69,12 @@ class EdgeSchema(BaseEdgeSchema, HasIdMixin, metaclass=AutoMixinInit):
         if self.new_input_fn is not None:
             return self.new_input_fn(state) == to_node.input
         else:
-            return to_node.input.__class__(**state.model_dump(include=state.model_fields_set)) == to_node.input
+            return (
+                to_node.input.__class__(
+                    **state.model_dump(include=state.model_fields_set)
+                )
+                == to_node.input
+            )
 
     def _can_skip(
         self,

@@ -879,8 +879,9 @@ class TestAgent:
             self.start_node_schema.id
         ][0].to_node_schema
 
-
-        input_schema, input = agent_executor.graph.curr_node.state.get_set_schema_and_fields()
+        input_schema, input = (
+            agent_executor.graph.curr_node.state.get_set_schema_and_fields()
+        )
         node_turn = TurnArgs(
             turn=NodeSystemTurn(
                 msg_content=next_node_schema.node_system_prompt(
@@ -969,7 +970,9 @@ class TestAgent:
         next_node_schema = cashier_graph_schema.from_node_schema_id_to_edge_schema[
             self.start_node_schema.id
         ][0].to_node_schema
-        input_schema, input = agent_executor.graph.curr_node.state.get_set_schema_and_fields()
+        input_schema, input = (
+            agent_executor.graph.curr_node.state.get_set_schema_and_fields()
+        )
         node_turn_1 = TurnArgs(
             turn=NodeSystemTurn(
                 msg_content=next_node_schema.node_system_prompt(
@@ -1114,7 +1117,9 @@ class TestAgent:
         next_node_schema = cashier_graph_schema.from_node_schema_id_to_edge_schema[
             self.start_node_schema.id
         ][0].to_node_schema
-        input_schema, input = agent_executor.graph.curr_node.state.get_set_schema_and_fields()
+        input_schema, input = (
+            agent_executor.graph.curr_node.state.get_set_schema_and_fields()
+        )
         node_turn_1 = TurnArgs(
             turn=NodeSystemTurn(
                 msg_content=next_node_schema.node_system_prompt(
@@ -1170,7 +1175,9 @@ class TestAgent:
         next_next_node_schema = cashier_graph_schema.from_node_schema_id_to_edge_schema[
             next_node_schema.id
         ][0].to_node_schema
-        input_schema, input = agent_executor.graph.curr_node.state.get_set_schema_and_fields()
+        input_schema, input = (
+            agent_executor.graph.curr_node.state.get_set_schema_and_fields()
+        )
         node_turn_2 = TurnArgs(
             turn=NodeSystemTurn(
                 msg_content=next_next_node_schema.node_system_prompt(
@@ -1251,7 +1258,9 @@ class TestAgent:
             False,
             bwd_skip_node_schema_id=2,
         )
-        input_schema, input = agent_executor.graph.curr_node.state.get_set_schema_and_fields()
+        input_schema, input = (
+            agent_executor.graph.curr_node.state.get_set_schema_and_fields()
+        )
         node_turn_4 = TurnArgs(
             turn=NodeSystemTurn(
                 msg_content=next_node_schema.node_system_prompt(

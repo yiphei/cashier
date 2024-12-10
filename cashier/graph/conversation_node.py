@@ -221,17 +221,30 @@ class ConversationNodeSchema(HasIdMixin, metaclass=AutoMixinInit):
         )
 
         target_input_schema = self.input_schema
-        if parent_state is not None and target_input_schema is None and getattr(self, 'input_from_state_schema', None) is None and self.is_input_from_state_schema_set is False:
+        if (
+            parent_state is not None
+            and target_input_schema is None
+            and getattr(self, "input_from_state_schema", None) is None
+            and self.is_input_from_state_schema_set is False
+        ):
             target_input_schema, input = parent_state.get_set_schema_and_fields()
             self.input_from_state_schema = target_input_schema
             self.is_input_from_state_schema_set = True
-        elif parent_state is not None and target_input_schema is None and getattr(self, 'input_from_state_schema', None) is not None:
+        elif (
+            parent_state is not None
+            and target_input_schema is None
+            and getattr(self, "input_from_state_schema", None) is not None
+        ):
             target_input_schema = self.input_from_state_schema
-            input = target_input_schema(**parent_state.model_dump(include=parent_state.model_fields_set))
+            input = target_input_schema(
+                **parent_state.model_dump(include=parent_state.model_fields_set)
+            )
 
         prompt = self.node_system_prompt(
             node_prompt=self.node_prompt,
-            input=(input.model_dump_json() if target_input_schema is not None else None),
+            input=(
+                input.model_dump_json() if target_input_schema is not None else None
+            ),
             node_input_json_schema=(
                 target_input_schema.model_json_schema() if target_input_schema else None
             ),
