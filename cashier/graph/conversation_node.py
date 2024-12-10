@@ -135,6 +135,8 @@ class ConversationNodeSchema(HasIdMixin, metaclass=AutoMixinInit):
         self.node_prompt = node_prompt
         self.node_system_prompt = node_system_prompt
         self.input_schema = input_schema
+        self.input_from_state_schema = None
+        self.is_input_from_state_schema_set = False
         self.first_turn = first_turn
         self.run_assistant_turn_before_transition = run_assistant_turn_before_transition
         self.completion_config = completion_config
@@ -218,15 +220,20 @@ class ConversationNodeSchema(HasIdMixin, metaclass=AutoMixinInit):
             self.state_schema, prev_node, edge_schema, direction, input
         )
 
-        input_schema = self.input_schema
-        if parent_state is not None:
-            input_schema, input = parent_state.get_set_schema_and_fields()
+        target_input_schema = self.input_schema
+        if parent_state is not None and target_input_schema is None and getattr(self, 'input_from_state_schema', None) is None and self.is_input_from_state_schema_set is False:
+            target_input_schema, input = parent_state.get_set_schema_and_fields()
+            self.input_from_state_schema = target_input_schema
+            self.is_input_from_state_schema_set = True
+        elif parent_state is not None and target_input_schema is None and getattr(self, 'input_from_state_schema', None) is not None:
+            target_input_schema = self.input_from_state_schema
+            input = target_input_schema(**parent_state.model_dump(include=parent_state.model_fields_set))
 
         prompt = self.node_system_prompt(
             node_prompt=self.node_prompt,
-            input=(input.model_dump_json() if input_schema is not None else None),
+            input=(input.model_dump_json() if target_input_schema is not None else None),
             node_input_json_schema=(
-                input_schema.model_json_schema() if input_schema else None
+                target_input_schema.model_json_schema() if target_input_schema else None
             ),
             state_json_schema=(
                 self.state_schema.model_json_schema() if self.state_schema else None

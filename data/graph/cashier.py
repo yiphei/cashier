@@ -87,7 +87,7 @@ confirm_order_node_schema = ConversationNodeSchema(
     node_system_prompt=CashierNodeSystemPrompt,
     tool_names=None,
     tool_registry_or_tool_defs=None,
-    input_schema=Order,
+    # input_schema=Order,
     state_schema=ConfirmOrderState,
 )
 take_to_confirm_edge_schema = EdgeSchema(
@@ -99,7 +99,6 @@ take_to_confirm_edge_schema = EdgeSchema(
             "order": lambda val: val is not None,
         },
     ),
-    new_input_fn=lambda state: state.order,  # type: ignore
 )
 
 
