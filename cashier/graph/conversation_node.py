@@ -29,12 +29,8 @@ class Direction(StrEnum):
     BWD = "BWD"
 
 
-class PolyMetaclass(ABCMeta, AutoMixinInit):
-    pass
-
-
 class ConversationNode(
-    HasIdMixin, HasStatusMixin, BaseExecutable, metaclass=PolyMetaclass
+    HasIdMixin, HasStatusMixin, metaclass=AutoMixinInit
 ):
     def __init__(
         self,
@@ -122,9 +118,6 @@ class ConversationNode(
                     self.mark_as_transitioning()
                     return edge_schema, edge_schema.to_node_schema
         return None, None
-
-    def get_next_edge_schema(self):
-        return None
 
 
 class ConversationNodeSchema(HasIdMixin, metaclass=AutoMixinInit):
