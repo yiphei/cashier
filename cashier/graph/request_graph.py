@@ -5,7 +5,7 @@ from typing import Any, List, Type
 
 from cashier.graph.base.base_edge_schema import BaseEdgeSchema
 from cashier.graph.base.base_graph import BaseGraph, BaseGraphSchema
-from cashier.graph.conversation_node import ConversationNode, ConversationNodeSchema
+from cashier.graph.conversation_node import ConversationNodeSchema
 from cashier.graph.edge_schema import EdgeSchema
 from cashier.graph.graph_schema import Graph
 from cashier.graph.mixin.auto_mixin_init import AutoMixinInit
@@ -113,7 +113,16 @@ class RequestGraph(BaseGraph):
                     None,
                 )
 
-    def check_self_transition(self, fn_call, is_fn_call_success, parent_edge_schemas=None, new_edge_schema=None, new_node_schema=None, fake_call=None, fake_call_output=None):
+    def check_self_transition(
+        self,
+        fn_call,
+        is_fn_call_success,
+        parent_edge_schemas=None,
+        new_edge_schema=None,
+        new_node_schema=None,
+        fake_call=None,
+        fake_call_output=None,
+    ):
         edge_schemas = self.schema.from_node_schema_id_to_edge_schema[
             self.curr_node.schema.id
         ]
@@ -132,9 +141,7 @@ class RequestGraph(BaseGraph):
         return new_edge_schema, new_node_schema, fake_fn_call, None
 
     def get_next_edge_schema(self):
-        return self.schema.from_node_schema_id_to_edge_schema[
-            self.curr_node.schema.id
-        ]
+        return self.schema.from_node_schema_id_to_edge_schema[self.curr_node.schema.id]
 
 
 class RequestGraphSchema(BaseGraphSchema):

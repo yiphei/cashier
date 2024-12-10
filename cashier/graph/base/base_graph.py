@@ -508,19 +508,42 @@ class BaseGraph(ABC, HasStatusMixin, HasIdMixin):
         )
 
     @abstractmethod
-    def check_self_transition(self, fn_call, is_fn_call_sucess, parent_edge_schemas=None, new_edge_schema=None, new_node_schema=None, fake_call=None, fake_call_output=None):
+    def check_self_transition(
+        self,
+        fn_call,
+        is_fn_call_sucess,
+        parent_edge_schemas=None,
+        new_edge_schema=None,
+        new_node_schema=None,
+        fake_call=None,
+        fake_call_output=None,
+    ):
         raise NotImplementedError()
 
     def check_transition(self, fn_call, is_fn_call_success, parent_edge_schemas=None):
         if getattr(self, "curr_node", None) is None or not isinstance(
             self.curr_node, BaseGraph
         ):
-            return self.check_self_transition(fn_call, is_fn_call_success, parent_edge_schemas)
+            return self.check_self_transition(
+                fn_call, is_fn_call_success, parent_edge_schemas
+            )
         else:
-            new_edge_schema, new_node_schema, fake_call, fake_call_output = self.curr_node.check_transition(fn_call, is_fn_call_success, self.get_next_edge_schema())
+            new_edge_schema, new_node_schema, fake_call, fake_call_output = (
+                self.curr_node.check_transition(
+                    fn_call, is_fn_call_success, self.get_next_edge_schema()
+                )
+            )
             if self.curr_node.status == Status.TRANSITIONING:
                 self.local_transition_queue.append(self.curr_node)
-            return self.check_self_transition(fn_call, is_fn_call_success, parent_edge_schemas, new_edge_schema, new_node_schema, fake_call, fake_call_output)
+            return self.check_self_transition(
+                fn_call,
+                is_fn_call_success,
+                parent_edge_schemas,
+                new_edge_schema,
+                new_node_schema,
+                fake_call,
+                fake_call_output,
+            )
 
     def execute_function_call(
         self, fn_call: FunctionCall, fn_callback: Optional[Callable] = None

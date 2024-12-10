@@ -231,7 +231,16 @@ class Graph(BaseGraph):
             self.mark_as_internally_completed()
         return self_completion
 
-    def check_self_transition(self, fn_call, is_fn_call_success, parent_edge_schemas=None, new_edge_schema=None, new_node_schema=None, fake_call=None, fake_call_output=None):
+    def check_self_transition(
+        self,
+        fn_call,
+        is_fn_call_success,
+        parent_edge_schemas=None,
+        new_edge_schema=None,
+        new_node_schema=None,
+        fake_call=None,
+        fake_call_output=None,
+    ):
         if self.check_self_completion(fn_call, is_fn_call_success):
             self.curr_node.mark_as_transitioning()
             self.local_transition_queue.append(self.curr_node)
