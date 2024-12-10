@@ -4,16 +4,20 @@ from cashier.graph.mixin.has_status_mixin import Status
 
 
 class BaseExecutable(ABC):
-    @abstractmethod
     def check_self_transition(
         self,
         fn_call,
-        is_fn_call_sucess,
+        is_fn_call_success,
         parent_edge_schemas=None,
         new_edge_schema=None,
         new_node_schema=None,
     ):
-        raise NotImplementedError()
+        if self.check_self_completion(fn_call, is_fn_call_success):
+            self.curr_node.mark_as_transitioning()
+            self.local_transition_queue.append(self.curr_node)
+            self.mark_as_transitioning()
+            return None, None
+        return new_edge_schema, new_node_schema
 
     @classmethod
     def get_next_edge_schema(self):
