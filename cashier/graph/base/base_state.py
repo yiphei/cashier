@@ -28,6 +28,8 @@ class BaseStateModel(BaseModel):
             for field_name, field_info in self.model_fields.items()
             if field_name in self.model_fields_set
         }
+        if len(field_kwargs.keys()) == 0:
+            return None, None
         new_model = create_model(self.__class__.__name__ + "_sub", **field_kwargs)
         new_instance = new_model(**self.model_dump(include=self.model_fields_set))
         return new_model, new_instance
