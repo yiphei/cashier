@@ -114,7 +114,6 @@ class ConversationNode(HasIdMixin, HasStatusMixin, metaclass=AutoMixinInit):
                     self.mark_as_transitioning()
                     return edge_schema, edge_schema.to_node_schema, None, None
         return None, None, None, None
-    
 
     def check_transition(self, fn_call, is_fn_call_success, parent_edge_schemas=None):
         if getattr(self, "curr_node", None) is None:
