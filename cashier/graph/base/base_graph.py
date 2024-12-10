@@ -589,6 +589,7 @@ class BaseGraph(BaseExecutable, HasStatusMixin, HasIdMixin):
                     self.new_node_schema = new_node_schema
                     if isinstance(self, RequestGraph):
                         if (
+                            self.curr_node is not None and
                             not isinstance(self.curr_node, ConversationNode)
                             and self.curr_node.status == Status.TRANSITIONING
                             and self.current_graph_schema_idx < len(self.requests) - 1
