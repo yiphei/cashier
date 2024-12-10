@@ -14,7 +14,7 @@ class BaseExecutable(ABC):
         new_node_schema=None,
     ):
         raise NotImplementedError()
-    
+
     @classmethod
     def get_next_edge_schema(self):
         raise NotImplementedError()
