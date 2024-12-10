@@ -221,7 +221,6 @@ class ConversationNodeSchema(HasIdMixin, metaclass=AutoMixinInit):
         input_schema = self.input_schema
         if parent_state is not None:
             input_schema, input = parent_state.get_set_schema_and_fields()
-        
 
         prompt = self.node_system_prompt(
             node_prompt=self.node_prompt,
