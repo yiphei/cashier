@@ -287,3 +287,7 @@ class Graph(BaseGraph):
         set_diff = set(new_graph_schema.before_pivot_node_schemas) - set(
             self.schema.before_pivot_node_schemas
         )
+        if len(set_diff) > 0:
+            self.schema.node_schemas.extend(list(set_diff))
+            # need to recreate edge schemas here
+            # self.schema.edge_schemas.extend()
