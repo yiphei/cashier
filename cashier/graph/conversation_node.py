@@ -216,7 +216,11 @@ class ConversationNodeSchema(HasIdMixin, metaclass=AutoMixinInit):
             self.state_schema, prev_node, edge_schema, direction, input
         )
 
-        target_input_schema = self.input_from_state_schema if self.is_input_from_state_schema_set else self.input_schema
+        target_input_schema = (
+            self.input_from_state_schema
+            if self.is_input_from_state_schema_set
+            else self.input_schema
+        )
 
         prompt = self.node_system_prompt(
             node_prompt=self.node_prompt,
@@ -252,9 +256,7 @@ class ConversationNodeSchema(HasIdMixin, metaclass=AutoMixinInit):
                 self.input_from_state_schema = target_input_schema
                 self.is_input_from_state_schema_set = True
                 return input
-            elif (
-                getattr(self, "input_from_state_schema", None) is not None
-            ):
+            elif getattr(self, "input_from_state_schema", None) is not None:
                 input = self.input_from_state_schema(
                     **state.model_dump(include=state.model_fields_set)
                 )

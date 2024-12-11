@@ -249,9 +249,7 @@ class BaseGraph(BaseExecutable, HasStatusMixin, HasIdMixin):
                     input = from_node.input
                 else:
                     edge_schema = next_edge_schema
-                    if (
-                        from_node != self.curr_node
-                    ):
+                    if from_node != self.curr_node:
                         input = edge_schema.to_node_schema.get_input(
                             from_node.state, edge_schema
                         )
