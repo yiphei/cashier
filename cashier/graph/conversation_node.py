@@ -121,7 +121,7 @@ class ConversationNodeSchema(HasIdMixin, metaclass=AutoMixinInit):
         self,
         node_prompt: str,
         node_system_prompt: Type[NodeSystemPrompt],
-        input_schema: Optional[Type[BaseModel]] = None,
+        direct_input_schema: Optional[Type[BaseModel]] = None,
         state_schema: Optional[Type[BaseStateModel]] = None,
         tool_registry_or_tool_defs: Optional[
             Union[ToolRegistry, List[ChatCompletionToolParam]]
@@ -134,7 +134,7 @@ class ConversationNodeSchema(HasIdMixin, metaclass=AutoMixinInit):
         self.state_schema = state_schema
         self.node_prompt = node_prompt
         self.node_system_prompt = node_system_prompt
-        self.input_schema = input_schema
+        self.direct_input_schema = direct_input_schema
         self.input_from_state_schema = None
         self.is_input_from_state_schema_set = False
         self.first_turn = first_turn
@@ -169,6 +169,10 @@ class ConversationNodeSchema(HasIdMixin, metaclass=AutoMixinInit):
                 "Function to get the current state, as defined in <state>",
                 {},
             )
+
+    @property
+    def input_schema(self):
+        return self.direct_input_schema or self.input_from_state_schema
 
     @overload
     def create_node(  # noqa: E704
@@ -216,19 +220,13 @@ class ConversationNodeSchema(HasIdMixin, metaclass=AutoMixinInit):
             self.state_schema, prev_node, edge_schema, direction, input
         )
 
-        target_input_schema = (
-            self.input_from_state_schema
-            if self.is_input_from_state_schema_set
-            else self.input_schema
-        )
-
         prompt = self.node_system_prompt(
             node_prompt=self.node_prompt,
             input=(
-                input.model_dump_json() if target_input_schema is not None else None
+                input.model_dump_json() if self.input_schema is not None else None
             ),
             node_input_json_schema=(
-                target_input_schema.model_json_schema() if target_input_schema else None
+                self.input_schema.model_json_schema() if self.input_schema else None
             ),
             state_json_schema=(
                 self.state_schema.model_json_schema() if self.state_schema else None
@@ -248,15 +246,16 @@ class ConversationNodeSchema(HasIdMixin, metaclass=AutoMixinInit):
         if edge_schema.new_input_fn is not None:
             return edge_schema.new_input_fn(state)
         elif state is not None:
+            assert self.direct_input_schema is None
             if (
-                getattr(self, "input_from_state_schema", None) is None
+                self.input_from_state_schema is None
                 and self.is_input_from_state_schema_set is False
             ):
                 target_input_schema, input = state.get_set_schema_and_fields()
                 self.input_from_state_schema = target_input_schema
                 self.is_input_from_state_schema_set = True
                 return input
-            elif getattr(self, "input_from_state_schema", None) is not None:
+            elif self.input_from_state_schema is not None:
                 input = self.input_from_state_schema(**state.model_dump_fields_set())
                 return input
         else:

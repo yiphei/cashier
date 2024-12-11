@@ -58,7 +58,6 @@ take_order_node_schema = ConversationNodeSchema(
         "get_menu_item_from_name",
     ],
     tool_registry_or_tool_defs=CASHIER_TOOL_REGISTRY,
-    input_schema=None,
     state_schema=TakeOrderState,
     first_turn=AssistantTurn(
         msg_content="hi, welcome to Heaven Coffee", model_provider=ModelProvider.NONE
