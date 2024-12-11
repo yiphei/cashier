@@ -222,9 +222,7 @@ class ConversationNodeSchema(HasIdMixin, metaclass=AutoMixinInit):
 
         prompt = self.node_system_prompt(
             node_prompt=self.node_prompt,
-            input=(
-                input.model_dump_json() if self.input_schema is not None else None
-            ),
+            input=(input.model_dump_json() if self.input_schema is not None else None),
             node_input_json_schema=(
                 self.input_schema.model_json_schema() if self.input_schema else None
             ),
