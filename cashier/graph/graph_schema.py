@@ -79,7 +79,9 @@ class Graph(BaseGraph):
         schema: BaseGraphSchema,
     ):
         super().__init__(schema, request)
+        input_keys = set(input.keys()) if input is not None else set()
         self.state = schema.state_schema(**(input or {}))
+        self.state.__pydantic_fields_set__ = input_keys
         self.has_run_assistant_turn_before_transition = False
 
     def compute_init_node_edge_schema(
