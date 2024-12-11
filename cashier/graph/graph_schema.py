@@ -63,7 +63,7 @@ class GraphSchema(HasIdMixin, BaseGraphSchema, metaclass=AutoMixinInit):
             request=request,
             schema=self,
         )
-    
+
     def get_input(self, state, edge_schema):
         if edge_schema.new_input_fn is not None:
             return edge_schema.new_input_fn(state)
