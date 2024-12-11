@@ -440,10 +440,14 @@ class BaseGraph(BaseExecutable, HasStatusMixin, HasIdMixin):
                 and getattr(parent_node, "state", None) is not None
             ):
                 old_state = parent_node.state.model_dump()
-                new_state = old_state | curr_node.state.model_dump(
+                set_fields = parent_node.state.model_fields_set
+                child_state = curr_node.state.model_dump(
                     exclude=curr_node.state.resettable_fields
                 )
+                new_state = old_state | child_state
+                new_set_fields = set_fields | child_state.keys()
                 parent_node.state = parent_node.state.__class__(**new_state)
+                parent_node.state.__pydantic_fields_set__ = new_set_fields
 
             parent_node.local_transition_queue.clear()
 

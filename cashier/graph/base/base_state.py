@@ -8,7 +8,7 @@ from pydantic import BaseModel, ConfigDict, create_model
 
 class BaseStateModel(BaseModel):
     resettable_fields: ClassVar[Optional[List[str]]] = None
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="forbid", revalidate_instances='always')
 
     def copy_resume(self) -> BaseStateModel:
         new_data = copy.deepcopy(dict(self))
