@@ -1013,7 +1013,7 @@ class TestAgent:
                 msg_content=self.start_node_schema.node_system_prompt(
                     node_prompt=cashier_graph_schema.start_node_schema.node_prompt,
                     input=None,
-                    node_input_json_schema=None,
+                    node_input_json_schema=self.start_node_schema.input_from_state_schema, # just to test that its None
                     state_json_schema=self.start_node_schema.state_schema.model_json_schema(),
                     last_msg="can you confirm the order?",
                     curr_request="customer wants to order coffee",
@@ -1217,7 +1217,7 @@ class TestAgent:
                 msg_content=self.start_node_schema.node_system_prompt(
                     node_prompt=cashier_graph_schema.start_node_schema.node_prompt,
                     input=None,
-                    node_input_json_schema=None,
+                    node_input_json_schema=self.start_node_schema.input_from_state_schema,
                     state_json_schema=self.start_node_schema.state_schema.model_json_schema(),
                     last_msg="thanks for confirming",
                     curr_request="customer wants to order coffee",
@@ -1258,15 +1258,12 @@ class TestAgent:
             False,
             bwd_skip_node_schema_id=2,
         )
-        input_schema, input = (
-            agent_executor.graph.curr_node.state.get_set_schema_and_fields()
-        )
         node_turn_4 = TurnArgs(
             turn=NodeSystemTurn(
                 msg_content=next_node_schema.node_system_prompt(
                     node_prompt=next_node_schema.node_prompt,
-                    input=input.model_dump_json(),
-                    node_input_json_schema=input_schema.model_json_schema(),
+                    input=next_node_schema.input_from_state_schema(**agent_executor.graph.curr_node.state.model_dump_fields_set()).model_dump_json(),
+                    node_input_json_schema=next_node_schema.input_from_state_schema.model_json_schema(),
                     state_json_schema=next_node_schema.state_schema.model_json_schema(),
                     last_msg="what do you want to change?",
                     curr_request="customer wants to order coffee",
