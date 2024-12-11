@@ -251,10 +251,9 @@ class BaseGraph(BaseExecutable, HasStatusMixin, HasIdMixin):
                     edge_schema = next_edge_schema
                     if (
                         from_node != self.curr_node
-                        and edge_schema.new_input_fn is not None
                     ):
-                        input = edge_schema.new_input_fn(
-                            from_node.state, from_node.input
+                        input = edge_schema.to_node_schema.get_input(
+                            from_node.state, edge_schema
                         )
                 break
             else:
@@ -311,7 +310,7 @@ class BaseGraph(BaseExecutable, HasStatusMixin, HasIdMixin):
             f"[NODE_SCHEMA] Initializing node with {Style.BRIGHT}node_schema_id: {node_schema.id}{Style.NORMAL}"
         )
         new_node = node_schema.create_node(
-            input, last_msg, edge_schema, prev_node, direction, self.request, getattr(self, "state", None)  # type: ignore
+            input, last_msg, edge_schema, prev_node, direction, self.request  # type: ignore
         )
         new_node.parent = self
 
@@ -399,11 +398,10 @@ class BaseGraph(BaseExecutable, HasStatusMixin, HasIdMixin):
     ) -> None:
         if input is None and edge_schema:
             # TODO: this is bad. refactor this
-            if edge_schema.new_input_fn is not None:
-                if hasattr(self, "state"):
-                    input = edge_schema.new_input_fn(self.state)
-                else:
-                    input = edge_schema.new_input_fn(self.curr_node.state)
+            if hasattr(self, "state"):
+                input = node_schema.get_input(self.state, edge_schema)
+            else:
+                input = node_schema.get_input(self.curr_node.state, edge_schema)
 
         if edge_schema:
             edge_schema, input = self.compute_next_edge_schema(edge_schema, input)

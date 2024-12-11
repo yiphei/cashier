@@ -123,7 +123,6 @@ confirm_to_terminal_edge_schema = EdgeSchema(
     transition_config=StateTransitionConfig(
         need_user_msg=True, state_check_fn_map={"has_confirmed_order": lambda val: val}
     ),
-    new_input_fn=lambda state: None,
 )
 
 

@@ -179,7 +179,6 @@ class ConversationNodeSchema(HasIdMixin, metaclass=AutoMixinInit):
         prev_node: Literal[None] = None,
         direction: Literal[Direction.FWD] = Direction.FWD,
         curr_request: Optional[str] = None,
-        parent_state: Optional[BaseStateModel] = None,
     ) -> ConversationNode: ...
 
     @overload
@@ -191,7 +190,6 @@ class ConversationNodeSchema(HasIdMixin, metaclass=AutoMixinInit):
         prev_node: Literal[None] = None,
         direction: Literal[Direction.FWD] = Direction.FWD,
         curr_request: Optional[str] = None,
-        parent_state: Optional[BaseStateModel] = None,
     ) -> ConversationNode: ...
 
     @overload
@@ -203,7 +201,6 @@ class ConversationNodeSchema(HasIdMixin, metaclass=AutoMixinInit):
         prev_node: ConversationNode,
         direction: Direction = Direction.FWD,
         curr_request: Optional[str] = None,
-        parent_state: Optional[BaseStateModel] = None,
     ) -> ConversationNode: ...
 
     def create_node(
@@ -214,31 +211,12 @@ class ConversationNodeSchema(HasIdMixin, metaclass=AutoMixinInit):
         prev_node: Optional[ConversationNode] = None,
         direction: Direction = Direction.FWD,
         curr_request: Optional[str] = None,
-        parent_state: Optional[BaseStateModel] = None,
     ) -> ConversationNode:
         state = ConversationNode.init_state(
             self.state_schema, prev_node, edge_schema, direction, input
         )
 
-        target_input_schema = self.input_schema
-        if (
-            parent_state is not None
-            and target_input_schema is None
-            and getattr(self, "input_from_state_schema", None) is None
-            and self.is_input_from_state_schema_set is False
-        ):
-            target_input_schema, input = parent_state.get_set_schema_and_fields()
-            self.input_from_state_schema = target_input_schema
-            self.is_input_from_state_schema_set = True
-        elif (
-            parent_state is not None
-            and target_input_schema is None
-            and getattr(self, "input_from_state_schema", None) is not None
-        ):
-            target_input_schema = self.input_from_state_schema
-            input = target_input_schema(
-                **parent_state.model_dump(include=parent_state.model_fields_set)
-            )
+        target_input_schema = self.input_from_state_schema if self.is_input_from_state_schema_set else self.input_schema
 
         prompt = self.node_system_prompt(
             node_prompt=self.node_prompt,
@@ -261,3 +239,25 @@ class ConversationNodeSchema(HasIdMixin, metaclass=AutoMixinInit):
             prompt=cast(str, prompt),
             direction=direction,
         )
+
+    def get_input(self, state, edge_schema):
+        if edge_schema.new_input_fn is not None:
+            return edge_schema.new_input_fn(state)
+        elif state is not None:
+            if (
+                getattr(self, "input_from_state_schema", None) is None
+                and self.is_input_from_state_schema_set is False
+            ):
+                target_input_schema, input = state.get_set_schema_and_fields()
+                self.input_from_state_schema = target_input_schema
+                self.is_input_from_state_schema_set = True
+                return input
+            elif (
+                getattr(self, "input_from_state_schema", None) is not None
+            ):
+                input = self.input_from_state_schema(
+                    **state.model_dump(include=state.model_fields_set)
+                )
+                return input
+        else:
+            return None
