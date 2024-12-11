@@ -250,8 +250,8 @@ class BaseGraph(BaseExecutable, HasStatusMixin, HasIdMixin):
                 else:
                     edge_schema = next_edge_schema
                     if from_node != self.curr_node:
-                        input = edge_schema.new_input_fn(
-                            from_node.state, from_node.input
+                        input = edge_schema.to_node_schema.get_input(
+                            from_node.state, edge_schema
                         )
                 break
             else:
@@ -397,9 +397,9 @@ class BaseGraph(BaseExecutable, HasStatusMixin, HasIdMixin):
         if input is None and edge_schema:
             # TODO: this is bad. refactor this
             if hasattr(self, "state"):
-                input = edge_schema.new_input_fn(self.state)
+                input = node_schema.get_input(self.state, edge_schema)
             else:
-                input = edge_schema.new_input_fn(self.curr_node.state)
+                input = node_schema.get_input(self.curr_node.state, edge_schema)
 
         if edge_schema:
             edge_schema, input = self.compute_next_edge_schema(edge_schema, input)
@@ -440,10 +440,14 @@ class BaseGraph(BaseExecutable, HasStatusMixin, HasIdMixin):
                 and getattr(parent_node, "state", None) is not None
             ):
                 old_state = parent_node.state.model_dump()
-                new_state = old_state | curr_node.state.model_dump(
+                set_fields = parent_node.state.model_fields_set
+                child_state = curr_node.state.model_dump(
                     exclude=curr_node.state.resettable_fields
                 )
+                new_state = old_state | child_state
+                new_set_fields = set_fields | child_state.keys()
                 parent_node.state = parent_node.state.__class__(**new_state)
+                parent_node.state.__pydantic_fields_set__ = new_set_fields
 
             parent_node.local_transition_queue.clear()
 
