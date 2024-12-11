@@ -25,7 +25,7 @@ class EdgeSchema(BaseEdgeSchema, HasIdMixin, metaclass=AutoMixinInit):
         from_node_schema: ConversationNodeSchema,
         to_node_schema: ConversationNodeSchema,
         transition_config: BaseTransitionConfig,
-        new_input_fn: Callable[[BaseStateModel], Any],
+        new_input_fn: Optional[Callable[[BaseStateModel], Any]] = None,
         bwd_state_init: BwdStateInit = BwdStateInit.RESUME,
         fwd_state_init: FwdStateInit = FwdStateInit.RESET,
         skip_from_complete_to_prev_complete: Optional[
@@ -78,7 +78,7 @@ class EdgeSchema(BaseEdgeSchema, HasIdMixin, metaclass=AutoMixinInit):
             return True, skip_type
         elif (
             skip_type == FwdSkipType.SKIP_IF_INPUT_UNCHANGED
-            and self.new_input_fn(state) == to_node.input
+            and to_node.schema.get_input(state, self) == to_node.input
         ):
             return True, skip_type
         return False, skip_type
