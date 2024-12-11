@@ -31,5 +31,9 @@ class BaseStateModel(BaseModel):
         if len(field_kwargs.keys()) == 0:
             return None, None
         new_model = create_model(self.__class__.__name__ + "_sub", **field_kwargs)
-        new_instance = new_model(**self.model_dump(include=self.model_fields_set))
+        new_instance = new_model(**self.model_dump_fields_set())
         return new_model, new_instance
+    
+
+    def model_dump_fields_set(self):
+        return self.model_dump(include=self.model_fields_set)

@@ -258,7 +258,7 @@ class ConversationNodeSchema(HasIdMixin, metaclass=AutoMixinInit):
                 return input
             elif getattr(self, "input_from_state_schema", None) is not None:
                 input = self.input_from_state_schema(
-                    **state.model_dump(include=state.model_fields_set)
+                    **state.model_dump_fields_set()
                 )
                 return input
         else:
