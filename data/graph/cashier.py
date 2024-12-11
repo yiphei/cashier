@@ -87,7 +87,6 @@ confirm_order_node_schema = ConversationNodeSchema(
     node_system_prompt=CashierNodeSystemPrompt,
     tool_names=None,
     tool_registry_or_tool_defs=None,
-    # input_schema=Order,
     state_schema=ConfirmOrderState,
 )
 take_to_confirm_edge_schema = EdgeSchema(
@@ -116,7 +115,6 @@ terminal_order_node_schema = ConversationNodeSchema(
     node_system_prompt=CashierNodeSystemPrompt,
     tool_names=None,
     tool_registry_or_tool_defs=None,
-    input_schema=None,
     state_schema=TerminalOrderState,
 )
 confirm_to_terminal_edge_schema = EdgeSchema(
