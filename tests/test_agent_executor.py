@@ -1013,7 +1013,7 @@ class TestAgent:
                 msg_content=self.start_node_schema.node_system_prompt(
                     node_prompt=cashier_graph_schema.start_node_schema.node_prompt,
                     input=None,
-                    node_input_json_schema=self.start_node_schema.input_from_state_schema, # just to test that its None
+                    node_input_json_schema=self.start_node_schema.input_from_state_schema,  # just to test that its None
                     state_json_schema=self.start_node_schema.state_schema.model_json_schema(),
                     last_msg="can you confirm the order?",
                     curr_request="customer wants to order coffee",
@@ -1262,7 +1262,9 @@ class TestAgent:
             turn=NodeSystemTurn(
                 msg_content=next_node_schema.node_system_prompt(
                     node_prompt=next_node_schema.node_prompt,
-                    input=next_node_schema.input_from_state_schema(**agent_executor.graph.curr_node.state.model_dump_fields_set()).model_dump_json(),
+                    input=next_node_schema.input_from_state_schema(
+                        **agent_executor.graph.curr_node.state.model_dump_fields_set()
+                    ).model_dump_json(),
                     node_input_json_schema=next_node_schema.input_from_state_schema.model_json_schema(),
                     state_json_schema=next_node_schema.state_schema.model_json_schema(),
                     last_msg="what do you want to change?",
