@@ -121,9 +121,7 @@ class RequestGraph(BaseGraph):
         new_edge_schema=None,
         new_node_schema=None,
     ):
-        edge_schemas = self.from_node_schema_id_to_edge_schema[
-            self.curr_node.schema.id
-        ]
+        edge_schemas = self.from_node_schema_id_to_edge_schema[self.curr_node.schema.id]
         if self.curr_node.status == Status.TRANSITIONING:
             if len(edge_schemas) == 1:
                 new_edge_schema = edge_schemas[0]

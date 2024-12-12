@@ -59,7 +59,6 @@ class GraphSchema(HasIdMixin, BaseGraphSchema, metaclass=AutoMixinInit):
         self.completion_config = completion_config
         self.run_assistant_turn_before_transition = run_assistant_turn_before_transition
 
-
         self.edge_schema_id_to_edge_schema = {
             edge_schema.id: edge_schema for edge_schema in self.edge_schemas
         }
@@ -102,9 +101,7 @@ class Graph(BaseGraph):
     ):
         node_schema = self.schema.start_node_schema
         edge_schema = None
-        next_edge_schemas = self.from_node_schema_id_to_edge_schema[
-            node_schema.id
-        ]
+        next_edge_schemas = self.from_node_schema_id_to_edge_schema[node_schema.id]
         passed_check = True
         while passed_check:
             passed_check = False
@@ -274,9 +271,7 @@ class Graph(BaseGraph):
             is_skip,
         )
         self.next_edge_schemas = set(
-            self.from_node_schema_id_to_edge_schema.get(
-                self.curr_node.schema.id, []
-            )
+            self.from_node_schema_id_to_edge_schema.get(self.curr_node.schema.id, [])
         )
         self.compute_bwd_skip_edge_schemas()
 
