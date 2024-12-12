@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from typing import Any, List, Type
 from collections import defaultdict
+from typing import Any, List, Type
 
 from pydantic import BaseModel
 
@@ -12,6 +12,7 @@ from cashier.graph.base.base_terminable_graph import (
 )
 from cashier.graph.conversation_node import ConversationNodeSchema
 from cashier.graph.edge_schema import EdgeSchema
+
 
 class ANDGraphSchema(BaseTerminableGraphSchema):
     def __init__(
@@ -32,7 +33,6 @@ class ANDGraphSchema(BaseTerminableGraphSchema):
         )
         self.default_start_node_schema = default_start_node_schema
         self.default_edge_schemas = default_edge_schemas
-
 
         self.default_edge_schema_id_to_edge_schema = {
             edge_schema.id: edge_schema for edge_schema in self.default_edge_schemas
@@ -67,13 +67,14 @@ class ANDGraph(BaseTerminableGraph):
     ):
         super().__init__(input, request, schema)
 
-
     def compute_init_node_edge_schema(
         self,
     ):
         node_schema = self.schema.default_start_node_schema
         edge_schema = None
-        next_edge_schemas = self.schema.default_from_node_schema_id_to_edge_schema[node_schema.id]
+        next_edge_schemas = self.schema.default_from_node_schema_id_to_edge_schema[
+            node_schema.id
+        ]
         passed_check = True
         while passed_check:
             passed_check = False
@@ -87,9 +88,11 @@ class ANDGraph(BaseTerminableGraph):
                     passed_check = True
                     node_schema = next_edge_schema.to_node_schema
                     edge_schema = next_edge_schema
-                    next_edge_schemas = self.schema.default_from_node_schema_id_to_edge_schema[
-                        node_schema.id
-                    ]
+                    next_edge_schemas = (
+                        self.schema.default_from_node_schema_id_to_edge_schema[
+                            node_schema.id
+                        ]
+                    )
                     break
 
         return node_schema, edge_schema
