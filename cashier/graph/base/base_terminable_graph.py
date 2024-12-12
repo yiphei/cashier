@@ -11,7 +11,6 @@ from cashier.graph.conversation_node import (
     Direction,
 )
 from cashier.graph.edge_schema import EdgeSchema
-from cashier.graph.mixin.auto_mixin_init import AutoMixinInit
 from cashier.graph.mixin.has_id_mixin import HasIdMixin
 from cashier.model.model_util import FunctionCall, create_think_fn_call
 from cashier.prompts.node_schema_selection import NodeSchemaSelectionPrompt

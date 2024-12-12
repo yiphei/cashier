@@ -1,25 +1,22 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from typing import Any, List, Optional, Set, Tuple, Type, Union
+from typing import Any, List, Optional, Set, Type
 
 from pydantic import BaseModel
 
 from cashier.graph.base.base_edge_schema import BaseTransitionConfig
-from cashier.graph.base.base_graph import BaseGraph, BaseGraphSchema
+from cashier.graph.base.base_graph import BaseGraphSchema
+from cashier.graph.base.base_terminable_graph import (
+    BaseTerminableGraph,
+    BaseTerminableGraphSchema,
+)
 from cashier.graph.conversation_node import (
-    ConversationNode,
     ConversationNodeSchema,
-    Direction,
 )
 from cashier.graph.edge_schema import EdgeSchema
-from cashier.graph.mixin.auto_mixin_init import AutoMixinInit
-from cashier.graph.mixin.has_id_mixin import HasIdMixin
-from cashier.model.model_util import FunctionCall, create_think_fn_call
 from cashier.prompts.node_schema_selection import NodeSchemaSelectionPrompt
-from cashier.prompts.off_topic import OffTopicPrompt
 from cashier.turn_container import TurnContainer
-from cashier.graph.base.base_terminable_graph import BaseTerminableGraph, BaseTerminableGraphSchema
 
 
 def should_change_node_schema(
@@ -51,7 +48,13 @@ class GraphSchema(BaseTerminableGraphSchema):
         completion_config: BaseTransitionConfig,
         run_assistant_turn_before_transition: bool = False,
     ):
-        BaseTerminableGraphSchema.__init__(self, description, node_schemas, state_schema, run_assistant_turn_before_transition)
+        BaseTerminableGraphSchema.__init__(
+            self,
+            description,
+            node_schemas,
+            state_schema,
+            run_assistant_turn_before_transition,
+        )
         self.edge_schemas = edge_schemas
         self.output_schema = output_schema
         self.start_node_schema = start_node_schema
