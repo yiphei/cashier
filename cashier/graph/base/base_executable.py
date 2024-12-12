@@ -1,7 +1,7 @@
 from cashier.graph.mixin.has_status_mixin import Status
+from abc import ABC, abstractmethod
 
-
-class BaseExecutable:
+class BaseExecutable(ABC):
     def check_self_transition(
         self,
         fn_call,
@@ -17,8 +17,12 @@ class BaseExecutable:
             return None, None
         return new_edge_schema, new_node_schema
 
-    @classmethod
+    @abstractmethod
     def get_next_edge_schema(self):
+        raise NotImplementedError()
+    
+    @abstractmethod
+    def check_self_completion(self):
         raise NotImplementedError()
 
     def check_transition(self, fn_call, is_fn_call_success, parent_edge_schemas=None):
