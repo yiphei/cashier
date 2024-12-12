@@ -11,9 +11,7 @@ from cashier.graph.base.base_terminable_graph import (
     BaseTerminableGraph,
     BaseTerminableGraphSchema,
 )
-from cashier.graph.conversation_node import (
-    ConversationNodeSchema,
-)
+from cashier.graph.conversation_node import ConversationNodeSchema
 from cashier.graph.edge_schema import EdgeSchema
 from cashier.prompts.node_schema_selection import NodeSchemaSelectionPrompt
 from cashier.turn_container import TurnContainer
