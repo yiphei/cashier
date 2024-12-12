@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from typing import Any, List, Optional, Set, Type
+from typing import Any, List, Type
 
 from pydantic import BaseModel
 
@@ -13,25 +13,6 @@ from cashier.graph.base.base_terminable_graph import (
 )
 from cashier.graph.conversation_node import ConversationNodeSchema
 from cashier.graph.edge_schema import EdgeSchema
-from cashier.prompts.node_schema_selection import NodeSchemaSelectionPrompt
-from cashier.turn_container import TurnContainer
-
-
-def should_change_node_schema(
-    TM: TurnContainer,
-    current_node_schema: ConversationNodeSchema,
-    all_node_schemas: Set[ConversationNodeSchema],
-    is_wait: bool,
-) -> Optional[int]:
-    if len(all_node_schemas) == 1:
-        return None
-    return NodeSchemaSelectionPrompt.run(
-        current_node_schema=current_node_schema,
-        tc=TM,
-        all_node_schemas=all_node_schemas,
-        is_wait=is_wait,
-    )
-
 
 class GraphSchema(BaseTerminableGraphSchema):
     def __init__(
