@@ -75,22 +75,18 @@ class BaseGraph(BaseExecutable, HasStatusMixin, HasIdMixin):
 
     @property
     def transition_queue(self):
-        from cashier.graph.graph_schema import Graph
-
         sub_queue = (
             self.curr_node.transition_queue
-            if isinstance(self.curr_node, Graph)
+            if isinstance(self.curr_node, BaseGraph)
             else deque()
         )
         return sub_queue + self.local_transition_queue
 
     @property
     def curr_conversation_node(self):
-        from cashier.graph.graph_schema import Graph
-
         return (
             self.curr_node.curr_conversation_node
-            if isinstance(self.curr_node, Graph)
+            if isinstance(self.curr_node, BaseGraph)
             else self.curr_node
         )
 
