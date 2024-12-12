@@ -32,30 +32,21 @@ class BaseGraphSchema:
     def __init__(
         self,
         description: str,
-        edge_schemas: List[EdgeSchema],
         node_schemas: List[ConversationNode],
     ):
         self.description = description
-        self.edge_schemas = edge_schemas
         self.node_schemas = node_schemas
 
         self.node_schema_id_to_node_schema = {
             node_schema.id: node_schema for node_schema in self.node_schemas
         }
-        self.edge_schema_id_to_edge_schema = {
-            edge_schema.id: edge_schema for edge_schema in self.edge_schemas
-        }
-        self.from_node_schema_id_to_edge_schema = defaultdict(list)
-        for edge_schema in self.edge_schemas:
-            self.from_node_schema_id_to_edge_schema[
-                edge_schema.from_node_schema.id
-            ].append(edge_schema)
 
 
 class BaseGraph(BaseExecutable, HasStatusMixin, HasIdMixin):
-    def __init__(self, schema: BaseGraphSchema, request=None):
+    def __init__(self, input: Any, schema: BaseGraphSchema, request=None):
         HasStatusMixin.__init__(self)
         HasIdMixin.__init__(self)
+        self.input = input
         self.schema = schema
         self.edge_schema_id_to_edges = defaultdict(list)
         self.from_node_schema_id_to_last_edge_schema_id = defaultdict(lambda: None)
@@ -69,6 +60,16 @@ class BaseGraph(BaseExecutable, HasStatusMixin, HasIdMixin):
         self.new_node_schema = None
         self.local_transition_queue = deque()
         self.parent = None
+
+        self.edge_schemas = schema.edge_schemas
+        self.edge_schema_id_to_edge_schema = {
+            edge_schema.id: edge_schema for edge_schema in self.edge_schemas
+        }
+        self.from_node_schema_id_to_edge_schema = defaultdict(list)
+        for edge_schema in self.edge_schemas:
+            self.from_node_schema_id_to_edge_schema[
+                edge_schema.from_node_schema.id
+            ].append(edge_schema)
 
     @property
     def transition_queue(self):

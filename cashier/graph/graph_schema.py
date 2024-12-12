@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections import defaultdict
 from typing import Any, List, Optional, Set, Tuple, Type, Union
 
 from pydantic import BaseModel
@@ -49,13 +50,23 @@ class GraphSchema(HasIdMixin, BaseGraphSchema, metaclass=AutoMixinInit):
         completion_config: BaseTransitionConfig,
         run_assistant_turn_before_transition: bool = False,
     ):
-        BaseGraphSchema.__init__(self, description, edge_schemas, node_schemas)
+        BaseGraphSchema.__init__(self, description, node_schemas)
+        self.edge_schemas = edge_schemas
         self.state_schema = state_schema
         self.output_schema = output_schema
         self.start_node_schema = start_node_schema
         self.last_node_schema = last_node_schema
         self.completion_config = completion_config
         self.run_assistant_turn_before_transition = run_assistant_turn_before_transition
+
+        self.edge_schema_id_to_edge_schema = {
+            edge_schema.id: edge_schema for edge_schema in self.edge_schemas
+        }
+        self.from_node_schema_id_to_edge_schema = defaultdict(list)
+        for edge_schema in self.edge_schemas:
+            self.from_node_schema_id_to_edge_schema[
+                edge_schema.from_node_schema.id
+            ].append(edge_schema)
 
     def create_node(self, input, request):
         return Graph(
@@ -79,7 +90,7 @@ class Graph(BaseGraph):
         request: str,
         schema: BaseGraphSchema,
     ):
-        super().__init__(schema, request)
+        super().__init__(input, schema, request)
         input_keys = set(input.keys()) if input is not None else set()
         self.state = schema.state_schema(**(input or {}))
         self.state.__pydantic_fields_set__ = input_keys
@@ -90,9 +101,7 @@ class Graph(BaseGraph):
     ):
         node_schema = self.schema.start_node_schema
         edge_schema = None
-        next_edge_schemas = self.schema.from_node_schema_id_to_edge_schema[
-            node_schema.id
-        ]
+        next_edge_schemas = self.from_node_schema_id_to_edge_schema[node_schema.id]
         passed_check = True
         while passed_check:
             passed_check = False
@@ -262,9 +271,7 @@ class Graph(BaseGraph):
             is_skip,
         )
         self.next_edge_schemas = set(
-            self.schema.from_node_schema_id_to_edge_schema.get(
-                self.curr_node.schema.id, []
-            )
+            self.from_node_schema_id_to_edge_schema.get(self.curr_node.schema.id, [])
         )
         self.compute_bwd_skip_edge_schemas()
 
