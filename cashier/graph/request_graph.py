@@ -121,7 +121,7 @@ class RequestGraph(BaseGraph):
         new_edge_schema=None,
         new_node_schema=None,
     ):
-        edge_schemas = self.schema.from_node_schema_id_to_edge_schema[
+        edge_schemas = self.from_node_schema_id_to_edge_schema[
             self.curr_node.schema.id
         ]
         if self.curr_node.status == Status.TRANSITIONING:
@@ -134,7 +134,7 @@ class RequestGraph(BaseGraph):
         return new_edge_schema, new_node_schema
 
     def get_next_edge_schema(self):
-        return self.schema.from_node_schema_id_to_edge_schema[self.curr_node.schema.id]
+        return self.from_node_schema_id_to_edge_schema[self.curr_node.schema.id]
 
 
 class RequestGraphSchema(BaseGraphSchema):
@@ -146,7 +146,8 @@ class RequestGraphSchema(BaseGraphSchema):
         edge_schemas: List[EdgeSchema],
         node_schemas: List[ConversationNodeSchema],
     ):
-        super().__init__(description, edge_schemas, node_schemas)
+        super().__init__(description, node_schemas)
+        self.edge_schemas = edge_schemas
         self.start_node_schema = ConversationNodeSchema(node_prompt, node_system_prompt)
         self.default_node_schema = ConversationNodeSchema(
             "You have just finished helping the customer with their requests. Ask if they need anything else.",
