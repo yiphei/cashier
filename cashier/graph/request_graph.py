@@ -119,7 +119,6 @@ class RequestGraph(BaseGraph):
         self,
         fn_call,
         is_fn_call_success,
-        parent_edge_schemas=None,
         new_edge_schema=None,
         new_node_schema=None,
     ):
