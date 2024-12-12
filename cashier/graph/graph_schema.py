@@ -14,6 +14,7 @@ from cashier.graph.base.base_terminable_graph import (
 from cashier.graph.conversation_node import ConversationNodeSchema
 from cashier.graph.edge_schema import EdgeSchema
 
+
 class GraphSchema(BaseTerminableGraphSchema):
     def __init__(
         self,
