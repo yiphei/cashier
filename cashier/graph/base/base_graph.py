@@ -43,9 +43,10 @@ class BaseGraphSchema:
 
 
 class BaseGraph(BaseExecutable, HasStatusMixin, HasIdMixin):
-    def __init__(self, schema: BaseGraphSchema, request=None):
+    def __init__(self, input: Any, schema: BaseGraphSchema, request=None):
         HasStatusMixin.__init__(self)
         HasIdMixin.__init__(self)
+        self.input = input
         self.schema = schema
         self.edge_schema_id_to_edges = defaultdict(list)
         self.from_node_schema_id_to_last_edge_schema_id = defaultdict(lambda: None)

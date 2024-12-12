@@ -90,7 +90,7 @@ class Graph(BaseGraph):
         request: str,
         schema: BaseGraphSchema,
     ):
-        super().__init__(schema, request)
+        super().__init__(input, schema, request)
         input_keys = set(input.keys()) if input is not None else set()
         self.state = schema.state_schema(**(input or {}))
         self.state.__pydantic_fields_set__ = input_keys
