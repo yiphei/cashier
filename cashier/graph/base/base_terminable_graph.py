@@ -218,7 +218,7 @@ class BaseTerminableGraph(BaseGraph):
 
     def get_next_edge_schema(self):
         return self.next_edge_schemas
-    
+
     def check_self_completion(self, fn_call, is_fn_call_success):
         assert self.schema.completion_config is not None
         self_completion = (
