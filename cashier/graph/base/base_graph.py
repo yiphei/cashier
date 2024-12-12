@@ -43,7 +43,7 @@ class BaseGraphSchema:
 
 
 class BaseGraph(BaseExecutable, HasStatusMixin, HasIdMixin):
-    def __init__(self, input: Any, schema: BaseGraphSchema, request=None):
+    def __init__(self, input: Any, schema: BaseGraphSchema, edge_schemas=None, request=None):
         HasStatusMixin.__init__(self)
         HasIdMixin.__init__(self)
         self.input = input
@@ -61,7 +61,7 @@ class BaseGraph(BaseExecutable, HasStatusMixin, HasIdMixin):
         self.local_transition_queue = deque()
         self.parent = None
 
-        self.edge_schemas = schema.edge_schemas
+        self.edge_schemas = edge_schemas or []
         self.edge_schema_id_to_edge_schema = {
             edge_schema.id: edge_schema for edge_schema in self.edge_schemas
         }

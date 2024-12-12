@@ -68,8 +68,9 @@ class BaseTerminableGraph(BaseGraph):
         input: Any,
         request: str,
         schema: BaseGraphSchema,
+        edge_schemas=None,
     ):
-        super().__init__(input, schema, request)
+        super().__init__(input, schema, edge_schemas, request)
         input_keys = set(input.keys()) if input is not None else set()
         self.state = schema.state_schema(**(input or {}))
         self.state.__pydantic_fields_set__ = input_keys

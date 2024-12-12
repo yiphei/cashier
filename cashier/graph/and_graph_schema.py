@@ -1,11 +1,10 @@
 from __future__ import annotations
 
-from collections import defaultdict
 from typing import Any, List, Type
+from collections import defaultdict
 
 from pydantic import BaseModel
 
-from cashier.graph.base.base_edge_schema import BaseTransitionConfig
 from cashier.graph.base.base_graph import BaseGraphSchema
 from cashier.graph.base.base_terminable_graph import (
     BaseTerminableGraph,
@@ -14,18 +13,14 @@ from cashier.graph.base.base_terminable_graph import (
 from cashier.graph.conversation_node import ConversationNodeSchema
 from cashier.graph.edge_schema import EdgeSchema
 
-
-class GraphSchema(BaseTerminableGraphSchema):
+class ANDGraphSchema(BaseTerminableGraphSchema):
     def __init__(
         self,
-        output_schema: Type[BaseModel],
         description: str,
-        start_node_schema: ConversationNodeSchema,
-        last_node_schema: ConversationNodeSchema,
-        edge_schemas: List[EdgeSchema],
         node_schemas: List[ConversationNodeSchema],
         state_schema: Type[BaseModel],
-        completion_config: BaseTransitionConfig,
+        default_edge_schemas: List[EdgeSchema],
+        default_start_node_schema: ConversationNodeSchema,
         run_assistant_turn_before_transition: bool = False,
     ):
         BaseTerminableGraphSchema.__init__(
@@ -35,23 +30,21 @@ class GraphSchema(BaseTerminableGraphSchema):
             state_schema,
             run_assistant_turn_before_transition,
         )
-        self.edge_schemas = edge_schemas
-        self.output_schema = output_schema
-        self.start_node_schema = start_node_schema
-        self.last_node_schema = last_node_schema
-        self.completion_config = completion_config
+        self.default_start_node_schema = default_start_node_schema
+        self.default_edge_schemas = default_edge_schemas
 
-        self.edge_schema_id_to_edge_schema = {
-            edge_schema.id: edge_schema for edge_schema in self.edge_schemas
+
+        self.default_edge_schema_id_to_edge_schema = {
+            edge_schema.id: edge_schema for edge_schema in self.default_edge_schemas
         }
-        self.from_node_schema_id_to_edge_schema = defaultdict(list)
-        for edge_schema in self.edge_schemas:
-            self.from_node_schema_id_to_edge_schema[
+        self.default_from_node_schema_id_to_edge_schema = defaultdict(list)
+        for edge_schema in self.default_edge_schemas:
+            self.default_from_node_schema_id_to_edge_schema[
                 edge_schema.from_node_schema.id
             ].append(edge_schema)
 
     def create_node(self, input, request):
-        return Graph(
+        return ANDGraph(
             input=input,
             request=request,
             schema=self,
@@ -65,21 +58,22 @@ class GraphSchema(BaseTerminableGraphSchema):
             return None
 
 
-class Graph(BaseTerminableGraph):
+class ANDGraph(BaseTerminableGraph):
     def __init__(
         self,
         input: Any,
         request: str,
         schema: BaseGraphSchema,
     ):
-        super().__init__(input, request, schema, schema.edge_schemas)
+        super().__init__(input, request, schema)
+
 
     def compute_init_node_edge_schema(
         self,
     ):
-        node_schema = self.schema.start_node_schema
+        node_schema = self.schema.default_start_node_schema
         edge_schema = None
-        next_edge_schemas = self.from_node_schema_id_to_edge_schema[node_schema.id]
+        next_edge_schemas = self.schema.default_from_node_schema_id_to_edge_schema[node_schema.id]
         passed_check = True
         while passed_check:
             passed_check = False
@@ -93,7 +87,7 @@ class Graph(BaseTerminableGraph):
                     passed_check = True
                     node_schema = next_edge_schema.to_node_schema
                     edge_schema = next_edge_schema
-                    next_edge_schemas = self.schema.from_node_schema_id_to_edge_schema[
+                    next_edge_schemas = self.schema.default_from_node_schema_id_to_edge_schema[
                         node_schema.id
                     ]
                     break
