@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from typing import Any, List, Type
+from typing import Any, List, Optional, Type
 
 from pydantic import BaseModel
 
@@ -10,7 +10,7 @@ from cashier.graph.base.base_terminable_graph import (
     BaseTerminableGraph,
     BaseTerminableGraphSchema,
 )
-from cashier.graph.conversation_node import ConversationNodeSchema
+from cashier.graph.conversation_node import ConversationNode, ConversationNodeSchema, Direction
 from cashier.graph.edge_schema import EdgeSchema
 
 
@@ -101,3 +101,27 @@ class ANDGraph(BaseTerminableGraph):
         return set(
             self.schema.default_from_node_schema_id_to_edge_schema.get(self.curr_node.schema.id, [])
         )
+    
+
+    def init_conversation_core(
+        self,
+        node_schema: ConversationNodeSchema,
+        edge_schema: Optional[EdgeSchema],
+        input: Any,
+        last_msg: Optional[str],
+        prev_node: Optional[ConversationNode],
+        direction: Direction,
+        TC,
+        is_skip: bool = False,
+    ) -> None:
+        super().init_conversation_core(
+            node_schema,
+            edge_schema,
+            input,
+            last_msg,
+            prev_node,
+            direction,
+            TC,
+            is_skip,
+        )
+        self.add_edge_schema(edge_schema)
