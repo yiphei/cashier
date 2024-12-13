@@ -328,6 +328,9 @@ class BaseGraph(BaseExecutable, HasStatusMixin, HasIdMixin):
 
         self.curr_node = new_node
 
+    def get_request_for_init_graph_core(self):
+        return self.request
+
     def init_graph_core(
         self,
         node_schema: ConversationNodeSchema,
@@ -339,10 +342,8 @@ class BaseGraph(BaseExecutable, HasStatusMixin, HasIdMixin):
         TC,
         is_skip: bool = False,
     ) -> None:
-        self.current_graph_schema_idx += 1
-
         graph = node_schema.create_node(
-            input=input, request=self.requests[self.current_graph_schema_idx]
+            input=input, request=self.get_request_for_init_graph_core()
         )
         graph.parent = self
 
