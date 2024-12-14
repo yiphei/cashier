@@ -12,6 +12,7 @@ from cashier.graph.base.base_terminable_graph import (
 )
 from cashier.graph.conversation_node import ConversationNode, ConversationNodeSchema, Direction
 from cashier.graph.edge_schema import EdgeSchema
+from cashier.graph.mixin.has_status_mixin import Status
 
 
 class ANDGraphSchema(BaseTerminableGraphSchema):
@@ -31,6 +32,8 @@ class ANDGraphSchema(BaseTerminableGraphSchema):
             state_schema,
             run_assistant_turn_before_transition,
         )
+        for node_schema in node_schemas:
+            assert node_schema.completion_config is not None
         self.default_start_node_schema = default_start_node_schema
         self.default_edge_schemas = default_edge_schemas
 
@@ -66,6 +69,7 @@ class ANDGraph(BaseTerminableGraph):
         schema: BaseGraphSchema,
     ):
         super().__init__(input, request, schema)
+        self.visited_node_schemas = set()
 
     def compute_init_node_edge_schema(
         self,
@@ -102,6 +106,11 @@ class ANDGraph(BaseTerminableGraph):
             self.schema.default_from_node_schema_id_to_edge_schema.get(self.curr_node.schema.id, [])
         )
     
+    def check_self_completion(self, fn_call, is_fn_call_success):
+        self_completion = len(self.visited_node_schemas) == self.schema.node_schemas and self.curr_node.status == Status.TRANSITIONING
+        if self_completion:
+            self.mark_as_internally_completed()
+        return self_completion
 
     def init_conversation_core(
         self,
@@ -124,4 +133,6 @@ class ANDGraph(BaseTerminableGraph):
             TC,
             is_skip,
         )
-        self.add_edge_schema(edge_schema)
+        self.visited_node_schemas.add(node_schema)
+        if edge_schema:
+            self.add_edge_schema(edge_schema)
