@@ -13,6 +13,7 @@ from cashier.model.model_util import ModelProvider
 from cashier.prompts.node_system import NodeSystemPrompt
 from data.prompt.cashier_background import CashierBackgroundPrompt
 from data.tool_registry.cashier_tool_registry import CASHIER_TOOL_REGISTRY, Order
+from cashier.graph.and_graph_schema import ANDGraphSchema
 
 
 class CashierNodeSystemPrompt(NodeSystemPrompt):
@@ -64,7 +65,7 @@ take_order_node_schema = ConversationNodeSchema(
     ),
     completion_config=StateTransitionConfig(
         need_user_msg=False,
-        state_check_fn_map={"has_finished_ordering": lambda val: bool(val)},
+        state_check_fn_map={"has_finished_ordering": lambda val: bool(val), "order": lambda val: val is not None},
     ),
 )
 
@@ -87,7 +88,15 @@ confirm_order_node_schema = ConversationNodeSchema(
     tool_names=None,
     tool_registry_or_tool_defs=None,
     state_schema=ConfirmOrderState,
+        completion_config=StateTransitionConfig(
+        need_user_msg=False,
+        state_check_fn_map={"has_confirmed_order": lambda val: bool(val)},
+    ),
 )
+
+class AndGraphState(BaseStateModel):
+    order: Optional[Order] = None
+
 take_to_confirm_edge_schema = EdgeSchema(
     from_node_schema=take_order_node_schema,
     to_node_schema=confirm_order_node_schema,
@@ -99,6 +108,14 @@ take_to_confirm_edge_schema = EdgeSchema(
     ),
 )
 
+and_graph = ANDGraphSchema(
+    description='take order and confirm it with the customer',
+    node_schemas=[take_order_node_schema, confirm_order_node_schema],
+    state_schema = AndGraphState,
+    default_edge_schemas=[take_to_confirm_edge_schema],
+    default_start_node_schema=take_order_node_schema,
+    run_assistant_turn_before_transition=False,
+)
 
 class TerminalOrderState(BaseStateModel):
     resettable_fields = ["has_said_goodbye"]
@@ -116,12 +133,10 @@ terminal_order_node_schema = ConversationNodeSchema(
     tool_registry_or_tool_defs=None,
     state_schema=TerminalOrderState,
 )
-confirm_to_terminal_edge_schema = EdgeSchema(
-    from_node_schema=confirm_order_node_schema,
+
+and_edge_schema = EdgeSchema(
+    from_node_schema=and_graph,
     to_node_schema=terminal_order_node_schema,
-    transition_config=StateTransitionConfig(
-        need_user_msg=True, state_check_fn_map={"has_confirmed_order": lambda val: val}
-    ),
 )
 
 
@@ -132,12 +147,11 @@ class GraphState(BaseStateModel):
 cashier_graph_schema = GraphSchema(
     description="Help the customer place a coffee order",
     output_schema=Order,
-    start_node_schema=take_order_node_schema,
+    start_node_schema=and_graph,
     last_node_schema=terminal_order_node_schema,
-    edge_schemas=[take_to_confirm_edge_schema, confirm_to_terminal_edge_schema],
+    edge_schemas=[and_edge_schema],
     node_schemas=[
-        take_order_node_schema,
-        confirm_order_node_schema,
+        and_graph,
         terminal_order_node_schema,
     ],
     state_schema=GraphState,
