@@ -13,6 +13,7 @@ from cashier.graph.base.base_terminable_graph import (
 from cashier.graph.conversation_node import ConversationNode, ConversationNodeSchema, Direction
 from cashier.graph.edge_schema import EdgeSchema
 from cashier.graph.mixin.has_status_mixin import Status
+from cashier.tool.tool_registry import ToolRegistry
 
 
 class ANDGraphSchema(BaseTerminableGraphSchema):
@@ -36,6 +37,11 @@ class ANDGraphSchema(BaseTerminableGraphSchema):
             assert node_schema.completion_config is not None
         self.default_start_node_schema = default_start_node_schema
         self.default_edge_schemas = default_edge_schemas
+        all_tool_defs = []
+        for node_schema in node_schemas:
+            all_tool_defs.extend(list(node_schema.tool_registry.openai_tool_name_to_tool_def.values()))
+        self.tool_registry = ToolRegistry(all_tool_defs)
+        self.node_prompt = description
 
         self.default_edge_schema_id_to_edge_schema = {
             edge_schema.id: edge_schema for edge_schema in self.default_edge_schemas
