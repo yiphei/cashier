@@ -153,7 +153,7 @@ class BaseTerminableGraph(BaseGraph):
 
     def handle_user_turn(self, msg, TC, model_provider, run_off_topic_check=True):
         if not run_off_topic_check or not OffTopicPrompt.run(
-            current_node_schema=self.curr_node.schema,
+            current_node_schema=self.curr_conversation_node.schema,
             tc=TC,
         ):
             edge_schema, node_schema, is_wait = self.handle_is_off_topic(TC)
@@ -165,7 +165,7 @@ class BaseTerminableGraph(BaseGraph):
                     TC.add_assistant_turn(
                         None,
                         model_provider,
-                        self.curr_node.schema.tool_registry,
+                        self.curr_conversation_node.schema.tool_registry,
                         [fake_fn_call],
                         {fake_fn_call.id: None},
                     )
@@ -185,11 +185,11 @@ class BaseTerminableGraph(BaseGraph):
                     TC.add_assistant_turn(
                         None,
                         model_provider,
-                        self.curr_node.schema.tool_registry,
+                        self.curr_conversation_node.schema.tool_registry,
                         [fake_fn_call],
-                        {fake_fn_call.id: self.curr_node.get_state()},
+                        {fake_fn_call.id: self.curr_conversation_node.get_state()},
                     )
-        self.curr_node.update_first_user_message()
+        self.curr_conversation_node.update_first_user_message()
 
     def compute_next_edge_schemas_for_init_conversation_core(self):
         return set(
