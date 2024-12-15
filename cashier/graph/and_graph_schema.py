@@ -26,8 +26,8 @@ class ANDGraphSchema(BaseTerminableGraphSchema):
         description: str,
         node_schemas: List[ConversationNodeSchema],
         state_schema: Type[BaseModel],
-        default_edge_schemas: List[EdgeSchema],
         default_start_node_schema: ConversationNodeSchema,
+        default_edge_schemas: Optional[List[EdgeSchema]] = None,
         run_assistant_turn_before_transition: bool = False,
     ):
         BaseTerminableGraphSchema.__init__(
@@ -41,6 +41,18 @@ class ANDGraphSchema(BaseTerminableGraphSchema):
             assert node_schema.completion_config is not None
         self.default_start_node_schema = default_start_node_schema
         self.default_edge_schemas = default_edge_schemas
+        if not default_edge_schemas:
+            self.default_edge_schemas = []
+            for i in range(1, len(node_schemas)):
+                from_node_schema = node_schemas[i - 1]
+                to_node_schema = node_schemas[i]
+                edge_schema = EdgeSchema(
+                    from_node_schema=from_node_schema,
+                    to_node_schema=to_node_schema,
+                )
+                self.default_edge_schemas.append(edge_schema)
+
+        all_tool_defs = []
         all_tool_defs = []
         for node_schema in node_schemas:
             all_tool_defs.extend(
