@@ -77,6 +77,7 @@ class Graph(BaseTerminableGraph):
     def compute_init_node_edge_schema(
         self,
     ):
+        from cashier.graph.and_graph_schema import ANDGraphSchema
         node_schema = self.schema.start_node_schema
         edge_schema = None
         next_edge_schemas = self.from_node_schema_id_to_edge_schema[node_schema.id]
@@ -89,7 +90,7 @@ class Graph(BaseTerminableGraph):
                     None,
                     None,
                     check_resettable_fields=False,
-                ):
+                ) and not isinstance(next_edge_schema.from_node_schema, ANDGraphSchema): #TODO: fix this
                     passed_check = True
                     node_schema = next_edge_schema.to_node_schema
                     edge_schema = next_edge_schema

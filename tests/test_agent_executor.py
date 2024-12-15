@@ -439,6 +439,7 @@ class TestAgent:
         ut = self.add_request_user_turn(
             agent_executor, "i want to order coffee", model_provider
         )
+        second_node_schema = self.start_node_schema.default_start_node_schema
         return [
             TurnArgs(
                 turn=NodeSystemTurn(
@@ -456,18 +457,18 @@ class TestAgent:
             ut,
             TurnArgs(
                 turn=NodeSystemTurn(
-                    msg_content=self.start_node_schema.node_system_prompt(
-                        node_prompt=cashier_graph_schema.start_node_schema.node_prompt,
+                    msg_content=second_node_schema.node_system_prompt(
+                        node_prompt=second_node_schema.node_prompt,
                         input=None,
                         node_input_json_schema=None,
-                        state_json_schema=self.start_node_schema.state_schema.model_json_schema(),
+                        state_json_schema=second_node_schema.state_schema.model_json_schema(),
                         last_msg="i want to order coffee",
                         curr_request="customer wants to order coffee",
                     ),
                     node_id=2,
                 ),
             ),
-            cashier_graph_schema.start_node_schema.first_turn,
+            second_node_schema.first_turn,
         ]
 
     @classmethod
@@ -671,7 +672,7 @@ class TestAgent:
         self.run_assertions(
             agent_executor,
             TC,
-            self.start_node_schema.tool_registry,
+            self.start_node_schema.default_start_node_schema.tool_registry,
             model_provider,
         )
 
@@ -684,7 +685,7 @@ class TestAgent:
             [*start_turns, user_turn], remove_prev_tool_calls
         )
         self.run_assertions(
-            agent_executor, TC, self.start_node_schema.tool_registry, model_provider
+            agent_executor, TC, self.start_node_schema.default_start_node_schema.tool_registry, model_provider
         )
 
     def test_add_user_turn_with_wait(

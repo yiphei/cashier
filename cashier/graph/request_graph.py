@@ -79,7 +79,7 @@ class RequestGraph(BaseGraph):
     def handle_user_turn(self, msg, TC, model_provider):
         if isinstance(self.curr_node, Graph):
             if not OffTopicPrompt.run(
-                current_node_schema=self.curr_node.curr_node.schema,
+                current_node_schema=self.curr_conversation_node.schema,
                 tc=TC,
             ):
                 has_new_task = self.add_tasks(msg, TC)
@@ -101,7 +101,7 @@ class RequestGraph(BaseGraph):
                         model_provider,
                         run_off_topic_check=False,
                     )
-            self.curr_node.curr_node.update_first_user_message()  # TODO: remove this after refactor
+            self.curr_conversation_node.update_first_user_message()  # TODO: remove this after refactor
         else:
             self.get_graph_schemas(msg)
             if len(self.graph_schema_sequence) > 0:

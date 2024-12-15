@@ -152,11 +152,12 @@ class BaseTerminableGraph(BaseGraph):
         return edge_schema, node_schema, False  # type: ignore
 
     def handle_user_turn(self, msg, TC, model_provider, run_off_topic_check=True):
+        run_container = self.curr_node if isinstance(self.curr_node, BaseGraph) else self # TODO: make this recursive
         if not run_off_topic_check or not OffTopicPrompt.run(
             current_node_schema=self.curr_conversation_node.schema,
             tc=TC,
         ):
-            edge_schema, node_schema, is_wait = self.handle_is_off_topic(TC)
+            edge_schema, node_schema, is_wait = run_container.handle_is_off_topic(TC)
             if edge_schema and node_schema:
                 if is_wait:
                     fake_fn_call = create_think_fn_call(

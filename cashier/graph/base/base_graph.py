@@ -374,9 +374,7 @@ class BaseGraph(BaseExecutable, HasStatusMixin, HasIdMixin):
         TC,
         is_skip: bool = False,
     ) -> None:
-        from cashier.graph.graph_schema import GraphSchema
-
-        if isinstance(node_schema, GraphSchema):
+        if isinstance(node_schema, BaseGraphSchema):
             fn = self.init_graph_core
         else:
             fn = self.init_conversation_core

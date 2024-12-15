@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from typing import Any, List, Optional, Type
+from typing import Any, List, Optional, Set, Tuple, Type, Union
 
 from pydantic import BaseModel
 
@@ -9,6 +9,7 @@ from cashier.graph.base.base_graph import BaseGraphSchema
 from cashier.graph.base.base_terminable_graph import (
     BaseTerminableGraph,
     BaseTerminableGraphSchema,
+    should_change_node_schema,
 )
 from cashier.graph.conversation_node import (
     ConversationNode,
@@ -100,30 +101,45 @@ class ANDGraph(BaseTerminableGraph):
     ):
         node_schema = self.schema.default_start_node_schema
         edge_schema = None
-        next_edge_schemas = self.schema.default_from_node_schema_id_to_edge_schema[
-            node_schema.id
-        ]
-        passed_check = True
-        while passed_check:
-            passed_check = False
-            for next_edge_schema in next_edge_schemas:
-                if next_edge_schema.check_transition_config(
-                    self.state,
-                    None,
-                    None,
-                    check_resettable_fields=False,
-                ):
-                    passed_check = True
-                    node_schema = next_edge_schema.to_node_schema
-                    edge_schema = next_edge_schema
-                    next_edge_schemas = (
-                        self.schema.default_from_node_schema_id_to_edge_schema[
-                            node_schema.id
-                        ]
-                    )
-                    break
+        # next_edge_schemas = self.schema.default_from_node_schema_id_to_edge_schema[
+        #     node_schema.id
+        # ]
+        # passed_check = True
+        # while passed_check:
+        #     passed_check = False
+        #     for next_edge_schema in next_edge_schemas:
+        #         if next_edge_schema.check_transition_config(
+        #             self.state,
+        #             None,
+        #             None,
+        #             check_resettable_fields=False,
+        #         ):
+        #             passed_check = True
+        #             node_schema = next_edge_schema.to_node_schema
+        #             edge_schema = next_edge_schema
+        #             next_edge_schemas = (
+        #                 self.schema.default_from_node_schema_id_to_edge_schema[
+        #                     node_schema.id
+        #                 ]
+        #             )
+        #             break
 
         return node_schema, edge_schema
+    
+    def handle_wait(
+        self,
+        fwd_skip_edge_schemas: Set[EdgeSchema],
+        TC,
+    ) -> Union[Tuple[EdgeSchema, ConversationNodeSchema], Tuple[None, None]]:
+        remaining_node_schemas = set(self.schema.node_schemas) - self.visited_node_schemas
+        node_schema_id = should_change_node_schema(
+            TC, self.curr_node.schema, remaining_node_schemas, True
+        )
+        node_schema = None
+        if node_schema_id is not None:
+            node_schema = self.schema.node_schema_id_to_node_schema[node_schema_id]
+
+        return None, node_schema
 
     def compute_next_edge_schemas_for_init_conversation_core(self):
         return set(
