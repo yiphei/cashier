@@ -101,23 +101,10 @@ confirm_order_node_schema = ConversationNodeSchema(
 class AndGraphState(BaseStateModel):
     order: Optional[Order] = None
 
-
-take_to_confirm_edge_schema = EdgeSchema(
-    from_node_schema=take_order_node_schema,
-    to_node_schema=confirm_order_node_schema,
-    transition_config=StateTransitionConfig(
-        need_user_msg=True,
-        state_check_fn_map={
-            "order": lambda val: val is not None,
-        },
-    ),
-)
-
 and_graph = ANDGraphSchema(
     description="take order and confirm it with the customer",
     node_schemas=[take_order_node_schema, confirm_order_node_schema],
     state_schema=AndGraphState,
-    default_edge_schemas=[take_to_confirm_edge_schema],
     default_start_node_schema=take_order_node_schema,
     run_assistant_turn_before_transition=False,
 )
