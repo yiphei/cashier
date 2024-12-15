@@ -748,7 +748,10 @@ class TestAgent:
         )
 
         self.run_assertions(
-            agent_executor, TC, self.start_node_schema.default_start_node_schema.tool_registry, model_provider
+            agent_executor,
+            TC,
+            self.start_node_schema.default_start_node_schema.tool_registry,
+            model_provider,
         )
 
     def test_add_assistant_turn_with_tool_calls(
@@ -770,7 +773,10 @@ class TestAgent:
         )
 
         self.run_assertions(
-            agent_executor, TC, self.start_node_schema.default_start_node_schema.tool_registry, model_provider
+            agent_executor,
+            TC,
+            self.start_node_schema.default_start_node_schema.tool_registry,
+            model_provider,
         )
 
     @pytest.mark.parametrize(
@@ -829,7 +835,10 @@ class TestAgent:
         )
 
         self.run_assertions(
-            agent_executor, TC, self.start_node_schema.default_start_node_schema.tool_registry, model_provider
+            agent_executor,
+            TC,
+            self.start_node_schema.default_start_node_schema.tool_registry,
+            model_provider,
         )
 
     def test_node_transition(
@@ -884,7 +893,9 @@ class TestAgent:
 
         next_node_schema = cashier_graph_schema.start_node_schema.default_from_node_schema_id_to_edge_schema[
             self.start_node_schema.default_start_node_schema.id
-        ][0].to_node_schema
+        ][
+            0
+        ].to_node_schema
 
         input_schema, input = (
             agent_executor.graph.curr_graph.state.get_set_schema_and_fields()
@@ -976,7 +987,9 @@ class TestAgent:
 
         next_node_schema = cashier_graph_schema.start_node_schema.default_from_node_schema_id_to_edge_schema[
             self.start_node_schema.default_start_node_schema.id
-        ][0].to_node_schema
+        ][
+            0
+        ].to_node_schema
         input_schema, input = (
             agent_executor.graph.curr_graph.state.get_set_schema_and_fields()
         )
@@ -1070,7 +1083,10 @@ class TestAgent:
         )
 
         self.run_assertions(
-            agent_executor, TC, self.start_node_schema.default_start_node_schema.tool_registry, model_provider
+            agent_executor,
+            TC,
+            self.start_node_schema.default_start_node_schema.tool_registry,
+            model_provider,
         )
 
     def test_forward_node_skip(
