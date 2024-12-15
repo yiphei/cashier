@@ -723,7 +723,10 @@ class TestAgent:
         )
 
         self.run_assertions(
-            agent_executor, TC, self.start_node_schema.default_start_node_schema.tool_registry, model_provider
+            agent_executor,
+            TC,
+            self.start_node_schema.default_start_node_schema.tool_registry,
+            model_provider,
         )
 
     def test_add_assistant_turn(

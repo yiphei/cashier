@@ -96,7 +96,7 @@ class BaseGraph(BaseExecutable, HasStatusMixin, HasIdMixin):
             if isinstance(self.curr_node, BaseGraph)
             else self.curr_node
         )
-    
+
     @property
     def curr_graph(self):
         return self.curr_conversation_node.parent
