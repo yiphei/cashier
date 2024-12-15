@@ -882,12 +882,12 @@ class TestAgent:
             second_fn_call_id_to_fn_output,
         )
 
-        next_node_schema = cashier_graph_schema.from_node_schema_id_to_edge_schema[
-            self.start_node_schema.id
+        next_node_schema = cashier_graph_schema.start_node_schema.default_from_node_schema_id_to_edge_schema[
+            self.start_node_schema.default_start_node_schema.id
         ][0].to_node_schema
 
         input_schema, input = (
-            agent_executor.graph.curr_node.state.get_set_schema_and_fields()
+            agent_executor.graph.curr_graph.state.get_set_schema_and_fields()
         )
         node_turn = TurnArgs(
             turn=NodeSystemTurn(
@@ -974,11 +974,11 @@ class TestAgent:
             second_fn_call_id_to_fn_output,
         )
 
-        next_node_schema = cashier_graph_schema.from_node_schema_id_to_edge_schema[
-            self.start_node_schema.id
+        next_node_schema = cashier_graph_schema.start_node_schema.default_from_node_schema_id_to_edge_schema[
+            self.start_node_schema.default_start_node_schema.id
         ][0].to_node_schema
         input_schema, input = (
-            agent_executor.graph.curr_node.state.get_set_schema_and_fields()
+            agent_executor.graph.curr_graph.state.get_set_schema_and_fields()
         )
         node_turn_1 = TurnArgs(
             turn=NodeSystemTurn(
@@ -1012,16 +1012,17 @@ class TestAgent:
             "i want to change order",
             model_provider,
             False,
-            bwd_skip_node_schema_id=self.start_node_schema.id,
+            include_fwd_skip_node_schema_id=False,
+            bwd_skip_node_schema_id=self.start_node_schema.default_start_node_schema.id,
         )
 
         node_turn_2 = TurnArgs(
             turn=NodeSystemTurn(
-                msg_content=self.start_node_schema.node_system_prompt(
-                    node_prompt=cashier_graph_schema.start_node_schema.node_prompt,
+                msg_content=self.start_node_schema.default_start_node_schema.node_system_prompt(
+                    node_prompt=cashier_graph_schema.start_node_schema.default_start_node_schema.node_prompt,
                     input=None,
-                    node_input_json_schema=self.start_node_schema.input_from_state_schema,  # just to test that its None
-                    state_json_schema=self.start_node_schema.state_schema.model_json_schema(),
+                    node_input_json_schema=self.start_node_schema.default_start_node_schema.input_from_state_schema,  # just to test that its None
+                    state_json_schema=self.start_node_schema.default_start_node_schema.state_schema.model_json_schema(),
                     last_msg="can you confirm the order?",
                     curr_request="customer wants to order coffee",
                 ),
@@ -1044,7 +1045,7 @@ class TestAgent:
         t7 = AssistantTurn(
             msg_content=None,
             model_provider=model_provider,
-            tool_registry=self.start_node_schema.tool_registry,
+            tool_registry=self.start_node_schema.default_start_node_schema.tool_registry,
             fn_calls=[get_state_fn_call],
             fn_call_id_to_fn_output={
                 get_state_fn_call.id: agent_executor.graph.curr_conversation_node.state
@@ -1069,7 +1070,7 @@ class TestAgent:
         )
 
         self.run_assertions(
-            agent_executor, TC, self.start_node_schema.tool_registry, model_provider
+            agent_executor, TC, self.start_node_schema.default_start_node_schema.tool_registry, model_provider
         )
 
     def test_forward_node_skip(
