@@ -10,7 +10,11 @@ from cashier.graph.base.base_terminable_graph import (
     BaseTerminableGraph,
     BaseTerminableGraphSchema,
 )
-from cashier.graph.conversation_node import ConversationNode, ConversationNodeSchema, Direction
+from cashier.graph.conversation_node import (
+    ConversationNode,
+    ConversationNodeSchema,
+    Direction,
+)
 from cashier.graph.edge_schema import EdgeSchema
 from cashier.graph.mixin.has_status_mixin import Status
 from cashier.tool.tool_registry import ToolRegistry
@@ -39,7 +43,9 @@ class ANDGraphSchema(BaseTerminableGraphSchema):
         self.default_edge_schemas = default_edge_schemas
         all_tool_defs = []
         for node_schema in node_schemas:
-            all_tool_defs.extend(list(node_schema.tool_registry.openai_tool_name_to_tool_def.values()))
+            all_tool_defs.extend(
+                list(node_schema.tool_registry.openai_tool_name_to_tool_def.values())
+            )
         self.tool_registry = ToolRegistry(all_tool_defs)
         self.node_prompt = description
 
@@ -109,11 +115,16 @@ class ANDGraph(BaseTerminableGraph):
 
     def compute_next_edge_schemas_for_init_conversation_core(self):
         return set(
-            self.schema.default_from_node_schema_id_to_edge_schema.get(self.curr_node.schema.id, [])
+            self.schema.default_from_node_schema_id_to_edge_schema.get(
+                self.curr_node.schema.id, []
+            )
         )
-    
+
     def check_self_completion(self, fn_call, is_fn_call_success):
-        self_completion = len(self.visited_node_schemas) == self.schema.node_schemas and self.curr_node.status == Status.TRANSITIONING
+        self_completion = (
+            len(self.visited_node_schemas) == self.schema.node_schemas
+            and self.curr_node.status == Status.TRANSITIONING
+        )
         if self_completion:
             self.mark_as_internally_completed()
         return self_completion

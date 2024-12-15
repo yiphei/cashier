@@ -76,7 +76,9 @@ class BaseGraph(BaseExecutable, HasStatusMixin, HasIdMixin):
     def add_edge_schema(self, edge_schema):
         self.edge_schemas.append(edge_schema)
         self.edge_schema_id_to_edge_schema[edge_schema.id] = edge_schema
-        self.from_node_schema_id_to_edge_schema[edge_schema.from_node_schema.id].append(edge_schema)
+        self.from_node_schema_id_to_edge_schema[edge_schema.from_node_schema.id].append(
+            edge_schema
+        )
 
     @property
     def transition_queue(self):

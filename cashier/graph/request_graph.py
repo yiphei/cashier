@@ -134,7 +134,7 @@ class RequestGraph(BaseGraph):
 
     def get_next_edge_schema(self):
         return self.from_node_schema_id_to_edge_schema[self.curr_node.schema.id]
-    
+
     def get_request_for_init_graph_core(self):
         self.current_graph_schema_idx += 1
         return self.requests[self.current_graph_schema_idx]

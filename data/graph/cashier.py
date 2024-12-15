@@ -2,6 +2,7 @@ from typing import Optional
 
 from pydantic import Field
 
+from cashier.graph.and_graph_schema import ANDGraphSchema
 from cashier.graph.base.base_edge_schema import StateTransitionConfig
 from cashier.graph.base.base_state import BaseStateModel
 from cashier.graph.conversation_node import ConversationNodeSchema
@@ -13,7 +14,6 @@ from cashier.model.model_util import ModelProvider
 from cashier.prompts.node_system import NodeSystemPrompt
 from data.prompt.cashier_background import CashierBackgroundPrompt
 from data.tool_registry.cashier_tool_registry import CASHIER_TOOL_REGISTRY, Order
-from cashier.graph.and_graph_schema import ANDGraphSchema
 
 
 class CashierNodeSystemPrompt(NodeSystemPrompt):
@@ -65,7 +65,10 @@ take_order_node_schema = ConversationNodeSchema(
     ),
     completion_config=StateTransitionConfig(
         need_user_msg=False,
-        state_check_fn_map={"has_finished_ordering": lambda val: bool(val), "order": lambda val: val is not None},
+        state_check_fn_map={
+            "has_finished_ordering": lambda val: bool(val),
+            "order": lambda val: val is not None,
+        },
     ),
 )
 
@@ -88,14 +91,16 @@ confirm_order_node_schema = ConversationNodeSchema(
     tool_names=None,
     tool_registry_or_tool_defs=None,
     state_schema=ConfirmOrderState,
-        completion_config=StateTransitionConfig(
+    completion_config=StateTransitionConfig(
         need_user_msg=False,
         state_check_fn_map={"has_confirmed_order": lambda val: bool(val)},
     ),
 )
 
+
 class AndGraphState(BaseStateModel):
     order: Optional[Order] = None
+
 
 take_to_confirm_edge_schema = EdgeSchema(
     from_node_schema=take_order_node_schema,
@@ -109,13 +114,14 @@ take_to_confirm_edge_schema = EdgeSchema(
 )
 
 and_graph = ANDGraphSchema(
-    description='take order and confirm it with the customer',
+    description="take order and confirm it with the customer",
     node_schemas=[take_order_node_schema, confirm_order_node_schema],
-    state_schema = AndGraphState,
+    state_schema=AndGraphState,
     default_edge_schemas=[take_to_confirm_edge_schema],
     default_start_node_schema=take_order_node_schema,
     run_assistant_turn_before_transition=False,
 )
+
 
 class TerminalOrderState(BaseStateModel):
     resettable_fields = ["has_said_goodbye"]

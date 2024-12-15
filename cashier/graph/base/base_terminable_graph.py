@@ -217,7 +217,9 @@ class BaseTerminableGraph(BaseGraph):
             TC,
             is_skip,
         )
-        self.next_edge_schemas = self.compute_next_edge_schemas_for_init_conversation_core()
+        self.next_edge_schemas = (
+            self.compute_next_edge_schemas_for_init_conversation_core()
+        )
         self.compute_bwd_skip_edge_schemas()
 
     def get_next_edge_schema(self):
