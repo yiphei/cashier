@@ -712,7 +712,7 @@ class TestAgent:
         assistant_turn = AssistantTurn(
             msg_content=None,
             model_provider=model_provider,
-            tool_registry=self.start_node_schema.tool_registry,
+            tool_registry=self.start_node_schema.default_start_node_schema.tool_registry,
             fn_calls=[fake_fn_call],
             fn_call_id_to_fn_output={fake_fn_call.id: None},
         )
@@ -723,7 +723,7 @@ class TestAgent:
         )
 
         self.run_assertions(
-            agent_executor, TC, self.start_node_schema.tool_registry, model_provider
+            agent_executor, TC, self.start_node_schema.default_start_node_schema.tool_registry, model_provider
         )
 
     def test_add_assistant_turn(

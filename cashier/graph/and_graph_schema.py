@@ -132,8 +132,9 @@ class ANDGraph(BaseTerminableGraph):
         TC,
     ) -> Union[Tuple[EdgeSchema, ConversationNodeSchema], Tuple[None, None]]:
         remaining_node_schemas = (
-            set(self.schema.node_schemas) - self.visited_node_schemas
+            (set(self.schema.node_schemas) - self.visited_node_schemas)
         )
+        remaining_node_schemas.add(self.curr_node.schema)
         node_schema_id = should_change_node_schema(
             TC, self.curr_node.schema, remaining_node_schemas, True
         )

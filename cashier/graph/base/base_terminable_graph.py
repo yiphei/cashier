@@ -145,7 +145,7 @@ class BaseTerminableGraph(BaseGraph):
         fwd_skip_edge_schemas = self.compute_fwd_skip_edge_schemas()
 
         edge_schema, node_schema = self.handle_wait(fwd_skip_edge_schemas, TC)
-        if edge_schema:
+        if node_schema:
             return edge_schema, node_schema, True  # type: ignore
 
         edge_schema, node_schema = self.handle_skip(fwd_skip_edge_schemas, TC)
@@ -157,7 +157,7 @@ class BaseTerminableGraph(BaseGraph):
             tc=TC,
         ):
             edge_schema, node_schema, is_wait = self.curr_graph.handle_is_off_topic(TC)
-            if edge_schema and node_schema:
+            if node_schema:
                 if is_wait:
                     fake_fn_call = create_think_fn_call(
                         "At least part of the customer request/question is off-topic for the current conversation and will actually be addressed later. According to the policies, I must tell the customer that 1) their off-topic request/question will be addressed later and 2) we must finish the current business before we can get to it. I must refuse to engage with the off-topic request/question in any way."
