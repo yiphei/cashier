@@ -101,6 +101,7 @@ confirm_order_node_schema = ConversationNodeSchema(
 class AndGraphState(BaseStateModel):
     order: Optional[Order] = None
 
+
 and_graph = ANDGraphSchema(
     description="take order and confirm it with the customer",
     node_schemas=[take_order_node_schema, confirm_order_node_schema],

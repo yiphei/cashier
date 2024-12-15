@@ -685,7 +685,10 @@ class TestAgent:
             [*start_turns, user_turn], remove_prev_tool_calls
         )
         self.run_assertions(
-            agent_executor, TC, self.start_node_schema.default_start_node_schema.tool_registry, model_provider
+            agent_executor,
+            TC,
+            self.start_node_schema.default_start_node_schema.tool_registry,
+            model_provider,
         )
 
     def test_add_user_turn_with_wait(
