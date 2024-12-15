@@ -42,7 +42,7 @@ class BaseTerminableGraphSchema(HasIdMixin, BaseGraphSchema):
         state_schema: Type[BaseModel],
         run_assistant_turn_before_transition: bool = False,
     ):
-        HasIdMixin.__init__(self)
+        HasIdMixin.__init__(self, target_cls=BaseTerminableGraphSchema)
         BaseGraphSchema.__init__(self, description, node_schemas)
         self.state_schema = state_schema
         self.run_assistant_turn_before_transition = run_assistant_turn_before_transition

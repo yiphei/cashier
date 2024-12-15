@@ -303,7 +303,7 @@ class TestAgent:
         model_provider,
     ):
         agent_selection = AgentSelection(
-            agent_id=1, task="customer wants to order coffee"
+            agent_id=2, task="customer wants to order coffee"
         )
         graph_schema_selection_completion = self.create_mock_model_completion(
             model_provider, None, False, [agent_selection], 0.5
