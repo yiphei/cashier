@@ -135,4 +135,4 @@ class NodeSchemaSelectionPrompt(BasePrompt):
             logger.debug(
                 f"{'SKIP_AGENT_ID' if not is_wait else 'WAIT_AGENT_ID'}: {actual_agent_id or 'current_id'}"
             )
-        return agent_id
+        return actual_agent_id
