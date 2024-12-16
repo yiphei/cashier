@@ -511,7 +511,6 @@ class BaseGraph(BaseExecutable, HasStatusMixin, HasIdMixin):
         prev_node = self.get_prev_node(edge_schema, direction)
         # TODO: remove this
         if isinstance(self, ANDGraph) and not edge_schema:
-            print("AAAAAAA")
             if (
                 self.node_schema_id_to_nodes[self.schema.default_start_node_schema.id]
             ):
