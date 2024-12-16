@@ -8,8 +8,7 @@ from cashier.graph.base.base_executable import BaseExecutableSchema
 from cashier.graph.base.base_graph import BaseGraph, BaseGraphSchema
 from cashier.graph.conversation_node import (
     ConversationNode,
-    ConversationNodeSchema,
-    Direction,
+    ConversationNodeSchema
 )
 from cashier.graph.edge_schema import EdgeSchema
 from cashier.graph.mixin.has_id_mixin import HasIdMixin

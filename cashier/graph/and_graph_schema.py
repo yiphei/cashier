@@ -15,7 +15,6 @@ from cashier.graph.base.base_terminable_graph import (
 from cashier.graph.conversation_node import (
     ConversationNode,
     ConversationNodeSchema,
-    Direction,
 )
 from cashier.graph.edge_schema import EdgeSchema
 from cashier.graph.mixin.has_status_mixin import Status
