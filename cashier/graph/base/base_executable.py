@@ -15,7 +15,7 @@ class BaseExecutableSchema:
         self.run_assistant_turn_before_transition = run_assistant_turn_before_transition
 
 
-class BaseExecutable(ABC):
+class BaseGraphExecutable(ABC):
     def check_self_transition(
         self,
         fn_call,

@@ -4,7 +4,7 @@ from typing import Any, Callable, List, Literal, Optional, Set, Tuple, overload
 
 from colorama import Style
 
-from cashier.graph.base.base_executable import BaseExecutable
+from cashier.graph.base.base_executable import BaseGraphExecutable
 from cashier.graph.conversation_node import (
     ConversationNode,
     ConversationNodeSchema,
@@ -42,7 +42,7 @@ class BaseGraphSchema:
         }
 
 
-class BaseGraph(BaseExecutable, HasStatusMixin, HasIdMixin):
+class BaseGraph(BaseGraphExecutable, HasStatusMixin, HasIdMixin):
     def __init__(
         self, input: Any, schema: BaseGraphSchema, edge_schemas=None, request=None
     ):
