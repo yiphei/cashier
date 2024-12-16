@@ -310,6 +310,33 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
 
             self.edge_schema_id_to_from_node[edge_schema.id] = new_node
 
+    def init_node_essential(
+                    self,
+        node_schema: ConversationNodeSchema,
+        edge_schema: Optional[EdgeSchema],
+        input: Any,
+        last_msg: Optional[str],
+        prev_node: Optional[ConversationNode],
+        direction: Direction,
+        TC,
+        request,
+        is_skip: bool = False,
+        prev_fn_caller=None,
+    ):
+        logger.debug(
+            f"[NODE_SCHEMA] Initializing node with {Style.BRIGHT}node_schema_id: {node_schema.id}{Style.NORMAL}"
+        )
+        new_node = node_schema.create_node(
+            input, last_msg, edge_schema, prev_node, direction, request  # type: ignore
+        )
+        self.node_schema_id_to_nodes[node_schema.id].append(new_node)
+        new_node.parent = self
+
+        if edge_schema and self.curr_node is not None:
+            self.add_edge(self.curr_node, new_node, edge_schema, direction)
+
+        return new_node
+
     def init_conversation_core(
         self,
         node_schema: ConversationNodeSchema,
@@ -322,14 +349,19 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
         is_skip: bool = False,
         prev_fn_caller=None,
     ) -> None:
-        logger.debug(
-            f"[NODE_SCHEMA] Initializing node with {Style.BRIGHT}node_schema_id: {node_schema.id}{Style.NORMAL}"
+
+        new_node = self.init_node_essential(
+            node_schema,
+            edge_schema,
+            input,
+            last_msg,
+            prev_node,
+            direction,
+            TC,
+            self.request,
+            is_skip,
+            prev_fn_caller,
         )
-        new_node = node_schema.create_node(
-            input, last_msg, edge_schema, prev_node, direction, self.request  # type: ignore
-        )
-        self.node_schema_id_to_nodes[node_schema.id].append(new_node)
-        new_node.parent = self
 
         TC.add_node_turn(
             new_node,
@@ -341,10 +373,6 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
             assert isinstance(node_schema.first_turn, AssistantTurn)
             TC.add_assistant_direct_turn(node_schema.first_turn)
             MessageDisplay.print_msg("assistant", node_schema.first_turn.msg_content)
-
-        # TODO: this is bad. refactor this
-        if edge_schema and self.curr_node is not None:
-            self.add_edge(self.curr_node, new_node, edge_schema, direction)
 
         self.curr_node = new_node
 
@@ -363,17 +391,19 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
         is_skip: bool = False,
         prev_fn_caller=None,
     ) -> None:
-        graph = node_schema.create_node(
-            input=input,
-            request=self.get_request_for_init_graph_core(),
-            prev_node=prev_node,
+        
+        graph = self.init_node_essential(
+            node_schema,
+            edge_schema,
+            input,
+            last_msg,
+            prev_node,
+            direction,
+            TC,
+            self.get_request_for_init_graph_core(),
+            is_skip,
+            prev_fn_caller,
         )
-        self.node_schema_id_to_nodes[node_schema.id].append(graph)
-        graph.parent = self
-
-        # TODO: this is bad. refactor this
-        if edge_schema and self.curr_node is not None:
-            self.add_edge(self.curr_node, graph, edge_schema, direction)
 
         self.curr_node = graph
 
