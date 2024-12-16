@@ -320,41 +320,21 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
         is_skip: bool = False,
         prev_fn_caller=None,
     ) -> None:
+        if not isinstance(node_schema, BaseGraphSchema):
+            TC.add_node_turn(
+                new_node,
+                is_skip=is_skip,
+            )
+            MessageDisplay.print_msg("system", new_node.prompt)
 
-        TC.add_node_turn(
-            new_node,
-            is_skip=is_skip,
-        )
-        MessageDisplay.print_msg("system", new_node.prompt)
+            if node_schema.first_turn and prev_node is None:
+                assert isinstance(node_schema.first_turn, AssistantTurn)
+                TC.add_assistant_direct_turn(node_schema.first_turn)
+                MessageDisplay.print_msg("assistant", node_schema.first_turn.msg_content)
 
-        if node_schema.first_turn and prev_node is None:
-            assert isinstance(node_schema.first_turn, AssistantTurn)
-            TC.add_assistant_direct_turn(node_schema.first_turn)
-            MessageDisplay.print_msg("assistant", node_schema.first_turn.msg_content)
-
-        self.curr_node = new_node
 
     def get_request_for_init_graph_core(self):
         return self.request
-
-    def init_graph_core(
-        self,
-        new_node,
-        node_schema: ConversationNodeSchema,
-        edge_schema: Optional[EdgeSchema],
-        prev_node: Optional[ConversationNode],
-        TC,
-        is_skip: bool = False,
-        prev_fn_caller=None,
-    ) -> None:
-
-        self.curr_node = new_node
-
-        node_schema, edge_schema = new_node.compute_init_node_edge_schema()
-        if prev_fn_caller is not None:
-            self.curr_node.init_skip_node(node_schema, edge_schema, TC)
-        else:
-            self.curr_node.init_next_node(node_schema, edge_schema, TC, None)
 
     def init_node_core(
         self,
@@ -369,10 +349,8 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
         prev_fn_caller=None,
     ) -> None:
         if isinstance(node_schema, BaseGraphSchema):
-            fn = self.init_graph_core
             request = self.get_request_for_init_graph_core()
         else:
-            fn = self.init_conversation_core
             request = self.request
 
         logger.debug(
@@ -387,7 +365,9 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
         if edge_schema and self.curr_node is not None:
             self.add_edge(self.curr_node, new_node, edge_schema, direction)
 
-        fn(
+        self.curr_node = new_node
+
+        self.init_conversation_core(
             new_node,
             node_schema,
             edge_schema,
@@ -396,6 +376,13 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
             is_skip,
             prev_fn_caller,
         )
+
+        if isinstance(node_schema, BaseGraphSchema):
+            node_schema, edge_schema = new_node.compute_init_node_edge_schema()
+            if prev_fn_caller is not None:
+                self.curr_node.init_skip_node(node_schema, edge_schema, TC)
+            else:
+                self.curr_node.init_next_node(node_schema, edge_schema, TC, None)
 
     def _init_next_node(
         self,

@@ -220,30 +220,6 @@ class BaseTerminableGraph(BaseGraph):
         )
         self.compute_bwd_skip_edge_schemas()
 
-    def init_graph_core(
-        self,
-        new_node,
-        node_schema: ConversationNodeSchema,
-        edge_schema: Optional[EdgeSchema],
-        prev_node: Optional[ConversationNode],
-        TC,
-        is_skip: bool = False,
-        prev_fn_caller=None,
-    ) -> None:
-        super().init_graph_core(
-            new_node,
-            node_schema,
-            edge_schema,
-            prev_node,
-            TC,
-            is_skip,
-            prev_fn_caller,
-        )
-        self.next_edge_schemas = (
-            self.compute_next_edge_schemas_for_init_conversation_core()
-        )
-        self.compute_bwd_skip_edge_schemas()
-
     def get_next_edge_schema(self):
         return self.next_edge_schemas
 
