@@ -80,9 +80,6 @@ class BaseGraphExecutable(BaseExecutable):
                 self.curr_node.mark_as_transitioning()
                 return edge_schema, edge_schema.to_node_schema
 
-        if not self.get_next_edge_schema():
-            self.curr_node.mark_as_transitioning()
-            return None, None
         return None, None
 
     @abstractmethod

@@ -150,10 +150,13 @@ class ANDGraph(BaseTerminableGraph):
     def check_self_completion(self, fn_call, is_fn_call_success):
         self_completion = (
             len(self.visited_node_schemas) == len(self.schema.node_schemas)
-            and self.curr_node.status == Status.TRANSITIONING
+            and self.curr_node.status == Status.INTERNALLY_COMPLETED
         )
         if self_completion:
             # TODO: this is bad. refactor this. also, generalize this to all graphs
+            self.curr_node.mark_as_transitioning()
+            self.local_transition_queue.append(self.curr_node)
+
             self.update_state_from_executable(self.curr_node)
             self.mark_as_transitioning()
         return self_completion
