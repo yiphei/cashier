@@ -310,7 +310,7 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
 
             self.edge_schema_id_to_from_node[edge_schema.id] = new_node
 
-    def init_conversation_core(
+    def post_node_init(
         self,
         new_node,
         node_schema: ConversationNodeSchema,
@@ -368,7 +368,7 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
 
         self.curr_node = new_node
 
-        self.init_conversation_core(
+        self.post_node_init(
             new_node,
             node_schema,
             edge_schema,

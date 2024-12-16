@@ -154,7 +154,7 @@ class ANDGraph(BaseTerminableGraph):
             self.mark_as_transitioning()
         return self_completion
 
-    def init_conversation_core(
+    def post_node_init(
         self,
         new_node,
         node_schema: ConversationNodeSchema,
@@ -164,7 +164,7 @@ class ANDGraph(BaseTerminableGraph):
         is_skip: bool = False,
         prev_fn_caller=None,
     ) -> None:
-        super().init_conversation_core(
+        super().post_node_init(
             new_node,
             node_schema,
             edge_schema,

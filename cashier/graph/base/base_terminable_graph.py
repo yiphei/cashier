@@ -196,7 +196,7 @@ class BaseTerminableGraph(BaseGraph):
             self.from_node_schema_id_to_edge_schema.get(self.curr_node.schema.id, [])
         )
 
-    def init_conversation_core(
+    def post_node_init(
         self,
         new_node,
         node_schema: ConversationNodeSchema,
@@ -206,7 +206,7 @@ class BaseTerminableGraph(BaseGraph):
         is_skip: bool = False,
         prev_fn_caller=None,
     ) -> None:
-        super().init_conversation_core(
+        super().post_node_init(
             new_node,
             node_schema,
             edge_schema,
