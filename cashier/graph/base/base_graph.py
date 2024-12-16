@@ -330,8 +330,9 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
             if node_schema.first_turn and prev_node is None:
                 assert isinstance(node_schema.first_turn, AssistantTurn)
                 TC.add_assistant_direct_turn(node_schema.first_turn)
-                MessageDisplay.print_msg("assistant", node_schema.first_turn.msg_content)
-
+                MessageDisplay.print_msg(
+                    "assistant", node_schema.first_turn.msg_content
+                )
 
     def get_request_for_init_graph_core(self):
         return self.request
