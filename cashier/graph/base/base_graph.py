@@ -313,13 +313,12 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
     def post_node_init(
         self,
         new_node,
-        node_schema: ConversationNodeSchema,
         edge_schema: Optional[EdgeSchema],
         prev_node: Optional[ConversationNode],
         TC,
         is_skip: bool = False,
-        prev_fn_caller=None,
     ) -> None:
+        node_schema = new_node.schema
         if not isinstance(node_schema, BaseGraphSchema):
             TC.add_node_turn(
                 new_node,
@@ -370,12 +369,10 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
 
         self.post_node_init(
             new_node,
-            node_schema,
             edge_schema,
             prev_node,
             TC,
             is_skip,
-            prev_fn_caller,
         )
 
         if isinstance(node_schema, BaseGraphSchema):
