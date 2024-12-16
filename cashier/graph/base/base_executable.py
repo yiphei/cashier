@@ -91,12 +91,10 @@ class BaseGraphExecutable(BaseExecutable):
         raise NotImplementedError()
 
     def check_transition(self, fn_call, is_fn_call_success):
-        from cashier.graph.conversation_node import ConversationNode
-
         new_edge_schema, new_node_schema = None, None
 
         if getattr(self, "curr_node", None) is not None:
-            if isinstance(self.curr_node, ConversationNode):
+            if not isinstance(self.curr_node, BaseGraphExecutable):
                 if self.curr_node.check_self_completion(fn_call, is_fn_call_success):
                     new_edge_schema, new_node_schema = self.check_node_transition(
                         fn_call, is_fn_call_success
