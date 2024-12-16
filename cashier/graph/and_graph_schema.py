@@ -12,10 +12,7 @@ from cashier.graph.base.base_terminable_graph import (
     BaseTerminableGraphSchema,
     should_change_node_schema,
 )
-from cashier.graph.conversation_node import (
-    ConversationNode,
-    ConversationNodeSchema,
-)
+from cashier.graph.conversation_node import ConversationNode, ConversationNodeSchema
 from cashier.graph.edge_schema import EdgeSchema
 from cashier.graph.mixin.has_status_mixin import Status
 from cashier.tool.tool_registry import ToolRegistry
