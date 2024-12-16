@@ -59,7 +59,6 @@ class BaseGraphExecutable(BaseExecutable):
         new_node_schema=None,
     ):
         from cashier.graph.and_graph_schema import ANDGraph
-        from cashier.graph.conversation_node import ConversationNode
 
         if self.check_self_completion(fn_call, is_fn_call_success):
             if not isinstance(self, ANDGraph):
@@ -67,8 +66,8 @@ class BaseGraphExecutable(BaseExecutable):
                 self.local_transition_queue.append(self.curr_node)
             self.mark_as_transitioning()
             return None, None
-        elif self.curr_node.status == Status.TRANSITIONING and not isinstance(
-            self.curr_node, ConversationNode
+        elif self.curr_node.status == Status.TRANSITIONING and isinstance(
+            self.curr_node, BaseGraphExecutable
         ):
             return self.check_node_transition(fn_call, is_fn_call_success)
         return new_edge_schema, new_node_schema
