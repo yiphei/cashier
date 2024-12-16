@@ -122,11 +122,17 @@ class TestAgent:
             ].conversation_dicts,
         )
         import json
+
         print(json.dumps(self.node_conversation_list, indent=4))
         print("--------------------------------")
-        print(json.dumps(agent_executor.TC.model_provider_to_message_manager[
-                model_provider
-            ].node_conversation_dicts, indent=4))
+        print(
+            json.dumps(
+                agent_executor.TC.model_provider_to_message_manager[
+                    model_provider
+                ].node_conversation_dicts,
+                indent=4,
+            )
+        )
         assert not DeepDiff(
             self.node_conversation_list,
             agent_executor.TC.model_provider_to_message_manager[
@@ -1146,7 +1152,9 @@ class TestAgent:
         )
         next_node_schema = cashier_graph_schema.start_node_schema.default_from_node_schema_id_to_edge_schema[
             self.start_node_schema.default_start_node_schema.id
-        ][0].to_node_schema
+        ][
+            0
+        ].to_node_schema
         input_schema, input = (
             agent_executor.graph.curr_graph.state.get_set_schema_and_fields()
         )
@@ -1247,7 +1255,9 @@ class TestAgent:
             bwd_skip_node_schema_id=self.start_node_schema.default_start_node_schema.id,
             include_fwd_skip_node_schema_id=False,
         )
-        start_node_schema = cashier_graph_schema.start_node_schema.default_start_node_schema
+        start_node_schema = (
+            cashier_graph_schema.start_node_schema.default_start_node_schema
+        )
         node_turn_3 = TurnArgs(
             turn=NodeSystemTurn(
                 msg_content=start_node_schema.node_system_prompt(
