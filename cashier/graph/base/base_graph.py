@@ -335,7 +335,7 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
     def get_request_for_init_graph_core(self):
         return self.request
 
-    def init_node_core(
+    def init_node(
         self,
         node_schema: ConversationNodeSchema,
         edge_schema: Optional[EdgeSchema],
@@ -412,7 +412,7 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
             else:
                 prev_node = None
 
-        self.init_node_core(
+        self.init_node(
             node_schema,
             edge_schema,
             input,
@@ -484,7 +484,7 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
         input = prev_node.input
 
         last_msg = TC.get_asst_message(content_only=True)
-        self.init_node_core(
+        self.init_node(
             node_schema,
             edge_schema,
             input,
