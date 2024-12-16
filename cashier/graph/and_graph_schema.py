@@ -154,11 +154,8 @@ class ANDGraph(BaseTerminableGraph):
         )
         if self_completion:
             # TODO: this is bad. refactor this. also, generalize this to all graphs
-            self.curr_node.mark_as_transitioning()
-            self.local_transition_queue.append(self.curr_node)
-
             self.update_state_from_executable(self.curr_node)
-            self.mark_as_transitioning()
+            self.mark_as_internally_completed()
         return self_completion
 
     def post_node_init(

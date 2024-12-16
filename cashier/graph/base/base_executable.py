@@ -58,10 +58,8 @@ class BaseGraphExecutable(BaseExecutable):
         new_edge_schema=None,
         new_node_schema=None,
     ):
-        from cashier.graph.and_graph_schema import ANDGraph
-
         if self.check_self_completion(fn_call, is_fn_call_success):
-            if not isinstance(self, ANDGraph):
+            if self.curr_node.status == Status.INTERNALLY_COMPLETED:
                 self.curr_node.mark_as_transitioning()
                 self.local_transition_queue.append(self.curr_node)
             self.mark_as_transitioning()
