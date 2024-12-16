@@ -311,7 +311,7 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
             self.edge_schema_id_to_from_node[edge_schema.id] = new_node
 
     def init_node_essential(
-                    self,
+        self,
         node_schema: ConversationNodeSchema,
         edge_schema: Optional[EdgeSchema],
         input: Any,
@@ -391,7 +391,7 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
         is_skip: bool = False,
         prev_fn_caller=None,
     ) -> None:
-        
+
         graph = self.init_node_essential(
             node_schema,
             edge_schema,
