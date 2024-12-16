@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from abc import ABCMeta
 from enum import StrEnum
 from typing import Any, List, Literal, Optional, Type, Union, cast, overload
 
@@ -27,8 +28,10 @@ class Direction(StrEnum):
     FWD = "FWD"
     BWD = "BWD"
 
+class TupleMetaclass(AutoMixinInit, ABCMeta):
+    pass
 
-class ConversationNode(BaseExecutable, HasIdMixin, HasStatusMixin, metaclass=AutoMixinInit):
+class ConversationNode(BaseExecutable, HasIdMixin, HasStatusMixin, metaclass=TupleMetaclass):
     def __init__(
         self,
         schema: ConversationNodeSchema,
