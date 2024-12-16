@@ -11,6 +11,7 @@ from cashier.graph.base.base_edge_schema import (
     BwdStateInit,
     FwdStateInit,
 )
+from cashier.graph.base.base_executable import BaseExecutableSchema
 from cashier.graph.base.base_state import BaseStateModel
 from cashier.graph.edge_schema import EdgeSchema
 from cashier.graph.mixin.auto_mixin_init import AutoMixinInit
@@ -106,7 +107,7 @@ class ConversationNode(HasIdMixin, HasStatusMixin, metaclass=AutoMixinInit):
         return self_completion
 
 
-class ConversationNodeSchema(HasIdMixin, metaclass=AutoMixinInit):
+class ConversationNodeSchema(BaseExecutableSchema, HasIdMixin, metaclass=AutoMixinInit):
     def __init__(
         self,
         node_prompt: str,
@@ -121,15 +122,13 @@ class ConversationNodeSchema(HasIdMixin, metaclass=AutoMixinInit):
         tool_names: Optional[List[str]] = None,
         completion_config: Optional[BaseTransitionConfig] = None,
     ):
-        self.state_schema = state_schema
+        BaseExecutableSchema.__init__(self, state_schema=state_schema, completion_config=completion_config, run_assistant_turn_before_transition=run_assistant_turn_before_transition)
         self.node_prompt = node_prompt
         self.node_system_prompt = node_system_prompt
         self.direct_input_schema = direct_input_schema
         self.input_from_state_schema = None
         self.is_input_from_state_schema_set = False
         self.first_turn = first_turn
-        self.run_assistant_turn_before_transition = run_assistant_turn_before_transition
-        self.completion_config = completion_config
         if tool_registry_or_tool_defs is not None and isinstance(
             tool_registry_or_tool_defs, ToolRegistry
         ):

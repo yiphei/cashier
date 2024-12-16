@@ -4,6 +4,7 @@ from typing import Any, List, Optional, Set, Tuple, Type, Union
 
 from pydantic import BaseModel
 
+from cashier.graph.base.base_executable import BaseExecutableSchema
 from cashier.graph.base.base_graph import BaseGraph, BaseGraphSchema
 from cashier.graph.conversation_node import (
     ConversationNode,
@@ -34,7 +35,7 @@ def should_change_node_schema(
     )
 
 
-class BaseTerminableGraphSchema(HasIdMixin, BaseGraphSchema):
+class BaseTerminableGraphSchema(HasIdMixin, BaseGraphSchema, BaseExecutableSchema):
     def __init__(
         self,
         description: str,
@@ -44,8 +45,7 @@ class BaseTerminableGraphSchema(HasIdMixin, BaseGraphSchema):
     ):
         HasIdMixin.__init__(self, target_cls=BaseTerminableGraphSchema)
         BaseGraphSchema.__init__(self, description, node_schemas)
-        self.state_schema = state_schema
-        self.run_assistant_turn_before_transition = run_assistant_turn_before_transition
+        BaseExecutableSchema.__init__(self, state_schema=state_schema, run_assistant_turn_before_transition=run_assistant_turn_before_transition)
 
     # def create_node(self, input, request):
     #     return Graph(

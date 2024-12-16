@@ -2,6 +2,11 @@ from abc import ABC, abstractmethod
 
 from cashier.graph.mixin.has_status_mixin import Status
 
+class BaseExecutableSchema:
+    def __init__(self, state_schema = None, completion_config=None, run_assistant_turn_before_transition=False):
+        self.state_schema = state_schema
+        self.completion_config = completion_config
+        self.run_assistant_turn_before_transition = run_assistant_turn_before_transition
 
 class BaseExecutable(ABC):
     def check_self_transition(
