@@ -57,7 +57,7 @@ class ConversationNode(HasIdMixin, HasStatusMixin, metaclass=AutoMixinInit):
         if state_schema is None:
             return None
 
-        if prev_node is not None:
+        if prev_node is not None and edge_schema is not None:
             state_init_val = getattr(
                 edge_schema,
                 "fwd_state_init" if direction == Direction.FWD else "bwd_state_init",

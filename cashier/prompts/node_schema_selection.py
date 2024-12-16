@@ -1,10 +1,11 @@
 import copy
 import json
-from typing import Any, Dict, Set
+from typing import Any, Dict, Set, Union
 
 from pydantic import BaseModel, ConfigDict
 
 from cashier.graph.conversation_node import ConversationNodeSchema
+from cashier.graph.base.base_graph import BaseGraphSchema
 from cashier.logger import logger
 from cashier.model.model_completion import ModelOutput
 from cashier.model.model_util import ModelProvider
@@ -20,7 +21,7 @@ class Input(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     current_node_schema: ConversationNodeSchema
-    all_node_schemas: Set[ConversationNodeSchema]
+    all_node_schemas: Set[Union[ConversationNodeSchema, BaseGraphSchema]]
     tc: TurnContainer
     is_wait: bool
 
@@ -32,7 +33,8 @@ class NodeSchemaSelectionPrompt(BasePrompt):
 
     def dynamic_prompt(  # type: ignore
         self,
-        all_node_schemas: Set[ConversationNodeSchema],
+        background_prompt: str,
+        all_node_schemas: Set[Union[ConversationNodeSchema, BaseGraphSchema]],
         model_provider: ModelProvider,
         last_customer_msg: str,
     ) -> str:
@@ -65,7 +67,7 @@ class NodeSchemaSelectionPrompt(BasePrompt):
         prompt += (
             "All agents share the following background:\n"  # type: ignore
             "<background>\n"
-            f"{next(iter(all_node_schemas)).node_system_prompt.BACKGROUND_PROMPT()}\n"
+            f"{background_prompt}\n"
             "</background>\n\n"
             "Given a conversation with a customer and the list above of AI agents with their attributes, "
             "determine which AI agent can best continue the conversation, especially given last customer message, in accordance with the universal guidelines defined in <guidelines>. "
@@ -106,6 +108,7 @@ class NodeSchemaSelectionPrompt(BasePrompt):
         last_customer_msg = tc.get_user_message(content_only=True)
 
         prompt = NodeSchemaSelectionPrompt(
+            background_prompt=input.current_node_schema.node_system_prompt.BACKGROUND_PROMPT(),
             all_node_schemas=all_node_schemas,
             model_provider=model_provider,
             last_customer_msg=last_customer_msg,
