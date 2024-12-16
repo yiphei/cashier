@@ -408,7 +408,6 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
             fn = self.init_conversation_core
             request = self.request
 
-
         new_node = self.init_node_essential(
             node_schema,
             edge_schema,
