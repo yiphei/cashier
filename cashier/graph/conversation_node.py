@@ -90,7 +90,6 @@ class ConversationNode(BaseExecutable, HasIdMixin, metaclass=TupleMetaclass):
                 "cannot update any state field until you get the first customer message in the current conversation. Remember, the current conversation starts after <cutoff_msg>"
             )
 
-
     def update_first_user_message(self) -> None:
         self.first_user_message = True
 
