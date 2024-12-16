@@ -219,12 +219,9 @@ class BaseTerminableGraph(BaseGraph):
 
     def check_self_completion(self, fn_call, is_fn_call_success):
         assert self.schema.completion_config is not None
-        self_completion = (
+        return (
             self.curr_node.schema == self.schema.last_node_schema
             and self.schema.completion_config.run_check(
                 self.state, fn_call, is_fn_call_success
             )
         )
-        if self_completion:
-            self.mark_as_internally_completed()
-        return self_completion
