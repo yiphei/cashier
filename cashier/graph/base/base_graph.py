@@ -359,7 +359,9 @@ class BaseGraph(BaseExecutable, HasStatusMixin, HasIdMixin):
         prev_fn_caller=None,
     ) -> None:
         graph = node_schema.create_node(
-            input=input, request=self.get_request_for_init_graph_core(), prev_node=prev_node
+            input=input,
+            request=self.get_request_for_init_graph_core(),
+            prev_node=prev_node,
         )
         self.node_schema_id_to_nodes[node_schema.id].append(graph)
         graph.parent = self
@@ -415,6 +417,7 @@ class BaseGraph(BaseExecutable, HasStatusMixin, HasIdMixin):
         input,
     ) -> None:
         from cashier.graph.and_graph_schema import ANDGraph
+
         if input is None and edge_schema:
             # TODO: this is bad. refactor this
             if hasattr(self, "state"):
@@ -429,15 +432,12 @@ class BaseGraph(BaseExecutable, HasStatusMixin, HasIdMixin):
         prev_node = self.get_prev_node(edge_schema, direction)
         # TODO: remove this
         if isinstance(self, ANDGraph) and not edge_schema:
-            if (
-                self.node_schema_id_to_nodes[self.schema.default_start_node_schema.id]
-            ):
+            if self.node_schema_id_to_nodes[self.schema.default_start_node_schema.id]:
                 prev_node = self.node_schema_id_to_nodes[
                     self.schema.default_start_node_schema.id
                 ][-1]
             else:
                 prev_node = None
-            
 
         self.init_node_core(
             node_schema,
@@ -511,9 +511,7 @@ class BaseGraph(BaseExecutable, HasStatusMixin, HasIdMixin):
         prev_node = self.get_prev_node(edge_schema, direction)
         # TODO: remove this
         if isinstance(self, ANDGraph) and not edge_schema:
-            if (
-                self.node_schema_id_to_nodes[self.schema.default_start_node_schema.id]
-            ):
+            if self.node_schema_id_to_nodes[self.schema.default_start_node_schema.id]:
                 prev_node = self.node_schema_id_to_nodes[
                     self.schema.default_start_node_schema.id
                 ][-1]
@@ -544,8 +542,6 @@ class BaseGraph(BaseExecutable, HasStatusMixin, HasIdMixin):
         if edge_schema:
             while edge_schema.from_node_schema not in parent_node.schema.node_schemas:
                 parent_node = parent_node.curr_node
-
-        
 
         direction = Direction.FWD
         if edge_schema and edge_schema.from_node_schema == node_schema:
