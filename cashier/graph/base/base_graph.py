@@ -155,7 +155,7 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
         )
 
     def get_prev_node(
-        self, edge_schema: Optional[EdgeSchema], direction: Direction
+        self, edge_schema: Optional[EdgeSchema], node_schema, direction: Direction
     ) -> Optional[ConversationNode]:
         if (
             edge_schema
@@ -164,6 +164,10 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
         ):
             edge = self.get_edge_by_edge_schema_id(edge_schema.id)
             return edge.to_node if direction == Direction.FWD else edge.from_node
+        elif edge_schema is None and node_schema == self.schema.start_node_schema and self.node_schema_id_to_nodes[self.schema.start_node_schema.id]:
+            return self.node_schema_id_to_nodes[
+                self.schema.start_node_schema.id
+            ][-1]
         else:
             return None
 
@@ -389,8 +393,6 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
         last_msg,
         input,
     ) -> None:
-        from cashier.graph.and_graph_schema import ANDGraph
-
         if input is None and edge_schema:
             # TODO: this is bad. refactor this
             if hasattr(self, "state"):
@@ -402,15 +404,7 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
             edge_schema, input = self.compute_next_edge_schema(edge_schema, input)
             node_schema = edge_schema.to_node_schema
 
-        prev_node = self.get_prev_node(edge_schema, direction)
-        # TODO: remove this
-        if isinstance(self, ANDGraph) and not edge_schema:
-            if self.node_schema_id_to_nodes[self.schema.default_start_node_schema.id]:
-                prev_node = self.node_schema_id_to_nodes[
-                    self.schema.default_start_node_schema.id
-                ][-1]
-            else:
-                prev_node = None
+        prev_node = self.get_prev_node(edge_schema, node_schema, direction)
 
         self.init_node(
             node_schema,
@@ -468,18 +462,10 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
         last_msg,
         TC,
     ) -> None:
-        from cashier.graph.and_graph_schema import ANDGraph
-
         if direction == Direction.BWD:
             self.bwd_skip_edge_schemas.clear()
 
-        prev_node = self.get_prev_node(edge_schema, direction)
-        # TODO: remove this
-        if isinstance(self, ANDGraph) and not edge_schema:
-            if self.node_schema_id_to_nodes[self.schema.default_start_node_schema.id]:
-                prev_node = self.node_schema_id_to_nodes[
-                    self.schema.default_start_node_schema.id
-                ][-1]
+        prev_node = self.get_prev_node(edge_schema, node_schema, direction)
         assert prev_node is not None
         input = prev_node.input
 

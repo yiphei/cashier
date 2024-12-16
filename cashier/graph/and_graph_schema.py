@@ -68,6 +68,10 @@ class ANDGraphSchema(BaseTerminableGraphSchema):
                 edge_schema.from_node_schema.id
             ].append(edge_schema)
 
+    @property
+    def start_node_schema(self):
+        return self.default_start_node_schema
+
     def create_node(self, input, last_msg, edge_schema, prev_node, direction, request):
         if prev_node is not None:
             return copy.deepcopy(prev_node)
