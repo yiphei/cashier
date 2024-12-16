@@ -202,6 +202,7 @@ class BaseTerminableGraph(BaseGraph):
 
     def init_conversation_core(
         self,
+        new_node,
         node_schema: ConversationNodeSchema,
         edge_schema: Optional[EdgeSchema],
         input: Any,
@@ -213,6 +214,7 @@ class BaseTerminableGraph(BaseGraph):
         prev_fn_caller=None,
     ) -> None:
         super().init_conversation_core(
+            new_node,
             node_schema,
             edge_schema,
             input,
@@ -230,6 +232,7 @@ class BaseTerminableGraph(BaseGraph):
 
     def init_graph_core(
         self,
+        new_node,
         node_schema: ConversationNodeSchema,
         edge_schema: Optional[EdgeSchema],
         input: Any,
@@ -241,6 +244,7 @@ class BaseTerminableGraph(BaseGraph):
         prev_fn_caller=None,
     ) -> None:
         super().init_graph_core(
+            new_node,
             node_schema,
             edge_schema,
             input,

@@ -160,6 +160,7 @@ class ANDGraph(BaseTerminableGraph):
 
     def init_conversation_core(
         self,
+        new_node,
         node_schema: ConversationNodeSchema,
         edge_schema: Optional[EdgeSchema],
         input: Any,
@@ -171,6 +172,7 @@ class ANDGraph(BaseTerminableGraph):
         prev_fn_caller=None,
     ) -> None:
         super().init_conversation_core(
+            new_node,
             node_schema,
             edge_schema,
             input,

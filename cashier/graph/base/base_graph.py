@@ -339,6 +339,7 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
 
     def init_conversation_core(
         self,
+        new_node,
         node_schema: ConversationNodeSchema,
         edge_schema: Optional[EdgeSchema],
         input: Any,
@@ -349,19 +350,6 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
         is_skip: bool = False,
         prev_fn_caller=None,
     ) -> None:
-
-        new_node = self.init_node_essential(
-            node_schema,
-            edge_schema,
-            input,
-            last_msg,
-            prev_node,
-            direction,
-            TC,
-            self.request,
-            is_skip,
-            prev_fn_caller,
-        )
 
         TC.add_node_turn(
             new_node,
@@ -381,6 +369,7 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
 
     def init_graph_core(
         self,
+        new_node,
         node_schema: ConversationNodeSchema,
         edge_schema: Optional[EdgeSchema],
         input: Any,
@@ -392,22 +381,9 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
         prev_fn_caller=None,
     ) -> None:
 
-        graph = self.init_node_essential(
-            node_schema,
-            edge_schema,
-            input,
-            last_msg,
-            prev_node,
-            direction,
-            TC,
-            self.get_request_for_init_graph_core(),
-            is_skip,
-            prev_fn_caller,
-        )
+        self.curr_node = new_node
 
-        self.curr_node = graph
-
-        node_schema, edge_schema = graph.compute_init_node_edge_schema()
+        node_schema, edge_schema = new_node.compute_init_node_edge_schema()
         if prev_fn_caller is not None:
             self.curr_node.init_skip_node(node_schema, edge_schema, TC)
         else:
@@ -427,10 +403,27 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
     ) -> None:
         if isinstance(node_schema, BaseGraphSchema):
             fn = self.init_graph_core
+            request = self.get_request_for_init_graph_core()
         else:
             fn = self.init_conversation_core
+            request = self.request
+
+
+        new_node = self.init_node_essential(
+            node_schema,
+            edge_schema,
+            input,
+            last_msg,
+            prev_node,
+            direction,
+            TC,
+            request,
+            is_skip,
+            prev_fn_caller,
+        )
 
         fn(
+            new_node,
             node_schema,
             edge_schema,
             input,
