@@ -312,19 +312,18 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
 
     def post_node_init(
         self,
-        new_node,
         edge_schema: Optional[EdgeSchema],
         prev_node: Optional[ConversationNode],
         TC,
         is_skip: bool = False,
     ) -> None:
-        node_schema = new_node.schema
+        node_schema = self.curr_node.schema
         if not isinstance(node_schema, BaseGraphSchema):
             TC.add_node_turn(
-                new_node,
+                self.curr_node,
                 is_skip=is_skip,
             )
-            MessageDisplay.print_msg("system", new_node.prompt)
+            MessageDisplay.print_msg("system", self.curr_node.prompt)
 
             if node_schema.first_turn and prev_node is None:
                 assert isinstance(node_schema.first_turn, AssistantTurn)
@@ -368,7 +367,6 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
         self.curr_node = new_node
 
         self.post_node_init(
-            new_node,
             edge_schema,
             prev_node,
             TC,

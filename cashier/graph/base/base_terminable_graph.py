@@ -198,14 +198,12 @@ class BaseTerminableGraph(BaseGraph):
 
     def post_node_init(
         self,
-        new_node,
         edge_schema: Optional[EdgeSchema],
         prev_node: Optional[ConversationNode],
         TC,
         is_skip: bool = False,
     ) -> None:
         super().post_node_init(
-            new_node,
             edge_schema,
             prev_node,
             TC,

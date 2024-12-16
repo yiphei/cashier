@@ -156,19 +156,17 @@ class ANDGraph(BaseTerminableGraph):
 
     def post_node_init(
         self,
-        new_node,
         edge_schema: Optional[EdgeSchema],
         prev_node: Optional[ConversationNode],
         TC,
         is_skip: bool = False,
     ) -> None:
         super().post_node_init(
-            new_node,
             edge_schema,
             prev_node,
             TC,
             is_skip,
         )
-        self.visited_node_schemas.add(new_node.schema)
+        self.visited_node_schemas.add(self.curr_node.schema)
         if edge_schema:
             self.add_edge_schema(edge_schema)
