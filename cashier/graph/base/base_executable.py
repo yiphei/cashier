@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Any
 
+from cashier.graph.base.base_state import BaseStateModel
 from cashier.graph.mixin.has_status_mixin import HasStatusMixin, Status
 
 
@@ -40,6 +41,9 @@ class BaseExecutable(ABC, HasStatusMixin):
     def update_state_from_executable(self, executable):
         state = executable.state
         self.update_state(**state.model_dump(exclude=state.resettable_fields))
+
+    def get_state(self) -> BaseStateModel:
+        return self.state
 
 
 class BaseGraphExecutable(BaseExecutable):
