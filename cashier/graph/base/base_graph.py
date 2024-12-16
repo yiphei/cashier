@@ -44,7 +44,12 @@ class BaseGraphSchema:
 
 class BaseGraph(BaseGraphExecutable, HasIdMixin):
     def __init__(
-        self, input: Any, schema: BaseGraphSchema, edge_schemas=None, request=None, state=None
+        self,
+        input: Any,
+        schema: BaseGraphSchema,
+        edge_schemas=None,
+        request=None,
+        state=None,
     ):
         HasIdMixin.__init__(self)
         BaseGraphExecutable.__init__(self, state)
