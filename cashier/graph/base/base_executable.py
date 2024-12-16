@@ -90,10 +90,6 @@ class BaseGraphExecutable(BaseExecutable):
     def get_next_edge_schema(self):
         raise NotImplementedError()
 
-    @abstractmethod
-    def check_self_completion(self):
-        raise NotImplementedError()
-
     def check_transition(self, fn_call, is_fn_call_success):
         from cashier.graph.conversation_node import ConversationNode
 
