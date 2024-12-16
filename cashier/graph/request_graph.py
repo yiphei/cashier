@@ -112,7 +112,7 @@ class RequestGraph(BaseGraph):
                     None,
                 )
 
-    def check_self_completion(self):
+    def is_completed(self):
         return False
 
     def check_self_transition(

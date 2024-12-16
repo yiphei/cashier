@@ -147,7 +147,7 @@ class ANDGraph(BaseTerminableGraph):
             )
         )
 
-    def check_self_completion(self, fn_call, is_fn_call_success):
+    def is_completed(self, fn_call, is_fn_call_success):
         self_completion = (
             len(self.visited_node_schemas) == len(self.schema.node_schemas)
             and self.curr_node.status == Status.INTERNALLY_COMPLETED

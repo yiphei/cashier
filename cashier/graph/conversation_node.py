@@ -93,7 +93,7 @@ class ConversationNode(BaseExecutable, HasIdMixin, metaclass=TupleMetaclass):
     def update_first_user_message(self) -> None:
         self.first_user_message = True
 
-    def check_self_completion(self, fn_call, is_fn_call_success):
+    def is_completed(self, fn_call, is_fn_call_success):
         return (
             self.schema.completion_config.run_check(
                 self.state, fn_call, is_fn_call_success
