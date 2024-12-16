@@ -4,7 +4,7 @@ from typing import Any
 from cashier.graph.mixin.has_status_mixin import Status
 
 
-class BaseExecutableSchema:
+class BaseExecutableSchema(ABC):
     def __init__(
         self,
         state_schema=None,
@@ -14,6 +14,10 @@ class BaseExecutableSchema:
         self.state_schema = state_schema
         self.completion_config = completion_config
         self.run_assistant_turn_before_transition = run_assistant_turn_before_transition
+
+    @abstractmethod
+    def get_input(self, state, edge_schema):
+        raise NotImplementedError()
 
 
 class BaseExecutable(ABC):

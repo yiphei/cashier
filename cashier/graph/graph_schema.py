@@ -57,13 +57,6 @@ class GraphSchema(BaseTerminableGraphSchema):
             schema=self,
         )
 
-    # TODO: refactor this to be shared with the get_input in ConversationNodeSchema
-    def get_input(self, state, edge_schema):
-        if edge_schema.new_input_fn is not None:
-            return edge_schema.new_input_fn(state)
-        else:
-            return None
-
 
 class Graph(BaseTerminableGraph):
     def __init__(
