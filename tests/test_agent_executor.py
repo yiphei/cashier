@@ -121,18 +121,6 @@ class TestAgent:
                 model_provider
             ].conversation_dicts,
         )
-        import json
-
-        print(json.dumps(self.node_conversation_list, indent=4))
-        print("--------------------------------")
-        print(
-            json.dumps(
-                agent_executor.TC.model_provider_to_message_manager[
-                    model_provider
-                ].node_conversation_dicts,
-                indent=4,
-            )
-        )
         assert not DeepDiff(
             self.node_conversation_list,
             agent_executor.TC.model_provider_to_message_manager[
@@ -1201,11 +1189,6 @@ class TestAgent:
         third_fn_calls_fn_call_id_to_fn_output = {
             fn_call.id: None for fn_call in third_fn_calls
         }
-        print("########################################################")
-        print(agent_executor.graph.curr_graph.schema.__class__)
-        print(agent_executor.graph.curr_conversation_node.schema.__class__)
-        print(agent_executor.graph.curr_conversation_node.state)
-        print("########################################################")
         t7 = self.add_assistant_turn(
             agent_executor,
             model_provider,
@@ -1296,8 +1279,6 @@ class TestAgent:
             is_stream,
         )
         self.run_message_dict_assertions(agent_executor, model_provider)
-
-        print("----------------up to here ------------------------------")
 
         t12 = self.add_user_turn(
             agent_executor,
