@@ -12,7 +12,7 @@ from cashier.graph.conversation_node import (
 )
 from cashier.graph.edge_schema import Edge, EdgeSchema, FwdSkipType
 from cashier.graph.mixin.has_id_mixin import HasIdMixin
-from cashier.graph.mixin.has_status_mixin import HasStatusMixin, Status
+from cashier.graph.mixin.has_status_mixin import Status
 from cashier.gui import MessageDisplay
 from cashier.logger import logger
 from cashier.model.model_completion import ModelOutput
@@ -42,12 +42,12 @@ class BaseGraphSchema:
         }
 
 
-class BaseGraph(BaseGraphExecutable, HasStatusMixin, HasIdMixin):
+class BaseGraph(BaseGraphExecutable, HasIdMixin):
     def __init__(
-        self, input: Any, schema: BaseGraphSchema, edge_schemas=None, request=None
+        self, input: Any, schema: BaseGraphSchema, edge_schemas=None, request=None, state=None
     ):
-        HasStatusMixin.__init__(self)
         HasIdMixin.__init__(self)
+        BaseGraphExecutable.__init__(self, state)
         self.input = input
         self.schema = schema
         self.edge_schema_id_to_edges = defaultdict(list)

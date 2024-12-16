@@ -17,7 +17,6 @@ from cashier.graph.base.base_state import BaseStateModel
 from cashier.graph.edge_schema import EdgeSchema
 from cashier.graph.mixin.auto_mixin_init import AutoMixinInit
 from cashier.graph.mixin.has_id_mixin import HasIdMixin
-from cashier.graph.mixin.has_status_mixin import HasStatusMixin
 from cashier.model.model_turn import ModelTurn
 from cashier.prompts.node_system import NodeSystemPrompt
 from cashier.tool.function_call_context import StateUpdateError
@@ -34,7 +33,7 @@ class TupleMetaclass(AutoMixinInit, ABCMeta):
 
 
 class ConversationNode(
-    BaseExecutable, HasIdMixin, HasStatusMixin, metaclass=TupleMetaclass
+    BaseExecutable, HasIdMixin, metaclass=TupleMetaclass
 ):
     def __init__(
         self,
@@ -44,12 +43,12 @@ class ConversationNode(
         prompt: str,
         direction: Direction = Direction.FWD,
     ):
+        BaseExecutable.__init__(self, state)
         self.prompt = prompt
         self.input = input
         self.schema = schema
         self.direction = direction
         self.has_run_assistant_turn_before_transition = False
-        self.state = state
         self.first_user_message = False
         self.parent = None
 

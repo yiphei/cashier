@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Any
 
-from cashier.graph.mixin.has_status_mixin import Status
+from cashier.graph.mixin.has_status_mixin import HasStatusMixin, Status
 
 
 class BaseExecutableSchema(ABC):
@@ -20,7 +20,11 @@ class BaseExecutableSchema(ABC):
         raise NotImplementedError()
 
 
-class BaseExecutable(ABC):
+class BaseExecutable(ABC, HasStatusMixin):
+    def __init__(self, state):
+        self.state = state
+        HasStatusMixin.__init__(self)
+
     @abstractmethod
     def check_self_completion(self):
         raise NotImplementedError()

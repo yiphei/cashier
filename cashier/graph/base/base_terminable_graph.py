@@ -74,10 +74,10 @@ class BaseTerminableGraph(BaseGraph):
         schema: BaseGraphSchema,
         edge_schemas=None,
     ):
-        super().__init__(input, schema, edge_schemas, request)
         input_keys = set(input.keys()) if input is not None else set()
-        self.state = schema.state_schema(**(input or {}))
-        self.state.__pydantic_fields_set__ = input_keys
+        state = schema.state_schema(**(input or {}))
+        state.__pydantic_fields_set__ = input_keys
+        super().__init__(input, schema, edge_schemas, request, state=state)
         self.has_run_assistant_turn_before_transition = False
 
     def handle_skip(
