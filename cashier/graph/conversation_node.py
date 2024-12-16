@@ -28,10 +28,14 @@ class Direction(StrEnum):
     FWD = "FWD"
     BWD = "BWD"
 
+
 class TupleMetaclass(AutoMixinInit, ABCMeta):
     pass
 
-class ConversationNode(BaseExecutable, HasIdMixin, HasStatusMixin, metaclass=TupleMetaclass):
+
+class ConversationNode(
+    BaseExecutable, HasIdMixin, HasStatusMixin, metaclass=TupleMetaclass
+):
     def __init__(
         self,
         schema: ConversationNodeSchema,

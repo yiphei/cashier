@@ -20,7 +20,7 @@ class BaseExecutable(ABC):
     @abstractmethod
     def check_self_completion(self):
         raise NotImplementedError()
-    
+
     def update_state(self, **kwargs: Any) -> None:
         old_state = self.state.model_dump()
         old_state_fields_set = self.state.model_fields_set
