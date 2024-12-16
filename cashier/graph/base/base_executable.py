@@ -19,6 +19,10 @@ class BaseExecutableSchema(ABC):
     @abstractmethod
     def get_input(self, state, edge_schema):
         raise NotImplementedError()
+    
+    @abstractmethod
+    def create_node(self, input, last_msg, edge_schema, prev_node, direction, request):
+        raise NotImplementedError()
 
 
 class BaseExecutable(ABC, HasStatusMixin):
