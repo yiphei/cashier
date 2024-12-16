@@ -83,9 +83,7 @@ class ConversationNode(BaseExecutable, HasIdMixin, HasStatusMixin, metaclass=Tup
 
     def update_state(self, **kwargs: Any) -> None:
         if self.first_user_message:
-            old_state = self.state.model_dump()
-            new_state = old_state | kwargs
-            self.state = self.state.__class__(**new_state)
+            super().update_state(**kwargs)
         else:
             raise StateUpdateError(
                 "cannot update any state field until you get the first customer message in the current conversation. Remember, the current conversation starts after <cutoff_msg>"

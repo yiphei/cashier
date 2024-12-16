@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from typing import Any
 
 from cashier.graph.mixin.has_status_mixin import Status
 
@@ -19,6 +20,18 @@ class BaseExecutable(ABC):
     @abstractmethod
     def check_self_completion(self):
         raise NotImplementedError()
+    
+    def update_state(self, **kwargs: Any) -> None:
+        old_state = self.state.model_dump()
+        old_state_fields_set = self.state.model_fields_set
+        new_state = old_state | kwargs
+        new_state_fields_set = old_state_fields_set | kwargs.keys()
+        self.state = self.state.__class__(**new_state)
+        self.state.__pydantic_fields_set__ = new_state_fields_set
+
+    def update_state_from_executable(self, executable):
+        state = executable.state
+        self.update_state(**state.model_dump(exclude=state.resettable_fields))
 
 
 class BaseGraphExecutable(BaseExecutable):

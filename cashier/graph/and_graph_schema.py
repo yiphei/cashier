@@ -161,17 +161,7 @@ class ANDGraph(BaseTerminableGraph):
         )
         if self_completion:
             # TODO: this is bad. refactor this. also, generalize this to all graphs
-            parent_node = self
-            curr_node = self.curr_node
-            old_state = parent_node.state.model_dump()
-            set_fields = parent_node.state.model_fields_set
-            child_state = curr_node.state.model_dump(
-                exclude=curr_node.state.resettable_fields
-            )
-            new_state = old_state | child_state
-            new_set_fields = set_fields | child_state.keys()
-            parent_node.state = parent_node.state.__class__(**new_state)
-            parent_node.state.__pydantic_fields_set__ = new_set_fields
+            self.update_state_from_executable(self.curr_node)
             self.mark_as_transitioning()
         return self_completion
 
