@@ -548,7 +548,9 @@ class BaseGraph(BaseExecutable, HasStatusMixin, HasIdMixin):
             direction = Direction.BWD
 
         if not edge_schema:
-            direction = Direction.BWD # TODO: fix this. this can actually be either BWD or FWD, but only the parent would know, so the parent needs to pass it down
+            direction = (
+                Direction.BWD
+            )  # TODO: fix this. this can actually be either BWD or FWD, but only the parent would know, so the parent needs to pass it down
 
         last_msg = TC.get_asst_message(content_only=True)
         parent_node._init_skip_node(
