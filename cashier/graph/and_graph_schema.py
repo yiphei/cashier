@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+import copy
 from collections import defaultdict
 from typing import Any, List, Optional, Set, Tuple, Type, Union
-import copy
 
 from pydantic import BaseModel
 
