@@ -45,7 +45,11 @@ class BaseTerminableGraphSchema(HasIdMixin, BaseGraphSchema, BaseExecutableSchem
     ):
         HasIdMixin.__init__(self, target_cls=BaseTerminableGraphSchema)
         BaseGraphSchema.__init__(self, description, node_schemas)
-        BaseExecutableSchema.__init__(self, state_schema=state_schema, run_assistant_turn_before_transition=run_assistant_turn_before_transition)
+        BaseExecutableSchema.__init__(
+            self,
+            state_schema=state_schema,
+            run_assistant_turn_before_transition=run_assistant_turn_before_transition,
+        )
 
     # def create_node(self, input, request):
     #     return Graph(

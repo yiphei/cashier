@@ -122,7 +122,12 @@ class ConversationNodeSchema(BaseExecutableSchema, HasIdMixin, metaclass=AutoMix
         tool_names: Optional[List[str]] = None,
         completion_config: Optional[BaseTransitionConfig] = None,
     ):
-        BaseExecutableSchema.__init__(self, state_schema=state_schema, completion_config=completion_config, run_assistant_turn_before_transition=run_assistant_turn_before_transition)
+        BaseExecutableSchema.__init__(
+            self,
+            state_schema=state_schema,
+            completion_config=completion_config,
+            run_assistant_turn_before_transition=run_assistant_turn_before_transition,
+        )
         self.node_prompt = node_prompt
         self.node_system_prompt = node_system_prompt
         self.direct_input_schema = direct_input_schema
