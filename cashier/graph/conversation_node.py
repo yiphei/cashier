@@ -11,7 +11,7 @@ from cashier.graph.base.base_edge_schema import (
     BwdStateInit,
     FwdStateInit,
 )
-from cashier.graph.base.base_executable import BaseExecutableSchema
+from cashier.graph.base.base_executable import BaseExecutable, BaseExecutableSchema
 from cashier.graph.base.base_state import BaseStateModel
 from cashier.graph.edge_schema import EdgeSchema
 from cashier.graph.mixin.auto_mixin_init import AutoMixinInit
@@ -28,7 +28,7 @@ class Direction(StrEnum):
     BWD = "BWD"
 
 
-class ConversationNode(HasIdMixin, HasStatusMixin, metaclass=AutoMixinInit):
+class ConversationNode(BaseExecutable, HasIdMixin, HasStatusMixin, metaclass=AutoMixinInit):
     def __init__(
         self,
         schema: ConversationNodeSchema,
