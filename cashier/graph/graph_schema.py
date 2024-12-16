@@ -50,7 +50,7 @@ class GraphSchema(BaseTerminableGraphSchema):
                 edge_schema.from_node_schema.id
             ].append(edge_schema)
 
-    def create_node(self, input, request):
+    def create_node(self, input, request, prev_node=None):
         return Graph(
             input=input,
             request=request,

@@ -11,11 +11,16 @@ class BaseExecutable(ABC):
         new_edge_schema=None,
         new_node_schema=None,
     ):
+        from cashier.graph.conversation_node import ConversationNode
+        from cashier.graph.and_graph_schema import ANDGraph
         if self.check_self_completion(fn_call, is_fn_call_success):
-            self.curr_node.mark_as_transitioning()
-            self.local_transition_queue.append(self.curr_node)
+            if not isinstance(self, ANDGraph):
+                self.curr_node.mark_as_transitioning()
+                self.local_transition_queue.append(self.curr_node)
             self.mark_as_transitioning()
             return None, None
+        elif self.curr_node.status == Status.TRANSITIONING and not isinstance(self.curr_node, ConversationNode):
+            return self.check_node_transition(fn_call, is_fn_call_success)
         return new_edge_schema, new_node_schema
 
     def check_node_transition(self, fn_call, is_fn_call_success):

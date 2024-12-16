@@ -73,6 +73,8 @@ class BaseGraph(BaseExecutable, HasStatusMixin, HasIdMixin):
                 edge_schema.from_node_schema.id
             ].append(edge_schema)
 
+        self.node_schema_id_to_nodes = defaultdict(list)
+
     def add_edge_schema(self, edge_schema):
         self.edge_schemas.append(edge_schema)
         self.edge_schema_id_to_edge_schema[edge_schema.id] = edge_schema
@@ -313,6 +315,7 @@ class BaseGraph(BaseExecutable, HasStatusMixin, HasIdMixin):
         direction: Direction,
         TC,
         is_skip: bool = False,
+        prev_fn_caller=None,
     ) -> None:
         logger.debug(
             f"[NODE_SCHEMA] Initializing node with {Style.BRIGHT}node_schema_id: {node_schema.id}{Style.NORMAL}"
@@ -320,6 +323,7 @@ class BaseGraph(BaseExecutable, HasStatusMixin, HasIdMixin):
         new_node = node_schema.create_node(
             input, last_msg, edge_schema, prev_node, direction, self.request  # type: ignore
         )
+        self.node_schema_id_to_nodes[node_schema.id].append(new_node)
         new_node.parent = self
 
         TC.add_node_turn(
@@ -352,10 +356,12 @@ class BaseGraph(BaseExecutable, HasStatusMixin, HasIdMixin):
         direction: Direction,
         TC,
         is_skip: bool = False,
+        prev_fn_caller=None,
     ) -> None:
         graph = node_schema.create_node(
-            input=input, request=self.get_request_for_init_graph_core()
+            input=input, request=self.get_request_for_init_graph_core(), prev_node=prev_node
         )
+        self.node_schema_id_to_nodes[node_schema.id].append(graph)
         graph.parent = self
 
         # TODO: this is bad. refactor this
@@ -365,7 +371,10 @@ class BaseGraph(BaseExecutable, HasStatusMixin, HasIdMixin):
         self.curr_node = graph
 
         node_schema, edge_schema = graph.compute_init_node_edge_schema()
-        self.curr_node.init_next_node(node_schema, edge_schema, TC, None)
+        if prev_fn_caller is not None:
+            self.curr_node.init_skip_node(node_schema, edge_schema, TC)
+        else:
+            self.curr_node.init_next_node(node_schema, edge_schema, TC, None)
 
     def init_node_core(
         self,
@@ -377,6 +386,7 @@ class BaseGraph(BaseExecutable, HasStatusMixin, HasIdMixin):
         direction: Direction,
         TC,
         is_skip: bool = False,
+        prev_fn_caller=None,
     ) -> None:
         if isinstance(node_schema, BaseGraphSchema):
             fn = self.init_graph_core
@@ -392,6 +402,7 @@ class BaseGraph(BaseExecutable, HasStatusMixin, HasIdMixin):
             direction,
             TC,
             is_skip,
+            prev_fn_caller,
         )
 
     def _init_next_node(
@@ -403,6 +414,7 @@ class BaseGraph(BaseExecutable, HasStatusMixin, HasIdMixin):
         last_msg,
         input,
     ) -> None:
+        from cashier.graph.and_graph_schema import ANDGraph
         if input is None and edge_schema:
             # TODO: this is bad. refactor this
             if hasattr(self, "state"):
@@ -415,6 +427,17 @@ class BaseGraph(BaseExecutable, HasStatusMixin, HasIdMixin):
             node_schema = edge_schema.to_node_schema
 
         prev_node = self.get_prev_node(edge_schema, direction)
+        # TODO: remove this
+        if isinstance(self, ANDGraph) and not edge_schema:
+            if (
+                self.node_schema_id_to_nodes[self.schema.default_start_node_schema.id]
+            ):
+                prev_node = self.node_schema_id_to_nodes[
+                    self.schema.default_start_node_schema.id
+                ][-1]
+            else:
+                prev_node = None
+            
 
         self.init_node_core(
             node_schema,
@@ -480,11 +503,21 @@ class BaseGraph(BaseExecutable, HasStatusMixin, HasIdMixin):
         last_msg,
         TC,
     ) -> None:
+        from cashier.graph.and_graph_schema import ANDGraph
 
         if direction == Direction.BWD:
             self.bwd_skip_edge_schemas.clear()
 
         prev_node = self.get_prev_node(edge_schema, direction)
+        # TODO: remove this
+        if isinstance(self, ANDGraph) and not edge_schema:
+            print("AAAAAAA")
+            if (
+                self.node_schema_id_to_nodes[self.schema.default_start_node_schema.id]
+            ):
+                prev_node = self.node_schema_id_to_nodes[
+                    self.schema.default_start_node_schema.id
+                ][-1]
         assert prev_node is not None
         input = prev_node.input
 
@@ -498,6 +531,7 @@ class BaseGraph(BaseExecutable, HasStatusMixin, HasIdMixin):
             direction,
             TC,
             True,
+            self._init_skip_node,
         )
 
     def init_skip_node(
@@ -508,11 +542,17 @@ class BaseGraph(BaseExecutable, HasStatusMixin, HasIdMixin):
     ) -> None:
         parent_node = self
 
-        while edge_schema.from_node_schema not in parent_node.schema.node_schemas:
-            parent_node = parent_node.curr_node
+        if edge_schema:
+            while edge_schema.from_node_schema not in parent_node.schema.node_schemas:
+                parent_node = parent_node.curr_node
+
+        
 
         direction = Direction.FWD
         if edge_schema and edge_schema.from_node_schema == node_schema:
+            direction = Direction.BWD
+
+        if not edge_schema:
             direction = Direction.BWD
 
         last_msg = TC.get_asst_message(content_only=True)

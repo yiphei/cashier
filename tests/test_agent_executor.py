@@ -121,6 +121,12 @@ class TestAgent:
                 model_provider
             ].conversation_dicts,
         )
+        import json
+        print(json.dumps(self.node_conversation_list, indent=4))
+        print("--------------------------------")
+        print(json.dumps(agent_executor.TC.model_provider_to_message_manager[
+                model_provider
+            ].node_conversation_dicts, indent=4))
         assert not DeepDiff(
             self.node_conversation_list,
             agent_executor.TC.model_provider_to_message_manager[
@@ -1138,11 +1144,11 @@ class TestAgent:
             second_fn_calls,
             second_fn_call_id_to_fn_output,
         )
-        next_node_schema = cashier_graph_schema.from_node_schema_id_to_edge_schema[
-            self.start_node_schema.id
+        next_node_schema = cashier_graph_schema.start_node_schema.default_from_node_schema_id_to_edge_schema[
+            self.start_node_schema.default_start_node_schema.id
         ][0].to_node_schema
         input_schema, input = (
-            agent_executor.graph.curr_node.state.get_set_schema_and_fields()
+            agent_executor.graph.curr_graph.state.get_set_schema_and_fields()
         )
         node_turn_1 = TurnArgs(
             turn=NodeSystemTurn(
@@ -1187,6 +1193,11 @@ class TestAgent:
         third_fn_calls_fn_call_id_to_fn_output = {
             fn_call.id: None for fn_call in third_fn_calls
         }
+        print("########################################################")
+        print(agent_executor.graph.curr_graph.schema.__class__)
+        print(agent_executor.graph.curr_conversation_node.schema.__class__)
+        print(agent_executor.graph.curr_conversation_node.state)
+        print("########################################################")
         t7 = self.add_assistant_turn(
             agent_executor,
             model_provider,
@@ -1197,10 +1208,10 @@ class TestAgent:
         )
 
         next_next_node_schema = cashier_graph_schema.from_node_schema_id_to_edge_schema[
-            next_node_schema.id
+            cashier_graph_schema.start_node_schema.id
         ][0].to_node_schema
         input_schema, input = (
-            agent_executor.graph.curr_node.state.get_set_schema_and_fields()
+            agent_executor.graph.curr_graph.state.get_set_schema_and_fields()
         )
         node_turn_2 = TurnArgs(
             turn=NodeSystemTurn(
@@ -1233,16 +1244,17 @@ class TestAgent:
             "actually, i want to change my order",
             model_provider,
             False,
-            bwd_skip_node_schema_id=self.start_node_schema.id,
+            bwd_skip_node_schema_id=self.start_node_schema.default_start_node_schema.id,
             include_fwd_skip_node_schema_id=False,
         )
+        start_node_schema = cashier_graph_schema.start_node_schema.default_start_node_schema
         node_turn_3 = TurnArgs(
             turn=NodeSystemTurn(
-                msg_content=self.start_node_schema.node_system_prompt(
-                    node_prompt=cashier_graph_schema.start_node_schema.node_prompt,
+                msg_content=start_node_schema.node_system_prompt(
+                    node_prompt=start_node_schema.node_prompt,
                     input=None,
-                    node_input_json_schema=self.start_node_schema.input_from_state_schema,
-                    state_json_schema=self.start_node_schema.state_schema.model_json_schema(),
+                    node_input_json_schema=start_node_schema.input_from_state_schema,
+                    state_json_schema=start_node_schema.state_schema.model_json_schema(),
                     last_msg="thanks for confirming",
                     curr_request="customer wants to order coffee",
                 ),
@@ -1275,12 +1287,14 @@ class TestAgent:
         )
         self.run_message_dict_assertions(agent_executor, model_provider)
 
+        print("----------------up to here ------------------------------")
+
         t12 = self.add_user_turn(
             agent_executor,
             "nvm, nothing",
             model_provider,
             False,
-            bwd_skip_node_schema_id=2,
+            bwd_skip_node_schema_id=next_node_schema.id,
         )
         node_turn_4 = TurnArgs(
             turn=NodeSystemTurn(

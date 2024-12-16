@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections import defaultdict
 from typing import Any, List, Optional, Set, Tuple, Type, Union
+import copy
 
 from pydantic import BaseModel
 
@@ -71,7 +72,9 @@ class ANDGraphSchema(BaseTerminableGraphSchema):
                 edge_schema.from_node_schema.id
             ].append(edge_schema)
 
-    def create_node(self, input, request):
+    def create_node(self, input, request, prev_node=None):
+        if prev_node is not None:
+            return copy.deepcopy(prev_node)
         return ANDGraph(
             input=input,
             request=request,
@@ -153,11 +156,11 @@ class ANDGraph(BaseTerminableGraph):
 
     def check_self_completion(self, fn_call, is_fn_call_success):
         self_completion = (
-            len(self.visited_node_schemas) == self.schema.node_schemas
+            len(self.visited_node_schemas) == len(self.schema.node_schemas)
             and self.curr_node.status == Status.TRANSITIONING
         )
         if self_completion:
-            self.mark_as_internally_completed()
+            self.mark_as_transitioning()
         return self_completion
 
     def init_conversation_core(
@@ -170,6 +173,7 @@ class ANDGraph(BaseTerminableGraph):
         direction: Direction,
         TC,
         is_skip: bool = False,
+        prev_fn_caller=None,
     ) -> None:
         super().init_conversation_core(
             node_schema,
@@ -180,6 +184,7 @@ class ANDGraph(BaseTerminableGraph):
             direction,
             TC,
             is_skip,
+            prev_fn_caller=None,
         )
         self.visited_node_schemas.add(node_schema)
         if edge_schema:
