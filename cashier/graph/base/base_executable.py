@@ -90,6 +90,7 @@ class BaseGraphExecutable(BaseExecutable):
         if getattr(self, "curr_node", None) is not None:
             if not isinstance(self.curr_node, BaseGraphExecutable):
                 if self.curr_node.check_self_completion(fn_call, is_fn_call_success):
+                    self.curr_node.mark_as_internally_completed()
                     new_edge_schema, new_node_schema = self.check_node_transition(
                         fn_call, is_fn_call_success
                     )

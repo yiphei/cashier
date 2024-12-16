@@ -94,16 +94,13 @@ class ConversationNode(BaseExecutable, HasIdMixin, metaclass=TupleMetaclass):
         self.first_user_message = True
 
     def check_self_completion(self, fn_call, is_fn_call_success):
-        self_completion = (
+        return (
             self.schema.completion_config.run_check(
                 self.state, fn_call, is_fn_call_success
             )
             if self.schema.completion_config is not None
             else True
         )
-        if self_completion:
-            self.mark_as_internally_completed()
-        return self_completion
 
 
 class ConversationNodeSchema(
