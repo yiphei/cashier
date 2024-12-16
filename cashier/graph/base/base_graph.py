@@ -310,42 +310,12 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
 
             self.edge_schema_id_to_from_node[edge_schema.id] = new_node
 
-    def init_node_essential(
-        self,
-        node_schema: ConversationNodeSchema,
-        edge_schema: Optional[EdgeSchema],
-        input: Any,
-        last_msg: Optional[str],
-        prev_node: Optional[ConversationNode],
-        direction: Direction,
-        TC,
-        request,
-        is_skip: bool = False,
-        prev_fn_caller=None,
-    ):
-        logger.debug(
-            f"[NODE_SCHEMA] Initializing node with {Style.BRIGHT}node_schema_id: {node_schema.id}{Style.NORMAL}"
-        )
-        new_node = node_schema.create_node(
-            input, last_msg, edge_schema, prev_node, direction, request  # type: ignore
-        )
-        self.node_schema_id_to_nodes[node_schema.id].append(new_node)
-        new_node.parent = self
-
-        if edge_schema and self.curr_node is not None:
-            self.add_edge(self.curr_node, new_node, edge_schema, direction)
-
-        return new_node
-
     def init_conversation_core(
         self,
         new_node,
         node_schema: ConversationNodeSchema,
         edge_schema: Optional[EdgeSchema],
-        input: Any,
-        last_msg: Optional[str],
         prev_node: Optional[ConversationNode],
-        direction: Direction,
         TC,
         is_skip: bool = False,
         prev_fn_caller=None,
@@ -372,10 +342,7 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
         new_node,
         node_schema: ConversationNodeSchema,
         edge_schema: Optional[EdgeSchema],
-        input: Any,
-        last_msg: Optional[str],
         prev_node: Optional[ConversationNode],
-        direction: Direction,
         TC,
         is_skip: bool = False,
         prev_fn_caller=None,
@@ -408,27 +375,23 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
             fn = self.init_conversation_core
             request = self.request
 
-        new_node = self.init_node_essential(
-            node_schema,
-            edge_schema,
-            input,
-            last_msg,
-            prev_node,
-            direction,
-            TC,
-            request,
-            is_skip,
-            prev_fn_caller,
+        logger.debug(
+            f"[NODE_SCHEMA] Initializing node with {Style.BRIGHT}node_schema_id: {node_schema.id}{Style.NORMAL}"
         )
+        new_node = node_schema.create_node(
+            input, last_msg, edge_schema, prev_node, direction, request  # type: ignore
+        )
+        self.node_schema_id_to_nodes[node_schema.id].append(new_node)
+        new_node.parent = self
+
+        if edge_schema and self.curr_node is not None:
+            self.add_edge(self.curr_node, new_node, edge_schema, direction)
 
         fn(
             new_node,
             node_schema,
             edge_schema,
-            input,
-            last_msg,
             prev_node,
-            direction,
             TC,
             is_skip,
             prev_fn_caller,
