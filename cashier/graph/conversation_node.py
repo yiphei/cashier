@@ -112,7 +112,9 @@ class ConversationNode(
         return self_completion
 
 
-class ConversationNodeSchema(BaseExecutableSchema, HasIdMixin, metaclass=TupleMetaclass):
+class ConversationNodeSchema(
+    BaseExecutableSchema, HasIdMixin, metaclass=TupleMetaclass
+):
     def __init__(
         self,
         node_prompt: str,
