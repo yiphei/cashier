@@ -1272,7 +1272,7 @@ class TestAgent:
         t10 = AssistantTurn(
             msg_content=None,
             model_provider=model_provider,
-            tool_registry=self.start_node_schema.tool_registry,
+            tool_registry=self.start_node_schema.default_start_node_schema.tool_registry,
             fn_calls=[get_state_fn_call],
             fn_call_id_to_fn_output={
                 get_state_fn_call.id: agent_executor.graph.curr_conversation_node.state
@@ -1294,6 +1294,7 @@ class TestAgent:
             "nvm, nothing",
             model_provider,
             False,
+            include_fwd_skip_node_schema_id=False,
             bwd_skip_node_schema_id=next_node_schema.id,
         )
         node_turn_4 = TurnArgs(
