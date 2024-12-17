@@ -46,9 +46,10 @@ class GraphSchema(BaseTerminableGraphSchema):
             request=request,
             schema=self,
         )
-    
+
     def get_edge_schemas(self):
         return self.edge_schemas
+
 
 class Graph(BaseTerminableGraph):
     def __init__(

@@ -42,14 +42,20 @@ class BaseGraphSchema:
         }
 
     def get_all_edge_schemas(self) -> List[EdgeSchema]:
-        all_edge_schemas = [] 
+        all_edge_schemas = []
         for edge_schema in self.get_edge_schemas():
             if isinstance(edge_schema.from_node_schema, BaseGraphSchema):
-                all_edge_schemas.extend(edge_schema.from_node_schema.get_all_edge_schemas())
+                all_edge_schemas.extend(
+                    edge_schema.from_node_schema.get_all_edge_schemas()
+                )
             all_edge_schemas.append(edge_schema)
 
-        if all_edge_schemas and isinstance(all_edge_schemas[-1].to_node_schema, BaseGraphSchema):
-            all_edge_schemas.extend(all_edge_schemas[-1].to_node_schema.get_all_edge_schemas())
+        if all_edge_schemas and isinstance(
+            all_edge_schemas[-1].to_node_schema, BaseGraphSchema
+        ):
+            all_edge_schemas.extend(
+                all_edge_schemas[-1].to_node_schema.get_all_edge_schemas()
+            )
         return all_edge_schemas
 
 
