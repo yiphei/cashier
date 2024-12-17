@@ -56,7 +56,6 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
         self.input = input
         self.schema = schema
         self.edge_schema_id_to_edges = defaultdict(list)
-        self.from_node_schema_id_to_last_edge_schema_id = defaultdict(lambda: None)
         self.to_node_id_to_edge = defaultdict(lambda: None)
         self.edge_schema_id_to_from_node = {}
         self.next_edge_schema: Optional[EdgeSchema] = None
@@ -123,9 +122,6 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
         edge = Edge(from_node, to_node, edge_schema)
         self.edge_schema_id_to_edges[edge_schema.id].append(edge)
         self.to_node_id_to_edge[to_node.id] = edge
-        self.from_node_schema_id_to_last_edge_schema_id[from_node.schema.id] = (
-            edge_schema.id
-        )
         self.edge_schema_id_to_from_node[edge_schema.id] = from_node
 
     @overload
@@ -150,10 +146,10 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
             raise ValueError()
         return edge
 
-    def get_last_edge_schema_by_from_node_schema_id(
+    def get_edge_schema_by_from_node_schema_id(
         self, node_schema_id: int
     ) -> Optional[EdgeSchema]:
-        edge_schema_id = self.from_node_schema_id_to_last_edge_schema_id[node_schema_id]
+        edge_schema_id = self.from_node_schema_id_to_edge_schema[node_schema_id]
         return (
             self.schema.edge_schema_id_to_edge_schema[edge_schema_id]
             if edge_schema_id
@@ -220,7 +216,7 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
                     ),
                 )[0]:
                     fwd_jump_edge_schemas.add(edge_schema)
-                    next_edge_schema = self.get_last_edge_schema_by_from_node_schema_id(
+                    next_edge_schema = self.get_edge_schema_by_from_node_schema_id(
                         to_node.schema.id
                     )
                     if next_edge_schema:
@@ -266,7 +262,7 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
                 edge_schema = next_edge_schema
 
                 next_next_edge_schema = (
-                    self.get_last_edge_schema_by_from_node_schema_id(to_node.schema.id)
+                    self.get_edge_schema_by_from_node_schema_id(to_node.schema.id)
                 )
 
                 if next_next_edge_schema:
