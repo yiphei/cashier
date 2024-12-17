@@ -477,7 +477,7 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
         node_schema: ConversationNodeSchema,
         edge_schema: EdgeSchema,
         TC,
-        direction = None
+        direction=None,
     ) -> None:
         parent_node = self
 
