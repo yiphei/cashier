@@ -46,9 +46,9 @@ class GraphSchema(BaseTerminableGraphSchema):
         }
         self.from_node_schema_id_to_edge_schema = defaultdict(lambda: None)
         for edge_schema in self.edge_schemas:
-            self.from_node_schema_id_to_edge_schema[
-                edge_schema.from_node_schema.id
-            ] = edge_schema
+            self.from_node_schema_id_to_edge_schema[edge_schema.from_node_schema.id] = (
+                edge_schema
+            )
 
     def create_node(self, input, last_msg, edge_schema, prev_node, direction, request):
         return Graph(
