@@ -1238,9 +1238,7 @@ class TestAgent:
             bwd_skip_node_schema_id=self.start_node_schema.start_node_schema.id,
             include_fwd_skip_node_schema_id=False,
         )
-        start_node_schema = (
-            cashier_graph_schema.start_node_schema.start_node_schema
-        )
+        start_node_schema = cashier_graph_schema.start_node_schema.start_node_schema
         node_turn_3 = TurnArgs(
             turn=NodeSystemTurn(
                 msg_content=start_node_schema.node_system_prompt(
