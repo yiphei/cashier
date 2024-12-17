@@ -34,12 +34,12 @@ class GraphSchema(BaseTerminableGraphSchema):
             node_schemas,
             state_schema,
             run_assistant_turn_before_transition,
+            completion_config,
         )
         self.edge_schemas = edge_schemas
         self.output_schema = output_schema
         self.start_node_schema = start_node_schema
         self.last_node_schema = last_node_schema
-        self.completion_config = completion_config
 
         self.edge_schema_id_to_edge_schema = {
             edge_schema.id: edge_schema for edge_schema in self.edge_schemas

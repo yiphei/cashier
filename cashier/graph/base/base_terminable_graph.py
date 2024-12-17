@@ -38,12 +38,14 @@ class BaseTerminableGraphSchema(HasIdMixin, BaseGraphSchema, BaseExecutableSchem
         node_schemas: List[ConversationNodeSchema],
         state_schema: Type[BaseModel],
         run_assistant_turn_before_transition: bool = False,
+        completion_config = None,
     ):
         HasIdMixin.__init__(self, target_cls=BaseTerminableGraphSchema)
         BaseGraphSchema.__init__(self, description, node_schemas)
         BaseExecutableSchema.__init__(
             self,
             state_schema=state_schema,
+            completion_config=completion_config,
             run_assistant_turn_before_transition=run_assistant_turn_before_transition,
         )
 
