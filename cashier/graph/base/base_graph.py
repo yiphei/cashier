@@ -75,6 +75,11 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
             self.from_node_schema_id_to_edge_schema[
                 edge_schema.from_node_schema.id
             ].append(edge_schema)
+        self.to_node_schema_id_to_edge_schema = defaultdict(list)
+        for edge_schema in self.edge_schemas:
+            self.to_node_schema_id_to_edge_schema[
+                edge_schema.to_node_schema.id
+            ].append(edge_schema)
 
         self.node_schema_id_to_nodes = defaultdict(list)
 
@@ -84,6 +89,10 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
         self.from_node_schema_id_to_edge_schema[edge_schema.from_node_schema.id].append(
             edge_schema
         )
+        self.to_node_schema_id_to_edge_schema[edge_schema.to_node_schema.id].append(
+            edge_schema
+        )
+
 
     @property
     def transition_queue(self):

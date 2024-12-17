@@ -113,13 +113,8 @@ class BaseTerminableGraph(BaseGraph):
             TC, self.curr_node.schema, all_node_schemas, True
         )
 
-        if node_schema_id is not None:
-            for edge_schema in remaining_edge_schemas:
-                if edge_schema.to_node_schema.id == node_schema_id:
-                    return (
-                        edge_schema,
-                        self.schema.node_schema_id_to_node_schema[node_schema_id],
-                    )
+        if node_schema_id is not None:                
+            return self.to_node_schema_id_to_edge_schema[node_schema_id][0], self.schema.node_schema_id_to_node_schema[node_schema_id]
 
         return None, None
 
