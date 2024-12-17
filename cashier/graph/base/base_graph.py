@@ -184,6 +184,10 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
 
         self.bwd_skip_edge_schemas = new_edge_schemas | curr_bwd_skip_edge_schemas
 
+    # TODO: make this recursive
+    def get_edge_schemas(self) -> List[EdgeSchema]:
+        return self.edge_schemas
+
     def compute_fwd_skip_edge_schemas(self) -> Set[EdgeSchema]:
         start_node = self.curr_node
         fwd_jump_edge_schemas = set()
@@ -220,7 +224,7 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
                     ),
                 )[0]:
                     if isinstance(edge_schema.to_node_schema, BaseGraphSchema):
-                        fwd_jump_edge_schemas.extend(graph_node.edge_schemas)
+                        fwd_jump_edge_schemas.extend([edge_schema] + graph_node.get_edge_schemas())
                     else:
                         fwd_jump_edge_schemas.add(edge_schema)
                     next_edge_schema = self.get_edge_schema_by_from_node_schema_id(
