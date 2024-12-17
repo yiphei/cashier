@@ -55,7 +55,6 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
         BaseGraphExecutable.__init__(self, state)
         self.input = input
         self.schema = schema
-        self.to_node_id_to_edge = defaultdict(lambda: None)
         self.edge_schema_id_to_from_node = {}
         self.request = request
         self.parent = None
@@ -77,6 +76,7 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
         # graph instance
         self.node_schema_id_to_nodes = defaultdict(list)
         self.edge_schema_id_to_edges = defaultdict(list)
+        self.to_node_id_to_edge = defaultdict(lambda: None)
 
         # transition
         self.next_edge_schema: Optional[EdgeSchema] = None
