@@ -62,11 +62,11 @@ class ANDGraphSchema(BaseTerminableGraphSchema):
         self.default_edge_schema_id_to_edge_schema = {
             edge_schema.id: edge_schema for edge_schema in self.default_edge_schemas
         }
-        self.default_from_node_schema_id_to_edge_schema = defaultdict(list)
+        self.default_from_node_schema_id_to_edge_schema = defaultdict(lambda: None)
         for edge_schema in self.default_edge_schemas:
             self.default_from_node_schema_id_to_edge_schema[
                 edge_schema.from_node_schema.id
-            ].append(edge_schema)
+            ] = edge_schema
 
     @property
     def start_node_schema(self):

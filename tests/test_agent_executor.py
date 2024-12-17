@@ -893,8 +893,6 @@ class TestAgent:
 
         next_node_schema = cashier_graph_schema.start_node_schema.default_from_node_schema_id_to_edge_schema[
             self.start_node_schema.start_node_schema.id
-        ][
-            0
         ].to_node_schema
 
         input_schema, input = (
@@ -987,8 +985,6 @@ class TestAgent:
 
         next_node_schema = cashier_graph_schema.start_node_schema.default_from_node_schema_id_to_edge_schema[
             self.start_node_schema.start_node_schema.id
-        ][
-            0
         ].to_node_schema
         input_schema, input = (
             agent_executor.graph.curr_graph.state.get_set_schema_and_fields()
@@ -1140,8 +1136,6 @@ class TestAgent:
         )
         next_node_schema = cashier_graph_schema.start_node_schema.default_from_node_schema_id_to_edge_schema[
             self.start_node_schema.start_node_schema.id
-        ][
-            0
         ].to_node_schema
         input_schema, input = (
             agent_executor.graph.curr_graph.state.get_set_schema_and_fields()
@@ -1200,7 +1194,7 @@ class TestAgent:
 
         next_next_node_schema = cashier_graph_schema.from_node_schema_id_to_edge_schema[
             cashier_graph_schema.start_node_schema.id
-        ][0].to_node_schema
+        ].to_node_schema
         input_schema, input = (
             agent_executor.graph.curr_graph.state.get_set_schema_and_fields()
         )
