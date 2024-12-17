@@ -214,7 +214,6 @@ class BaseTerminableGraph(BaseGraph):
         )
         self.compute_bwd_skip_edge_schemas()
 
-
     def is_completed(self, fn_call, is_fn_call_success):
         assert self.schema.completion_config is not None
         return (
