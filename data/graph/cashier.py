@@ -102,7 +102,7 @@ class AndGraphState(BaseStateModel):
     order: Optional[Order] = None
 
 
-and_graph = ANDGraphSchema(
+and_graph_schema = ANDGraphSchema(
     description="take order and confirm it with the customer",
     node_schemas=[take_order_node_schema, confirm_order_node_schema],
     state_schema=AndGraphState,
@@ -129,7 +129,7 @@ terminal_order_node_schema = ConversationNodeSchema(
 )
 
 and_edge_schema = EdgeSchema(
-    from_node_schema=and_graph,
+    from_node_schema=and_graph_schema,
     to_node_schema=terminal_order_node_schema,
 )
 
@@ -141,11 +141,11 @@ class GraphState(BaseStateModel):
 cashier_graph_schema = GraphSchema(
     description="Help the customer place a coffee order",
     output_schema=Order,
-    start_node_schema=and_graph,
+    start_node_schema=and_graph_schema,
     last_node_schema=terminal_order_node_schema,
     edge_schemas=[and_edge_schema],
     node_schemas=[
-        and_graph,
+        and_graph_schema,
         terminal_order_node_schema,
     ],
     state_schema=GraphState,
