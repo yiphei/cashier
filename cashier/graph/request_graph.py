@@ -112,28 +112,21 @@ class RequestGraph(BaseGraph):
                     None,
                 )
 
-    def is_completed(self):
+    def is_completed(self, fn_call, is_fn_call_success):
         return False
-
-    def check_self_transition(
-        self,
-        fn_call,
-        is_fn_call_success,
-        new_edge_schema=None,
-        new_node_schema=None,
-    ):
+    
+    def check_node_transition(self, fn_call, is_fn_call_success):
         edge_schemas = self.from_node_schema_id_to_edge_schema[self.curr_node.schema.id]
-        if self.curr_node.status == Status.INTERNALLY_COMPLETED:
-            if len(edge_schemas) == 1:
-                new_edge_schema = edge_schemas[0]
-                new_node_schema = new_edge_schema.to_node_schema
-            else:
-                new_edge_schema = None
-                new_node_schema = self.schema.default_node_schema
+        if len(edge_schemas) == 1:
+            new_edge_schema = edge_schemas[0]
+            new_node_schema = new_edge_schema.to_node_schema
+        else:
+            new_edge_schema = None
+            new_node_schema = self.schema.default_node_schema
 
-            if self.curr_node.status == Status.INTERNALLY_COMPLETED:
-                self.curr_node.mark_as_transitioning()
-                self.local_transition_queue.append(self.curr_node)
+        if self.curr_node.status == Status.INTERNALLY_COMPLETED:
+            self.curr_node.mark_as_transitioning()
+            self.local_transition_queue.append(self.curr_node)
         return new_edge_schema, new_node_schema
 
     def get_next_edge_schema(self):

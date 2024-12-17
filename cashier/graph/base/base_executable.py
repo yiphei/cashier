@@ -64,9 +64,7 @@ class BaseGraphExecutable(BaseExecutable):
                 self.local_transition_queue.append(self.curr_node)
             self.mark_as_internally_completed()
             return None, None
-        elif self.curr_node.status == Status.INTERNALLY_COMPLETED and isinstance(
-            self.curr_node, BaseGraphExecutable
-        ):
+        elif self.curr_node.status == Status.INTERNALLY_COMPLETED:
             return self.check_node_transition(fn_call, is_fn_call_success)
         return new_edge_schema, new_node_schema
 
