@@ -148,14 +148,10 @@ class ANDGraph(BaseTerminableGraph):
         )
 
     def is_completed(self, fn_call, is_fn_call_success):
-        self_completion = (
+        return (
             len(self.visited_node_schemas) == len(self.schema.node_schemas)
             and self.curr_node.status == Status.INTERNALLY_COMPLETED
         )
-        if self_completion:
-            # TODO: this is bad. refactor this. also, generalize this to all graphs
-            self.update_state_from_executable(self.curr_node)
-        return self_completion
 
     def post_node_init(
         self,

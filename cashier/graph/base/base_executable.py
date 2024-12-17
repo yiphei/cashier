@@ -75,6 +75,9 @@ class BaseGraphExecutable(BaseExecutable):
                     fn_call, is_fn_call_success
                 )
 
+        if self.curr_node.status == Status.INTERNALLY_COMPLETED:
+            self.update_state_from_executable(self.curr_node)
+
         if self.is_completed(fn_call, is_fn_call_success):
             if self.curr_node.status == Status.INTERNALLY_COMPLETED:
                 self.curr_node.mark_as_transitioning()

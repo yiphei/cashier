@@ -435,13 +435,6 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
 
             assert curr_node.status == Status.TRANSITIONING
             curr_node.mark_as_completed()
-            # TODO: this is bad. refactor this
-            if (
-                curr_node.state is not None
-                and getattr(parent_node, "state", None) is not None
-            ):
-                parent_node.update_state_from_executable(curr_node)
-
             parent_node.local_transition_queue.clear()
 
         direction = Direction.FWD
