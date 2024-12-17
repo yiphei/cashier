@@ -124,9 +124,8 @@ class RequestGraph(BaseGraph):
             new_edge_schema = None
             new_node_schema = self.schema.default_node_schema
 
-        if self.curr_node.status == Status.INTERNALLY_COMPLETED:
-            self.curr_node.mark_as_transitioning()
-            self.local_transition_queue.append(self.curr_node)
+        self.curr_node.mark_as_transitioning()
+        self.local_transition_queue.append(self.curr_node)
         return new_edge_schema, new_node_schema
 
     def get_next_edge_schema(self):
