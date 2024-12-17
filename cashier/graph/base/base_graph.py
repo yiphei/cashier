@@ -222,7 +222,7 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
             ):
                 graph_node = self.node_schema_id_to_nodes[
                     edge_schema.from_node_schema.id
-                ]
+                ][-1]
                 fwd_jump_edge_schemas |= graph_node.compute_fwd_skip_edge_schemas()
 
             if (
@@ -246,7 +246,7 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
                     fwd_jump_edge_schemas.add(edge_schema)
                     if isinstance(edge_schema.to_node_schema, BaseGraphSchema):
                         fwd_jump_edge_schemas |= set(
-                            graph_node.schema.get_all_edge_schemas()
+                            edge_schema.to_node_schema.get_all_edge_schemas()
                         )
                     next_edge_schema = self.get_edge_schema_by_from_node_schema_id(
                         to_node.schema.id
