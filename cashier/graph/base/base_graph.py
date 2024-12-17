@@ -59,13 +59,11 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
         self.from_node_schema_id_to_last_edge_schema_id = defaultdict(lambda: None)
         self.to_node_id_to_edge = defaultdict(lambda: None)
         self.edge_schema_id_to_from_node = {}
-        self.curr_node = None
         self.next_edge_schemas: Set[EdgeSchema] = set()
         self.bwd_skip_edge_schemas: Set[EdgeSchema] = set()
         self.request = request
         self.new_edge_schema = None
         self.new_node_schema = None
-        self.local_transition_queue = deque()
         self.parent = None
 
         self.edge_schemas = edge_schemas or []

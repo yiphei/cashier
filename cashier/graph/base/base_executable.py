@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import Any
-
+from collections import deque
 from cashier.graph.base.base_state import BaseStateModel
 from cashier.graph.mixin.has_status_mixin import HasStatusMixin, Status
 
@@ -51,6 +51,11 @@ class BaseExecutable(ABC, HasStatusMixin):
 
 
 class BaseGraphExecutable(BaseExecutable):
+    def __init__(self, state):
+        super().__init__(state)
+        self.local_transition_queue = deque()
+        self.curr_node = None
+
     def check_node_transition(self, fn_call, is_fn_call_success):
         assert self.curr_node.status == Status.INTERNALLY_COMPLETED
         for edge_schema in self.next_edge_schemas:
