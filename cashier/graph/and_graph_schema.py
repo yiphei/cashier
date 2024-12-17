@@ -140,7 +140,7 @@ class ANDGraph(BaseTerminableGraph):
 
         return None, node_schema
 
-    def compute_next_edge_schemas_for_init_conversation_core(self):
+    def get_next_edge_schemas(self):
         return set(
             self.schema.default_from_node_schema_id_to_edge_schema.get(
                 self.curr_node.schema.id, []

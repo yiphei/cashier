@@ -178,7 +178,7 @@ class BaseTerminableGraph(BaseGraph):
                     )
         self.curr_conversation_node.update_first_user_message()
 
-    def compute_next_edge_schemas_for_init_conversation_core(self):
+    def get_next_edge_schemas(self):
         return set(
             self.from_node_schema_id_to_edge_schema.get(self.curr_node.schema.id, [])
         )
@@ -197,7 +197,7 @@ class BaseTerminableGraph(BaseGraph):
             is_skip,
         )
         self.next_edge_schemas = (
-            self.compute_next_edge_schemas_for_init_conversation_core()
+            self.get_next_edge_schemas()
         )
         self.compute_bwd_skip_edge_schemas()
 
