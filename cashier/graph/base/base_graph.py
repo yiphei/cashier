@@ -379,7 +379,7 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
         if isinstance(node_schema, BaseGraphSchema):
             node_schema, edge_schema = new_node.compute_init_node_edge_schema()
             if is_skip:
-                self.curr_node.init_skip_node(node_schema, edge_schema, TC)
+                self.curr_node.init_skip_node(node_schema, edge_schema, TC, direction)
             else:
                 self.curr_node.init_next_node(node_schema, edge_schema, TC, None)
 
@@ -477,6 +477,7 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
         node_schema: ConversationNodeSchema,
         edge_schema: EdgeSchema,
         TC,
+        direction = None
     ) -> None:
         parent_node = self
 
@@ -484,14 +485,9 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
             while edge_schema.from_node_schema not in parent_node.schema.node_schemas:
                 parent_node = parent_node.curr_node
 
-        direction = Direction.FWD
+        direction = direction or Direction.FWD
         if edge_schema and edge_schema.from_node_schema == node_schema:
             direction = Direction.BWD
-
-        if not edge_schema:
-            direction = (
-                Direction.BWD
-            )  # TODO: fix this. this can actually be either BWD or FWD, but only the parent would know, so the parent needs to pass it down
 
         last_msg = TC.get_asst_message(content_only=True)
         parent_node._init_skip_node(
