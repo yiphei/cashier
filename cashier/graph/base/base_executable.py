@@ -67,9 +67,7 @@ class BaseGraphExecutable(BaseExecutable):
         elif self.curr_node.status == Status.INTERNALLY_COMPLETED and isinstance(
             self.curr_node, BaseGraphExecutable
         ):
-            return self.check_node_transition(
-                fn_call, is_fn_call_success
-            )
+            return self.check_node_transition(fn_call, is_fn_call_success)
         return new_edge_schema, new_node_schema
 
     def check_node_transition(self, fn_call, is_fn_call_success):
