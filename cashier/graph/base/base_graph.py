@@ -192,7 +192,7 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
     def compute_fwd_skip_edge_schemas(self) -> Set[EdgeSchema]:
         start_node = self.curr_node
         fwd_jump_edge_schemas = set()
-        edge_schemas = (
+        edge_schemas = ( # TODO: refactor this to not use a deque altogether
             deque([self.next_edge_schema]) if self.next_edge_schema else deque()
         )
         while edge_schemas:
