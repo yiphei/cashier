@@ -432,7 +432,6 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
         while transition_queue:
             curr_node = transition_queue.popleft()
             parent_node = curr_node.parent
-
             assert curr_node.status == Status.TRANSITIONING
             curr_node.mark_as_completed()
             parent_node.local_transition_queue.clear()
