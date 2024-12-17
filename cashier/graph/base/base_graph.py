@@ -312,7 +312,6 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
                     self.to_node_id_to_edge[new_node.id].schema,
                 )
 
-
     def post_node_init(
         self,
         edge_schema: Optional[EdgeSchema],
