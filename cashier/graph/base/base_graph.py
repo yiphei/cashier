@@ -41,6 +41,17 @@ class BaseGraphSchema:
             node_schema.id: node_schema for node_schema in self.node_schemas
         }
 
+    def get_all_edge_schemas(self) -> List[EdgeSchema]:
+        all_edge_schemas = [] 
+        for edge_schema in self.get_edge_schemas():
+            if isinstance(edge_schema.from_node_schema, BaseGraphSchema):
+                all_edge_schemas.extend(edge_schema.from_node_schema.get_all_edge_schemas())
+            all_edge_schemas.append(edge_schema)
+
+        if all_edge_schemas and isinstance(all_edge_schemas[-1].to_node_schema, BaseGraphSchema):
+            all_edge_schemas.extend(all_edge_schemas[-1].to_node_schema.get_all_edge_schemas())
+        return all_edge_schemas
+
 
 class BaseGraph(BaseGraphExecutable, HasIdMixin):
     def __init__(
@@ -191,10 +202,6 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
 
         return new_edge_schemas | curr_bwd_skip_edge_schemas
 
-    # TODO: make this recursive
-    def get_edge_schemas(self) -> List[EdgeSchema]:
-        return self.edge_schemas
-
     def compute_fwd_skip_edge_schemas(self) -> Set[EdgeSchema]:
         start_node = self.curr_node
         fwd_jump_edge_schemas = set()
@@ -232,7 +239,7 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
                 )[0]:
                     if isinstance(edge_schema.to_node_schema, BaseGraphSchema):
                         fwd_jump_edge_schemas.extend(
-                            [edge_schema] + graph_node.get_edge_schemas()
+                            [edge_schema] + graph_node.schema.get_all_edge_schemas()
                         )
                     else:
                         fwd_jump_edge_schemas.add(edge_schema)
