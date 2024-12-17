@@ -55,7 +55,6 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
         BaseGraphExecutable.__init__(self, state)
         self.input = input
         self.schema = schema
-        self.edge_schema_id_to_from_node = {}
         self.request = request
         self.parent = None
 
@@ -124,7 +123,6 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
         edge = Edge(from_node, to_node, edge_schema)
         self.edge_schema_id_to_edges[edge_schema.id].append(edge)
         self.to_node_id_to_edge[to_node.id] = edge
-        self.edge_schema_id_to_from_node[edge_schema.id] = from_node
 
     @overload
     def get_edge_by_edge_schema_id(  # noqa: E704
@@ -294,7 +292,7 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
         if direction == Direction.FWD:
             immediate_from_node = curr_node
             if edge_schema.from_node_schema != curr_node.schema:
-                from_node = self.edge_schema_id_to_from_node[edge_schema.id]
+                from_node = self.edge_schema_id_to_edges[edge_schema.id][-1].from_node
                 immediate_from_node = from_node
                 while from_node.schema != curr_node.schema:
                     edge = self.to_node_id_to_edge[from_node.id]
@@ -314,7 +312,6 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
                     self.to_node_id_to_edge[new_node.id].schema,
                 )
 
-            self.edge_schema_id_to_from_node[edge_schema.id] = new_node
 
     def post_node_init(
         self,
