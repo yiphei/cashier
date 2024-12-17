@@ -62,13 +62,16 @@ class BaseGraphExecutable(BaseExecutable):
 
     def check_node_transition(self, fn_call, is_fn_call_success):
         assert self.curr_node.status == Status.INTERNALLY_COMPLETED
-        if self.next_edge_schema is not None and self.next_edge_schema.check_transition_config(
-            self.curr_node.state, fn_call, is_fn_call_success
+        if (
+            self.next_edge_schema is not None
+            and self.next_edge_schema.check_transition_config(
+                self.curr_node.state, fn_call, is_fn_call_success
+            )
         ):
             self.curr_node.mark_as_transitioning()
             self.local_transition_queue.append(self.curr_node)
             return self.next_edge_schema, self.next_edge_schema.to_node_schema
-        
+
         return None, None
 
     def check_transition(self, fn_call, is_fn_call_success):

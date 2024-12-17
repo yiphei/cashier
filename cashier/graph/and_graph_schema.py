@@ -142,8 +142,8 @@ class ANDGraph(BaseTerminableGraph):
 
     def get_next_edge_schema(self):
         return self.schema.default_from_node_schema_id_to_edge_schema.get(
-                self.curr_node.schema.id, None
-            )
+            self.curr_node.schema.id, None
+        )
 
     def is_completed(self, fn_call, is_fn_call_success):
         return (

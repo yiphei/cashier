@@ -177,7 +177,9 @@ class BaseTerminableGraph(BaseGraph):
         self.curr_conversation_node.update_first_user_message()
 
     def get_next_edge_schema(self):
-        return self.from_node_schema_id_to_edge_schema.get(self.curr_node.schema.id, None)
+        return self.from_node_schema_id_to_edge_schema.get(
+            self.curr_node.schema.id, None
+        )
 
     def post_node_init(
         self,
