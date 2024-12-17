@@ -49,12 +49,6 @@ class BaseExecutable(ABC, HasStatusMixin):
     def get_state(self) -> BaseStateModel:
         return self.state
 
-    def check_transition(self, fn_call, is_fn_call_success):
-        if self.is_completed(fn_call, is_fn_call_success):
-            self.mark_as_internally_completed()
-        return None, None
-
-
 class BaseGraphExecutable(BaseExecutable):
     def check_node_transition(self, fn_call, is_fn_call_success):
         assert self.curr_node.status == Status.INTERNALLY_COMPLETED
@@ -72,9 +66,13 @@ class BaseGraphExecutable(BaseExecutable):
         new_edge_schema, new_node_schema = None, None
 
         if getattr(self, "curr_node", None) is not None:
-            new_edge_schema, new_node_schema = self.curr_node.check_transition(
-                fn_call, is_fn_call_success
-            )
+            if not isinstance(self.curr_node, BaseGraphExecutable):
+                if self.curr_node.is_completed(fn_call, is_fn_call_success):
+                    self.curr_node.mark_as_internally_completed()
+            else:
+                new_edge_schema, new_node_schema = self.curr_node.check_transition(
+                    fn_call, is_fn_call_success
+                )
 
         if self.is_completed(fn_call, is_fn_call_success):
             if self.curr_node.status == Status.INTERNALLY_COMPLETED:
