@@ -123,7 +123,7 @@ class RequestGraph(BaseGraph):
         new_node_schema=None,
     ):
         edge_schemas = self.from_node_schema_id_to_edge_schema[self.curr_node.schema.id]
-        if self.curr_node.status in [Status.TRANSITIONING, Status.INTERNALLY_COMPLETED]:
+        if self.curr_node.status == Status.INTERNALLY_COMPLETED:
             if len(edge_schemas) == 1:
                 new_edge_schema = edge_schemas[0]
                 new_node_schema = new_edge_schema.to_node_schema
