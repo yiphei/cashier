@@ -192,8 +192,13 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
         )
         while edge_schemas:
             edge_schema = edge_schemas.popleft()
-            if isinstance(edge_schema.from_node_schema, BaseGraphSchema) and edge_schema.from_node_schema.id in self.node_schema_id_to_nodes:
-                graph_node = self.node_schema_id_to_nodes[edge_schema.from_node_schema.id]
+            if (
+                isinstance(edge_schema.from_node_schema, BaseGraphSchema)
+                and edge_schema.from_node_schema.id in self.node_schema_id_to_nodes
+            ):
+                graph_node = self.node_schema_id_to_nodes[
+                    edge_schema.from_node_schema.id
+                ]
                 fwd_jump_edge_schemas.extend(graph_node.compute_fwd_skip_edge_schemas())
 
             if (
