@@ -65,7 +65,7 @@ class ANDGraphSchema(BaseTerminableGraphSchema):
     @property
     def start_node_schema(self):
         return self.default_start_node_schema
-    
+
     @property
     def last_node_schema(self):
         return self.node_schemas[-1]

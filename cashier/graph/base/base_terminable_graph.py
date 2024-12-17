@@ -69,9 +69,13 @@ class BaseTerminableGraph(BaseGraph):
         TC,
     ) -> Union[Tuple[EdgeSchema, ConversationNodeSchema], Tuple[None, None]]:
         all_node_schemas = {self.curr_node.schema}
-        all_node_schemas.update(self.get_conv_node_schema_from_edge_schema(edge) for edge in fwd_skip_edge_schemas)
         all_node_schemas.update(
-            self.get_from_conv_node_schema_from_edge_schema(edge) for edge in self.bwd_skip_edge_schemas
+            self.get_conv_node_schema_from_edge_schema(edge)
+            for edge in fwd_skip_edge_schemas
+        )
+        all_node_schemas.update(
+            self.get_from_conv_node_schema_from_edge_schema(edge)
+            for edge in self.bwd_skip_edge_schemas
         )
 
         node_schema_id = should_change_node_schema(
@@ -88,7 +92,9 @@ class BaseTerminableGraph(BaseGraph):
                     )
 
             for edge_schema in self.bwd_skip_edge_schemas:
-                node_schema = self.get_from_conv_node_schema_from_edge_schema(edge_schema)
+                node_schema = self.get_from_conv_node_schema_from_edge_schema(
+                    edge_schema
+                )
                 if node_schema.id == node_schema_id:
                     return (
                         edge_schema,
@@ -96,13 +102,13 @@ class BaseTerminableGraph(BaseGraph):
                     )
 
         return None, None
-    
+
     # TODO: make this recursive
     def get_conv_node_schema_from_edge_schema(self, edge_schema):
         if isinstance(edge_schema.to_node_schema, BaseGraphSchema):
             return edge_schema.to_node_schema.start_node_schema
         return edge_schema.to_node_schema
-    
+
     # TODO: make this recursive
     def get_from_conv_node_schema_from_edge_schema(self, edge_schema):
         if isinstance(edge_schema.from_node_schema, BaseGraphSchema):
@@ -121,7 +127,10 @@ class BaseTerminableGraph(BaseGraph):
         )
 
         all_node_schemas = {self.curr_node.schema}
-        all_node_schemas.update(self.get_conv_node_schema_from_edge_schema(edge) for edge in remaining_edge_schemas)
+        all_node_schemas.update(
+            self.get_conv_node_schema_from_edge_schema(edge)
+            for edge in remaining_edge_schemas
+        )
 
         node_schema_id = should_change_node_schema(
             TC, self.curr_node.schema, all_node_schemas, True
