@@ -171,6 +171,9 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
             return None
 
     def compute_bwd_skip_edge_schemas(self) -> Set[EdgeSchema]:
+        if self.curr_node is None:
+            return set()
+        
         from_node = self.curr_node
         new_edge_schemas = set()
         curr_bwd_skip_edge_schemas = self.bwd_skip_edge_schemas
