@@ -59,7 +59,7 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
         self.from_node_schema_id_to_last_edge_schema_id = defaultdict(lambda: None)
         self.to_node_id_to_edge = defaultdict(lambda: None)
         self.edge_schema_id_to_from_node = {}
-        self.next_edge_schemas: Set[EdgeSchema] = set()
+        self.next_edge_schema: Optional[EdgeSchema] = None
         self.bwd_skip_edge_schemas: Set[EdgeSchema] = set()
         self.request = request
         self.new_edge_schema = None
@@ -195,9 +195,8 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
 
     def compute_fwd_skip_edge_schemas(self) -> Set[EdgeSchema]:
         start_node = self.curr_node
-        start_edge_schemas = self.next_edge_schemas
         fwd_jump_edge_schemas = set()
-        edge_schemas = deque(start_edge_schemas)
+        edge_schemas = deque(self.next_edge_schema)
         while edge_schemas:
             edge_schema = edge_schemas.popleft()
             if (
