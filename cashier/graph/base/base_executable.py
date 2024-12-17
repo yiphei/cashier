@@ -48,26 +48,14 @@ class BaseExecutable(ABC, HasStatusMixin):
 
     def get_state(self) -> BaseStateModel:
         return self.state
+    
+    def check_transition(self, fn_call, is_fn_call_success):
+        if self.is_completed(fn_call, is_fn_call_success):
+            self.mark_as_internally_completed()
+        return None, None
 
 
 class BaseGraphExecutable(BaseExecutable):
-    def check_self_transition(
-        self,
-        fn_call,
-        is_fn_call_success,
-        new_edge_schema=None,
-        new_node_schema=None,
-    ):
-        if self.is_completed(fn_call, is_fn_call_success):
-            if self.curr_node.status == Status.INTERNALLY_COMPLETED:
-                self.curr_node.mark_as_transitioning()
-                self.local_transition_queue.append(self.curr_node)
-            self.mark_as_internally_completed()
-            return None, None
-        elif self.curr_node.status == Status.INTERNALLY_COMPLETED:
-            return self.check_node_transition(fn_call, is_fn_call_success)
-        return new_edge_schema, new_node_schema
-
     def check_node_transition(self, fn_call, is_fn_call_success):
         assert self.curr_node.status == Status.INTERNALLY_COMPLETED
         for edge_schema in self.get_next_edge_schema():
@@ -88,21 +76,16 @@ class BaseGraphExecutable(BaseExecutable):
         new_edge_schema, new_node_schema = None, None
 
         if getattr(self, "curr_node", None) is not None:
-            if not isinstance(self.curr_node, BaseGraphExecutable):
-                if self.curr_node.is_completed(fn_call, is_fn_call_success):
-                    self.curr_node.mark_as_internally_completed()
-                    new_edge_schema, new_node_schema = self.check_node_transition(
-                        fn_call, is_fn_call_success
-                    )
-            else:
-                new_edge_schema, new_node_schema = self.curr_node.check_transition(
-                    fn_call, is_fn_call_success
-                )
+            new_edge_schema, new_node_schema = self.curr_node.check_transition(
+                fn_call, is_fn_call_success
+            )
 
-        new_edge_schema, new_node_schema = self.check_self_transition(
-            fn_call,
-            is_fn_call_success,
-            new_edge_schema,
-            new_node_schema,
-        )
+        if self.is_completed(fn_call, is_fn_call_success):
+            if self.curr_node.status == Status.INTERNALLY_COMPLETED:
+                self.curr_node.mark_as_transitioning()
+                self.local_transition_queue.append(self.curr_node)
+            self.mark_as_internally_completed()
+            return None, None
+        elif self.curr_node.status == Status.INTERNALLY_COMPLETED:
+            return self.check_node_transition(fn_call, is_fn_call_success)
         return new_edge_schema, new_node_schema
