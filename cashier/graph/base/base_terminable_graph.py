@@ -68,7 +68,7 @@ class BaseTerminableGraph(BaseGraph):
         fwd_skip_edge_schemas: Set[EdgeSchema],
         TC,
     ) -> Union[Tuple[EdgeSchema, ConversationNodeSchema], Tuple[None, None]]:
-        all_node_schemas = {self.curr_node.schema}
+        all_node_schemas = {self.curr_conversation_node.schema}
         all_node_schemas.update(
             self.get_conv_node_schema_from_edge_schema(edge)
             for edge in fwd_skip_edge_schemas
@@ -79,7 +79,7 @@ class BaseTerminableGraph(BaseGraph):
         )
 
         node_schema_id = should_change_node_schema(
-            TC, self.curr_node.schema, all_node_schemas, False
+            TC, self.curr_conversation_node.schema, all_node_schemas, False
         )
 
         if node_schema_id is not None:
@@ -126,14 +126,14 @@ class BaseTerminableGraph(BaseGraph):
             - self.bwd_skip_edge_schemas
         )
 
-        all_node_schemas = {self.curr_node.schema}
+        all_node_schemas = {self.curr_conversation_node.schema}
         all_node_schemas.update(
             self.get_conv_node_schema_from_edge_schema(edge)
             for edge in remaining_edge_schemas
         )
 
         node_schema_id = should_change_node_schema(
-            TC, self.curr_node.schema, all_node_schemas, True
+            TC, self.curr_conversation_node.schema, all_node_schemas, True
         )
 
         if node_schema_id is not None:
