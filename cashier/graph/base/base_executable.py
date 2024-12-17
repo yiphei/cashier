@@ -17,9 +17,11 @@ class BaseExecutableSchema(ABC):
         self.completion_config = completion_config
         self.run_assistant_turn_before_transition = run_assistant_turn_before_transition
 
-    @abstractmethod
     def get_input(self, state, edge_schema):
-        raise NotImplementedError()
+        if edge_schema.new_input_fn is not None:
+            return edge_schema.new_input_fn(state)
+        else:
+            return None
 
     @abstractmethod
     def create_node(self, input, last_msg, edge_schema, prev_node, direction, request):
