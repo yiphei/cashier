@@ -55,16 +55,12 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
         BaseGraphExecutable.__init__(self, state)
         self.input = input
         self.schema = schema
-        self.edge_schema_id_to_edges = defaultdict(list)
         self.to_node_id_to_edge = defaultdict(lambda: None)
         self.edge_schema_id_to_from_node = {}
-        self.next_edge_schema: Optional[EdgeSchema] = None
-        self.bwd_skip_edge_schemas: Set[EdgeSchema] = set()
         self.request = request
-        self.new_edge_schema = None
-        self.new_node_schema = None
         self.parent = None
 
+        # graph schema
         self.edge_schemas = edge_schemas or []
         self.edge_schema_id_to_edge_schema = {
             edge_schema.id: edge_schema for edge_schema in self.edge_schemas
@@ -78,7 +74,15 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
             for edge_schema in self.edge_schemas
         }
 
+        # graph instance
         self.node_schema_id_to_nodes = defaultdict(list)
+        self.edge_schema_id_to_edges = defaultdict(list)
+
+        # transition
+        self.next_edge_schema: Optional[EdgeSchema] = None
+        self.bwd_skip_edge_schemas: Set[EdgeSchema] = set()
+        self.new_edge_schema = None
+        self.new_node_schema = None
 
     def add_edge_schema(self, edge_schema):
         self.edge_schemas.append(edge_schema)
