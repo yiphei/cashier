@@ -204,7 +204,7 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
             assert from_node == edge.to_node
             from_node = edge.from_node
             if isinstance(from_node.schema, BaseGraphSchema):
-                new_edge_schemas |=from_node.compute_bwd_skip_edge_schemas()
+                new_edge_schemas |= from_node.compute_bwd_skip_edge_schemas()
 
         return new_edge_schemas | curr_bwd_skip_edge_schemas
 
