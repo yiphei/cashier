@@ -31,6 +31,7 @@ class BaseExecutableSchema(ABC):
 class BaseExecutable(ABC, HasStatusMixin):
     def __init__(self, state):
         self.state = state
+        self.has_run_assistant_turn_before_transition = False
         HasStatusMixin.__init__(self)
 
     @abstractmethod

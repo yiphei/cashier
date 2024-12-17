@@ -67,7 +67,6 @@ class BaseTerminableGraph(BaseGraph):
         state = schema.state_schema(**(input or {}))
         state.__pydantic_fields_set__ = input_keys
         super().__init__(input, schema, edge_schemas, request, state=state)
-        self.has_run_assistant_turn_before_transition = False
 
     def handle_skip(
         self,

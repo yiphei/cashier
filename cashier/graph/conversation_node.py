@@ -46,7 +46,6 @@ class ConversationNode(BaseExecutable, HasIdMixin, metaclass=TupleMetaclass):
         self.input = input
         self.schema = schema
         self.direction = direction
-        self.has_run_assistant_turn_before_transition = False
         self.first_user_message = False
         self.parent = None
 
