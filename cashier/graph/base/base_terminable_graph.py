@@ -113,8 +113,11 @@ class BaseTerminableGraph(BaseGraph):
             TC, self.curr_node.schema, all_node_schemas, True
         )
 
-        if node_schema_id is not None:                
-            return self.to_node_schema_id_to_edge_schema[node_schema_id][0], self.schema.node_schema_id_to_node_schema[node_schema_id]
+        if node_schema_id is not None:
+            return (
+                self.to_node_schema_id_to_edge_schema[node_schema_id][0],
+                self.schema.node_schema_id_to_node_schema[node_schema_id],
+            )
 
         return None, None
 
@@ -191,9 +194,7 @@ class BaseTerminableGraph(BaseGraph):
             TC,
             is_skip,
         )
-        self.next_edge_schemas = (
-            self.get_next_edge_schemas()
-        )
+        self.next_edge_schemas = self.get_next_edge_schemas()
         self.compute_bwd_skip_edge_schemas()
 
     def is_completed(self, fn_call, is_fn_call_success):
