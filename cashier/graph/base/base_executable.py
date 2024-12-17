@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
-from typing import Any
 from collections import deque
+from typing import Any
+
 from cashier.graph.base.base_state import BaseStateModel
 from cashier.graph.mixin.has_status_mixin import HasStatusMixin, Status
 
