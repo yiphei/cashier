@@ -10,7 +10,6 @@ from cashier.graph.edge_schema import EdgeSchema
 from cashier.graph.graph_schema import Graph
 from cashier.graph.mixin.auto_mixin_init import AutoMixinInit
 from cashier.graph.mixin.has_id_mixin import HasIdMixin
-from cashier.graph.mixin.has_status_mixin import Status
 from cashier.logger import logger
 from cashier.model.model_util import CustomJSONEncoder, create_think_fn_call
 from cashier.prompts.graph_schema_addition import GraphSchemaAdditionPrompt
