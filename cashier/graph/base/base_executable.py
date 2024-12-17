@@ -48,7 +48,7 @@ class BaseExecutable(ABC, HasStatusMixin):
 
     def get_state(self) -> BaseStateModel:
         return self.state
-    
+
     def check_transition(self, fn_call, is_fn_call_success):
         if self.is_completed(fn_call, is_fn_call_success):
             self.mark_as_internally_completed()
