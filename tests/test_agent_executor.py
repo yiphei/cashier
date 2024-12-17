@@ -439,7 +439,7 @@ class TestAgent:
         ut = self.add_request_user_turn(
             agent_executor, "i want to order coffee", model_provider
         )
-        second_node_schema = self.start_node_schema.default_start_node_schema
+        second_node_schema = self.start_node_schema.start_node_schema
         return [
             TurnArgs(
                 turn=NodeSystemTurn(
@@ -672,7 +672,7 @@ class TestAgent:
         self.run_assertions(
             agent_executor,
             TC,
-            self.start_node_schema.default_start_node_schema.tool_registry,
+            self.start_node_schema.start_node_schema.tool_registry,
             model_provider,
         )
 
@@ -687,7 +687,7 @@ class TestAgent:
         self.run_assertions(
             agent_executor,
             TC,
-            self.start_node_schema.default_start_node_schema.tool_registry,
+            self.start_node_schema.start_node_schema.tool_registry,
             model_provider,
         )
 
@@ -712,7 +712,7 @@ class TestAgent:
         assistant_turn = AssistantTurn(
             msg_content=None,
             model_provider=model_provider,
-            tool_registry=self.start_node_schema.default_start_node_schema.tool_registry,
+            tool_registry=self.start_node_schema.start_node_schema.tool_registry,
             fn_calls=[fake_fn_call],
             fn_call_id_to_fn_output={fake_fn_call.id: None},
         )
@@ -725,7 +725,7 @@ class TestAgent:
         self.run_assertions(
             agent_executor,
             TC,
-            self.start_node_schema.default_start_node_schema.tool_registry,
+            self.start_node_schema.start_node_schema.tool_registry,
             model_provider,
         )
 
@@ -750,7 +750,7 @@ class TestAgent:
         self.run_assertions(
             agent_executor,
             TC,
-            self.start_node_schema.default_start_node_schema.tool_registry,
+            self.start_node_schema.start_node_schema.tool_registry,
             model_provider,
         )
 
@@ -775,7 +775,7 @@ class TestAgent:
         self.run_assertions(
             agent_executor,
             TC,
-            self.start_node_schema.default_start_node_schema.tool_registry,
+            self.start_node_schema.start_node_schema.tool_registry,
             model_provider,
         )
 
@@ -837,7 +837,7 @@ class TestAgent:
         self.run_assertions(
             agent_executor,
             TC,
-            self.start_node_schema.default_start_node_schema.tool_registry,
+            self.start_node_schema.start_node_schema.tool_registry,
             model_provider,
         )
 
@@ -892,7 +892,7 @@ class TestAgent:
         )
 
         next_node_schema = cashier_graph_schema.start_node_schema.default_from_node_schema_id_to_edge_schema[
-            self.start_node_schema.default_start_node_schema.id
+            self.start_node_schema.start_node_schema.id
         ][
             0
         ].to_node_schema
@@ -986,7 +986,7 @@ class TestAgent:
         )
 
         next_node_schema = cashier_graph_schema.start_node_schema.default_from_node_schema_id_to_edge_schema[
-            self.start_node_schema.default_start_node_schema.id
+            self.start_node_schema.start_node_schema.id
         ][
             0
         ].to_node_schema
@@ -1026,16 +1026,16 @@ class TestAgent:
             model_provider,
             False,
             include_fwd_skip_node_schema_id=False,
-            bwd_skip_node_schema_id=self.start_node_schema.default_start_node_schema.id,
+            bwd_skip_node_schema_id=self.start_node_schema.start_node_schema.id,
         )
 
         node_turn_2 = TurnArgs(
             turn=NodeSystemTurn(
-                msg_content=self.start_node_schema.default_start_node_schema.node_system_prompt(
-                    node_prompt=cashier_graph_schema.start_node_schema.default_start_node_schema.node_prompt,
+                msg_content=self.start_node_schema.start_node_schema.node_system_prompt(
+                    node_prompt=cashier_graph_schema.start_node_schema.start_node_schema.node_prompt,
                     input=None,
-                    node_input_json_schema=self.start_node_schema.default_start_node_schema.input_from_state_schema,  # just to test that its None
-                    state_json_schema=self.start_node_schema.default_start_node_schema.state_schema.model_json_schema(),
+                    node_input_json_schema=self.start_node_schema.start_node_schema.input_from_state_schema,  # just to test that its None
+                    state_json_schema=self.start_node_schema.start_node_schema.state_schema.model_json_schema(),
                     last_msg="can you confirm the order?",
                     curr_request="customer wants to order coffee",
                 ),
@@ -1058,7 +1058,7 @@ class TestAgent:
         t7 = AssistantTurn(
             msg_content=None,
             model_provider=model_provider,
-            tool_registry=self.start_node_schema.default_start_node_schema.tool_registry,
+            tool_registry=self.start_node_schema.start_node_schema.tool_registry,
             fn_calls=[get_state_fn_call],
             fn_call_id_to_fn_output={
                 get_state_fn_call.id: agent_executor.graph.curr_conversation_node.state
@@ -1085,7 +1085,7 @@ class TestAgent:
         self.run_assertions(
             agent_executor,
             TC,
-            self.start_node_schema.default_start_node_schema.tool_registry,
+            self.start_node_schema.start_node_schema.tool_registry,
             model_provider,
         )
 
@@ -1139,7 +1139,7 @@ class TestAgent:
             second_fn_call_id_to_fn_output,
         )
         next_node_schema = cashier_graph_schema.start_node_schema.default_from_node_schema_id_to_edge_schema[
-            self.start_node_schema.default_start_node_schema.id
+            self.start_node_schema.start_node_schema.id
         ][
             0
         ].to_node_schema
@@ -1235,11 +1235,11 @@ class TestAgent:
             "actually, i want to change my order",
             model_provider,
             False,
-            bwd_skip_node_schema_id=self.start_node_schema.default_start_node_schema.id,
+            bwd_skip_node_schema_id=self.start_node_schema.start_node_schema.id,
             include_fwd_skip_node_schema_id=False,
         )
         start_node_schema = (
-            cashier_graph_schema.start_node_schema.default_start_node_schema
+            cashier_graph_schema.start_node_schema.start_node_schema
         )
         node_turn_3 = TurnArgs(
             turn=NodeSystemTurn(
@@ -1265,7 +1265,7 @@ class TestAgent:
         t10 = AssistantTurn(
             msg_content=None,
             model_provider=model_provider,
-            tool_registry=self.start_node_schema.default_start_node_schema.tool_registry,
+            tool_registry=self.start_node_schema.start_node_schema.tool_registry,
             fn_calls=[get_state_fn_call],
             fn_call_id_to_fn_output={
                 get_state_fn_call.id: agent_executor.graph.curr_conversation_node.state
