@@ -349,7 +349,6 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
         direction: Direction,
         TC,
         is_skip: bool = False,
-        prev_fn_caller=None,
     ) -> None:
         if isinstance(node_schema, BaseGraphSchema):
             request = self.get_request_for_init_graph_core()
@@ -379,7 +378,7 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
 
         if isinstance(node_schema, BaseGraphSchema):
             node_schema, edge_schema = new_node.compute_init_node_edge_schema()
-            if prev_fn_caller is not None:
+            if is_skip:
                 self.curr_node.init_skip_node(node_schema, edge_schema, TC)
             else:
                 self.curr_node.init_next_node(node_schema, edge_schema, TC, None)
@@ -471,7 +470,6 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
             direction,
             TC,
             True,
-            self._init_skip_node,
         )
 
     def init_skip_node(
