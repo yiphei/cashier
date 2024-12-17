@@ -10,7 +10,6 @@ from cashier.graph.edge_schema import EdgeSchema
 from cashier.graph.graph_schema import Graph
 from cashier.graph.mixin.auto_mixin_init import AutoMixinInit
 from cashier.graph.mixin.has_id_mixin import HasIdMixin
-from cashier.graph.mixin.has_status_mixin import Status
 from cashier.logger import logger
 from cashier.model.model_util import CustomJSONEncoder, create_think_fn_call
 from cashier.prompts.graph_schema_addition import GraphSchemaAdditionPrompt
@@ -79,7 +78,7 @@ class RequestGraph(BaseGraph):
     def handle_user_turn(self, msg, TC, model_provider):
         if isinstance(self.curr_node, Graph):
             if not OffTopicPrompt.run(
-                current_node_schema=self.curr_node.curr_node.schema,
+                current_node_schema=self.curr_conversation_node.schema,
                 tc=TC,
             ):
                 has_new_task = self.add_tasks(msg, TC)
@@ -101,7 +100,7 @@ class RequestGraph(BaseGraph):
                         model_provider,
                         run_off_topic_check=False,
                     )
-            self.curr_node.curr_node.update_first_user_message()  # TODO: remove this after refactor
+            self.curr_conversation_node.update_first_user_message()  # TODO: remove this after refactor
         else:
             self.get_graph_schemas(msg)
             if len(self.graph_schema_sequence) > 0:
@@ -112,29 +111,25 @@ class RequestGraph(BaseGraph):
                     None,
                 )
 
-    def check_self_completion(self):
+    def is_completed(self, fn_call, is_fn_call_success):
         return False
 
-    def check_self_transition(
-        self,
-        fn_call,
-        is_fn_call_success,
-        parent_edge_schemas=None,
-        new_edge_schema=None,
-        new_node_schema=None,
-    ):
+    def check_node_transition(self, fn_call, is_fn_call_success):
         edge_schemas = self.from_node_schema_id_to_edge_schema[self.curr_node.schema.id]
-        if self.curr_node.status == Status.TRANSITIONING:
-            if len(edge_schemas) == 1:
-                new_edge_schema = edge_schemas[0]
-                new_node_schema = new_edge_schema.to_node_schema
-            else:
-                new_edge_schema = None
-                new_node_schema = self.schema.default_node_schema
+        if len(edge_schemas) == 1:
+            new_edge_schema = edge_schemas[0]
+            new_node_schema = new_edge_schema.to_node_schema
+        else:
+            new_edge_schema = None
+            new_node_schema = self.schema.default_node_schema
+
+        self.curr_node.mark_as_transitioning()
+        self.local_transition_queue.append(self.curr_node)
         return new_edge_schema, new_node_schema
 
-    def get_next_edge_schema(self):
-        return self.from_node_schema_id_to_edge_schema[self.curr_node.schema.id]
+    def get_request_for_init_graph_core(self):
+        self.current_graph_schema_idx += 1
+        return self.requests[self.current_graph_schema_idx]
 
 
 class RequestGraphSchema(BaseGraphSchema):

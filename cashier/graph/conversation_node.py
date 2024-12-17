@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from abc import ABCMeta
 from enum import StrEnum
 from typing import Any, List, Literal, Optional, Type, Union, cast, overload
 
@@ -11,11 +12,11 @@ from cashier.graph.base.base_edge_schema import (
     BwdStateInit,
     FwdStateInit,
 )
+from cashier.graph.base.base_executable import BaseExecutable, BaseExecutableSchema
 from cashier.graph.base.base_state import BaseStateModel
 from cashier.graph.edge_schema import EdgeSchema
 from cashier.graph.mixin.auto_mixin_init import AutoMixinInit
 from cashier.graph.mixin.has_id_mixin import HasIdMixin
-from cashier.graph.mixin.has_status_mixin import HasStatusMixin
 from cashier.model.model_turn import ModelTurn
 from cashier.prompts.node_system import NodeSystemPrompt
 from cashier.tool.function_call_context import StateUpdateError
@@ -27,7 +28,11 @@ class Direction(StrEnum):
     BWD = "BWD"
 
 
-class ConversationNode(HasIdMixin, HasStatusMixin, metaclass=AutoMixinInit):
+class TupleMetaclass(AutoMixinInit, ABCMeta):
+    pass
+
+
+class ConversationNode(BaseExecutable, HasIdMixin, metaclass=TupleMetaclass):
     def __init__(
         self,
         schema: ConversationNodeSchema,
@@ -36,12 +41,11 @@ class ConversationNode(HasIdMixin, HasStatusMixin, metaclass=AutoMixinInit):
         prompt: str,
         direction: Direction = Direction.FWD,
     ):
+        BaseExecutable.__init__(self, state)
         self.prompt = prompt
         self.input = input
         self.schema = schema
         self.direction = direction
-        self.has_run_assistant_turn_before_transition = False
-        self.state = state
         self.first_user_message = False
         self.parent = None
 
@@ -57,7 +61,7 @@ class ConversationNode(HasIdMixin, HasStatusMixin, metaclass=AutoMixinInit):
         if state_schema is None:
             return None
 
-        if prev_node is not None:
+        if prev_node is not None and edge_schema is not None:
             state_init_val = getattr(
                 edge_schema,
                 "fwd_state_init" if direction == Direction.FWD else "bwd_state_init",
@@ -79,44 +83,28 @@ class ConversationNode(HasIdMixin, HasStatusMixin, metaclass=AutoMixinInit):
 
     def update_state(self, **kwargs: Any) -> None:
         if self.first_user_message:
-            old_state = self.state.model_dump()
-            new_state = old_state | kwargs
-            self.state = self.state.__class__(**new_state)
+            super().update_state(**kwargs)
         else:
             raise StateUpdateError(
                 "cannot update any state field until you get the first customer message in the current conversation. Remember, the current conversation starts after <cutoff_msg>"
             )
 
-    def get_state(self) -> BaseStateModel:
-        return self.state
-
     def update_first_user_message(self) -> None:
         self.first_user_message = True
 
-    def check_self_completion(self, fn_call, is_fn_call_success):
-        self_completion = (
+    def is_completed(self, fn_call, is_fn_call_success):
+        return (
             self.schema.completion_config.run_check(
                 self.state, fn_call, is_fn_call_success
             )
             if self.schema.completion_config is not None
             else True
         )
-        if self_completion:
-            self.mark_as_internally_completed()
-        return self_completion
-
-    def check_self_transition(self, fn_call, is_fn_call_success, edge_schemas):
-        if self.check_self_completion(fn_call, is_fn_call_success):
-            for edge_schema in edge_schemas:
-                if edge_schema.check_transition_config(
-                    self.state, fn_call, is_fn_call_success
-                ):
-                    self.mark_as_transitioning()
-                    return edge_schema, edge_schema.to_node_schema
-        return None, None
 
 
-class ConversationNodeSchema(HasIdMixin, metaclass=AutoMixinInit):
+class ConversationNodeSchema(
+    BaseExecutableSchema, HasIdMixin, metaclass=TupleMetaclass
+):
     def __init__(
         self,
         node_prompt: str,
@@ -131,15 +119,18 @@ class ConversationNodeSchema(HasIdMixin, metaclass=AutoMixinInit):
         tool_names: Optional[List[str]] = None,
         completion_config: Optional[BaseTransitionConfig] = None,
     ):
-        self.state_schema = state_schema
+        BaseExecutableSchema.__init__(
+            self,
+            state_schema=state_schema,
+            completion_config=completion_config,
+            run_assistant_turn_before_transition=run_assistant_turn_before_transition,
+        )
         self.node_prompt = node_prompt
         self.node_system_prompt = node_system_prompt
         self.direct_input_schema = direct_input_schema
         self.input_from_state_schema = None
         self.is_input_from_state_schema_set = False
         self.first_turn = first_turn
-        self.run_assistant_turn_before_transition = run_assistant_turn_before_transition
-        self.completion_config = completion_config
         if tool_registry_or_tool_defs is not None and isinstance(
             tool_registry_or_tool_defs, ToolRegistry
         ):

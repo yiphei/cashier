@@ -1,51 +1,98 @@
 from abc import ABC, abstractmethod
+from collections import deque
+from typing import Any
 
-from cashier.graph.mixin.has_status_mixin import Status
+from cashier.graph.base.base_state import BaseStateModel
+from cashier.graph.mixin.has_status_mixin import HasStatusMixin, Status
 
 
-class BaseExecutable(ABC):
-    def check_self_transition(
+class BaseExecutableSchema(ABC):
+    def __init__(
         self,
-        fn_call,
-        is_fn_call_success,
-        parent_edge_schemas=None,
-        new_edge_schema=None,
-        new_node_schema=None,
+        state_schema=None,
+        completion_config=None,
+        run_assistant_turn_before_transition=False,
     ):
-        if self.check_self_completion(fn_call, is_fn_call_success):
-            self.curr_node.mark_as_transitioning()
-            self.local_transition_queue.append(self.curr_node)
-            self.mark_as_transitioning()
-            return None, None
-        return new_edge_schema, new_node_schema
+        self.state_schema = state_schema
+        self.completion_config = completion_config
+        self.run_assistant_turn_before_transition = run_assistant_turn_before_transition
+
+    def get_input(self, state, edge_schema):
+        if edge_schema.new_input_fn is not None:
+            return edge_schema.new_input_fn(state)
+        else:
+            return None
 
     @abstractmethod
-    def get_next_edge_schema(self):
+    def create_node(self, input, last_msg, edge_schema, prev_node, direction, request):
         raise NotImplementedError()
+
+
+class BaseExecutable(ABC, HasStatusMixin):
+    def __init__(self, state):
+        self.state = state
+        self.has_run_assistant_turn_before_transition = False
+        HasStatusMixin.__init__(self)
 
     @abstractmethod
-    def check_self_completion(self):
+    def is_completed(self):
         raise NotImplementedError()
 
-    def check_transition(self, fn_call, is_fn_call_success, parent_edge_schemas=None):
-        from cashier.graph.conversation_node import ConversationNode
+    def update_state(self, **kwargs: Any) -> None:
+        old_state = self.state.model_dump()
+        old_state_fields_set = self.state.model_fields_set
+        new_state = old_state | kwargs
+        new_state_fields_set = old_state_fields_set | kwargs.keys()
+        self.state = self.state.__class__(**new_state)
+        self.state.__pydantic_fields_set__ = new_state_fields_set
+
+    def update_state_from_executable(self, executable):
+        state = executable.state
+        self.update_state(**state.model_dump(exclude=state.resettable_fields))
+
+    def get_state(self) -> BaseStateModel:
+        return self.state
+
+
+class BaseGraphExecutable(BaseExecutable):
+    def __init__(self, state):
+        super().__init__(state)
+        self.local_transition_queue = deque()
+        self.curr_node = None
+
+    def check_node_transition(self, fn_call, is_fn_call_success):
+        assert self.curr_node.status == Status.INTERNALLY_COMPLETED
+        for edge_schema in self.next_edge_schemas:
+            if edge_schema.check_transition_config(
+                self.curr_node.state, fn_call, is_fn_call_success
+            ):
+                self.curr_node.mark_as_transitioning()
+                self.local_transition_queue.append(self.curr_node)
+                return edge_schema, edge_schema.to_node_schema
+
+        return None, None
+
+    def check_transition(self, fn_call, is_fn_call_success):
+        new_edge_schema, new_node_schema = None, None
 
         if getattr(self, "curr_node", None) is not None:
-            if isinstance(self.curr_node, ConversationNode):
-                new_edge_schema, new_node_schema = self.curr_node.check_self_transition(
-                    fn_call, is_fn_call_success, self.get_next_edge_schema()
-                )
+            if not isinstance(self.curr_node, BaseGraphExecutable):
+                if self.curr_node.is_completed(fn_call, is_fn_call_success):
+                    self.curr_node.mark_as_internally_completed()
             else:
                 new_edge_schema, new_node_schema = self.curr_node.check_transition(
-                    fn_call, is_fn_call_success, self.get_next_edge_schema()
+                    fn_call, is_fn_call_success
                 )
-            if self.curr_node.status == Status.TRANSITIONING:
-                self.local_transition_queue.append(self.curr_node)
 
-        return self.check_self_transition(
-            fn_call,
-            is_fn_call_success,
-            parent_edge_schemas,
-            new_edge_schema,
-            new_node_schema,
-        )
+        if self.curr_node.status == Status.INTERNALLY_COMPLETED:
+            self.update_state_from_executable(self.curr_node)
+
+        if self.is_completed(fn_call, is_fn_call_success):
+            if self.curr_node.status == Status.INTERNALLY_COMPLETED:
+                self.curr_node.mark_as_transitioning()
+                self.local_transition_queue.append(self.curr_node)
+            self.mark_as_internally_completed()
+            return None, None
+        elif self.curr_node.status == Status.INTERNALLY_COMPLETED:
+            return self.check_node_transition(fn_call, is_fn_call_success)
+        return new_edge_schema, new_node_schema
