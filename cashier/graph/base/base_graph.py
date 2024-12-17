@@ -261,8 +261,8 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
             if can_skip:
                 edge_schema = next_edge_schema
 
-                next_next_edge_schema = (
-                    self.get_edge_schema_by_from_node_schema_id(to_node.schema.id)
+                next_next_edge_schema = self.get_edge_schema_by_from_node_schema_id(
+                    to_node.schema.id
                 )
 
                 if next_next_edge_schema:
