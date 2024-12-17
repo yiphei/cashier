@@ -49,6 +49,7 @@ class BaseExecutable(ABC, HasStatusMixin):
     def get_state(self) -> BaseStateModel:
         return self.state
 
+
 class BaseGraphExecutable(BaseExecutable):
     def check_node_transition(self, fn_call, is_fn_call_success):
         assert self.curr_node.status == Status.INTERNALLY_COMPLETED
