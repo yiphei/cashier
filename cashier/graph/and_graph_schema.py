@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import copy
-from collections import defaultdict
 from typing import Any, List, Optional, Set, Tuple, Type, Union
 
 from pydantic import BaseModel
@@ -51,7 +50,6 @@ class ANDGraphSchema(BaseTerminableGraphSchema):
                 self.default_edge_schemas.append(edge_schema)
 
         all_tool_defs = []
-        all_tool_defs = []
         for node_schema in node_schemas:
             all_tool_defs.extend(
                 list(node_schema.tool_registry.openai_tool_name_to_tool_def.values())
@@ -59,14 +57,10 @@ class ANDGraphSchema(BaseTerminableGraphSchema):
         self.tool_registry = ToolRegistry(all_tool_defs)
         self.node_prompt = description
 
-        self.default_edge_schema_id_to_edge_schema = {
-            edge_schema.id: edge_schema for edge_schema in self.default_edge_schemas
+        self.default_from_node_schema_id_to_edge_schema = {
+            edge_schema.from_node_schema.id: edge_schema
+            for edge_schema in self.default_edge_schemas
         }
-        self.default_from_node_schema_id_to_edge_schema = defaultdict(list)
-        for edge_schema in self.default_edge_schemas:
-            self.default_from_node_schema_id_to_edge_schema[
-                edge_schema.from_node_schema.id
-            ].append(edge_schema)
 
     @property
     def start_node_schema(self):
@@ -140,11 +134,9 @@ class ANDGraph(BaseTerminableGraph):
 
         return None, node_schema
 
-    def get_next_edge_schemas(self):
-        return set(
-            self.schema.default_from_node_schema_id_to_edge_schema.get(
-                self.curr_node.schema.id, []
-            )
+    def get_next_edge_schema(self):
+        return self.schema.default_from_node_schema_id_to_edge_schema.get(
+            self.curr_node.schema.id, None
         )
 
     def is_completed(self, fn_call, is_fn_call_success):

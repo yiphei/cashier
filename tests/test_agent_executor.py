@@ -41,6 +41,12 @@ class TurnArgs(BaseModel):
     kwargs: Dict[str, Any] = Field(default_factory=dict)
 
 
+CASHIER_GRAPH_SCHEMA_FROM_NODE_SCHEMA_ID_TO_EDGE_SCHEMA = {
+    edge_schema.from_node_schema.id: edge_schema
+    for edge_schema in cashier_graph_schema.edge_schemas
+}
+
+
 class TestAgent:
     @pytest.fixture(autouse=True)
     def setup(self):
@@ -893,8 +899,6 @@ class TestAgent:
 
         next_node_schema = cashier_graph_schema.start_node_schema.default_from_node_schema_id_to_edge_schema[
             self.start_node_schema.start_node_schema.id
-        ][
-            0
         ].to_node_schema
 
         input_schema, input = (
@@ -987,8 +991,6 @@ class TestAgent:
 
         next_node_schema = cashier_graph_schema.start_node_schema.default_from_node_schema_id_to_edge_schema[
             self.start_node_schema.start_node_schema.id
-        ][
-            0
         ].to_node_schema
         input_schema, input = (
             agent_executor.graph.curr_graph.state.get_set_schema_and_fields()
@@ -1140,8 +1142,6 @@ class TestAgent:
         )
         next_node_schema = cashier_graph_schema.start_node_schema.default_from_node_schema_id_to_edge_schema[
             self.start_node_schema.start_node_schema.id
-        ][
-            0
         ].to_node_schema
         input_schema, input = (
             agent_executor.graph.curr_graph.state.get_set_schema_and_fields()
@@ -1198,9 +1198,9 @@ class TestAgent:
             third_fn_calls_fn_call_id_to_fn_output,
         )
 
-        next_next_node_schema = cashier_graph_schema.from_node_schema_id_to_edge_schema[
+        next_next_node_schema = CASHIER_GRAPH_SCHEMA_FROM_NODE_SCHEMA_ID_TO_EDGE_SCHEMA[
             cashier_graph_schema.start_node_schema.id
-        ][0].to_node_schema
+        ].to_node_schema
         input_schema, input = (
             agent_executor.graph.curr_graph.state.get_set_schema_and_fields()
         )

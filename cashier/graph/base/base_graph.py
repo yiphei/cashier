@@ -55,41 +55,41 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
         BaseGraphExecutable.__init__(self, state)
         self.input = input
         self.schema = schema
-        self.edge_schema_id_to_edges = defaultdict(list)
-        self.from_node_schema_id_to_last_edge_schema_id = defaultdict(lambda: None)
-        self.to_node_id_to_edge = defaultdict(lambda: None)
-        self.edge_schema_id_to_from_node = {}
-        self.next_edge_schemas: Set[EdgeSchema] = set()
-        self.bwd_skip_edge_schemas: Set[EdgeSchema] = set()
         self.request = request
-        self.new_edge_schema = None
-        self.new_node_schema = None
         self.parent = None
 
+        # graph schema
         self.edge_schemas = edge_schemas or []
         self.edge_schema_id_to_edge_schema = {
             edge_schema.id: edge_schema for edge_schema in self.edge_schemas
         }
-        self.from_node_schema_id_to_edge_schema = defaultdict(list)
-        for edge_schema in self.edge_schemas:
-            self.from_node_schema_id_to_edge_schema[
-                edge_schema.from_node_schema.id
-            ].append(edge_schema)
-        self.to_node_schema_id_to_edge_schema = defaultdict(list)
-        for edge_schema in self.edge_schemas:
-            self.to_node_schema_id_to_edge_schema[edge_schema.to_node_schema.id].append(
-                edge_schema
-            )
+        self.from_node_schema_id_to_edge_schema = {
+            edge_schema.from_node_schema.id: edge_schema
+            for edge_schema in self.edge_schemas
+        }
+        self.to_node_schema_id_to_edge_schema = {
+            edge_schema.to_node_schema.id: edge_schema
+            for edge_schema in self.edge_schemas
+        }
 
+        # graph instance
         self.node_schema_id_to_nodes = defaultdict(list)
+        self.edge_schema_id_to_edges = defaultdict(list)
+        self.to_node_id_to_edge = defaultdict(lambda: None)
+
+        # transition
+        self.next_edge_schema: Optional[EdgeSchema] = None
+        self.bwd_skip_edge_schemas: Set[EdgeSchema] = set()
+        self.new_edge_schema = None
+        self.new_node_schema = None
 
     def add_edge_schema(self, edge_schema):
         self.edge_schemas.append(edge_schema)
         self.edge_schema_id_to_edge_schema[edge_schema.id] = edge_schema
-        self.from_node_schema_id_to_edge_schema[edge_schema.from_node_schema.id].append(
+        self.from_node_schema_id_to_edge_schema[edge_schema.from_node_schema.id] = (
             edge_schema
         )
-        self.to_node_schema_id_to_edge_schema[edge_schema.to_node_schema.id].append(
+        self.to_node_schema_id_to_edge_schema[edge_schema.to_node_schema.id] = (
             edge_schema
         )
 
@@ -123,10 +123,6 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
         edge = Edge(from_node, to_node, edge_schema)
         self.edge_schema_id_to_edges[edge_schema.id].append(edge)
         self.to_node_id_to_edge[to_node.id] = edge
-        self.from_node_schema_id_to_last_edge_schema_id[from_node.schema.id] = (
-            edge_schema.id
-        )
-        self.edge_schema_id_to_from_node[edge_schema.id] = from_node
 
     @overload
     def get_edge_by_edge_schema_id(  # noqa: E704
@@ -150,15 +146,10 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
             raise ValueError()
         return edge
 
-    def get_last_edge_schema_by_from_node_schema_id(
+    def get_edge_schema_by_from_node_schema_id(
         self, node_schema_id: int
     ) -> Optional[EdgeSchema]:
-        edge_schema_id = self.from_node_schema_id_to_last_edge_schema_id[node_schema_id]
-        return (
-            self.schema.edge_schema_id_to_edge_schema[edge_schema_id]
-            if edge_schema_id
-            else None
-        )
+        return self.from_node_schema_id_to_edge_schema.get(node_schema_id, None)
 
     def get_prev_node(
         self, edge_schema: Optional[EdgeSchema], node_schema, direction: Direction
@@ -195,9 +186,10 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
 
     def compute_fwd_skip_edge_schemas(self) -> Set[EdgeSchema]:
         start_node = self.curr_node
-        start_edge_schemas = self.next_edge_schemas
         fwd_jump_edge_schemas = set()
-        edge_schemas = deque(start_edge_schemas)
+        edge_schemas = (  # TODO: refactor this to not use a deque altogether
+            deque([self.next_edge_schema]) if self.next_edge_schema else deque()
+        )
         while edge_schemas:
             edge_schema = edge_schemas.popleft()
             if (
@@ -219,7 +211,7 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
                     ),
                 )[0]:
                     fwd_jump_edge_schemas.add(edge_schema)
-                    next_edge_schema = self.get_last_edge_schema_by_from_node_schema_id(
+                    next_edge_schema = self.get_edge_schema_by_from_node_schema_id(
                         to_node.schema.id
                     )
                     if next_edge_schema:
@@ -264,8 +256,8 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
             if can_skip:
                 edge_schema = next_edge_schema
 
-                next_next_edge_schema = (
-                    self.get_last_edge_schema_by_from_node_schema_id(to_node.schema.id)
+                next_next_edge_schema = self.get_edge_schema_by_from_node_schema_id(
+                    to_node.schema.id
                 )
 
                 if next_next_edge_schema:
@@ -300,7 +292,7 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
         if direction == Direction.FWD:
             immediate_from_node = curr_node
             if edge_schema.from_node_schema != curr_node.schema:
-                from_node = self.edge_schema_id_to_from_node[edge_schema.id]
+                from_node = self.edge_schema_id_to_edges[edge_schema.id][-1].from_node
                 immediate_from_node = from_node
                 while from_node.schema != curr_node.schema:
                     edge = self.to_node_id_to_edge[from_node.id]
@@ -319,8 +311,6 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
                     new_node,
                     self.to_node_id_to_edge[new_node.id].schema,
                 )
-
-            self.edge_schema_id_to_from_node[edge_schema.id] = new_node
 
     def post_node_init(
         self,

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from collections import defaultdict
 from typing import Any, List, Type
 
 from pydantic import BaseModel
@@ -41,15 +40,6 @@ class GraphSchema(BaseTerminableGraphSchema):
         self.start_node_schema = start_node_schema
         self.last_node_schema = last_node_schema
 
-        self.edge_schema_id_to_edge_schema = {
-            edge_schema.id: edge_schema for edge_schema in self.edge_schemas
-        }
-        self.from_node_schema_id_to_edge_schema = defaultdict(list)
-        for edge_schema in self.edge_schemas:
-            self.from_node_schema_id_to_edge_schema[
-                edge_schema.from_node_schema.id
-            ].append(edge_schema)
-
     def create_node(self, input, last_msg, edge_schema, prev_node, direction, request):
         return Graph(
             input=input,
@@ -74,25 +64,24 @@ class Graph(BaseTerminableGraph):
 
         node_schema = self.schema.start_node_schema
         edge_schema = None
-        next_edge_schemas = self.from_node_schema_id_to_edge_schema[node_schema.id]
+        next_edge_schema = self.from_node_schema_id_to_edge_schema[node_schema.id]
         passed_check = True
         while passed_check:
             passed_check = False
-            for next_edge_schema in next_edge_schemas:
-                if next_edge_schema.check_transition_config(
-                    self.state,
-                    None,
-                    None,
-                    check_resettable_fields=False,
-                ) and not isinstance(
-                    next_edge_schema.from_node_schema, ANDGraphSchema
-                ):  # TODO: fix this
-                    passed_check = True
-                    node_schema = next_edge_schema.to_node_schema
-                    edge_schema = next_edge_schema
-                    next_edge_schemas = self.schema.from_node_schema_id_to_edge_schema[
-                        node_schema.id
-                    ]
-                    break
+            if next_edge_schema.check_transition_config(
+                self.state,
+                None,
+                None,
+                check_resettable_fields=False,
+            ) and not isinstance(
+                next_edge_schema.from_node_schema, ANDGraphSchema
+            ):  # TODO: fix this
+                passed_check = True
+                node_schema = next_edge_schema.to_node_schema
+                edge_schema = next_edge_schema
+                next_edge_schema = self.schema.from_node_schema_id_to_edge_schema.get(
+                    node_schema.id, None
+                )
+                break
 
         return node_schema, edge_schema
