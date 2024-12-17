@@ -50,7 +50,6 @@ class ANDGraphSchema(BaseTerminableGraphSchema):
                 self.default_edge_schemas.append(edge_schema)
 
         all_tool_defs = []
-        all_tool_defs = []
         for node_schema in node_schemas:
             all_tool_defs.extend(
                 list(node_schema.tool_registry.openai_tool_name_to_tool_def.values())
