@@ -69,9 +69,9 @@ class BaseTerminableGraph(BaseGraph):
         TC,
     ) -> Union[Tuple[EdgeSchema, ConversationNodeSchema], Tuple[None, None]]:
         all_node_schemas = {self.curr_node.schema}
-        all_node_schemas.update(edge.to_node_schema for edge in fwd_skip_edge_schemas)
+        all_node_schemas.update(self.get_conv_node_schema_from_edge_schema(edge) for edge in fwd_skip_edge_schemas)
         all_node_schemas.update(
-            edge.from_node_schema for edge in self.bwd_skip_edge_schemas
+            self.get_from_conv_node_schema_from_edge_schema(edge) for edge in self.bwd_skip_edge_schemas
         )
 
         node_schema_id = should_change_node_schema(
@@ -80,20 +80,34 @@ class BaseTerminableGraph(BaseGraph):
 
         if node_schema_id is not None:
             for edge_schema in fwd_skip_edge_schemas:
-                if edge_schema.to_node_schema.id == node_schema_id:
+                node_schema = self.get_conv_node_schema_from_edge_schema(edge_schema)
+                if node_schema.id == node_schema_id:
                     return (
                         edge_schema,
-                        self.schema.node_schema_id_to_node_schema[node_schema_id],
+                        node_schema,
                     )
 
             for edge_schema in self.bwd_skip_edge_schemas:
-                if edge_schema.from_node_schema.id == node_schema_id:
+                node_schema = self.get_from_conv_node_schema_from_edge_schema(edge_schema)
+                if node_schema.id == node_schema_id:
                     return (
                         edge_schema,
-                        self.schema.node_schema_id_to_node_schema[node_schema_id],
+                        node_schema,
                     )
 
         return None, None
+    
+    # TODO: make this recursive
+    def get_conv_node_schema_from_edge_schema(self, edge_schema):
+        if isinstance(edge_schema.to_node_schema, BaseGraphSchema):
+            return edge_schema.to_node_schema.start_node_schema
+        return edge_schema.to_node_schema
+    
+    # TODO: make this recursive
+    def get_from_conv_node_schema_from_edge_schema(self, edge_schema):
+        if isinstance(edge_schema.from_node_schema, BaseGraphSchema):
+            return edge_schema.from_node_schema.last_node_schema
+        return edge_schema.from_node_schema
 
     def handle_wait(
         self,
@@ -101,23 +115,26 @@ class BaseTerminableGraph(BaseGraph):
         TC,
     ) -> Union[Tuple[EdgeSchema, ConversationNodeSchema], Tuple[None, None]]:
         remaining_edge_schemas = (
-            set(self.schema.edge_schemas)
+            set(self.schema.get_all_edge_schemas())
             - fwd_skip_edge_schemas
             - self.bwd_skip_edge_schemas
         )
 
         all_node_schemas = {self.curr_node.schema}
-        all_node_schemas.update(edge.to_node_schema for edge in remaining_edge_schemas)
+        all_node_schemas.update(self.get_conv_node_schema_from_edge_schema(edge) for edge in remaining_edge_schemas)
 
         node_schema_id = should_change_node_schema(
             TC, self.curr_node.schema, all_node_schemas, True
         )
 
         if node_schema_id is not None:
-            return (
-                self.to_node_schema_id_to_edge_schema[node_schema_id],
-                self.schema.node_schema_id_to_node_schema[node_schema_id],
-            )
+            for edge_schema in remaining_edge_schemas:
+                node_schema = self.get_conv_node_schema_from_edge_schema(edge_schema)
+                if node_schema.id == node_schema_id:
+                    return (
+                        edge_schema,
+                        node_schema,
+                    )
 
         return None, None
 
@@ -141,7 +158,7 @@ class BaseTerminableGraph(BaseGraph):
             current_node_schema=self.curr_conversation_node.schema,
             tc=TC,
         ):
-            edge_schema, node_schema, is_wait = self.curr_graph.handle_is_off_topic(TC)
+            edge_schema, node_schema, is_wait = self.handle_is_off_topic(TC)
             if node_schema:
                 if is_wait:
                     fake_fn_call = create_think_fn_call(

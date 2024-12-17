@@ -65,6 +65,10 @@ class ANDGraphSchema(BaseTerminableGraphSchema):
     @property
     def start_node_schema(self):
         return self.default_start_node_schema
+    
+    @property
+    def last_node_schema(self):
+        return self.node_schemas[-1]
 
     def create_node(self, input, last_msg, edge_schema, prev_node, direction, request):
         if prev_node is not None:
