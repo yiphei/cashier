@@ -58,7 +58,7 @@ class BaseExecutable(ABC, HasStatusMixin):
 class BaseGraphExecutable(BaseExecutable):
     def check_node_transition(self, fn_call, is_fn_call_success):
         assert self.curr_node.status == Status.INTERNALLY_COMPLETED
-        for edge_schema in self.get_next_edge_schema():
+        for edge_schema in self.next_edge_schemas:
             if edge_schema.check_transition_config(
                 self.curr_node.state, fn_call, is_fn_call_success
             ):
@@ -67,10 +67,6 @@ class BaseGraphExecutable(BaseExecutable):
                 return edge_schema, edge_schema.to_node_schema
 
         return None, None
-
-    @abstractmethod
-    def get_next_edge_schema(self):
-        raise NotImplementedError()
 
     def check_transition(self, fn_call, is_fn_call_success):
         new_edge_schema, new_node_schema = None, None
