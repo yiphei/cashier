@@ -115,7 +115,7 @@ class BaseTerminableGraph(BaseGraph):
 
         if node_schema_id is not None:
             return (
-                self.to_node_schema_id_to_edge_schema[node_schema_id][0],
+                self.to_node_schema_id_to_edge_schema[node_schema_id],
                 self.schema.node_schema_id_to_node_schema[node_schema_id],
             )
 
