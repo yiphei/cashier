@@ -114,12 +114,10 @@ class BaseTerminableGraph(BaseGraph):
         )
 
         if node_schema_id is not None:
-            for edge_schema in remaining_edge_schemas:
-                if edge_schema.to_node_schema.id == node_schema_id:
-                    return (
-                        edge_schema,
-                        self.schema.node_schema_id_to_node_schema[node_schema_id],
-                    )
+            return (
+                self.to_node_schema_id_to_edge_schema[node_schema_id][0],
+                self.schema.node_schema_id_to_node_schema[node_schema_id],
+            )
 
         return None, None
 
@@ -178,7 +176,7 @@ class BaseTerminableGraph(BaseGraph):
                     )
         self.curr_conversation_node.update_first_user_message()
 
-    def compute_next_edge_schemas_for_init_conversation_core(self):
+    def get_next_edge_schemas(self):
         return set(
             self.from_node_schema_id_to_edge_schema.get(self.curr_node.schema.id, [])
         )
@@ -196,9 +194,7 @@ class BaseTerminableGraph(BaseGraph):
             TC,
             is_skip,
         )
-        self.next_edge_schemas = (
-            self.compute_next_edge_schemas_for_init_conversation_core()
-        )
+        self.next_edge_schemas = self.get_next_edge_schemas()
         self.compute_bwd_skip_edge_schemas()
 
     def is_completed(self, fn_call, is_fn_call_success):
