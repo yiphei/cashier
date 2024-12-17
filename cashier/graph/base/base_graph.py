@@ -69,8 +69,14 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
         self.edge_schema_id_to_edge_schema = {
             edge_schema.id: edge_schema for edge_schema in self.edge_schemas
         }
-        self.from_node_schema_id_to_edge_schema = {edge_schema.from_node_schema.id: edge_schema for edge_schema in self.edge_schemas}
-        self.to_node_schema_id_to_edge_schema = {edge_schema.to_node_schema.id: edge_schema for edge_schema in self.edge_schemas}
+        self.from_node_schema_id_to_edge_schema = {
+            edge_schema.from_node_schema.id: edge_schema
+            for edge_schema in self.edge_schemas
+        }
+        self.to_node_schema_id_to_edge_schema = {
+            edge_schema.to_node_schema.id: edge_schema
+            for edge_schema in self.edge_schemas
+        }
 
         self.node_schema_id_to_nodes = defaultdict(list)
 
@@ -80,7 +86,9 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
         self.from_node_schema_id_to_edge_schema[edge_schema.from_node_schema.id] = (
             edge_schema
         )
-        self.to_node_schema_id_to_edge_schema[edge_schema.to_node_schema.id] = edge_schema
+        self.to_node_schema_id_to_edge_schema[edge_schema.to_node_schema.id] = (
+            edge_schema
+        )
 
     @property
     def transition_queue(self):
@@ -139,7 +147,9 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
     def get_edge_schema_by_from_node_schema_id(
         self, node_schema_id: int
     ) -> Optional[EdgeSchema]:
-        edge_schema_id = self.from_node_schema_id_to_edge_schema.get(node_schema_id, None)
+        edge_schema_id = self.from_node_schema_id_to_edge_schema.get(
+            node_schema_id, None
+        )
         return (
             self.schema.edge_schema_id_to_edge_schema[edge_schema_id]
             if edge_schema_id
