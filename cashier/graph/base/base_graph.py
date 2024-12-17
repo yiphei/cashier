@@ -203,7 +203,7 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
                     from_node = start_node
 
                 if edge_schema.can_skip(
-                    self.state,  # TODO: this class does not explicitly have a state
+                    self.state,
                     from_node,
                     to_node,
                     self.is_prev_from_node_completed(
