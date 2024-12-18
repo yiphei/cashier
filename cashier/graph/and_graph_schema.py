@@ -123,24 +123,6 @@ class ANDGraph(BaseTerminableGraph):
 
         return node_schema, edge_schema
 
-    def handle_wait(
-        self,
-        fwd_skip_edge_schemas: Set[EdgeSchema],
-        TC,
-    ) -> Union[Tuple[EdgeSchema, ConversationNodeSchema], Tuple[None, None]]:
-        remaining_node_schemas = (
-            set(self.schema.node_schemas) - self.visited_node_schemas
-        )
-        remaining_node_schemas.add(self.curr_node.schema)
-        node_schema_id = should_change_node_schema(
-            TC, self.curr_node.schema, remaining_node_schemas, True
-        )
-        node_schema = None
-        if node_schema_id is not None:
-            node_schema = self.schema.node_schema_id_to_node_schema[node_schema_id]
-
-        return None, node_schema
-
     def get_next_edge_schema(self):
         return self.schema.default_from_node_schema_id_to_edge_schema.get(
             self.curr_node.schema.id, None

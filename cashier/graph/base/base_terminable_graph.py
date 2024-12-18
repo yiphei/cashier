@@ -154,6 +154,7 @@ class BaseTerminableGraph(BaseGraph):
         Tuple[EdgeSchema, ConversationNodeSchema, bool], Tuple[None, None, bool]
     ]:
         fwd_skip_edge_schemas = self.compute_fwd_skip_edge_schemas()
+        self.bwd_skip_edge_schemas = self.compute_bwd_skip_edge_schemas()
 
         edge_schema, node_schema = self.handle_wait(fwd_skip_edge_schemas, TC)
         if node_schema:

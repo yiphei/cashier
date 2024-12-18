@@ -1027,7 +1027,6 @@ class TestAgent:
             "i want to change order",
             model_provider,
             False,
-            include_fwd_skip_node_schema_id=False,
             bwd_skip_node_schema_id=self.start_node_schema.start_node_schema.id,
         )
 
