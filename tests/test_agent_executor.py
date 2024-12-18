@@ -295,7 +295,8 @@ class TestAgent:
                     model_provider,
                     None,
                     False,
-                    bwd_skip_node_schema_id or agent_executor.graph.curr_conversation_node.schema.id,
+                    bwd_skip_node_schema_id
+                    or agent_executor.graph.curr_conversation_node.schema.id,
                     0.5,
                 )
                 model_chat_side_effects.append(bwd_skip_model_completion)
