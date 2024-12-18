@@ -192,7 +192,7 @@ class BaseTerminableGraph(BaseGraph):
         if node_schema:
             return edge_schema, node_schema, True, None  # type: ignore
 
-        edge_schema, node_schema= self.handle_skip(
+        edge_schema, node_schema = self.handle_skip(
             fwd_skip_edge_schemas, bwd_skip_edge_schemas, TC
         )
         print("$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
