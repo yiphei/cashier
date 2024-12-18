@@ -27,8 +27,8 @@ from cashier.tool.function_call_context import (
     InexistentFunctionError,
 )
 
+SkipData = namedtuple("SkipData", ["edge_schema", "node_schema", "parent_node"])
 
-SkipData = namedtuple('SkipData', ['edge_schema', 'node_schema', 'parent_node'])
 
 class BaseGraphSchema:
     def __init__(
@@ -202,7 +202,13 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
             edge = self.to_node_id_to_edge[from_node.id]
             if edge.schema in curr_bwd_skip_edge_schemas:
                 break
-            new_edge_schemas.add(SkipData(edge_schema=edge.schema, node_schema=edge.from_node.schema, parent_node=edge.from_node.parent)) # TODO: this not truly recursive
+            new_edge_schemas.add(
+                SkipData(
+                    edge_schema=edge.schema,
+                    node_schema=edge.from_node.schema,
+                    parent_node=edge.from_node.parent,
+                )
+            )  # TODO: this not truly recursive
             print("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
             print(edge.schema, edge.from_node.schema, edge.from_node.parent)
             print("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
@@ -248,7 +254,13 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
                         edge_schema, from_node == start_node
                     ),
                 )[0]:
-                    fwd_jump_edge_schemas.add(SkipData(edge_schema=edge_schema, node_schema=edge_schema.to_node_schema, parent_node=self)) # TODO: this not truly recursive
+                    fwd_jump_edge_schemas.add(
+                        SkipData(
+                            edge_schema=edge_schema,
+                            node_schema=edge_schema.to_node_schema,
+                            parent_node=self,
+                        )
+                    )  # TODO: this not truly recursive
                     if isinstance(edge_schema.to_node_schema, BaseGraphSchema):
                         # fwd_jump_edge_schemas |= set(
                         #     edge_schema.to_node_schema.get_all_edge_schemas()
@@ -256,7 +268,9 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
                         graph_node = self.node_schema_id_to_nodes[
                             edge_schema.to_node_schema.id
                         ][-1]
-                        fwd_jump_edge_schemas |= graph_node.compute_fwd_skip_edge_schemas()
+                        fwd_jump_edge_schemas |= (
+                            graph_node.compute_fwd_skip_edge_schemas()
+                        )
                     next_edge_schema = self.get_edge_schema_by_from_node_schema_id(
                         to_node.schema.id
                     )
