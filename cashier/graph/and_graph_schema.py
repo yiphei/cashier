@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import copy
-from typing import Any, List, Optional, Set, Tuple, Type, Union
+from typing import Any, List, Optional, Type
 
 from pydantic import BaseModel
 
@@ -9,7 +9,6 @@ from cashier.graph.base.base_graph import BaseGraphSchema
 from cashier.graph.base.base_terminable_graph import (
     BaseTerminableGraph,
     BaseTerminableGraphSchema,
-    should_change_node_schema,
 )
 from cashier.graph.conversation_node import ConversationNode, ConversationNodeSchema
 from cashier.graph.edge_schema import EdgeSchema
