@@ -198,7 +198,11 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
             and self.node_schema_id_to_nodes[self.schema.start_node_schema.id]
         ):
             return self.node_schema_id_to_nodes[self.schema.start_node_schema.id][-1]
-        elif edge_schema is None and node_schema and self.node_schema_id_to_nodes[node_schema.id]:
+        elif (
+            edge_schema is None
+            and node_schema
+            and self.node_schema_id_to_nodes[node_schema.id]
+        ):
             return self.node_schema_id_to_nodes[node_schema.id][-1]
         else:
             return None
