@@ -132,12 +132,10 @@ class BaseTerminableGraph(BaseGraph):
             data.node_schema.id: data.parent_node for data in fwd_skip_edge_schemas_data
         }
         node_schema_id_to_node_schema = {
-            data.node_schema.id: data.node_schema
-            for data in fwd_skip_edge_schemas_data
+            data.node_schema.id: data.node_schema for data in fwd_skip_edge_schemas_data
         }
         node_schema_id_to_edge_schema = {
-            data.node_schema.id: data.edge_schema
-            for data in fwd_skip_edge_schemas_data
+            data.node_schema.id: data.edge_schema for data in fwd_skip_edge_schemas_data
         }
 
         self.bwd_skip_edge_schemas = self.compute_bwd_skip_edge_schemas()
@@ -150,18 +148,24 @@ class BaseTerminableGraph(BaseGraph):
                 for data in self.bwd_skip_edge_schemas
             }
         )
-        node_schema_id_to_node_schema.update({
-            data.node_schema.id: data.node_schema
-            for data in self.bwd_skip_edge_schemas
-        })
-        node_schema_id_to_edge_schema.update({
-            data.node_schema.id: data.edge_schema
-            for data in self.bwd_skip_edge_schemas
-        })
+        node_schema_id_to_node_schema.update(
+            {
+                data.node_schema.id: data.node_schema
+                for data in self.bwd_skip_edge_schemas
+            }
+        )
+        node_schema_id_to_edge_schema.update(
+            {
+                data.node_schema.id: data.edge_schema
+                for data in self.bwd_skip_edge_schemas
+            }
+        )
         all_node_schemas = {self.curr_conversation_node.schema} | set(
             node_schema_id_to_node_schema.values()
         )
-        remaining_node_schemas = set(self.schema.get_all_node_schemas()) - all_node_schemas
+        remaining_node_schemas = (
+            set(self.schema.get_all_node_schemas()) - all_node_schemas
+        )
         remaining_node_schemas |= {self.curr_conversation_node.schema}
 
         edge_schema, node_schema = self.handle_wait(
@@ -170,9 +174,7 @@ class BaseTerminableGraph(BaseGraph):
         if node_schema:
             return edge_schema, node_schema, True, None  # type: ignore
 
-        node_schema_id = self.handle_skip(
-            all_node_schemas, TC
-        )
+        node_schema_id = self.handle_skip(all_node_schemas, TC)
         # return edge_schema, node_schema, False, parent_node  # type: ignore
         if node_schema_id is not None:
             return node_schema_id_to_edge_schema[node_schema_id], node_schema_id_to_node_schema[node_schema_id], False, node_schema_id_to_parent_node[node_schema_id]  # type: ignore
