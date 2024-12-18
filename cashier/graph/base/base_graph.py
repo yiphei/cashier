@@ -180,7 +180,10 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
         return self.from_node_schema_id_to_edge_schema.get(node_schema_id, None)
 
     def get_prev_node(
-        self, edge_schema: Optional[EdgeSchema], node_schema, direction: Direction=None,
+        self,
+        edge_schema: Optional[EdgeSchema],
+        node_schema,
+        direction: Direction = None,
     ) -> Optional[ConversationNode]:
         if (
             edge_schema
