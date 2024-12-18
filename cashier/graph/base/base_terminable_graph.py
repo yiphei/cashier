@@ -104,7 +104,7 @@ class BaseTerminableGraph(BaseGraph):
             selected_node_schema
         )
         remaining_node_schemas = (
-            set(self.schema.get_all_node_schemas()) - all_node_schemas
+            set(self.schema.all_conversation_node_schemas) - all_node_schemas
         )
         remaining_node_schemas |= {self.curr_conversation_node.schema}
 
