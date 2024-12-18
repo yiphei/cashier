@@ -1,5 +1,5 @@
 import json
-from collections import defaultdict, deque
+from collections import defaultdict, deque, namedtuple
 from typing import Any, Callable, List, Literal, Optional, Set, Tuple, overload
 
 from colorama import Style
@@ -26,6 +26,8 @@ from cashier.tool.function_call_context import (
     FunctionCallContext,
     InexistentFunctionError,
 )
+
+SkipData = namedtuple("SkipData", ["edge_schema", "node_schema", "parent_node"])
 
 
 class BaseGraphSchema:
@@ -57,6 +59,15 @@ class BaseGraphSchema:
                 all_edge_schemas[-1].to_node_schema.get_all_edge_schemas()
             )
         return all_edge_schemas
+
+    def get_all_node_schemas(self):
+        all_node_schemas = []
+        for node_schema in self.get_node_schemas():
+            if isinstance(node_schema, BaseGraphSchema):
+                all_node_schemas.extend(node_schema.get_all_node_schemas())
+            else:
+                all_node_schemas.append(node_schema)
+        return all_node_schemas
 
 
 class BaseGraph(BaseGraphExecutable, HasIdMixin):
@@ -169,7 +180,10 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
         return self.from_node_schema_id_to_edge_schema.get(node_schema_id, None)
 
     def get_prev_node(
-        self, edge_schema: Optional[EdgeSchema], node_schema, direction: Direction
+        self,
+        edge_schema: Optional[EdgeSchema],
+        node_schema,
+        direction: Direction = None,
     ) -> Optional[ConversationNode]:
         if (
             edge_schema
@@ -184,6 +198,12 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
             and self.node_schema_id_to_nodes[self.schema.start_node_schema.id]
         ):
             return self.node_schema_id_to_nodes[self.schema.start_node_schema.id][-1]
+        elif (
+            edge_schema is None
+            and node_schema
+            and self.node_schema_id_to_nodes[node_schema.id]
+        ):
+            return self.node_schema_id_to_nodes[node_schema.id][-1]
         else:
             return None
 
@@ -193,14 +213,25 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
 
         from_node = self.curr_node
         new_edge_schemas = set()
-        curr_bwd_skip_edge_schemas = self.bwd_skip_edge_schemas
+        curr_bwd_skip_edge_schemas = set()
         if isinstance(from_node.schema, BaseGraphSchema):
             new_edge_schemas |= from_node.compute_bwd_skip_edge_schemas()
         while self.to_node_id_to_edge[from_node.id] is not None:
             edge = self.to_node_id_to_edge[from_node.id]
             if edge.schema in curr_bwd_skip_edge_schemas:
                 break
-            new_edge_schemas.add(edge.schema)
+            node_schema = edge.from_node.schema
+            parent_node = edge.from_node.parent
+            if isinstance(node_schema, BaseGraphSchema):
+                node_schema = node_schema.node_schemas[-1]
+                parent_node = edge.from_node.get_prev_node(None, node_schema)
+            new_edge_schemas.add(
+                SkipData(
+                    edge_schema=edge.schema,
+                    node_schema=node_schema,
+                    parent_node=parent_node,
+                )
+            )  # TODO: this not truly recursive
             assert from_node == edge.to_node
             from_node = edge.from_node
             if isinstance(from_node.schema, BaseGraphSchema):
@@ -214,17 +245,18 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
         edge_schemas = (  # TODO: refactor this to not use a deque altogether
             deque([self.next_edge_schema]) if self.next_edge_schema else deque()
         )
+        if (
+            self.next_edge_schema
+            and isinstance(self.next_edge_schema.from_node_schema, BaseGraphSchema)
+            and self.get_prev_node(None, self.next_edge_schema.from_node_schema)
+            is not None
+        ):
+            graph_node = self.get_prev_node(
+                None, self.next_edge_schema.from_node_schema
+            )
+            fwd_jump_edge_schemas |= graph_node.compute_fwd_skip_edge_schemas()
         while edge_schemas:
             edge_schema = edge_schemas.popleft()
-            if (
-                isinstance(edge_schema.from_node_schema, BaseGraphSchema)
-                and edge_schema.from_node_schema.id in self.node_schema_id_to_nodes
-            ):
-                graph_node = self.node_schema_id_to_nodes[
-                    edge_schema.from_node_schema.id
-                ][-1]
-                fwd_jump_edge_schemas |= graph_node.compute_fwd_skip_edge_schemas()
-
             if (
                 self.get_edge_by_edge_schema_id(edge_schema.id, raise_if_none=False)
                 is not None
@@ -243,10 +275,19 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
                         edge_schema, from_node == start_node
                     ),
                 )[0]:
-                    fwd_jump_edge_schemas.add(edge_schema)
+                    fwd_jump_edge_schemas.add(
+                        SkipData(
+                            edge_schema=edge_schema,
+                            node_schema=edge_schema.to_node_schema,
+                            parent_node=self,
+                        )
+                    )  # TODO: this not truly recursive
                     if isinstance(edge_schema.to_node_schema, BaseGraphSchema):
-                        fwd_jump_edge_schemas |= set(
-                            edge_schema.to_node_schema.get_all_edge_schemas()
+                        graph_node = self.get_prev_node(
+                            None, edge_schema.to_node_schema
+                        )
+                        fwd_jump_edge_schemas |= (
+                            graph_node.compute_fwd_skip_edge_schemas()
                         )
                     next_edge_schema = self.get_edge_schema_by_from_node_schema_id(
                         to_node.schema.id
