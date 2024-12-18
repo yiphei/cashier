@@ -89,6 +89,7 @@ class BaseTerminableGraph(BaseGraph):
                     return (
                         edge_schema,
                         node_schema,
+                        self if edge_schema in self.schema.get_edge_schemas() else self.node_schema_id_to_nodes[edge_schema.to_node_schema.id][-1] # TODO: this is a hack
                     )
 
             for edge_schema in self.bwd_skip_edge_schemas:
@@ -99,6 +100,7 @@ class BaseTerminableGraph(BaseGraph):
                     return (
                         edge_schema,
                         node_schema,
+                        self if edge_schema in self.schema.get_edge_schemas() else self.node_schema_id_to_nodes[edge_schema.from_node_schema.id][-1] # TODO: this is a hack
                     )
 
         return None, None
@@ -158,17 +160,17 @@ class BaseTerminableGraph(BaseGraph):
 
         edge_schema, node_schema = self.handle_wait(fwd_skip_edge_schemas, TC)
         if node_schema:
-            return edge_schema, node_schema, True  # type: ignore
+            return edge_schema, node_schema, True, None  # type: ignore
 
-        edge_schema, node_schema = self.handle_skip(fwd_skip_edge_schemas, TC)
-        return edge_schema, node_schema, False  # type: ignore
+        edge_schema, node_schema, parent_node = self.handle_skip(fwd_skip_edge_schemas, TC)
+        return edge_schema, node_schema, False, parent_node  # type: ignore
 
     def handle_user_turn(self, msg, TC, model_provider, run_off_topic_check=True):
         if not run_off_topic_check or not OffTopicPrompt.run(
             current_node_schema=self.curr_conversation_node.schema,
             tc=TC,
         ):
-            edge_schema, node_schema, is_wait = self.handle_is_off_topic(TC)
+            edge_schema, node_schema, is_wait, parent_node = self.handle_is_off_topic(TC)
             if node_schema:
                 if is_wait:
                     fake_fn_call = create_think_fn_call(
@@ -182,11 +184,13 @@ class BaseTerminableGraph(BaseGraph):
                         {fake_fn_call.id: None},
                     )
                 else:
-                    self.init_skip_node(
+                    parent_node.init_skip_node(
                         node_schema,
                         edge_schema,
                         TC,
                     )
+                    if parent_node is not self:
+                        self.curr_node = parent_node # TODO: this is a hack
 
                     fake_fn_call = FunctionCall.create(
                         api_id=None,
