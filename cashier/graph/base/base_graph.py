@@ -209,9 +209,6 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
                     parent_node=edge.from_node.parent,
                 )
             )  # TODO: this not truly recursive
-            print("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
-            print(edge.schema, edge.from_node.schema, edge.from_node.parent)
-            print("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
             assert from_node == edge.to_node
             from_node = edge.from_node
             if isinstance(from_node.schema, BaseGraphSchema):
@@ -263,9 +260,6 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
                         )
                     )  # TODO: this not truly recursive
                     if isinstance(edge_schema.to_node_schema, BaseGraphSchema):
-                        # fwd_jump_edge_schemas |= set(
-                        #     edge_schema.to_node_schema.get_all_edge_schemas()
-                        # )
                         graph_node = self.node_schema_id_to_nodes[
                             edge_schema.to_node_schema.id
                         ][-1]

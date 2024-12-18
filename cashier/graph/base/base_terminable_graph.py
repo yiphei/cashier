@@ -162,23 +162,11 @@ class BaseTerminableGraph(BaseGraph):
         node_schema_id_to_parent_node = {
             data.node_schema.id: data.parent_node for data in fwd_skip_edge_schemas_data
         }
-        print("@@@@@@@@@@@@@@@@@@@@@@")
-        print(fwd_skip_edge_schemas_data)
-        print(node_schema_id_to_parent_node.keys())
 
         self.bwd_skip_edge_schemas = self.compute_bwd_skip_edge_schemas()
         bwd_skip_edge_schemas = {
             data.edge_schema for data in self.bwd_skip_edge_schemas
         }
-        print("@@@@@@@@@@@@@@@@@@@@@@")
-        print(self.bwd_skip_edge_schemas)
-        print([data.node_schema.id for data in self.bwd_skip_edge_schemas])
-        print(
-            {
-                data.node_schema.id: data.parent_node
-                for data in self.bwd_skip_edge_schemas
-            }.keys()
-        )
         node_schema_id_to_parent_node.update(
             {
                 data.node_schema.id: data.parent_node
@@ -195,11 +183,6 @@ class BaseTerminableGraph(BaseGraph):
         edge_schema, node_schema = self.handle_skip(
             fwd_skip_edge_schemas, bwd_skip_edge_schemas, TC
         )
-        print("$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
-        print(node_schema)
-        print(node_schema_id_to_parent_node[node_schema.id])
-        print(node_schema_id_to_parent_node[node_schema.id].curr_node)
-        print("$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
         # return edge_schema, node_schema, False, parent_node  # type: ignore
         return edge_schema, node_schema, False, node_schema_id_to_parent_node[node_schema.id]  # type: ignore
 
