@@ -60,6 +60,17 @@ class BaseGraphSchema:
             )
         return all_edge_schemas
 
+    def get_all_node_schemas(self):
+        all_node_schemas = []
+        for node_schema in self.get_node_schemas():
+            if isinstance(node_schema, BaseGraphSchema):
+                all_node_schemas.extend(
+                    node_schema.get_all_node_schemas()
+                )
+            else:
+                all_node_schemas.append(node_schema)
+        return all_node_schemas
+
 
 class BaseGraph(BaseGraphExecutable, HasIdMixin):
     def __init__(

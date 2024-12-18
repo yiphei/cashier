@@ -50,6 +50,9 @@ class GraphSchema(BaseTerminableGraphSchema):
     def get_edge_schemas(self):
         return self.edge_schemas
 
+    def get_node_schemas(self):
+        return self.node_schemas
+
 
 class Graph(BaseTerminableGraph):
     def __init__(
