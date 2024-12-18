@@ -78,8 +78,6 @@ class ANDGraphSchema(BaseTerminableGraphSchema):
             schema=self,
         )
 
-    def get_edge_schemas(self):
-        return self.default_edge_schemas
 
     def get_node_schemas(self):
         return self.node_schemas
