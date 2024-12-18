@@ -120,11 +120,17 @@ class TestAgent:
 
     def run_message_dict_assertions(self, agent_executor, model_provider):
         import json
+
         print(json.dumps(self.message_list, indent=4))
         print("----------------------------------------------")
-        print(json.dumps(agent_executor.TC.model_provider_to_message_manager[
-                model_provider
-            ].message_dicts, indent=4))
+        print(
+            json.dumps(
+                agent_executor.TC.model_provider_to_message_manager[
+                    model_provider
+                ].message_dicts,
+                indent=4,
+            )
+        )
         assert not DeepDiff(
             self.message_list,
             agent_executor.TC.model_provider_to_message_manager[
