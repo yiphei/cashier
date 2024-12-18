@@ -70,9 +70,6 @@ class BaseTerminableGraph(BaseGraph):
         Tuple[EdgeSchema, ConversationNodeSchema, bool], Tuple[None, None, bool]
     ]:
         fwd_skip_edge_schemas_data = self.compute_fwd_skip_edge_schemas()
-        fwd_skip_edge_schemas = {
-            data.edge_schema for data in fwd_skip_edge_schemas_data
-        }
         node_schema_id_to_parent_node = {
             data.node_schema.id: data.parent_node for data in fwd_skip_edge_schemas_data
         }
@@ -84,9 +81,6 @@ class BaseTerminableGraph(BaseGraph):
         }
 
         self.bwd_skip_edge_schemas = self.compute_bwd_skip_edge_schemas()
-        bwd_skip_edge_schemas = {
-            data.edge_schema for data in self.bwd_skip_edge_schemas
-        }
         node_schema_id_to_parent_node.update(
             {
                 data.node_schema.id: data.parent_node
