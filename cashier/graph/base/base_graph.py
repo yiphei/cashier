@@ -195,7 +195,7 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
 
         from_node = self.curr_node
         new_edge_schemas = set()
-        curr_bwd_skip_edge_schemas = self.bwd_skip_edge_schemas
+        curr_bwd_skip_edge_schemas = set()
         if isinstance(from_node.schema, BaseGraphSchema):
             new_edge_schemas |= from_node.compute_bwd_skip_edge_schemas()
         while self.to_node_id_to_edge[from_node.id] is not None:
