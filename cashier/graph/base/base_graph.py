@@ -180,7 +180,7 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
         return self.from_node_schema_id_to_edge_schema.get(node_schema_id, None)
 
     def get_prev_node(
-        self, edge_schema: Optional[EdgeSchema], node_schema, direction: Direction
+        self, edge_schema: Optional[EdgeSchema], node_schema, direction: Direction=None,
     ) -> Optional[ConversationNode]:
         if (
             edge_schema
@@ -211,11 +211,16 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
             edge = self.to_node_id_to_edge[from_node.id]
             if edge.schema in curr_bwd_skip_edge_schemas:
                 break
+            node_schema = edge.from_node.schema
+            parent_node = edge.from_node.parent
+            if isinstance(node_schema, BaseGraphSchema):
+                node_schema = node_schema.node_schemas[-1]
+                parent_node = edge.from_node.get_prev_node(None, node_schema)
             new_edge_schemas.add(
                 SkipData(
                     edge_schema=edge.schema,
-                    node_schema=edge.from_node.schema,
-                    parent_node=edge.from_node.parent,
+                    node_schema=node_schema,
+                    parent_node=parent_node,
                 )
             )  # TODO: this not truly recursive
             assert from_node == edge.to_node

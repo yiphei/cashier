@@ -72,18 +72,6 @@ class BaseTerminableGraph(BaseGraph):
             TC, self.curr_conversation_node.schema, all_node_schemas, False
         )
 
-    # TODO: make this recursive
-    def get_conv_node_schema_from_edge_schema(self, edge_schema):
-        if isinstance(edge_schema.to_node_schema, BaseGraphSchema):
-            return edge_schema.to_node_schema.start_node_schema
-        return edge_schema.to_node_schema
-
-    # TODO: make this recursive
-    def get_from_conv_node_schema_from_edge_schema(self, edge_schema):
-        if isinstance(edge_schema.from_node_schema, BaseGraphSchema):
-            return edge_schema.from_node_schema.last_node_schema
-        return edge_schema.from_node_schema
-
     def handle_wait(
         self,
         fwd_skip_edge_schemas: Set[EdgeSchema],
@@ -91,32 +79,9 @@ class BaseTerminableGraph(BaseGraph):
         remaining_node_schemas,
         TC,
     ) -> Union[Tuple[EdgeSchema, ConversationNodeSchema], Tuple[None, None]]:
-        remaining_edge_schemas = (
-            set(self.schema.get_all_edge_schemas())
-            - fwd_skip_edge_schemas
-            - bwd_skip_edge_schemas
+        return should_change_node_schema(
+            TC, self.curr_conversation_node.schema, remaining_node_schemas, True
         )
-
-        all_node_schemas = {self.curr_conversation_node.schema}
-        all_node_schemas.update(
-            self.get_conv_node_schema_from_edge_schema(edge)
-            for edge in remaining_edge_schemas
-        )
-
-        node_schema_id = should_change_node_schema(
-            TC, self.curr_conversation_node.schema, all_node_schemas, True
-        )
-
-        if node_schema_id is not None:
-            for edge_schema in remaining_edge_schemas:
-                node_schema = self.get_conv_node_schema_from_edge_schema(edge_schema)
-                if node_schema.id == node_schema_id:
-                    return (
-                        edge_schema,
-                        node_schema,
-                    )
-
-        return None, None
 
     def handle_is_off_topic(
         self,
@@ -168,11 +133,12 @@ class BaseTerminableGraph(BaseGraph):
         )
         remaining_node_schemas |= {self.curr_conversation_node.schema}
 
-        edge_schema, node_schema = self.handle_wait(
+        node_schema_id = self.handle_wait(
             fwd_skip_edge_schemas, bwd_skip_edge_schemas, remaining_node_schemas, TC
         )
-        if node_schema:
-            return edge_schema, node_schema, True, None  # type: ignore
+        if node_schema_id is not None:
+            # TODO: it errors here if you look up the node_schema_id in the dict, so fix it
+            return None, node_schema_id, True, None  # type: ignore
 
         node_schema_id = self.handle_skip(all_node_schemas, TC)
         # return edge_schema, node_schema, False, parent_node  # type: ignore
