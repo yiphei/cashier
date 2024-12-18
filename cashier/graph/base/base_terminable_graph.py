@@ -96,7 +96,10 @@ class BaseTerminableGraph(BaseGraph):
                 for data in self.bwd_skip_edge_schemas
             }
         )
-        selected_node_schema = {data.node_schema for data in (fwd_skip_edge_schemas_data | self.bwd_skip_edge_schemas)}
+        selected_node_schema = {
+            data.node_schema
+            for data in (fwd_skip_edge_schemas_data | self.bwd_skip_edge_schemas)
+        }
         all_node_schemas = {self.curr_conversation_node.schema} | set(
             selected_node_schema
         )
@@ -183,7 +186,6 @@ class BaseTerminableGraph(BaseGraph):
             is_skip,
         )
         self.next_edge_schema = self.get_next_edge_schema()
-
 
     def is_completed(self, fn_call, is_fn_call_success):
         assert self.schema.completion_config is not None
