@@ -63,15 +63,6 @@ class BaseTerminableGraph(BaseGraph):
         state.__pydantic_fields_set__ = input_keys
         super().__init__(input, schema, edge_schemas, request, state=state)
 
-    def handle_skip(
-        self,
-        all_node_schemas,
-        TC,
-    ) -> Union[Tuple[EdgeSchema, ConversationNodeSchema], Tuple[None, None]]:
-        return should_change_node_schema(
-            TC, self.curr_conversation_node.schema, all_node_schemas, False
-        )
-
     def handle_wait(
         self,
         fwd_skip_edge_schemas: Set[EdgeSchema],
@@ -140,8 +131,9 @@ class BaseTerminableGraph(BaseGraph):
             # TODO: it errors here if you look up the node_schema_id in the dict, so fix it
             return None, node_schema_id, True, None  # type: ignore
 
-        node_schema_id = self.handle_skip(all_node_schemas, TC)
-        # return edge_schema, node_schema, False, parent_node  # type: ignore
+        node_schema_id = should_change_node_schema(
+            TC, self.curr_conversation_node.schema, all_node_schemas, False
+        )
         if node_schema_id is not None:
             return node_schema_id_to_edge_schema[node_schema_id], node_schema_id_to_node_schema[node_schema_id], False, node_schema_id_to_parent_node[node_schema_id]  # type: ignore
         else:
