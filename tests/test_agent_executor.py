@@ -32,7 +32,12 @@ from cashier.tool.function_call_context import (
     ToolExceptionWrapper,
 )
 from cashier.turn_container import TurnContainer
-from data.graph.cashier import REQUEST_GRAPH_SCHEMA, cashier_graph_schema
+from data.graph.cashier import (
+    REQUEST_GRAPH_SCHEMA,
+    and_graph_schema,
+    cashier_graph_schema,
+    confirm_order_node_schema,
+)
 from data.tool_registry.cashier_tool_registry import CupSize, ItemOrder, Order
 
 
@@ -148,6 +153,7 @@ class TestAgent:
                     else False
                 ),
             },
+            exclude_regex_paths=r"root\['turn_container'\]\.turns\[\d+\]\.node_id",
         )
 
     def create_mock_model_completion(
@@ -289,7 +295,8 @@ class TestAgent:
                     model_provider,
                     None,
                     False,
-                    bwd_skip_node_schema_id or agent_executor.graph.curr_node.schema.id,
+                    bwd_skip_node_schema_id
+                    or agent_executor.graph.curr_conversation_node.schema.id,
                     0.5,
                 )
                 model_chat_side_effects.append(bwd_skip_model_completion)
@@ -309,7 +316,7 @@ class TestAgent:
         model_provider,
     ):
         agent_selection = AgentSelection(
-            agent_id=2, task="customer wants to order coffee"
+            agent_id=cashier_graph_schema.id, task="customer wants to order coffee"
         )
         graph_schema_selection_completion = self.create_mock_model_completion(
             model_provider, None, False, [agent_selection], 0.5
@@ -705,7 +712,7 @@ class TestAgent:
         start_turns,
     ):
         user_turn = self.add_user_turn(
-            agent_executor, "hello", model_provider, False, 2
+            agent_executor, "hello", model_provider, False, confirm_order_node_schema.id
         )
 
         fake_fn_call = self.recreate_fake_single_fn_call(
@@ -1234,7 +1241,7 @@ class TestAgent:
             "actually, i want to change my order",
             model_provider,
             False,
-            bwd_skip_node_schema_id=self.start_node_schema.start_node_schema.id,
+            bwd_skip_node_schema_id=and_graph_schema.id,
             include_fwd_skip_node_schema_id=False,
         )
         start_node_schema = cashier_graph_schema.start_node_schema.start_node_schema
