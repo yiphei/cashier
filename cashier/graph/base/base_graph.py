@@ -517,7 +517,10 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
         parent_node = self
 
         if edge_schema:
-            while isinstance(parent_node.curr_node, BaseGraph) and edge_schema.from_node_schema not in parent_node.schema.node_schemas:
+            while (
+                isinstance(parent_node.curr_node, BaseGraph)
+                and edge_schema.from_node_schema not in parent_node.schema.node_schemas
+            ):
                 parent_node = parent_node.curr_node
 
         direction = direction or Direction.FWD
