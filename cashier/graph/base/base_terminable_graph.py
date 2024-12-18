@@ -90,13 +90,6 @@ class BaseTerminableGraph(BaseGraph):
                     return (
                         edge_schema,
                         node_schema,
-                        (
-                            self
-                            if edge_schema in self.schema.get_edge_schemas()
-                            else self.node_schema_id_to_nodes[
-                                edge_schema.to_node_schema.id
-                            ][-1]
-                        ),  # TODO: this is a hack
                     )
 
             for edge_schema in bwd_skip_edge_schemas:
@@ -107,13 +100,6 @@ class BaseTerminableGraph(BaseGraph):
                     return (
                         edge_schema,
                         node_schema,
-                        (
-                            self
-                            if edge_schema in self.schema.get_edge_schemas()
-                            else self.node_schema_id_to_nodes[
-                                edge_schema.from_node_schema.id
-                            ][-1]
-                        ),  # TODO: this is a hack
                     )
 
         return None, None
@@ -206,12 +192,11 @@ class BaseTerminableGraph(BaseGraph):
         if node_schema:
             return edge_schema, node_schema, True, None  # type: ignore
 
-        edge_schema, node_schema, parent_node = self.handle_skip(
+        edge_schema, node_schema= self.handle_skip(
             fwd_skip_edge_schemas, bwd_skip_edge_schemas, TC
         )
         print("$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
         print(node_schema)
-        print(parent_node)
         print(node_schema_id_to_parent_node[node_schema.id])
         print(node_schema_id_to_parent_node[node_schema.id].curr_node)
         print("$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
