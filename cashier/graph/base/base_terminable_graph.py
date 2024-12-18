@@ -40,7 +40,7 @@ class BaseTerminableGraphSchema(HasIdMixin, BaseGraphSchema, BaseExecutableSchem
         run_assistant_turn_before_transition: bool = False,
         completion_config=None,
     ):
-        HasIdMixin.__init__(self, target_cls=BaseTerminableGraphSchema)
+        HasIdMixin.__init__(self)
         BaseGraphSchema.__init__(self, description, node_schemas)
         BaseExecutableSchema.__init__(
             self,
