@@ -231,6 +231,7 @@ class BaseTerminableGraph(BaseGraph):
                     )
                     if parent_node is not self:
                         self.curr_node = parent_node  # TODO: this is a hack
+                        self.next_edge_schema = self.get_next_edge_schema()
 
                     fake_fn_call = FunctionCall.create(
                         api_id=None,

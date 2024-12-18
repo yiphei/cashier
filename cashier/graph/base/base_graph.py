@@ -225,17 +225,16 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
         edge_schemas = (  # TODO: refactor this to not use a deque altogether
             deque([self.next_edge_schema]) if self.next_edge_schema else deque()
         )
+        if (self.next_edge_schema and
+            isinstance(self.next_edge_schema.from_node_schema, BaseGraphSchema)
+            and self.next_edge_schema.from_node_schema.id in self.node_schema_id_to_nodes
+        ):
+            graph_node = self.node_schema_id_to_nodes[
+                self.next_edge_schema.from_node_schema.id
+            ][-1]
+            fwd_jump_edge_schemas |= graph_node.compute_fwd_skip_edge_schemas()
         while edge_schemas:
             edge_schema = edge_schemas.popleft()
-            if (
-                isinstance(edge_schema.from_node_schema, BaseGraphSchema)
-                and edge_schema.from_node_schema.id in self.node_schema_id_to_nodes
-            ):
-                graph_node = self.node_schema_id_to_nodes[
-                    edge_schema.from_node_schema.id
-                ][-1]
-                fwd_jump_edge_schemas |= graph_node.compute_fwd_skip_edge_schemas()
-
             if (
                 self.get_edge_by_edge_schema_id(edge_schema.id, raise_if_none=False)
                 is not None
