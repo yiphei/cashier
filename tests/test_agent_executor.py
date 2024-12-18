@@ -1241,7 +1241,7 @@ class TestAgent:
             "actually, i want to change my order",
             model_provider,
             False,
-            bwd_skip_node_schema_id=and_graph_schema.id,
+            bwd_skip_node_schema_id=cashier_graph_schema.start_node_schema.start_node_schema.id,
             include_fwd_skip_node_schema_id=False,
         )
         start_node_schema = cashier_graph_schema.start_node_schema.start_node_schema
