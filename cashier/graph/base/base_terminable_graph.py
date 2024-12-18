@@ -170,21 +170,39 @@ class BaseTerminableGraph(BaseGraph):
         Tuple[EdgeSchema, ConversationNodeSchema, bool], Tuple[None, None, bool]
     ]:
         fwd_skip_edge_schemas_data = self.compute_fwd_skip_edge_schemas()
-        fwd_skip_edge_schemas = {data.edge_schema for data in fwd_skip_edge_schemas_data}
-        node_schema_id_to_parent_node = {data.node_schema.id: data.parent_node for data in fwd_skip_edge_schemas_data}
+        fwd_skip_edge_schemas = {
+            data.edge_schema for data in fwd_skip_edge_schemas_data
+        }
+        node_schema_id_to_parent_node = {
+            data.node_schema.id: data.parent_node for data in fwd_skip_edge_schemas_data
+        }
         print("@@@@@@@@@@@@@@@@@@@@@@")
         print(fwd_skip_edge_schemas_data)
         print(node_schema_id_to_parent_node.keys())
 
         self.bwd_skip_edge_schemas = self.compute_bwd_skip_edge_schemas()
-        bwd_skip_edge_schemas = {data.edge_schema for data in self.bwd_skip_edge_schemas}
+        bwd_skip_edge_schemas = {
+            data.edge_schema for data in self.bwd_skip_edge_schemas
+        }
         print("@@@@@@@@@@@@@@@@@@@@@@")
         print(self.bwd_skip_edge_schemas)
         print([data.node_schema.id for data in self.bwd_skip_edge_schemas])
-        print({data.node_schema.id: data.parent_node for data in self.bwd_skip_edge_schemas}.keys())
-        node_schema_id_to_parent_node.update({data.node_schema.id: data.parent_node for data in self.bwd_skip_edge_schemas})
+        print(
+            {
+                data.node_schema.id: data.parent_node
+                for data in self.bwd_skip_edge_schemas
+            }.keys()
+        )
+        node_schema_id_to_parent_node.update(
+            {
+                data.node_schema.id: data.parent_node
+                for data in self.bwd_skip_edge_schemas
+            }
+        )
 
-        edge_schema, node_schema = self.handle_wait(fwd_skip_edge_schemas, bwd_skip_edge_schemas, TC)
+        edge_schema, node_schema = self.handle_wait(
+            fwd_skip_edge_schemas, bwd_skip_edge_schemas, TC
+        )
         if node_schema:
             return edge_schema, node_schema, True, None  # type: ignore
 
