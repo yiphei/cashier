@@ -248,9 +248,12 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
         if (
             self.next_edge_schema
             and isinstance(self.next_edge_schema.from_node_schema, BaseGraphSchema)
-            and self.get_prev_node(None, self.next_edge_schema.from_node_schema) is not None
+            and self.get_prev_node(None, self.next_edge_schema.from_node_schema)
+            is not None
         ):
-            graph_node = self.get_prev_node(None, self.next_edge_schema.from_node_schema)
+            graph_node = self.get_prev_node(
+                None, self.next_edge_schema.from_node_schema
+            )
             fwd_jump_edge_schemas |= graph_node.compute_fwd_skip_edge_schemas()
         while edge_schemas:
             edge_schema = edge_schemas.popleft()
@@ -280,7 +283,9 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
                         )
                     )  # TODO: this not truly recursive
                     if isinstance(edge_schema.to_node_schema, BaseGraphSchema):
-                        graph_node = self.get_prev_node(None, edge_schema.to_node_schema)
+                        graph_node = self.get_prev_node(
+                            None, edge_schema.to_node_schema
+                        )
                         fwd_jump_edge_schemas |= (
                             graph_node.compute_fwd_skip_edge_schemas()
                         )
