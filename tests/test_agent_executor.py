@@ -34,9 +34,9 @@ from cashier.tool.function_call_context import (
 from cashier.turn_container import TurnContainer
 from data.graph.cashier import (
     REQUEST_GRAPH_SCHEMA,
+    and_graph_schema,
     cashier_graph_schema,
     confirm_order_node_schema,
-    and_graph_schema,
 )
 from data.tool_registry.cashier_tool_registry import CupSize, ItemOrder, Order
 
