@@ -49,6 +49,12 @@ class BaseTerminableGraphSchema(HasIdMixin, BaseGraphSchema, BaseExecutableSchem
             run_assistant_turn_before_transition=run_assistant_turn_before_transition,
         )
 
+        self.all_conversation_node_schemas = self.get_all_node_schemas()
+        self.conversation_node_schema_id_to_conversation_node_schema = {
+            node_schema.id: node_schema
+            for node_schema in self.all_conversation_node_schemas
+        }
+
 
 class BaseTerminableGraph(BaseGraph):
     def __init__(
@@ -73,9 +79,6 @@ class BaseTerminableGraph(BaseGraph):
         node_schema_id_to_parent_node = {
             data.node_schema.id: data.parent_node for data in fwd_skip_edge_schemas_data
         }
-        node_schema_id_to_node_schema = {
-            data.node_schema.id: data.node_schema for data in fwd_skip_edge_schemas_data
-        }
         node_schema_id_to_edge_schema = {
             data.node_schema.id: data.edge_schema for data in fwd_skip_edge_schemas_data
         }
@@ -87,20 +90,15 @@ class BaseTerminableGraph(BaseGraph):
                 for data in self.bwd_skip_edge_schemas
             }
         )
-        node_schema_id_to_node_schema.update(
-            {
-                data.node_schema.id: data.node_schema
-                for data in self.bwd_skip_edge_schemas
-            }
-        )
         node_schema_id_to_edge_schema.update(
             {
                 data.node_schema.id: data.edge_schema
                 for data in self.bwd_skip_edge_schemas
             }
         )
+        selected_node_schema = {data.node_schema for data in (fwd_skip_edge_schemas_data | self.bwd_skip_edge_schemas)}
         all_node_schemas = {self.curr_conversation_node.schema} | set(
-            node_schema_id_to_node_schema.values()
+            selected_node_schema
         )
         remaining_node_schemas = (
             set(self.schema.get_all_node_schemas()) - all_node_schemas
@@ -117,7 +115,7 @@ class BaseTerminableGraph(BaseGraph):
             TC, self.curr_conversation_node.schema, all_node_schemas, False
         )
         if node_schema_id is not None:
-            return node_schema_id_to_edge_schema[node_schema_id], node_schema_id_to_node_schema[node_schema_id], False, node_schema_id_to_parent_node[node_schema_id]  # type: ignore
+            return node_schema_id_to_edge_schema[node_schema_id], self.schema.conversation_node_schema_id_to_conversation_node_schema[node_schema_id], False, node_schema_id_to_parent_node[node_schema_id]  # type: ignore
         else:
             return None, None, False, None
 
@@ -185,6 +183,7 @@ class BaseTerminableGraph(BaseGraph):
             is_skip,
         )
         self.next_edge_schema = self.get_next_edge_schema()
+
 
     def is_completed(self, fn_call, is_fn_call_success):
         assert self.schema.completion_config is not None
