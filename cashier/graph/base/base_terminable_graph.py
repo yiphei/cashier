@@ -59,7 +59,9 @@ class BaseTerminableGraphSchema(HasIdMixin, BaseGraphSchema, BaseExecutableSchem
 
         self.real_from_conversation_node_schema_id_to_edge_schema = {}
         for edge_schema in self.get_edge_schemas():
-            self.real_from_conversation_node_schema_id_to_edge_schema[edge_schema.from_node_schema.id] = edge_schema
+            self.real_from_conversation_node_schema_id_to_edge_schema[
+                edge_schema.from_node_schema.id
+            ] = edge_schema
 
         edge_schemas_stack = self.get_edge_schemas()[:]
         while edge_schemas_stack:
