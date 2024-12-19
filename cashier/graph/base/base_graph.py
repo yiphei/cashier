@@ -393,7 +393,7 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
                     "assistant", node_schema.first_turn.msg_content
                 )
 
-    def get_request_for_init_graph_core(self):
+    def get_request_for_init_graph_core(self, increase_counter=True):
         return self.request
 
     def init_node(
@@ -439,6 +439,55 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
                 self.curr_node.init_skip_node(node_schema, edge_schema, TC, direction)
             else:
                 self.curr_node.init_next_node(node_schema, edge_schema, TC, None)
+
+
+    def init_node_but_skip(
+        self,
+        node_schema: ConversationNodeSchema,
+        edge_schema: Optional[EdgeSchema],
+        input: Any,
+        last_msg: Optional[str],
+        prev_node: Optional[ConversationNode],
+        direction: Direction,
+        TC,
+        is_skip: bool = False,
+    ) -> None:
+        if isinstance(node_schema, BaseGraphSchema):
+            request = self.get_request_for_init_graph_core(increase_counter=False)
+        else:
+            request = self.request
+
+        if not isinstance(node_schema, BaseGraphSchema):
+            new_node = node_schema.create_node(
+                input, last_msg, edge_schema, prev_node, direction, request  # type: ignore
+            )
+            self.node_schema_id_to_nodes[node_schema.id].append(new_node)
+            new_node.parent = self
+            if edge_schema and self.curr_node is not None:
+                self.add_edge(self.curr_node, new_node, edge_schema, direction)
+        else:
+            new_node = prev_node
+
+        self.curr_node = new_node
+
+        self.post_node_init(
+            edge_schema,
+            prev_node,
+            TC,
+            is_skip,
+        )
+
+        if self.parent is not None:
+            self.parent.init_node_but_skip(
+                self.schema,
+                None,
+                None,
+                last_msg,
+                self,
+                direction,
+                TC,
+                is_skip,
+            )
 
     def _init_next_node(
         self,
@@ -517,8 +566,7 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
         assert prev_node is not None
         input = prev_node.input
 
-        last_msg = TC.get_asst_message(content_only=True)
-        self.init_node(
+        self.init_node_but_skip(
             node_schema,
             edge_schema,
             input,
@@ -533,17 +581,10 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
         self,
         node_schema: ConversationNodeSchema,
         edge_schema: EdgeSchema,
+        parent_node,
         TC,
         direction=None,
     ) -> None:
-        parent_node = self
-
-        if edge_schema:
-            while (
-                isinstance(parent_node.curr_node, BaseGraph)
-                and edge_schema.from_node_schema not in parent_node.schema.node_schemas
-            ):
-                parent_node = parent_node.curr_node
 
         direction = direction or Direction.FWD
         if edge_schema and edge_schema.from_node_schema == node_schema:

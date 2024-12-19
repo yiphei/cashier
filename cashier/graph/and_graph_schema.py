@@ -151,5 +151,5 @@ class ANDGraph(BaseTerminableGraph):
             is_skip,
         )
         self.visited_node_schemas.add(self.curr_node.schema)
-        if edge_schema:
+        if edge_schema and edge_schema not in self.edge_schemas:
             self.add_edge_schema(edge_schema)

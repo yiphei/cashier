@@ -184,14 +184,14 @@ class BaseTerminableGraph(BaseGraph):
                         {fake_fn_call.id: None},
                     )
                 else:
-                    parent_node.init_skip_node(
+                    self.init_skip_node(
                         node_schema,
                         edge_schema,
+                        parent_node,
                         TC,
                     )
                     if parent_node is not self:
-                        self.curr_node = parent_node  # TODO: this is a hack
-                        self.next_edge_schema = self.get_next_edge_schema()
+                        self.next_edge_schema = self.get_next_edge_schema() # TODO: this is a hack
 
                     fake_fn_call = FunctionCall.create(
                         api_id=None,
