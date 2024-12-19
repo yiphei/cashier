@@ -101,7 +101,7 @@ class BaseTerminableGraph(BaseGraph):
         Tuple[EdgeSchema, ConversationNodeSchema, bool], Tuple[None, None, bool]
     ]:
         fwd_skip_edge_schemas_data = self.compute_fwd_skip_edge_schemas()
-        fwd_node_schemas = {data.node_schema.id for data in fwd_skip_edge_schemas_data}
+        fwd_node_schema_ids = {data.node_schema.id for data in fwd_skip_edge_schemas_data}
         node_schema_id_to_parent_node = {
             data.node_schema.id: data.parent_node for data in fwd_skip_edge_schemas_data
         }
@@ -135,7 +135,7 @@ class BaseTerminableGraph(BaseGraph):
             TC, self.curr_conversation_node.schema, all_node_schemas, False
         )
         if node_schema_id is not None:
-            if node_schema_id in fwd_node_schemas:
+            if node_schema_id in fwd_node_schema_ids:
                 edge_schema = self.schema.to_conversation_node_schema_id_to_edge_schema[node_schema_id]
             else:
                 edge_schema = self.schema.from_conversation_node_schema_id_to_edge_schema[node_schema_id]
