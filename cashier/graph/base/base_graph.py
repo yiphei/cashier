@@ -250,8 +250,7 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
 
         fwd_jump_edge_schemas = set()
         edge_schema = start_edge_schema
-        if ( isinstance(start_edge_schema.from_node_schema, BaseGraphSchema)
-        ):
+        if isinstance(start_edge_schema.from_node_schema, BaseGraphSchema):
             fwd_jump_edge_schemas |= start_node.compute_fwd_skip_edge_schemas(True)
         while edge_schema and (
             self.get_edge_by_edge_schema_id(edge_schema.id, raise_if_none=False)
