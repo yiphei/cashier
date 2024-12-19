@@ -183,6 +183,11 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
             return self.node_schema_id_to_nodes[node_schema.id][-1]
         else:
             return None
+        
+    def get_bwd_node_schema_and_parent_node(self, node_schema, parent_node):
+        if isinstance(node_schema, BaseGraphSchema):
+            return self.get_bwd_node_schema_and_parent_node(node_schema.last_node_schema, parent_node.get_prev_node(None, node_schema))
+        return node_schema, parent_node
 
     def compute_bwd_skip_edge_schemas(self) -> Set[EdgeSchema]:
         if self.curr_node is None:
@@ -197,17 +202,14 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
             edge = self.to_node_id_to_edge[from_node.id]
             if edge.schema in curr_bwd_skip_edge_schemas:
                 break
-            node_schema = edge.from_node.schema
-            parent_node = edge.from_node.parent
-            if isinstance(node_schema, BaseGraphSchema):
-                node_schema = node_schema.last_node_schema
-                parent_node = edge.from_node.get_prev_node(None, node_schema)
+
+            node_schema, parent_node = self.get_bwd_node_schema_and_parent_node(edge.from_node.schema, self)
             new_edge_schemas.add(
                 SkipData(
                     node_schema=node_schema,
                     parent_node=parent_node,
                 )
-            )  # TODO: this not truly recursive
+            )
             assert from_node == edge.to_node
             from_node = edge.from_node
             if isinstance(from_node.schema, BaseGraphSchema):
