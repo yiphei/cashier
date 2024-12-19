@@ -410,7 +410,7 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
 
         if edge_schema is None and is_skip:
             edge_schema = (
-                self.schema.real_from_conversation_node_schema_id_to_edge_schema[
+                self.schema.from_node_schema_id_to_edge_schema[
                     node_schema.id
                 ]
             )
