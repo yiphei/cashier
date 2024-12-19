@@ -310,9 +310,7 @@ class BaseTerminableGraph(BaseGraph):
             )
         return node_schema
 
-    def compute_fwd_skip_node_schemas(
-        self, start_from_next_edge_schema
-    ):
+    def compute_fwd_skip_node_schemas(self, start_from_next_edge_schema):
         start_edge_schema = (
             self.next_edge_schema
             if start_from_next_edge_schema
