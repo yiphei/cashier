@@ -286,22 +286,22 @@ class BaseTerminableGraph(BaseGraph):
         if from_node is None:
             return set()
 
-        new_edge_schemas = set()
+        new_node_schemas = set()
         if isinstance(from_node.schema, BaseGraphSchema):
-            new_edge_schemas |= from_node.compute_bwd_skip_node_schemas(True)
+            new_node_schemas |= from_node.compute_bwd_skip_node_schemas(True)
         while self.to_node_id_to_edge[from_node.id] is not None:
             edge = self.to_node_id_to_edge[from_node.id]
 
             node_schema = self.get_bwd_node_schema_and_parent_node(
                 edge.from_node.schema
             )
-            new_edge_schemas.add(node_schema)
+            new_node_schemas.add(node_schema)
             assert from_node == edge.to_node
             from_node = edge.from_node
             if isinstance(from_node.schema, BaseGraphSchema):
-                new_edge_schemas |= from_node.compute_bwd_skip_node_schemas(False)
+                new_node_schemas |= from_node.compute_bwd_skip_node_schemas(False)
 
-        return new_edge_schemas
+        return new_node_schemas
 
     def get_fwd_node_schema_and_parent_node(self, node_schema):
         if isinstance(node_schema, BaseGraphSchema):
