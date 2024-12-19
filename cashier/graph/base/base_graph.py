@@ -235,22 +235,24 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
             )
         return node_schema, parent_node
 
-    def compute_fwd_skip_edge_schemas(self) -> Set[EdgeSchema]:
-        start_node = self.curr_node
+    def compute_fwd_skip_edge_schemas(self, start_from_next_edge_schema) -> Set[EdgeSchema]:
+        start_edge_schema = self.next_edge_schema if start_from_next_edge_schema else self.schema.get_edge_schemas()[0]
+        start_node = self.curr_node if start_from_next_edge_schema else self.get_prev_node(None, start_edge_schema)
+
         fwd_jump_edge_schemas = set()
         edge_schemas = (  # TODO: refactor this to not use a deque altogether
-            deque([self.next_edge_schema]) if self.next_edge_schema else deque()
+            deque([start_edge_schema]) if start_edge_schema else deque()
         )
         if (
-            self.next_edge_schema
-            and isinstance(self.next_edge_schema.from_node_schema, BaseGraphSchema)
-            and self.get_prev_node(None, self.next_edge_schema.from_node_schema)
+            start_edge_schema
+            and isinstance(start_edge_schema.from_node_schema, BaseGraphSchema)
+            and self.get_prev_node(None, start_edge_schema.from_node_schema)
             is not None
         ):
             graph_node = self.get_prev_node(
-                None, self.next_edge_schema.from_node_schema
+                None, start_edge_schema.from_node_schema
             )
-            fwd_jump_edge_schemas |= graph_node.compute_fwd_skip_edge_schemas()
+            fwd_jump_edge_schemas |= graph_node.compute_fwd_skip_edge_schemas(True)
         while edge_schemas:
             edge_schema = edge_schemas.popleft()
             if (
@@ -286,7 +288,7 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
                             None, edge_schema.to_node_schema
                         )
                         fwd_jump_edge_schemas |= (
-                            graph_node.compute_fwd_skip_edge_schemas()
+                            graph_node.compute_fwd_skip_edge_schemas(False)
                         )
                     next_edge_schema = self.get_edge_schema_by_from_node_schema_id(
                         to_node.schema.id

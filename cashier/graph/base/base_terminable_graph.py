@@ -131,7 +131,7 @@ class BaseTerminableGraph(BaseGraph):
     ) -> Union[
         Tuple[EdgeSchema, ConversationNodeSchema, bool], Tuple[None, None, bool]
     ]:
-        fwd_skip_edge_schemas_data = self.compute_fwd_skip_edge_schemas()
+        fwd_skip_edge_schemas_data = self.compute_fwd_skip_edge_schemas(True)
         fwd_node_schema_ids = {
             data.node_schema.id for data in fwd_skip_edge_schemas_data
         }
