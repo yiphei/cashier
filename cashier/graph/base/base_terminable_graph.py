@@ -19,7 +19,7 @@ from cashier.prompts.node_schema_selection import NodeSchemaSelectionPrompt
 from cashier.prompts.off_topic import OffTopicPrompt
 from cashier.turn_container import TurnContainer
 
-SkipData = namedtuple("SkipData", ["node_schema", "parent_node"])
+SkipData = namedtuple("SkipData", ["node_schema"])
 
 
 def should_change_node_schema(
@@ -236,17 +236,8 @@ class BaseTerminableGraph(BaseGraph):
         fwd_node_schema_ids = {
             data.node_schema.id for data in fwd_skip_edge_schemas_data
         }
-        node_schema_id_to_parent_node = {
-            data.node_schema.id: data.parent_node for data in fwd_skip_edge_schemas_data
-        }
 
         self.bwd_skip_edge_schemas = self.compute_bwd_skip_edge_schemas(True)
-        node_schema_id_to_parent_node.update(
-            {
-                data.node_schema.id: data.parent_node
-                for data in self.bwd_skip_edge_schemas
-            }
-        )
         skip_node_schema = {
             data.node_schema
             for data in (fwd_skip_edge_schemas_data | self.bwd_skip_edge_schemas)
@@ -276,7 +267,7 @@ class BaseTerminableGraph(BaseGraph):
                     ]
                 )
 
-            return edge_schema, self.schema.conversation_node_schema_id_to_conversation_node_schema[node_schema_id], False, node_schema_id_to_parent_node[node_schema_id]  # type: ignore
+            return edge_schema, self.schema.conversation_node_schema_id_to_conversation_node_schema[node_schema_id], False, self.conv_node_schema_id_to_parent_node[node_schema_id]  # type: ignore
         else:
             return None, None, False, None
 
@@ -310,7 +301,6 @@ class BaseTerminableGraph(BaseGraph):
             new_edge_schemas.add(
                 SkipData(
                     node_schema=node_schema,
-                    parent_node=parent_node,
                 )
             )
             assert from_node == edge.to_node
@@ -375,7 +365,6 @@ class BaseTerminableGraph(BaseGraph):
                 fwd_jump_edge_schemas.add(
                     SkipData(
                         node_schema=node_schema,
-                        parent_node=parent_node,
                     )
                 )
                 if isinstance(edge_schema.to_node_schema, BaseGraphSchema):

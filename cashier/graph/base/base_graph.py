@@ -92,6 +92,9 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
         self.new_edge_schema = None
         self.new_node_schema = None
 
+        # shared recursively
+        self.conv_node_schema_id_to_parent_node = {}
+
     def add_edge_schema(self, edge_schema):
         self.edge_schemas.append(edge_schema)
         self.edge_schema_id_to_edge_schema[edge_schema.id] = edge_schema
@@ -318,6 +321,10 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
         )
         self.node_schema_id_to_nodes[node_schema.id].append(new_node)
         new_node.parent = self
+        if isinstance(node_schema, BaseGraphSchema):
+            new_node.conv_node_schema_id_to_parent_node = self.conv_node_schema_id_to_parent_node # TODO: this is a hack. refactor later
+        else:
+            self.conv_node_schema_id_to_parent_node[node_schema.id] = self
 
         if edge_schema and self.curr_node is not None:
             self.add_edge(self.curr_node, new_node, edge_schema, direction)
