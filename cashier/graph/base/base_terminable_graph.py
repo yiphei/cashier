@@ -113,24 +113,20 @@ class BaseTerminableGraph(BaseGraph):
                 for data in self.bwd_skip_edge_schemas
             }
         )
-        selected_node_schema = {
+        skip_node_schema = {
             data.node_schema
             for data in (fwd_skip_edge_schemas_data | self.bwd_skip_edge_schemas)
         }
-        all_node_schemas = {self.curr_conversation_node.schema} | set(
-            selected_node_schema
-        )
         remaining_node_schemas = (
-            set(self.schema.all_conversation_node_schemas) - all_node_schemas
+            set(self.schema.all_conversation_node_schemas) - skip_node_schema
         )
-        remaining_node_schemas |= {self.curr_conversation_node.schema}
-
         node_schema_id = should_change_node_schema(
             TC, self.curr_conversation_node.schema, remaining_node_schemas, True
         )
         if node_schema_id is not None:
             return None, node_schema_id, True, None  # type: ignore
 
+        all_node_schemas = {self.curr_conversation_node.schema} | skip_node_schema
         node_schema_id = should_change_node_schema(
             TC, self.curr_conversation_node.schema, all_node_schemas, False
         )
