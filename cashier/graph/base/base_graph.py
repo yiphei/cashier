@@ -299,6 +299,30 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
 
     def get_request_for_init_graph_core(self, increase_counter=True):
         return self.request
+    
+    def init_node_core(
+                    self,
+        node_schema: ConversationNodeSchema,
+        edge_schema: Optional[EdgeSchema],
+        input: Any,
+        last_msg: Optional[str],
+        prev_node: Optional[ConversationNode],
+        direction: Direction,
+        request,
+    ):
+        logger.debug(
+            f"[NODE_SCHEMA] Initializing node with {Style.BRIGHT}node_schema_id: {node_schema.id}{Style.NORMAL}"
+        )
+        new_node = node_schema.create_node(
+            input, last_msg, edge_schema, prev_node, direction, request  # type: ignore
+        )
+        self.node_schema_id_to_nodes[node_schema.id].append(new_node)
+        new_node.parent = self
+
+        if edge_schema and self.curr_node is not None:
+            self.add_edge(self.curr_node, new_node, edge_schema, direction)
+
+        return new_node
 
     def init_node(
         self,
@@ -316,18 +340,7 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
         else:
             request = self.request
 
-        logger.debug(
-            f"[NODE_SCHEMA] Initializing node with {Style.BRIGHT}node_schema_id: {node_schema.id}{Style.NORMAL}"
-        )
-        new_node = node_schema.create_node(
-            input, last_msg, edge_schema, prev_node, direction, request  # type: ignore
-        )
-        self.node_schema_id_to_nodes[node_schema.id].append(new_node)
-        new_node.parent = self
-
-        if edge_schema and self.curr_node is not None:
-            self.add_edge(self.curr_node, new_node, edge_schema, direction)
-
+        new_node = self.init_node_core(node_schema, edge_schema, input, last_msg, prev_node, direction, request)
         self.curr_node = new_node
 
         self.post_node_init(
@@ -362,17 +375,7 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
             edge_schema = self.schema.from_node_schema_id_to_edge_schema[node_schema.id]
 
         if not isinstance(node_schema, BaseGraphSchema):
-            logger.debug(
-                f"[NODE_SCHEMA] Initializing node with {Style.BRIGHT}node_schema_id: {node_schema.id}{Style.NORMAL}"
-            )
-            new_node = node_schema.create_node(
-                input, last_msg, edge_schema, prev_node, direction, request  # type: ignore
-            )
-            self.node_schema_id_to_nodes[node_schema.id].append(new_node)
-            new_node.parent = self
-
-            if edge_schema and self.curr_node is not None:
-                self.add_edge(self.curr_node, new_node, edge_schema, direction)
+            new_node = self.init_node_core(node_schema, edge_schema, input, last_msg, prev_node, direction, request)
         else:
             new_node = prev_node
 
