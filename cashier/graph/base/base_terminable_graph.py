@@ -99,7 +99,7 @@ class BaseTerminableGraphSchema(HasIdMixin, BaseGraphSchema, BaseExecutableSchem
                 ] = edge_schema
 
     def get_edge_schemas(self):
-        return self.edge_schemas        
+        return self.edge_schemas
 
 
 class BaseTerminableGraph(BaseGraph):
