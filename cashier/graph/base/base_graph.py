@@ -356,53 +356,6 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
             node_schema, edge_schema = new_node.compute_init_node_edge_schema()
             self.curr_node.init_next_node(node_schema, edge_schema, TC, None)
 
-    def init_node_but_skip(
-        self,
-        node_schema: ConversationNodeSchema,
-        edge_schema: Optional[EdgeSchema],
-        input: Any,
-        last_msg: Optional[str],
-        prev_node: Optional[ConversationNode],
-        direction: Direction,
-        TC,
-    ) -> None:
-        from cashier.graph.request_graph import RequestGraph
-
-        if isinstance(node_schema, BaseGraphSchema):
-            request = self.get_request_for_init_graph_core(False)
-        else:
-            request = self.request
-
-        if edge_schema is None:
-            edge_schema = self.schema.from_node_schema_id_to_edge_schema[node_schema.id]
-
-        if not isinstance(node_schema, BaseGraphSchema):
-            new_node = self.init_node_core(
-                node_schema, edge_schema, input, last_msg, prev_node, direction, request
-            )
-        else:
-            new_node = prev_node
-
-        self.curr_node = new_node
-
-        self.post_node_init(
-            edge_schema,
-            prev_node,
-            TC,
-            True,
-        )
-
-        if self.parent is not None and not isinstance(self.parent, RequestGraph):
-            self.parent.init_node_but_skip(
-                self.schema,
-                None,
-                None,
-                last_msg,
-                self,
-                direction,
-                TC,
-            )
-
     def _init_next_node(
         self,
         node_schema,
@@ -462,53 +415,6 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
             direction,
             last_msg,
             input,
-        )
-
-    def _init_skip_node(
-        self,
-        node_schema: ConversationNodeSchema,
-        edge_schema: EdgeSchema,
-        direction,
-        last_msg,
-        TC,
-    ) -> None:
-        if direction == Direction.BWD:
-            self.bwd_skip_edge_schemas.clear()
-
-        prev_node = self.get_prev_node(edge_schema, node_schema, direction)
-        assert prev_node is not None
-        input = prev_node.input
-
-        self.init_node_but_skip(
-            node_schema,
-            edge_schema,
-            input,
-            last_msg,
-            prev_node,
-            direction,
-            TC,
-        )
-
-    def init_skip_node(
-        self,
-        node_schema: ConversationNodeSchema,
-        edge_schema: EdgeSchema,
-        parent_node,
-        TC,
-        direction=None,
-    ) -> None:
-
-        direction = direction or Direction.FWD
-        if edge_schema and edge_schema.from_node_schema == node_schema:
-            direction = Direction.BWD
-
-        last_msg = TC.get_asst_message(content_only=True)
-        parent_node._init_skip_node(
-            node_schema,
-            edge_schema,
-            direction,
-            last_msg,
-            TC,
         )
 
     def execute_function_call(
