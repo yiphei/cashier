@@ -187,8 +187,6 @@ class BaseTerminableGraph(BaseGraph):
         last_msg,
         TC,
     ) -> None:
-        if direction == Direction.BWD:
-            self.bwd_skip_edge_schemas.clear()
 
         prev_node = self.get_prev_node(edge_schema, node_schema, direction)
         assert prev_node is not None
@@ -235,9 +233,9 @@ class BaseTerminableGraph(BaseGraph):
         fwd_skip_edge_schemas_data = self.compute_fwd_skip_edge_schemas(True)
         fwd_node_schema_ids = {data.id for data in fwd_skip_edge_schemas_data}
 
-        self.bwd_skip_edge_schemas = self.compute_bwd_skip_edge_schemas(True)
+        bwd_skip_edge_schemas = self.compute_bwd_skip_edge_schemas(True)
         skip_node_schema = {
-            data for data in (fwd_skip_edge_schemas_data | self.bwd_skip_edge_schemas)
+            data for data in (fwd_skip_edge_schemas_data | bwd_skip_edge_schemas)
         }
         remaining_node_schemas = (
             set(self.schema.all_conversation_node_schemas) - skip_node_schema

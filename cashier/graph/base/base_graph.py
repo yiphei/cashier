@@ -88,7 +88,6 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
 
         # transition
         self.next_edge_schema: Optional[EdgeSchema] = None
-        self.bwd_skip_edge_schemas: Set[EdgeSchema] = set()
         self.new_edge_schema = None
         self.new_node_schema = None
 
