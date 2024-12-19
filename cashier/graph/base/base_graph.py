@@ -235,9 +235,19 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
             )
         return node_schema, parent_node
 
-    def compute_fwd_skip_edge_schemas(self, start_from_next_edge_schema) -> Set[EdgeSchema]:
-        start_edge_schema = self.next_edge_schema if start_from_next_edge_schema else self.schema.get_edge_schemas()[0]
-        start_node = self.curr_node if start_from_next_edge_schema else self.get_prev_node(None, start_edge_schema)
+    def compute_fwd_skip_edge_schemas(
+        self, start_from_next_edge_schema
+    ) -> Set[EdgeSchema]:
+        start_edge_schema = (
+            self.next_edge_schema
+            if start_from_next_edge_schema
+            else self.schema.get_edge_schemas()[0]
+        )
+        start_node = (
+            self.curr_node
+            if start_from_next_edge_schema
+            else self.get_prev_node(None, start_edge_schema)
+        )
 
         fwd_jump_edge_schemas = set()
         edge_schemas = (  # TODO: refactor this to not use a deque altogether
@@ -246,12 +256,9 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
         if (
             start_edge_schema
             and isinstance(start_edge_schema.from_node_schema, BaseGraphSchema)
-            and self.get_prev_node(None, start_edge_schema.from_node_schema)
-            is not None
+            and self.get_prev_node(None, start_edge_schema.from_node_schema) is not None
         ):
-            graph_node = self.get_prev_node(
-                None, start_edge_schema.from_node_schema
-            )
+            graph_node = self.get_prev_node(None, start_edge_schema.from_node_schema)
             fwd_jump_edge_schemas |= graph_node.compute_fwd_skip_edge_schemas(True)
         while edge_schemas:
             edge_schema = edge_schemas.popleft()
