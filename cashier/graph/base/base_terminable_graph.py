@@ -368,9 +368,7 @@ class BaseTerminableGraph(BaseGraph):
             current_node_schema=self.curr_conversation_node.schema,
             tc=TC,
         ):
-            edge_schema, node_schema, is_wait = self.handle_is_off_topic(
-                TC
-            )
+            edge_schema, node_schema, is_wait = self.handle_is_off_topic(TC)
             if node_schema:
                 if is_wait:
                     fake_fn_call = create_think_fn_call(
