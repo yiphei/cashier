@@ -230,12 +230,12 @@ class BaseTerminableGraph(BaseGraph):
     ) -> Union[
         Tuple[EdgeSchema, ConversationNodeSchema, bool], Tuple[None, None, bool]
     ]:
-        fwd_skip_edge_schemas_data = self.compute_fwd_skip_edge_schemas(True)
-        fwd_node_schema_ids = {data.id for data in fwd_skip_edge_schemas_data}
+        fwd_skip_node_schemas = self.compute_fwd_skip_edge_schemas(True)
+        fwd_skip_node_schema_ids = {node_schema.id for node_schema in fwd_skip_node_schemas}
 
-        bwd_skip_edge_schemas = self.compute_bwd_skip_edge_schemas(True)
+        bwd_skip_node_schemas = self.compute_bwd_skip_edge_schemas(True)
         skip_node_schema = {
-            data for data in (fwd_skip_edge_schemas_data | bwd_skip_edge_schemas)
+            node_schema for node_schema in (fwd_skip_node_schemas | bwd_skip_node_schemas)
         }
         remaining_node_schemas = (
             set(self.schema.all_conversation_node_schemas) - skip_node_schema
@@ -251,7 +251,7 @@ class BaseTerminableGraph(BaseGraph):
             TC, self.curr_conversation_node.schema, all_node_schemas, False
         )
         if node_schema_id is not None:
-            if node_schema_id in fwd_node_schema_ids:
+            if node_schema_id in fwd_skip_node_schema_ids:
                 edge_schema = self.schema.to_conversation_node_schema_id_to_edge_schema[
                     node_schema_id
                 ]
