@@ -77,7 +77,7 @@ class BaseTerminableGraphSchema(HasIdMixin, BaseGraphSchema, BaseExecutableSchem
                 ] = edge_schema
 
             if isinstance(edge_schema.from_node_schema, BaseGraphSchema):
-                schema = edge_schema.from_node_schema.node_schemas[-1]
+                schema = edge_schema.from_node_schema.last_node_schema
                 self.from_conversation_node_schema_id_to_edge_schema[schema.id] = (
                     edge_schema
                 )
@@ -99,7 +99,7 @@ class BaseTerminableGraphSchema(HasIdMixin, BaseGraphSchema, BaseExecutableSchem
                 ] = edge_schema
 
     def get_edge_schemas(self):
-        return self.edge_schemas
+        return self.edge_schemas        
 
 
 class BaseTerminableGraph(BaseGraph):

@@ -206,7 +206,7 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
             node_schema = edge.from_node.schema
             parent_node = edge.from_node.parent
             if isinstance(node_schema, BaseGraphSchema):
-                node_schema = node_schema.node_schemas[-1]
+                node_schema = node_schema.last_node_schema
                 parent_node = edge.from_node.get_prev_node(None, node_schema)
             new_edge_schemas.add(
                 SkipData(
