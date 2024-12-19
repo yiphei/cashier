@@ -68,8 +68,6 @@ class ANDGraphSchema(BaseTerminableGraphSchema):
         return self.default_start_node_schema
 
     def create_node(self, input, last_msg, edge_schema, prev_node, direction, request):
-        if prev_node is not None:
-            return copy.deepcopy(prev_node)
         return ANDGraph(
             input=input,
             request=request,
