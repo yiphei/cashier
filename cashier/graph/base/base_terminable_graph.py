@@ -231,11 +231,14 @@ class BaseTerminableGraph(BaseGraph):
         Tuple[EdgeSchema, ConversationNodeSchema, bool], Tuple[None, None, bool]
     ]:
         fwd_skip_node_schemas = self.compute_fwd_skip_edge_schemas(True)
-        fwd_skip_node_schema_ids = {node_schema.id for node_schema in fwd_skip_node_schemas}
+        fwd_skip_node_schema_ids = {
+            node_schema.id for node_schema in fwd_skip_node_schemas
+        }
 
         bwd_skip_node_schemas = self.compute_bwd_skip_edge_schemas(True)
         skip_node_schema = {
-            node_schema for node_schema in (fwd_skip_node_schemas | bwd_skip_node_schemas)
+            node_schema
+            for node_schema in (fwd_skip_node_schemas | bwd_skip_node_schemas)
         }
         remaining_node_schemas = (
             set(self.schema.all_conversation_node_schemas) - skip_node_schema
