@@ -27,6 +27,7 @@ class GraphSchema(BaseTerminableGraphSchema):
         completion_config: BaseTransitionConfig,
         run_assistant_turn_before_transition: bool = False,
     ):
+        self.edge_schemas = edge_schemas
         BaseTerminableGraphSchema.__init__(
             self,
             description,
@@ -35,7 +36,6 @@ class GraphSchema(BaseTerminableGraphSchema):
             run_assistant_turn_before_transition,
             completion_config,
         )
-        self.edge_schemas = edge_schemas
         self.output_schema = output_schema
         self.start_node_schema = start_node_schema
         self.last_node_schema = last_node_schema
@@ -46,6 +46,9 @@ class GraphSchema(BaseTerminableGraphSchema):
             request=request,
             schema=self,
         )
+
+    def get_node_schemas(self):
+        return self.node_schemas
 
 
 class Graph(BaseTerminableGraph):

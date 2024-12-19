@@ -34,7 +34,6 @@ from cashier.tool.function_call_context import (
 from cashier.turn_container import TurnContainer
 from data.graph.cashier import (
     REQUEST_GRAPH_SCHEMA,
-    and_graph_schema,
     cashier_graph_schema,
     confirm_order_node_schema,
 )
@@ -1034,7 +1033,6 @@ class TestAgent:
             "i want to change order",
             model_provider,
             False,
-            include_fwd_skip_node_schema_id=False,
             bwd_skip_node_schema_id=self.start_node_schema.start_node_schema.id,
         )
 
@@ -1242,7 +1240,7 @@ class TestAgent:
             "actually, i want to change my order",
             model_provider,
             False,
-            bwd_skip_node_schema_id=and_graph_schema.id,
+            bwd_skip_node_schema_id=cashier_graph_schema.start_node_schema.start_node_schema.id,
             include_fwd_skip_node_schema_id=False,
         )
         start_node_schema = cashier_graph_schema.start_node_schema.start_node_schema
@@ -1290,7 +1288,7 @@ class TestAgent:
             "nvm, nothing",
             model_provider,
             False,
-            include_fwd_skip_node_schema_id=False,
+            include_fwd_skip_node_schema_id=True,
             bwd_skip_node_schema_id=next_node_schema.id,
         )
         node_turn_4 = TurnArgs(

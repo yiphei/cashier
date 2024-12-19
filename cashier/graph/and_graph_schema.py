@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import copy
-from typing import Any, List, Optional, Set, Tuple, Type, Union
+from typing import Any, List, Optional, Type
 
 from pydantic import BaseModel
 
@@ -9,7 +9,6 @@ from cashier.graph.base.base_graph import BaseGraphSchema
 from cashier.graph.base.base_terminable_graph import (
     BaseTerminableGraph,
     BaseTerminableGraphSchema,
-    should_change_node_schema,
 )
 from cashier.graph.conversation_node import ConversationNode, ConversationNodeSchema
 from cashier.graph.edge_schema import EdgeSchema
@@ -27,13 +26,6 @@ class ANDGraphSchema(BaseTerminableGraphSchema):
         default_edge_schemas: Optional[List[EdgeSchema]] = None,
         run_assistant_turn_before_transition: bool = False,
     ):
-        BaseTerminableGraphSchema.__init__(
-            self,
-            description,
-            node_schemas,
-            state_schema,
-            run_assistant_turn_before_transition,
-        )
         for node_schema in node_schemas:
             assert node_schema.completion_config is not None
         self.default_start_node_schema = default_start_node_schema
@@ -49,6 +41,14 @@ class ANDGraphSchema(BaseTerminableGraphSchema):
                 )
                 self.default_edge_schemas.append(edge_schema)
 
+        BaseTerminableGraphSchema.__init__(
+            self,
+            description,
+            node_schemas,
+            state_schema,
+            run_assistant_turn_before_transition,
+        )
+
         all_tool_defs = []
         for node_schema in node_schemas:
             all_tool_defs.extend(
@@ -61,6 +61,7 @@ class ANDGraphSchema(BaseTerminableGraphSchema):
             edge_schema.from_node_schema.id: edge_schema
             for edge_schema in self.default_edge_schemas
         }
+        self.last_node_schema = self.node_schemas[-1]
 
     @property
     def start_node_schema(self):
@@ -74,6 +75,12 @@ class ANDGraphSchema(BaseTerminableGraphSchema):
             request=request,
             schema=self,
         )
+
+    def get_node_schemas(self):
+        return self.node_schemas
+
+    def get_edge_schemas(self):
+        return self.default_edge_schemas
 
 
 class ANDGraph(BaseTerminableGraph):
@@ -116,24 +123,6 @@ class ANDGraph(BaseTerminableGraph):
 
         return node_schema, edge_schema
 
-    def handle_wait(
-        self,
-        fwd_skip_edge_schemas: Set[EdgeSchema],
-        TC,
-    ) -> Union[Tuple[EdgeSchema, ConversationNodeSchema], Tuple[None, None]]:
-        remaining_node_schemas = (
-            set(self.schema.node_schemas) - self.visited_node_schemas
-        )
-        remaining_node_schemas.add(self.curr_node.schema)
-        node_schema_id = should_change_node_schema(
-            TC, self.curr_node.schema, remaining_node_schemas, True
-        )
-        node_schema = None
-        if node_schema_id is not None:
-            node_schema = self.schema.node_schema_id_to_node_schema[node_schema_id]
-
-        return None, node_schema
-
     def get_next_edge_schema(self):
         return self.schema.default_from_node_schema_id_to_edge_schema.get(
             self.curr_node.schema.id, None
@@ -159,5 +148,5 @@ class ANDGraph(BaseTerminableGraph):
             is_skip,
         )
         self.visited_node_schemas.add(self.curr_node.schema)
-        if edge_schema:
+        if edge_schema and edge_schema not in self.edge_schemas:
             self.add_edge_schema(edge_schema)

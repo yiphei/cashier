@@ -49,6 +49,68 @@ class BaseTerminableGraphSchema(HasIdMixin, BaseGraphSchema, BaseExecutableSchem
             run_assistant_turn_before_transition=run_assistant_turn_before_transition,
         )
 
+        self.all_conversation_node_schemas = self.get_leaf_conv_node_schemas()
+        self.conversation_node_schema_id_to_conversation_node_schema = {
+            node_schema.id: node_schema
+            for node_schema in self.all_conversation_node_schemas
+        }
+        self.to_conversation_node_schema_id_to_edge_schema = {}
+        self.from_conversation_node_schema_id_to_edge_schema = {}
+
+        self.from_node_schema_id_to_edge_schema = {
+            edge_schema.from_node_schema.id: edge_schema
+            for edge_schema in self.get_edge_schemas()
+        }
+
+        edge_schemas_stack = self.get_edge_schemas()[:]
+        while edge_schemas_stack:
+            edge_schema = edge_schemas_stack.pop()
+            if isinstance(edge_schema.to_node_schema, BaseGraphSchema):
+                schema = (
+                    edge_schema.to_node_schema.start_node_schema
+                )  # TODO: this and the rest is not truly recursive
+                self.to_conversation_node_schema_id_to_edge_schema[schema.id] = (
+                    edge_schema
+                )
+            else:
+                self.to_conversation_node_schema_id_to_edge_schema[
+                    edge_schema.to_node_schema.id
+                ] = edge_schema
+
+            if isinstance(edge_schema.from_node_schema, BaseGraphSchema):
+                schema = edge_schema.from_node_schema.last_node_schema
+                self.from_conversation_node_schema_id_to_edge_schema[schema.id] = (
+                    edge_schema
+                )
+                edge_schemas_stack.extend(
+                    edge_schema.from_node_schema.get_edge_schemas()
+                )
+            else:
+                self.from_conversation_node_schema_id_to_edge_schema[
+                    edge_schema.from_node_schema.id
+                ] = edge_schema
+
+        # TODO: work in progress
+        last_to_node_schema = self.get_edge_schemas()[-1]
+        edge_schemas_stack = [last_to_node_schema]
+        while edge_schemas_stack:
+            edge_schema = edge_schemas_stack.pop()
+            if isinstance(edge_schema.to_node_schema, BaseGraphSchema):
+                schema = edge_schema.to_node_schema.start_node_schema
+                self.to_conversation_node_schema_id_to_edge_schema[schema.id] = (
+                    edge_schema
+                )
+                edge_schemas_stack.extend(
+                    edge_schema.to_node_schema.get_edge_schemas()[:].reverse()
+                )
+            else:
+                self.to_conversation_node_schema_id_to_edge_schema[
+                    edge_schema.to_node_schema.id
+                ] = edge_schema
+
+    def get_edge_schemas(self):
+        return self.edge_schemas
+
 
 class BaseTerminableGraph(BaseGraph):
     def __init__(
@@ -63,85 +125,68 @@ class BaseTerminableGraph(BaseGraph):
         state.__pydantic_fields_set__ = input_keys
         super().__init__(input, schema, edge_schemas, request, state=state)
 
-    def handle_skip(
-        self,
-        fwd_skip_edge_schemas: Set[EdgeSchema],
-        TC,
-    ) -> Union[Tuple[EdgeSchema, ConversationNodeSchema], Tuple[None, None]]:
-        all_node_schemas = {self.curr_node.schema}
-        all_node_schemas.update(edge.to_node_schema for edge in fwd_skip_edge_schemas)
-        all_node_schemas.update(
-            edge.from_node_schema for edge in self.bwd_skip_edge_schemas
-        )
-
-        node_schema_id = should_change_node_schema(
-            TC, self.curr_node.schema, all_node_schemas, False
-        )
-
-        if node_schema_id is not None:
-            for edge_schema in fwd_skip_edge_schemas:
-                if edge_schema.to_node_schema.id == node_schema_id:
-                    return (
-                        edge_schema,
-                        self.schema.node_schema_id_to_node_schema[node_schema_id],
-                    )
-
-            for edge_schema in self.bwd_skip_edge_schemas:
-                if edge_schema.from_node_schema.id == node_schema_id:
-                    return (
-                        edge_schema,
-                        self.schema.node_schema_id_to_node_schema[node_schema_id],
-                    )
-
-        return None, None
-
-    def handle_wait(
-        self,
-        fwd_skip_edge_schemas: Set[EdgeSchema],
-        TC,
-    ) -> Union[Tuple[EdgeSchema, ConversationNodeSchema], Tuple[None, None]]:
-        remaining_edge_schemas = (
-            set(self.schema.edge_schemas)
-            - fwd_skip_edge_schemas
-            - self.bwd_skip_edge_schemas
-        )
-
-        all_node_schemas = {self.curr_node.schema}
-        all_node_schemas.update(edge.to_node_schema for edge in remaining_edge_schemas)
-
-        node_schema_id = should_change_node_schema(
-            TC, self.curr_node.schema, all_node_schemas, True
-        )
-
-        if node_schema_id is not None:
-            return (
-                self.to_node_schema_id_to_edge_schema[node_schema_id],
-                self.schema.node_schema_id_to_node_schema[node_schema_id],
-            )
-
-        return None, None
-
     def handle_is_off_topic(
         self,
         TC,
     ) -> Union[
         Tuple[EdgeSchema, ConversationNodeSchema, bool], Tuple[None, None, bool]
     ]:
-        fwd_skip_edge_schemas = self.compute_fwd_skip_edge_schemas()
+        fwd_skip_edge_schemas_data = self.compute_fwd_skip_edge_schemas(True)
+        fwd_node_schema_ids = {
+            data.node_schema.id for data in fwd_skip_edge_schemas_data
+        }
+        node_schema_id_to_parent_node = {
+            data.node_schema.id: data.parent_node for data in fwd_skip_edge_schemas_data
+        }
 
-        edge_schema, node_schema = self.handle_wait(fwd_skip_edge_schemas, TC)
-        if node_schema:
-            return edge_schema, node_schema, True  # type: ignore
+        self.bwd_skip_edge_schemas = self.compute_bwd_skip_edge_schemas(True)
+        node_schema_id_to_parent_node.update(
+            {
+                data.node_schema.id: data.parent_node
+                for data in self.bwd_skip_edge_schemas
+            }
+        )
+        skip_node_schema = {
+            data.node_schema
+            for data in (fwd_skip_edge_schemas_data | self.bwd_skip_edge_schemas)
+        }
+        remaining_node_schemas = (
+            set(self.schema.all_conversation_node_schemas) - skip_node_schema
+        )
+        node_schema_id = should_change_node_schema(
+            TC, self.curr_conversation_node.schema, remaining_node_schemas, True
+        )
+        if node_schema_id is not None:
+            return None, node_schema_id, True, None  # type: ignore
 
-        edge_schema, node_schema = self.handle_skip(fwd_skip_edge_schemas, TC)
-        return edge_schema, node_schema, False  # type: ignore
+        all_node_schemas = {self.curr_conversation_node.schema} | skip_node_schema
+        node_schema_id = should_change_node_schema(
+            TC, self.curr_conversation_node.schema, all_node_schemas, False
+        )
+        if node_schema_id is not None:
+            if node_schema_id in fwd_node_schema_ids:
+                edge_schema = self.schema.to_conversation_node_schema_id_to_edge_schema[
+                    node_schema_id
+                ]
+            else:
+                edge_schema = (
+                    self.schema.from_conversation_node_schema_id_to_edge_schema[
+                        node_schema_id
+                    ]
+                )
+
+            return edge_schema, self.schema.conversation_node_schema_id_to_conversation_node_schema[node_schema_id], False, node_schema_id_to_parent_node[node_schema_id]  # type: ignore
+        else:
+            return None, None, False, None
 
     def handle_user_turn(self, msg, TC, model_provider, run_off_topic_check=True):
         if not run_off_topic_check or not OffTopicPrompt.run(
             current_node_schema=self.curr_conversation_node.schema,
             tc=TC,
         ):
-            edge_schema, node_schema, is_wait = self.curr_graph.handle_is_off_topic(TC)
+            edge_schema, node_schema, is_wait, parent_node = self.handle_is_off_topic(
+                TC
+            )
             if node_schema:
                 if is_wait:
                     fake_fn_call = create_think_fn_call(
@@ -158,6 +203,7 @@ class BaseTerminableGraph(BaseGraph):
                     self.init_skip_node(
                         node_schema,
                         edge_schema,
+                        parent_node,
                         TC,
                     )
 
@@ -195,7 +241,6 @@ class BaseTerminableGraph(BaseGraph):
             is_skip,
         )
         self.next_edge_schema = self.get_next_edge_schema()
-        self.compute_bwd_skip_edge_schemas()
 
     def is_completed(self, fn_call, is_fn_call_success):
         assert self.schema.completion_config is not None
