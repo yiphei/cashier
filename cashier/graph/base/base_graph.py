@@ -293,12 +293,10 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
                         fwd_jump_edge_schemas |= (
                             graph_node.compute_fwd_skip_edge_schemas(False)
                         )
-                    if self.get_edge_schema_by_from_node_schema_id(
-                        to_node.schema.id
-                    ):
-                       next_edge_schema= self.get_edge_schema_by_from_node_schema_id(
-                        to_node.schema.id
-                    )
+                    if self.get_edge_schema_by_from_node_schema_id(to_node.schema.id):
+                        next_edge_schema = self.get_edge_schema_by_from_node_schema_id(
+                            to_node.schema.id
+                        )
 
         return fwd_jump_edge_schemas
 
