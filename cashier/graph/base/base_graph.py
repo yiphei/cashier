@@ -166,7 +166,7 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
         self,
         edge_schema: Optional[EdgeSchema],
         node_schema,
-        direction: Direction = None,
+        direction: Optional[Direction] = None,
     ) -> Optional[ConversationNode]:
         if (
             edge_schema
@@ -175,12 +175,6 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
         ):
             edge = self.get_edge_by_edge_schema_id(edge_schema.id)
             return edge.to_node if direction == Direction.FWD else edge.from_node
-        elif (
-            edge_schema is None
-            and node_schema == self.schema.start_node_schema
-            and self.node_schema_id_to_nodes[self.schema.start_node_schema.id]
-        ):
-            return self.node_schema_id_to_nodes[self.schema.start_node_schema.id][-1]
         elif (
             edge_schema is None
             and node_schema
