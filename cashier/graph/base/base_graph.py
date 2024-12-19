@@ -183,10 +183,13 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
             return self.node_schema_id_to_nodes[node_schema.id][-1]
         else:
             return None
-        
+
     def get_bwd_node_schema_and_parent_node(self, node_schema, parent_node):
         if isinstance(node_schema, BaseGraphSchema):
-            return self.get_bwd_node_schema_and_parent_node(node_schema.last_node_schema, parent_node.get_prev_node(None, node_schema))
+            return self.get_bwd_node_schema_and_parent_node(
+                node_schema.last_node_schema,
+                parent_node.get_prev_node(None, node_schema),
+            )
         return node_schema, parent_node
 
     def compute_bwd_skip_edge_schemas(self) -> Set[EdgeSchema]:
@@ -203,7 +206,9 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
             if edge.schema in curr_bwd_skip_edge_schemas:
                 break
 
-            node_schema, parent_node = self.get_bwd_node_schema_and_parent_node(edge.from_node.schema, self)
+            node_schema, parent_node = self.get_bwd_node_schema_and_parent_node(
+                edge.from_node.schema, self
+            )
             new_edge_schemas.add(
                 SkipData(
                     node_schema=node_schema,
