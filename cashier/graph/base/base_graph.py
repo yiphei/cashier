@@ -28,7 +28,6 @@ from cashier.tool.function_call_context import (
 )
 
 
-
 class BaseGraphSchema:
     def __init__(
         self,

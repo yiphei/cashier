@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from typing import Any, List, Optional, Set, Tuple, Type, Union
 from collections import namedtuple
+from typing import Any, List, Optional, Set, Tuple, Type, Union
 
 from pydantic import BaseModel
 
@@ -181,7 +181,6 @@ class BaseTerminableGraph(BaseGraph):
             return edge_schema, self.schema.conversation_node_schema_id_to_conversation_node_schema[node_schema_id], False, node_schema_id_to_parent_node[node_schema_id]  # type: ignore
         else:
             return None, None, False, None
-        
 
     def get_bwd_node_schema_and_parent_node(self, node_schema, parent_node):
         if isinstance(node_schema, BaseGraphSchema):
