@@ -127,9 +127,8 @@ class RequestGraph(BaseGraph):
         self.local_transition_queue.append(self.curr_node)
         return new_edge_schema, new_node_schema
 
-    def get_request_for_init_graph_core(self, increase_counter=True):
-        if increase_counter:
-            self.current_graph_schema_idx += 1
+    def get_request_for_init_graph_core(self):
+        self.current_graph_schema_idx += 1
         return self.requests[self.current_graph_schema_idx]
 
 

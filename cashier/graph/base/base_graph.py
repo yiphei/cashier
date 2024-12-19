@@ -299,7 +299,7 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
                     "assistant", node_schema.first_turn.msg_content
                 )
 
-    def get_request_for_init_graph_core(self, increase_counter=True):
+    def get_request_for_init_graph_core(self):
         return self.request
 
     def init_node_core(
@@ -344,7 +344,7 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
     ) -> None:
 
         if isinstance(node_schema, BaseGraphSchema):
-            request = self.get_request_for_init_graph_core(True)
+            request = self.get_request_for_init_graph_core()
         else:
             request = self.request
 

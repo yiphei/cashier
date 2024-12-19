@@ -141,17 +141,12 @@ class BaseTerminableGraph(BaseGraph):
     ) -> None:
         from cashier.graph.request_graph import RequestGraph
 
-        if isinstance(node_schema, BaseGraphSchema):
-            request = self.get_request_for_init_graph_core(False)
-        else:
-            request = self.request
-
         if edge_schema is None:
             edge_schema = self.schema.from_node_schema_id_to_edge_schema[node_schema.id]
 
         if not isinstance(node_schema, BaseGraphSchema):
             new_node = self.init_node_core(
-                node_schema, edge_schema, input, last_msg, prev_node, direction, request
+                node_schema, edge_schema, input, last_msg, prev_node, direction, self.request
             )
         else:
             new_node = prev_node
