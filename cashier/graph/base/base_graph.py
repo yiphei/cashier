@@ -27,7 +27,7 @@ from cashier.tool.function_call_context import (
     InexistentFunctionError,
 )
 
-SkipData = namedtuple("SkipData", ["edge_schema", "node_schema", "parent_node"])
+SkipData = namedtuple("SkipData", ["node_schema", "parent_node"])
 
 
 class BaseGraphSchema:
@@ -210,7 +210,6 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
                 parent_node = edge.from_node.get_prev_node(None, node_schema)
             new_edge_schemas.add(
                 SkipData(
-                    edge_schema=edge.schema,
                     node_schema=node_schema,
                     parent_node=parent_node,
                 )
@@ -260,7 +259,6 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
                 )[0]:
                     fwd_jump_edge_schemas.add(
                         SkipData(
-                            edge_schema=edge_schema,
                             node_schema=edge_schema.to_node_schema,
                             parent_node=self,
                         )

@@ -26,13 +26,6 @@ class ANDGraphSchema(BaseTerminableGraphSchema):
         default_edge_schemas: Optional[List[EdgeSchema]] = None,
         run_assistant_turn_before_transition: bool = False,
     ):
-        BaseTerminableGraphSchema.__init__(
-            self,
-            description,
-            node_schemas,
-            state_schema,
-            run_assistant_turn_before_transition,
-        )
         for node_schema in node_schemas:
             assert node_schema.completion_config is not None
         self.default_start_node_schema = default_start_node_schema
@@ -47,6 +40,14 @@ class ANDGraphSchema(BaseTerminableGraphSchema):
                     to_node_schema=to_node_schema,
                 )
                 self.default_edge_schemas.append(edge_schema)
+
+        BaseTerminableGraphSchema.__init__(
+            self,
+            description,
+            node_schemas,
+            state_schema,
+            run_assistant_turn_before_transition,
+        )
 
         all_tool_defs = []
         for node_schema in node_schemas:
@@ -80,6 +81,9 @@ class ANDGraphSchema(BaseTerminableGraphSchema):
 
     def get_node_schemas(self):
         return self.node_schemas
+    
+    def get_edge_schemas(self):
+        return self.default_edge_schemas
 
 
 class ANDGraph(BaseTerminableGraph):
