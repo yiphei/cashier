@@ -322,7 +322,9 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
         self.node_schema_id_to_nodes[node_schema.id].append(new_node)
         new_node.parent = self
         if isinstance(node_schema, BaseGraphSchema):
-            new_node.conv_node_schema_id_to_parent_node = self.conv_node_schema_id_to_parent_node # TODO: this is a hack. refactor later
+            new_node.conv_node_schema_id_to_parent_node = (
+                self.conv_node_schema_id_to_parent_node
+            )  # TODO: this is a hack. refactor later
         else:
             self.conv_node_schema_id_to_parent_node[node_schema.id] = self
 
