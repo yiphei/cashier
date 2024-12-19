@@ -234,10 +234,7 @@ class BaseTerminableGraph(BaseGraph):
         }
 
         bwd_skip_node_schemas = self.compute_bwd_skip_node_schemas(True)
-        skip_node_schema = {
-            node_schema
-            for node_schema in (fwd_skip_node_schemas | bwd_skip_node_schemas)
-        }
+        skip_node_schema = fwd_skip_node_schemas | bwd_skip_node_schemas
         remaining_node_schemas = (
             set(self.schema.all_conversation_node_schemas) - skip_node_schema
         )
