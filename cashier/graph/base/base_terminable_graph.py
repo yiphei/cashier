@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from collections import namedtuple
 from typing import Any, List, Optional, Set, Tuple, Type, Union
 
 from pydantic import BaseModel
@@ -18,8 +17,6 @@ from cashier.model.model_util import FunctionCall, create_think_fn_call
 from cashier.prompts.node_schema_selection import NodeSchemaSelectionPrompt
 from cashier.prompts.off_topic import OffTopicPrompt
 from cashier.turn_container import TurnContainer
-
-SkipData = namedtuple("SkipData", ["node_schema"])
 
 
 def should_change_node_schema(
