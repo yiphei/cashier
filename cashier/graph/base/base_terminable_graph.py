@@ -49,7 +49,7 @@ class BaseTerminableGraphSchema(HasIdMixin, BaseGraphSchema, BaseExecutableSchem
             run_assistant_turn_before_transition=run_assistant_turn_before_transition,
         )
 
-        self.all_conversation_node_schemas = self.get_all_node_schemas()
+        self.all_conversation_node_schemas = self.get_leaf_conv_node_schemas()
         self.conversation_node_schema_id_to_conversation_node_schema = {
             node_schema.id: node_schema
             for node_schema in self.all_conversation_node_schemas

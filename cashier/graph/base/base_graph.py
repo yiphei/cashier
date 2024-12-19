@@ -43,11 +43,11 @@ class BaseGraphSchema:
             node_schema.id: node_schema for node_schema in self.node_schemas
         }
 
-    def get_all_node_schemas(self):
+    def get_leaf_conv_node_schemas(self):
         all_node_schemas = []
         for node_schema in self.get_node_schemas():
             if isinstance(node_schema, BaseGraphSchema):
-                all_node_schemas.extend(node_schema.get_all_node_schemas())
+                all_node_schemas.extend(node_schema.get_leaf_conv_node_schemas())
             else:
                 all_node_schemas.append(node_schema)
         return all_node_schemas
