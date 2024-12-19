@@ -230,12 +230,12 @@ class BaseTerminableGraph(BaseGraph):
     ) -> Union[
         Tuple[EdgeSchema, ConversationNodeSchema, bool], Tuple[None, None, bool]
     ]:
-        fwd_skip_node_schemas = self.compute_fwd_skip_edge_schemas(True)
+        fwd_skip_node_schemas = self.compute_fwd_skip_node_schemas(True)
         fwd_skip_node_schema_ids = {
             node_schema.id for node_schema in fwd_skip_node_schemas
         }
 
-        bwd_skip_node_schemas = self.compute_bwd_skip_edge_schemas(True)
+        bwd_skip_node_schemas = self.compute_bwd_skip_node_schemas(True)
         skip_node_schema = {
             node_schema
             for node_schema in (fwd_skip_node_schemas | bwd_skip_node_schemas)
@@ -276,7 +276,7 @@ class BaseTerminableGraph(BaseGraph):
             )
         return node_schema
 
-    def compute_bwd_skip_edge_schemas(self, start_from_curr_node) -> Set[EdgeSchema]:
+    def compute_bwd_skip_node_schemas(self, start_from_curr_node):
         from_node = (
             self.curr_node
             if start_from_curr_node
@@ -288,7 +288,7 @@ class BaseTerminableGraph(BaseGraph):
 
         new_edge_schemas = set()
         if isinstance(from_node.schema, BaseGraphSchema):
-            new_edge_schemas |= from_node.compute_bwd_skip_edge_schemas(True)
+            new_edge_schemas |= from_node.compute_bwd_skip_node_schemas(True)
         while self.to_node_id_to_edge[from_node.id] is not None:
             edge = self.to_node_id_to_edge[from_node.id]
 
@@ -299,7 +299,7 @@ class BaseTerminableGraph(BaseGraph):
             assert from_node == edge.to_node
             from_node = edge.from_node
             if isinstance(from_node.schema, BaseGraphSchema):
-                new_edge_schemas |= from_node.compute_bwd_skip_edge_schemas(False)
+                new_edge_schemas |= from_node.compute_bwd_skip_node_schemas(False)
 
         return new_edge_schemas
 
@@ -310,9 +310,9 @@ class BaseTerminableGraph(BaseGraph):
             )
         return node_schema
 
-    def compute_fwd_skip_edge_schemas(
+    def compute_fwd_skip_node_schemas(
         self, start_from_next_edge_schema
-    ) -> Set[EdgeSchema]:
+    ):
         start_edge_schema = (
             self.next_edge_schema
             if start_from_next_edge_schema
@@ -326,13 +326,13 @@ class BaseTerminableGraph(BaseGraph):
         if start_node is None or start_edge_schema is None:
             return set()
 
-        fwd_jump_edge_schemas = set()
+        fwd_jump_node_schemas = set()
         edge_schema = start_edge_schema
         next_edge_schema = start_edge_schema
         from_node = start_node
 
         if isinstance(start_edge_schema.from_node_schema, BaseGraphSchema):
-            fwd_jump_edge_schemas |= start_node.compute_fwd_skip_edge_schemas(True)
+            fwd_jump_node_schemas |= start_node.compute_fwd_skip_node_schemas(True)
         while next_edge_schema and (
             self.get_edge_by_edge_schema_id(next_edge_schema.id, raise_if_none=False)
             is not None
@@ -354,10 +354,10 @@ class BaseTerminableGraph(BaseGraph):
                 node_schema = self.get_fwd_node_schema_and_parent_node(
                     edge_schema.to_node_schema
                 )
-                fwd_jump_edge_schemas.add(node_schema)
+                fwd_jump_node_schemas.add(node_schema)
                 if isinstance(edge_schema.to_node_schema, BaseGraphSchema):
                     graph_node = self.get_prev_node(None, edge_schema.to_node_schema)
-                    fwd_jump_edge_schemas |= graph_node.compute_fwd_skip_edge_schemas(
+                    fwd_jump_node_schemas |= graph_node.compute_fwd_skip_node_schemas(
                         False
                     )
                 if self.get_edge_schema_by_from_node_schema_id(to_node.schema.id):
@@ -366,7 +366,7 @@ class BaseTerminableGraph(BaseGraph):
                     )
                     from_node = to_node
 
-        return fwd_jump_edge_schemas
+        return fwd_jump_node_schemas
 
     def handle_user_turn(self, msg, TC, model_provider, run_off_topic_check=True):
         if not run_off_topic_check or not OffTopicPrompt.run(
