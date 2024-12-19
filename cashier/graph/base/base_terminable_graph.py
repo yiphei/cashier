@@ -56,30 +56,45 @@ class BaseTerminableGraphSchema(HasIdMixin, BaseGraphSchema, BaseExecutableSchem
         }
         self.to_conversation_node_schema_id_to_edge_schema = {}
         self.from_conversation_node_schema_id_to_edge_schema = {}
-        
+
         edge_schemas_stack = self.get_edge_schemas()[:]
         while edge_schemas_stack:
             edge_schema = edge_schemas_stack.pop()
             if isinstance(edge_schema.to_node_schema, BaseGraphSchema):
                 schema = edge_schema.to_node_schema.start_node_schema
-                self.to_conversation_node_schema_id_to_edge_schema[schema.id] = edge_schema
+                self.to_conversation_node_schema_id_to_edge_schema[schema.id] = (
+                    edge_schema
+                )
             else:
-                self.to_conversation_node_schema_id_to_edge_schema[edge_schema.to_node_schema.id] = edge_schema
+                self.to_conversation_node_schema_id_to_edge_schema[
+                    edge_schema.to_node_schema.id
+                ] = edge_schema
 
             if isinstance(edge_schema.from_node_schema, BaseGraphSchema):
                 schema = edge_schema.from_node_schema.node_schemas[-1]
-                self.from_conversation_node_schema_id_to_edge_schema[schema.id] = edge_schema
-                edge_schemas_stack.extend(edge_schema.from_node_schema.get_edge_schemas())
+                self.from_conversation_node_schema_id_to_edge_schema[schema.id] = (
+                    edge_schema
+                )
+                edge_schemas_stack.extend(
+                    edge_schema.from_node_schema.get_edge_schemas()
+                )
             else:
-                self.from_conversation_node_schema_id_to_edge_schema[edge_schema.from_node_schema.id] = edge_schema
+                self.from_conversation_node_schema_id_to_edge_schema[
+                    edge_schema.from_node_schema.id
+                ] = edge_schema
 
         # TODO: make this recursive
         if isinstance(self.get_edge_schemas()[-1].to_node_schema, BaseGraphSchema):
-            for edge_schema in self.get_edge_schemas()[-1].to_node_schema.get_edge_schemas():
-                self.to_conversation_node_schema_id_to_edge_schema[edge_schema.to_node_schema.id] = edge_schema
+            for edge_schema in self.get_edge_schemas()[
+                -1
+            ].to_node_schema.get_edge_schemas():
+                self.to_conversation_node_schema_id_to_edge_schema[
+                    edge_schema.to_node_schema.id
+                ] = edge_schema
 
     def get_edge_schemas(self):
         return self.edge_schemas
+
 
 class BaseTerminableGraph(BaseGraph):
     def __init__(
@@ -101,7 +116,9 @@ class BaseTerminableGraph(BaseGraph):
         Tuple[EdgeSchema, ConversationNodeSchema, bool], Tuple[None, None, bool]
     ]:
         fwd_skip_edge_schemas_data = self.compute_fwd_skip_edge_schemas()
-        fwd_node_schema_ids = {data.node_schema.id for data in fwd_skip_edge_schemas_data}
+        fwd_node_schema_ids = {
+            data.node_schema.id for data in fwd_skip_edge_schemas_data
+        }
         node_schema_id_to_parent_node = {
             data.node_schema.id: data.parent_node for data in fwd_skip_edge_schemas_data
         }
@@ -132,10 +149,16 @@ class BaseTerminableGraph(BaseGraph):
         )
         if node_schema_id is not None:
             if node_schema_id in fwd_node_schema_ids:
-                edge_schema = self.schema.to_conversation_node_schema_id_to_edge_schema[node_schema_id]
+                edge_schema = self.schema.to_conversation_node_schema_id_to_edge_schema[
+                    node_schema_id
+                ]
             else:
-                edge_schema = self.schema.from_conversation_node_schema_id_to_edge_schema[node_schema_id]
-            
+                edge_schema = (
+                    self.schema.from_conversation_node_schema_id_to_edge_schema[
+                        node_schema_id
+                    ]
+                )
+
             return edge_schema, self.schema.conversation_node_schema_id_to_conversation_node_schema[node_schema_id], False, node_schema_id_to_parent_node[node_schema_id]  # type: ignore
         else:
             return None, None, False, None
