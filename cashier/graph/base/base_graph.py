@@ -1,5 +1,5 @@
 import json
-from collections import defaultdict, deque, namedtuple
+from collections import defaultdict, deque
 from typing import Any, Callable, List, Literal, Optional, Set, Tuple, overload
 
 from colorama import Style
@@ -27,7 +27,6 @@ from cashier.tool.function_call_context import (
     InexistentFunctionError,
 )
 
-SkipData = namedtuple("SkipData", ["node_schema", "parent_node"])
 
 
 class BaseGraphSchema:
@@ -183,117 +182,6 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
             return self.node_schema_id_to_nodes[node_schema.id][-1]
         else:
             return None
-
-    def get_bwd_node_schema_and_parent_node(self, node_schema, parent_node):
-        if isinstance(node_schema, BaseGraphSchema):
-            return self.get_bwd_node_schema_and_parent_node(
-                node_schema.last_node_schema,
-                parent_node.get_prev_node(None, node_schema),
-            )
-        return node_schema, parent_node
-
-    def compute_bwd_skip_edge_schemas(self, start_from_curr_node) -> Set[EdgeSchema]:
-        from_node = (
-            self.curr_node
-            if start_from_curr_node
-            else self.get_prev_node(None, self.schema.last_node_schema)
-        )
-
-        if from_node is None:
-            return set()
-
-        new_edge_schemas = set()
-        if isinstance(from_node.schema, BaseGraphSchema):
-            new_edge_schemas |= from_node.compute_bwd_skip_edge_schemas(True)
-        while self.to_node_id_to_edge[from_node.id] is not None:
-            edge = self.to_node_id_to_edge[from_node.id]
-
-            node_schema, parent_node = self.get_bwd_node_schema_and_parent_node(
-                edge.from_node.schema, self
-            )
-            new_edge_schemas.add(
-                SkipData(
-                    node_schema=node_schema,
-                    parent_node=parent_node,
-                )
-            )
-            assert from_node == edge.to_node
-            from_node = edge.from_node
-            if isinstance(from_node.schema, BaseGraphSchema):
-                new_edge_schemas |= from_node.compute_bwd_skip_edge_schemas(False)
-
-        return new_edge_schemas
-
-    def get_fwd_node_schema_and_parent_node(self, node_schema, parent_node):
-        if isinstance(node_schema, BaseGraphSchema):
-            return self.get_fwd_node_schema_and_parent_node(
-                node_schema.start_node_schema,
-                parent_node.get_prev_node(None, node_schema),
-            )
-        return node_schema, parent_node
-
-    def compute_fwd_skip_edge_schemas(
-        self, start_from_next_edge_schema
-    ) -> Set[EdgeSchema]:
-        start_edge_schema = (
-            self.next_edge_schema
-            if start_from_next_edge_schema
-            else self.schema.get_edge_schemas()[0]
-        )
-        start_node = (
-            self.curr_node
-            if start_from_next_edge_schema
-            else self.get_prev_node(None, start_edge_schema.from_node_schema)
-        )
-        if start_node is None or start_edge_schema is None:
-            return set()
-
-        fwd_jump_edge_schemas = set()
-        edge_schema = start_edge_schema
-        next_edge_schema = start_edge_schema
-        from_node = start_node
-
-        if isinstance(start_edge_schema.from_node_schema, BaseGraphSchema):
-            fwd_jump_edge_schemas |= start_node.compute_fwd_skip_edge_schemas(True)
-        while next_edge_schema and (
-            self.get_edge_by_edge_schema_id(next_edge_schema.id, raise_if_none=False)
-            is not None
-        ):
-            edge_schema = next_edge_schema
-            next_edge_schema = None
-            edge = self.get_edge_by_edge_schema_id(edge_schema.id)
-            to_node = edge.to_node
-            if from_node.schema == start_node.schema:
-                from_node = start_node
-
-            if edge_schema.can_skip(
-                self.state,
-                from_node,
-                to_node,
-                self.is_prev_from_node_completed(edge_schema, from_node == start_node),
-            )[0]:
-
-                node_schema, parent_node = self.get_fwd_node_schema_and_parent_node(
-                    edge_schema.to_node_schema, self
-                )
-                fwd_jump_edge_schemas.add(
-                    SkipData(
-                        node_schema=node_schema,
-                        parent_node=parent_node,
-                    )
-                )
-                if isinstance(edge_schema.to_node_schema, BaseGraphSchema):
-                    graph_node = self.get_prev_node(None, edge_schema.to_node_schema)
-                    fwd_jump_edge_schemas |= graph_node.compute_fwd_skip_edge_schemas(
-                        False
-                    )
-                if self.get_edge_schema_by_from_node_schema_id(to_node.schema.id):
-                    next_edge_schema = self.get_edge_schema_by_from_node_schema_id(
-                        to_node.schema.id
-                    )
-                    from_node = to_node
-
-        return fwd_jump_edge_schemas
 
     def is_prev_from_node_completed(
         self, edge_schema: EdgeSchema, is_start_node: bool
