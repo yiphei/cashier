@@ -310,13 +310,11 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
         direction: Direction,
         TC,
     ) -> None:
-        from cashier.graph.request_graph import RequestGraph
 
         if isinstance(node_schema, BaseGraphSchema):
             request = self.get_request_for_init_graph_core(True)
         else:
             request = self.request
-
 
         logger.debug(
             f"[NODE_SCHEMA] Initializing node with {Style.BRIGHT}node_schema_id: {node_schema.id}{Style.NORMAL}"
@@ -387,10 +385,7 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
             True,
         )
 
-        if (
-self.parent is not None
-            and not isinstance(self.parent, RequestGraph)
-        ):
+        if self.parent is not None and not isinstance(self.parent, RequestGraph):
             self.parent.init_node_but_skip(
                 self.schema,
                 None,
