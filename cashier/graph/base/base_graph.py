@@ -299,9 +299,9 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
 
     def get_request_for_init_graph_core(self, increase_counter=True):
         return self.request
-    
+
     def init_node_core(
-                    self,
+        self,
         node_schema: ConversationNodeSchema,
         edge_schema: Optional[EdgeSchema],
         input: Any,
@@ -340,7 +340,9 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
         else:
             request = self.request
 
-        new_node = self.init_node_core(node_schema, edge_schema, input, last_msg, prev_node, direction, request)
+        new_node = self.init_node_core(
+            node_schema, edge_schema, input, last_msg, prev_node, direction, request
+        )
         self.curr_node = new_node
 
         self.post_node_init(
@@ -375,7 +377,9 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
             edge_schema = self.schema.from_node_schema_id_to_edge_schema[node_schema.id]
 
         if not isinstance(node_schema, BaseGraphSchema):
-            new_node = self.init_node_core(node_schema, edge_schema, input, last_msg, prev_node, direction, request)
+            new_node = self.init_node_core(
+                node_schema, edge_schema, input, last_msg, prev_node, direction, request
+            )
         else:
             new_node = prev_node
 
