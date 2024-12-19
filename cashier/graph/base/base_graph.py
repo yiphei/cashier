@@ -193,7 +193,11 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
         return node_schema, parent_node
 
     def compute_bwd_skip_edge_schemas(self, start_from_curr_node) -> Set[EdgeSchema]:
-        from_node = self.curr_node if start_from_curr_node else self.get_prev_node(None, self.schema.last_node_schema)
+        from_node = (
+            self.curr_node
+            if start_from_curr_node
+            else self.get_prev_node(None, self.schema.last_node_schema)
+        )
 
         if from_node is None:
             return set()
