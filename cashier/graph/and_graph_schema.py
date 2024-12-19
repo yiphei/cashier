@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import copy
 from typing import Any, List, Optional, Type
 
 from pydantic import BaseModel
