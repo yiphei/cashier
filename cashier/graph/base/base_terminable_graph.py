@@ -209,7 +209,7 @@ class BaseTerminableGraph(BaseGraph):
     ) -> None:
 
         direction = direction or Direction.FWD
-        if edge_schema and edge_schema.from_node_schema == node_schema:
+        if edge_schema.from_node_schema == node_schema:
             direction = Direction.BWD
 
         last_msg = TC.get_asst_message(content_only=True)
