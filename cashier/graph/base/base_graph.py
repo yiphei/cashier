@@ -440,7 +440,6 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
             else:
                 self.curr_node.init_next_node(node_schema, edge_schema, TC, None)
 
-
     def init_node_but_skip(
         self,
         node_schema: ConversationNodeSchema,
@@ -453,6 +452,7 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
         is_skip: bool = False,
     ) -> None:
         from cashier.graph.request_graph import RequestGraph
+
         if isinstance(node_schema, BaseGraphSchema):
             request = self.get_request_for_init_graph_core(increase_counter=False)
         else:
