@@ -407,70 +407,29 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
         TC,
         is_skip: bool = False,
     ) -> None:
+        from cashier.graph.request_graph import RequestGraph
         if isinstance(node_schema, BaseGraphSchema):
-            request = self.get_request_for_init_graph_core()
+            request = self.get_request_for_init_graph_core(False if is_skip else True)
         else:
             request = self.request
 
-        logger.debug(
-            f"[NODE_SCHEMA] Initializing node with {Style.BRIGHT}node_schema_id: {node_schema.id}{Style.NORMAL}"
-        )
-        new_node = node_schema.create_node(
-            input, last_msg, edge_schema, prev_node, direction, request  # type: ignore
-        )
-        self.node_schema_id_to_nodes[node_schema.id].append(new_node)
-        new_node.parent = self
-
-        if edge_schema and self.curr_node is not None:
-            self.add_edge(self.curr_node, new_node, edge_schema, direction)
-
-        self.curr_node = new_node
-
-        self.post_node_init(
-            edge_schema,
-            prev_node,
-            TC,
-            is_skip,
-        )
-
-        if isinstance(node_schema, BaseGraphSchema):
-            node_schema, edge_schema = new_node.compute_init_node_edge_schema()
-            if is_skip:
-                self.curr_node.init_skip_node(node_schema, edge_schema, TC, direction)
-            else:
-                self.curr_node.init_next_node(node_schema, edge_schema, TC, None)
-
-    def init_node_but_skip(
-        self,
-        node_schema: ConversationNodeSchema,
-        edge_schema: Optional[EdgeSchema],
-        input: Any,
-        last_msg: Optional[str],
-        prev_node: Optional[ConversationNode],
-        direction: Direction,
-        TC,
-        is_skip: bool = False,
-    ) -> None:
-        from cashier.graph.request_graph import RequestGraph
-
-        if edge_schema is None:
+        if edge_schema is None and is_skip:
             edge_schema = (
                 self.schema.real_from_conversation_node_schema_id_to_edge_schema[
                     node_schema.id
                 ]
             )
 
-        if isinstance(node_schema, BaseGraphSchema):
-            request = self.get_request_for_init_graph_core(increase_counter=False)
-        else:
-            request = self.request
-
-        if not isinstance(node_schema, BaseGraphSchema):
+        if (is_skip and not isinstance(node_schema, BaseGraphSchema)) or not is_skip:
+            logger.debug(
+                f"[NODE_SCHEMA] Initializing node with {Style.BRIGHT}node_schema_id: {node_schema.id}{Style.NORMAL}"
+            )
             new_node = node_schema.create_node(
                 input, last_msg, edge_schema, prev_node, direction, request  # type: ignore
             )
             self.node_schema_id_to_nodes[node_schema.id].append(new_node)
             new_node.parent = self
+
             if edge_schema and self.curr_node is not None:
                 self.add_edge(self.curr_node, new_node, edge_schema, direction)
         else:
@@ -485,8 +444,8 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
             is_skip,
         )
 
-        if self.parent is not None and not isinstance(self.parent, RequestGraph):
-            self.parent.init_node_but_skip(
+        if is_skip and self.parent is not None and not isinstance(self.parent, RequestGraph):
+            self.parent.init_node(
                 self.schema,
                 None,
                 None,
@@ -496,6 +455,9 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
                 TC,
                 is_skip,
             )
+        elif not is_skip and isinstance(node_schema, BaseGraphSchema):
+            node_schema, edge_schema = new_node.compute_init_node_edge_schema()
+            self.curr_node.init_next_node(node_schema, edge_schema, TC, None)
 
     def _init_next_node(
         self,
@@ -574,7 +536,7 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
         assert prev_node is not None
         input = prev_node.input
 
-        self.init_node_but_skip(
+        self.init_node(
             node_schema,
             edge_schema,
             input,
