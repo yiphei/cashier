@@ -139,7 +139,7 @@ class BaseTerminableGraph(BaseGraph):
             data.node_schema.id: data.parent_node for data in fwd_skip_edge_schemas_data
         }
 
-        self.bwd_skip_edge_schemas = self.compute_bwd_skip_edge_schemas()
+        self.bwd_skip_edge_schemas = self.compute_bwd_skip_edge_schemas(True)
         node_schema_id_to_parent_node.update(
             {
                 data.node_schema.id: data.parent_node

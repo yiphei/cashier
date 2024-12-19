@@ -192,15 +192,16 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
             )
         return node_schema, parent_node
 
-    def compute_bwd_skip_edge_schemas(self) -> Set[EdgeSchema]:
-        if self.curr_node is None:
+    def compute_bwd_skip_edge_schemas(self, start_from_curr_node) -> Set[EdgeSchema]:
+        from_node = self.curr_node if start_from_curr_node else self.get_prev_node(None, self.schema.last_node_schema)
+
+        if from_node is None:
             return set()
 
-        from_node = self.curr_node
         new_edge_schemas = set()
         curr_bwd_skip_edge_schemas = set()
         if isinstance(from_node.schema, BaseGraphSchema):
-            new_edge_schemas |= from_node.compute_bwd_skip_edge_schemas()
+            new_edge_schemas |= from_node.compute_bwd_skip_edge_schemas(True)
         while self.to_node_id_to_edge[from_node.id] is not None:
             edge = self.to_node_id_to_edge[from_node.id]
             if edge.schema in curr_bwd_skip_edge_schemas:
@@ -218,7 +219,7 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
             assert from_node == edge.to_node
             from_node = edge.from_node
             if isinstance(from_node.schema, BaseGraphSchema):
-                new_edge_schemas |= from_node.compute_bwd_skip_edge_schemas()
+                new_edge_schemas |= from_node.compute_bwd_skip_edge_schemas(False)
 
         return new_edge_schemas | curr_bwd_skip_edge_schemas
 
