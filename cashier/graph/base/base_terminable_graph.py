@@ -66,7 +66,9 @@ class BaseTerminableGraphSchema(HasIdMixin, BaseGraphSchema, BaseExecutableSchem
         while edge_schemas_stack:
             edge_schema = edge_schemas_stack.pop()
             if isinstance(edge_schema.to_node_schema, BaseGraphSchema):
-                schema = edge_schema.to_node_schema.start_node_schema # TODO: this and the rest is not truly recursive
+                schema = (
+                    edge_schema.to_node_schema.start_node_schema
+                )  # TODO: this and the rest is not truly recursive
                 self.to_conversation_node_schema_id_to_edge_schema[schema.id] = (
                     edge_schema
                 )
