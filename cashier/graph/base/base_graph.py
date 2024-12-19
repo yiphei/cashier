@@ -255,9 +255,9 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
         ):
             fwd_jump_edge_schemas |= start_node.compute_fwd_skip_edge_schemas(True)
         while edge_schema and (
-                self.get_edge_by_edge_schema_id(edge_schema.id, raise_if_none=False)
-                is not None
-            ):
+            self.get_edge_by_edge_schema_id(edge_schema.id, raise_if_none=False)
+            is not None
+        ):
             edge = self.get_edge_by_edge_schema_id(edge_schema.id)
             from_node = edge.from_node
             to_node = edge.to_node
@@ -268,9 +268,7 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
                 self.state,
                 from_node,
                 to_node,
-                self.is_prev_from_node_completed(
-                    edge_schema, from_node == start_node
-                ),
+                self.is_prev_from_node_completed(edge_schema, from_node == start_node),
             )[0]:
 
                 node_schema, parent_node = self.get_fwd_node_schema_and_parent_node(
@@ -283,11 +281,9 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
                     )
                 )
                 if isinstance(edge_schema.to_node_schema, BaseGraphSchema):
-                    graph_node = self.get_prev_node(
-                        None, edge_schema.to_node_schema
-                    )
-                    fwd_jump_edge_schemas |= (
-                        graph_node.compute_fwd_skip_edge_schemas(False)
+                    graph_node = self.get_prev_node(None, edge_schema.to_node_schema)
+                    fwd_jump_edge_schemas |= graph_node.compute_fwd_skip_edge_schemas(
+                        False
                     )
                 if self.get_edge_schema_by_from_node_schema_id(to_node.schema.id):
                     edge_schema = self.get_edge_schema_by_from_node_schema_id(
