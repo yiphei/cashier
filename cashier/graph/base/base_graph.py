@@ -452,6 +452,8 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
         is_skip: bool = False,
     ) -> None:
         from cashier.graph.request_graph import RequestGraph
+        if edge_schema is None:
+            edge_schema = self.schema.real_from_conversation_node_schema_id_to_edge_schema[node_schema.id]
 
         if isinstance(node_schema, BaseGraphSchema):
             request = self.get_request_for_init_graph_core(increase_counter=False)
