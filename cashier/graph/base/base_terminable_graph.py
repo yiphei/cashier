@@ -146,7 +146,13 @@ class BaseTerminableGraph(BaseGraph):
 
         if not isinstance(node_schema, BaseGraphSchema):
             new_node = self.init_node_core(
-                node_schema, edge_schema, input, last_msg, prev_node, direction, self.request
+                node_schema,
+                edge_schema,
+                input,
+                last_msg,
+                prev_node,
+                direction,
+                self.request,
             )
         else:
             new_node = prev_node
