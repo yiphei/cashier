@@ -203,7 +203,6 @@ class BaseTerminableGraph(BaseGraph):
         self,
         node_schema: ConversationNodeSchema,
         edge_schema: EdgeSchema,
-        parent_node,
         TC,
         direction=None,
     ) -> None:
@@ -213,6 +212,7 @@ class BaseTerminableGraph(BaseGraph):
             direction = Direction.BWD
 
         last_msg = TC.get_asst_message(content_only=True)
+        parent_node = self.conv_node_schema_id_to_parent_node[node_schema.id]
         parent_node._init_skip_node(
             node_schema,
             edge_schema,
@@ -244,7 +244,7 @@ class BaseTerminableGraph(BaseGraph):
             TC, self.curr_conversation_node.schema, remaining_node_schemas, True
         )
         if node_schema_id is not None:
-            return None, node_schema_id, True, None  # type: ignore
+            return None, node_schema_id, True  # type: ignore
 
         all_node_schemas = {self.curr_conversation_node.schema} | skip_node_schema
         node_schema_id = should_change_node_schema(
@@ -262,9 +262,9 @@ class BaseTerminableGraph(BaseGraph):
                     ]
                 )
 
-            return edge_schema, self.schema.conversation_node_schema_id_to_conversation_node_schema[node_schema_id], False, self.conv_node_schema_id_to_parent_node[node_schema_id]  # type: ignore
+            return edge_schema, self.schema.conversation_node_schema_id_to_conversation_node_schema[node_schema_id], False  # type: ignore
         else:
-            return None, None, False, None
+            return None, None, False
 
     def get_bwd_node_schema_and_parent_node(self, node_schema):
         if isinstance(node_schema, BaseGraphSchema):
@@ -368,7 +368,7 @@ class BaseTerminableGraph(BaseGraph):
             current_node_schema=self.curr_conversation_node.schema,
             tc=TC,
         ):
-            edge_schema, node_schema, is_wait, parent_node = self.handle_is_off_topic(
+            edge_schema, node_schema, is_wait = self.handle_is_off_topic(
                 TC
             )
             if node_schema:
@@ -387,7 +387,6 @@ class BaseTerminableGraph(BaseGraph):
                     self.init_skip_node(
                         node_schema,
                         edge_schema,
-                        parent_node,
                         TC,
                     )
 
