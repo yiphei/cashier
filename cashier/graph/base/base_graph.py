@@ -245,13 +245,12 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
             if start_from_next_edge_schema
             else self.get_prev_node(None, start_edge_schema.from_node_schema)
         )
+        if start_node is None or start_edge_schema is None:
+            return set()
 
         fwd_jump_edge_schemas = set()
         edge_schema = start_edge_schema
-        if (
-            start_edge_schema
-            and isinstance(start_edge_schema.from_node_schema, BaseGraphSchema)
-            and start_node is not None
+        if ( isinstance(start_edge_schema.from_node_schema, BaseGraphSchema)
         ):
             fwd_jump_edge_schemas |= start_node.compute_fwd_skip_edge_schemas(True)
         while edge_schema and (
