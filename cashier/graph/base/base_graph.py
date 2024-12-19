@@ -251,6 +251,8 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
         fwd_jump_edge_schemas = set()
         edge_schema = start_edge_schema
         next_edge_schema = start_edge_schema
+        from_node = start_node
+
         if isinstance(start_edge_schema.from_node_schema, BaseGraphSchema):
             fwd_jump_edge_schemas |= start_node.compute_fwd_skip_edge_schemas(True)
         while next_edge_schema and (
@@ -260,7 +262,6 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
             edge_schema = next_edge_schema
             next_edge_schema = None
             edge = self.get_edge_by_edge_schema_id(edge_schema.id)
-            from_node = edge.from_node
             to_node = edge.to_node
             if from_node.schema == start_node.schema:
                 from_node = start_node
@@ -290,6 +291,7 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
                     next_edge_schema = self.get_edge_schema_by_from_node_schema_id(
                         to_node.schema.id
                     )
+                    from_node = to_node
 
         return fwd_jump_edge_schemas
 
