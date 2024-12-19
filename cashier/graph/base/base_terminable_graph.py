@@ -7,7 +7,11 @@ from pydantic import BaseModel
 
 from cashier.graph.base.base_executable import BaseExecutableSchema
 from cashier.graph.base.base_graph import BaseGraph, BaseGraphSchema
-from cashier.graph.conversation_node import ConversationNode, ConversationNodeSchema, Direction
+from cashier.graph.conversation_node import (
+    ConversationNode,
+    ConversationNodeSchema,
+    Direction,
+)
 from cashier.graph.edge_schema import EdgeSchema
 from cashier.graph.mixin.has_id_mixin import HasIdMixin
 from cashier.model.model_util import FunctionCall, create_think_fn_call
@@ -128,7 +132,6 @@ class BaseTerminableGraph(BaseGraph):
         state.__pydantic_fields_set__ = input_keys
         super().__init__(input, schema, edge_schemas, request, state=state)
 
-
     def init_node_but_skip(
         self,
         node_schema: ConversationNodeSchema,
@@ -175,7 +178,6 @@ class BaseTerminableGraph(BaseGraph):
                 direction,
                 TC,
             )
-
 
     def _init_skip_node(
         self,
