@@ -409,11 +409,7 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
             request = self.request
 
         if edge_schema is None and is_skip:
-            edge_schema = (
-                self.schema.from_node_schema_id_to_edge_schema[
-                    node_schema.id
-                ]
-            )
+            edge_schema = self.schema.from_node_schema_id_to_edge_schema[node_schema.id]
 
         if (is_skip and not isinstance(node_schema, BaseGraphSchema)) or not is_skip:
             logger.debug(
