@@ -57,6 +57,12 @@ class BaseTerminableGraphSchema(HasIdMixin, BaseGraphSchema, BaseExecutableSchem
         self.to_conversation_node_schema_id_to_edge_schema = {}
         self.from_conversation_node_schema_id_to_edge_schema = {}
 
+        self.real_from_conversation_node_schema_id_to_edge_schema = {}
+        for edge_schema in self.get_edge_schemas():
+            self.real_from_conversation_node_schema_id_to_edge_schema[
+                edge_schema.from_node_schema.id
+            ] = edge_schema
+
         edge_schemas_stack = self.get_edge_schemas()[:]
         while edge_schemas_stack:
             edge_schema = edge_schemas_stack.pop()
@@ -184,14 +190,12 @@ class BaseTerminableGraph(BaseGraph):
                         {fake_fn_call.id: None},
                     )
                 else:
-                    parent_node.init_skip_node(
+                    self.init_skip_node(
                         node_schema,
                         edge_schema,
+                        parent_node,
                         TC,
                     )
-                    if parent_node is not self:
-                        self.curr_node = parent_node  # TODO: this is a hack
-                        self.next_edge_schema = self.get_next_edge_schema()
 
                     fake_fn_call = FunctionCall.create(
                         api_id=None,
