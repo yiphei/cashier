@@ -66,7 +66,7 @@ class BaseTerminableGraphSchema(HasIdMixin, BaseGraphSchema, BaseExecutableSchem
         while edge_schemas_stack:
             edge_schema = edge_schemas_stack.pop()
             if isinstance(edge_schema.to_node_schema, BaseGraphSchema):
-                schema = edge_schema.to_node_schema.start_node_schema
+                schema = edge_schema.to_node_schema.start_node_schema # TODO: this and the rest is not truly recursive
                 self.to_conversation_node_schema_id_to_edge_schema[schema.id] = (
                     edge_schema
                 )
@@ -88,11 +88,20 @@ class BaseTerminableGraphSchema(HasIdMixin, BaseGraphSchema, BaseExecutableSchem
                     edge_schema.from_node_schema.id
                 ] = edge_schema
 
-        # TODO: make this recursive
-        if isinstance(self.get_edge_schemas()[-1].to_node_schema, BaseGraphSchema):
-            for edge_schema in self.get_edge_schemas()[
-                -1
-            ].to_node_schema.get_edge_schemas():
+        # TODO: work in progress
+        last_to_node_schema = self.get_edge_schemas()[-1]
+        edge_schemas_stack = [last_to_node_schema]
+        while edge_schemas_stack:
+            edge_schema = edge_schemas_stack.pop()
+            if isinstance(edge_schema.to_node_schema, BaseGraphSchema):
+                schema = edge_schema.to_node_schema.start_node_schema
+                self.to_conversation_node_schema_id_to_edge_schema[schema.id] = (
+                    edge_schema
+                )
+                edge_schemas_stack.extend(
+                    edge_schema.to_node_schema.get_edge_schemas()[:].reverse()
+                )
+            else:
                 self.to_conversation_node_schema_id_to_edge_schema[
                     edge_schema.to_node_schema.id
                 ] = edge_schema
