@@ -10,7 +10,7 @@ from cashier.graph.conversation_node import (
     ConversationNodeSchema,
     Direction,
 )
-from cashier.graph.edge_schema import Edge, EdgeSchema, FwdSkipType
+from cashier.graph.edge_schema import Edge, EdgeSchema
 from cashier.graph.mixin.has_id_mixin import HasIdMixin
 from cashier.graph.mixin.has_status_mixin import Status
 from cashier.gui import MessageDisplay
@@ -32,7 +32,7 @@ class BaseGraphSchema:
     def __init__(
         self,
         description: str,
-        node_schemas: List[ConversationNode],
+        node_schemas: List[ConversationNodeSchema],
     ):
         self.description = description
         self.node_schemas = node_schemas
@@ -191,62 +191,6 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
         edge = self.get_edge_by_edge_schema_id(edge_schema.id, idx, raise_if_none=False)
         return edge.from_node.status == Status.COMPLETED if edge else False
 
-    def compute_next_edge_schema(
-        self,
-        start_edge_schema: EdgeSchema,
-        start_input: Any,
-    ) -> Tuple[EdgeSchema, Any]:
-        next_edge_schema = start_edge_schema
-        edge_schema = start_edge_schema
-        input = start_input
-        while (
-            self.get_edge_by_edge_schema_id(next_edge_schema.id, raise_if_none=False)
-            is not None
-        ):
-            edge = self.get_edge_by_edge_schema_id(next_edge_schema.id)
-            from_node = edge.from_node
-            to_node = edge.to_node
-            if from_node.schema == self.curr_node.schema:
-                from_node = self.curr_node
-
-            can_skip, skip_type = next_edge_schema.can_skip(
-                self.state,  # TODO: this class does not explicitly have a state
-                from_node,
-                to_node,
-                self.is_prev_from_node_completed(
-                    next_edge_schema, from_node == self.curr_node
-                ),
-            )
-
-            if can_skip:
-                edge_schema = next_edge_schema
-
-                next_next_edge_schema = self.get_edge_schema_by_from_node_schema_id(
-                    to_node.schema.id
-                )
-
-                if next_next_edge_schema:
-                    next_edge_schema = next_next_edge_schema
-                else:
-                    input = to_node.input
-                    break
-            elif skip_type == FwdSkipType.SKIP_IF_INPUT_UNCHANGED:
-                if from_node.status != Status.COMPLETED:
-                    input = from_node.input
-                else:
-                    edge_schema = next_edge_schema
-                    if from_node != self.curr_node:
-                        input = edge_schema.to_node_schema.get_input(
-                            from_node.state, edge_schema
-                        )
-                break
-            else:
-                if from_node != self.curr_node:
-                    input = from_node.input
-                break
-
-        return edge_schema, input
-
     def add_edge(
         self,
         curr_node: ConversationNode,
@@ -369,22 +313,11 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
         node_schema,
         edge_schema,
         TC,
-        direction,
-        last_msg,
         input,
     ) -> None:
-        if input is None and edge_schema:
-            # TODO: this is bad. refactor this
-            if hasattr(self, "state"):
-                input = node_schema.get_input(self.state, edge_schema)
-            else:
-                input = node_schema.get_input(self.curr_node.state, edge_schema)
-
-        if edge_schema:
-            edge_schema, input = self.compute_next_edge_schema(edge_schema, input)
-            node_schema = edge_schema.to_node_schema
-
+        direction = Direction.FWD
         prev_node = self.get_prev_node(edge_schema, node_schema, direction)
+        last_msg = TC.get_user_message(content_only=True)
 
         self.init_node(
             node_schema,
@@ -396,6 +329,21 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
             TC,
         )
 
+    def pre_init_next_node(
+        self,
+        node_schema: ConversationNodeSchema,
+        edge_schema: Optional[EdgeSchema],
+        input: Any = None,
+    ) -> None:
+        if input is None and edge_schema:
+            # TODO: this is bad. refactor this
+            if hasattr(self, "state"):
+                input = node_schema.get_input(self.state, edge_schema)
+            else:
+                input = node_schema.get_input(self.curr_node.state, edge_schema)
+
+        return node_schema, edge_schema, input
+
     def init_next_node(
         self,
         node_schema: ConversationNodeSchema,
@@ -403,27 +351,36 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
         TC,
         input: Any = None,
     ) -> None:
-        curr_node = self.curr_node
-        parent_node = self
-        transition_queue = self.transition_queue
-        while transition_queue:
-            curr_node = transition_queue.popleft()
+        while self.local_transition_queue:
+            curr_node = self.local_transition_queue.popleft()
             parent_node = curr_node.parent
             assert curr_node.status == Status.TRANSITIONING
             curr_node.mark_as_completed()
             parent_node.local_transition_queue.clear()
 
-        direction = Direction.FWD
-        last_msg = TC.get_user_message(content_only=True)
+        if self.curr_node is not None and isinstance(self.curr_node, BaseGraph):
+            self.curr_node.init_next_node(node_schema, edge_schema, TC, input)
 
-        parent_node._init_next_node(
-            node_schema,
-            edge_schema,
-            TC,
-            direction,
-            last_msg,
-            input,
-        )
+        if node_schema in self.schema.node_schemas:
+            node_schema, edge_schema, input = self.pre_init_next_node(
+                node_schema,
+                edge_schema,
+                input,
+            )
+            if node_schema in self.schema.node_schemas:
+                self._init_next_node(
+                    node_schema,
+                    edge_schema,
+                    TC,
+                    input,
+                )
+            else:
+                # TODO: this is bad. refactor this
+                self.init_skip_node(
+                    node_schema,
+                    edge_schema,
+                    TC,
+                )
 
     def execute_function_call(
         self, fn_call: FunctionCall, fn_callback: Optional[Callable] = None
