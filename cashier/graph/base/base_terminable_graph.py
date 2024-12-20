@@ -378,11 +378,7 @@ class BaseTerminableGraph(BaseGraph):
         if to_node.schema == self.curr_node.schema:
             to_node = self.curr_node
 
-        input = (
-            to_node.input
-            if fwd_node_schemas
-            else start_input
-        )
+        input = to_node.input if fwd_node_schemas else start_input
 
         edge_schema = self.get_edge_schema_by_from_node_schema_id(to_node_schema.id)
         if edge_schema is None:
