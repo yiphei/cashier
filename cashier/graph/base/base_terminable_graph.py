@@ -365,14 +365,14 @@ class BaseTerminableGraph(BaseGraph):
 
     def compute_next_edge_schema(
         self,
-        start_edge_schema: EdgeSchema,
+        start_node_schema,
         start_input: Any,
     ) -> Tuple[EdgeSchema, Any]:
         fwd_node_schemas = self.compute_fwd_skip_node_schemas(True)
         to_node_schema = (
             fwd_node_schemas[-1]
             if fwd_node_schemas
-            else start_edge_schema.to_node_schema
+            else start_node_schema
         )
         to_node = self.get_prev_node(None, to_node_schema)
         if to_node and to_node.schema == self.curr_node.schema:
@@ -429,7 +429,7 @@ class BaseTerminableGraph(BaseGraph):
         )
 
         if edge_schema:
-            node_schema, input = self.compute_next_edge_schema(edge_schema, input)
+            node_schema, input = self.compute_next_edge_schema(node_schema, input)
 
         if (
             isinstance(node_schema, ConversationNodeSchema)
