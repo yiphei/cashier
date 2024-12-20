@@ -369,8 +369,16 @@ class BaseTerminableGraph(BaseGraph):
         start_input: Any,
     ) -> Tuple[EdgeSchema, Any]:
         fwd_node_schemas = self.compute_fwd_skip_node_schemas(True)
-        from_node_schema = fwd_node_schemas[-1] if fwd_node_schemas else start_edge_schema.to_node_schema
-        input = self.get_prev_node(None, from_node_schema).input if fwd_node_schemas else start_input
+        from_node_schema = (
+            fwd_node_schemas[-1]
+            if fwd_node_schemas
+            else start_edge_schema.to_node_schema
+        )
+        input = (
+            self.get_prev_node(None, from_node_schema).input
+            if fwd_node_schemas
+            else start_input
+        )
 
         edge_schema = self.get_edge_schema_by_from_node_schema_id(from_node_schema.id)
         if edge_schema is None:
