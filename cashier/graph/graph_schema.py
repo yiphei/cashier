@@ -68,18 +68,20 @@ class Graph(BaseTerminableGraph):
         node_schema = self.schema.start_node_schema
         edge_schema = None
         next_edge_schema = self.from_node_schema_id_to_edge_schema[node_schema.id]
-        while next_edge_schema and next_edge_schema.check_transition_config(
+        while (
+            next_edge_schema
+            and next_edge_schema.check_transition_config(
                 self.state,
                 None,
                 None,
                 check_resettable_fields=False,
-            ) and not isinstance(
-                next_edge_schema.from_node_schema, ANDGraphSchema
-            ):  # TODO: fix this
-                node_schema = next_edge_schema.to_node_schema
-                edge_schema = next_edge_schema
-                next_edge_schema = self.schema.from_node_schema_id_to_edge_schema.get(
-                    node_schema.id, None
-                )
+            )
+            and not isinstance(next_edge_schema.from_node_schema, ANDGraphSchema)
+        ):  # TODO: fix this
+            node_schema = next_edge_schema.to_node_schema
+            edge_schema = next_edge_schema
+            next_edge_schema = self.schema.from_node_schema_id_to_edge_schema.get(
+                node_schema.id, None
+            )
 
         return node_schema, edge_schema
