@@ -377,10 +377,10 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
             else:
                 # TODO: this is bad. refactor this
                 self.init_skip_node(
-                        node_schema,
-                        edge_schema,
-                        TC,
-                    )
+                    node_schema,
+                    edge_schema,
+                    TC,
+                )
 
     def execute_function_call(
         self, fn_call: FunctionCall, fn_callback: Optional[Callable] = None
