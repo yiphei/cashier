@@ -52,7 +52,7 @@ class RequestGraph(BaseGraph):
             f"agent_selections: {json.dumps(agent_selections, cls=CustomJSONEncoder, indent=4)}"
         )
 
-    def add_tasks(self, request, tc):
+    def add_tasks(self, tc):
         agent_selection = GraphSchemaAdditionPrompt.run(
             graph_schemas=self.schema.graph_node_schemas,
             curr_agent_id=self.graph_schema_sequence[self.current_graph_schema_idx].id,
