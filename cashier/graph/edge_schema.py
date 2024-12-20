@@ -84,8 +84,10 @@ class EdgeSchema(BaseEdgeSchema, HasIdMixin, metaclass=AutoMixinInit):
         ):
             return True, skip_type
         return False, skip_type
-    
-    def get_skip_type(self, from_node_status, to_node_status, is_prev_from_node_completed):
+
+    def get_skip_type(
+        self, from_node_status, to_node_status, is_prev_from_node_completed
+    ):
         if from_node_status == Status.COMPLETED:
             if to_node_status == Status.COMPLETED:
                 return self.skip_from_complete_to_prev_complete
@@ -107,8 +109,11 @@ class EdgeSchema(BaseEdgeSchema, HasIdMixin, metaclass=AutoMixinInit):
         assert from_node.schema == self.from_node_schema
         assert to_node.schema == self.to_node_schema
 
-        skip_type = self.get_skip_type(from_node.status, to_node.status, is_prev_from_node_completed)
+        skip_type = self.get_skip_type(
+            from_node.status, to_node.status, is_prev_from_node_completed
+        )
         return self._can_skip(state, skip_type, to_node)
+
 
 class Edge:
     def __init__(self, from_node, to_node, schema):
