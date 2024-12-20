@@ -368,56 +368,50 @@ class BaseTerminableGraph(BaseGraph):
         start_edge_schema: EdgeSchema,
         start_input: Any,
     ) -> Tuple[EdgeSchema, Any]:
-        next_edge_schema = start_edge_schema
-        edge_schema = start_edge_schema
-        input = start_input
-        while (
-            self.get_edge_by_edge_schema_id(next_edge_schema.id, raise_if_none=False)
+        fwd_node_schemas = self.compute_fwd_skip_node_schemas(True)
+        from_node_schema = fwd_node_schemas[-1] if fwd_node_schemas else start_edge_schema.to_node_schema
+        input = self.get_prev_node(None, from_node_schema).input if fwd_node_schemas else start_input
+
+        edge_schema = self.get_edge_schema_by_from_node_schema_id(from_node_schema.id)
+        if edge_schema is None:
+            return from_node_schema, start_input
+
+        if (
+            self.get_edge_by_edge_schema_id(edge_schema.id, raise_if_none=False)
             is not None
         ):
-            edge = self.get_edge_by_edge_schema_id(next_edge_schema.id)
-            from_node = edge.from_node
+            from_node = self.get_prev_node(None, from_node_schema)
+            edge = self.get_edge_by_edge_schema_id(edge_schema.id)
             to_node = edge.to_node
             if from_node.schema == self.curr_node.schema:
                 from_node = self.curr_node
 
-            can_skip, skip_type = next_edge_schema.can_skip(
+            can_skip, skip_type = edge_schema.can_skip(
                 self.state,  # TODO: this class does not explicitly have a state
                 from_node,
                 to_node,
                 self.is_prev_from_node_completed(
-                    next_edge_schema, from_node == self.curr_node
+                    edge_schema, from_node == self.curr_node
                 ),
             )
 
             if can_skip:
-                edge_schema = next_edge_schema
-
-                next_next_edge_schema = self.get_edge_schema_by_from_node_schema_id(
-                    to_node.schema.id
-                )
-
-                if next_next_edge_schema:
-                    next_edge_schema = next_next_edge_schema
-                else:
-                    input = to_node.input
-                    break
+                from_node_schema = edge_schema.to_node_schema
+                input = to_node.input
             elif skip_type == FwdSkipType.SKIP_IF_INPUT_UNCHANGED:
                 if from_node.status != Status.COMPLETED:
                     input = from_node.input
                 else:
-                    edge_schema = next_edge_schema
+                    from_node_schema = edge_schema.to_node_schema
                     if from_node != self.curr_node:
                         input = edge_schema.to_node_schema.get_input(
                             from_node.state, edge_schema
                         )
-                break
             else:
                 if from_node != self.curr_node:
                     input = from_node.input
-                break
 
-        return edge_schema.to_node_schema, input
+        return from_node_schema, input
 
     def pre_init_next_node(
         self,
