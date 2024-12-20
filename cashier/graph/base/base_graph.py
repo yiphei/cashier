@@ -367,12 +367,20 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
                 edge_schema,
                 input,
             )
-            self._init_next_node(
-                node_schema,
-                edge_schema,
-                TC,
-                input,
-            )
+            if node_schema in self.schema.node_schemas:
+                self._init_next_node(
+                    node_schema,
+                    edge_schema,
+                    TC,
+                    input,
+                )
+            else:
+                # TODO: this is bad. refactor this
+                self.init_skip_node(
+                        node_schema,
+                        edge_schema,
+                        TC,
+                    )
 
     def execute_function_call(
         self, fn_call: FunctionCall, fn_callback: Optional[Callable] = None
