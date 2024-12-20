@@ -360,7 +360,6 @@ class BaseTerminableGraph(BaseGraph):
                     from_node = to_node
 
         return fwd_jump_node_schemas
-    
 
     def pre_init_next_node(
         self,
