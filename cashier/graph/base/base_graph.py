@@ -32,7 +32,7 @@ class BaseGraphSchema:
     def __init__(
         self,
         description: str,
-        node_schemas: List[ConversationNode],
+        node_schemas: List[ConversationNodeSchema],
     ):
         self.description = description
         self.node_schemas = node_schemas
