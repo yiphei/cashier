@@ -360,6 +360,24 @@ class BaseTerminableGraph(BaseGraph):
                     from_node = to_node
 
         return fwd_jump_node_schemas
+    
+
+    def pre_init_next_node(
+        self,
+        node_schema: ConversationNodeSchema,
+        edge_schema: Optional[EdgeSchema],
+        input: Any = None,
+    ) -> None:
+        node_schema, edge_schema, input = super().pre_init_next_node(
+            node_schema,
+            edge_schema,
+            input,
+        )
+
+        if edge_schema:
+            edge_schema, input = self.compute_next_edge_schema(edge_schema, input)
+            node_schema = edge_schema.to_node_schema
+        return node_schema, edge_schema, input
 
     def handle_user_turn(self, msg, TC, model_provider, run_off_topic_check=True):
         if not run_off_topic_check or not OffTopicPrompt.run(

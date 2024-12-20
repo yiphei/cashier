@@ -371,17 +371,6 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
         TC,
         input,
     ) -> None:
-        if input is None and edge_schema:
-            # TODO: this is bad. refactor this
-            if hasattr(self, "state"):
-                input = node_schema.get_input(self.state, edge_schema)
-            else:
-                input = node_schema.get_input(self.curr_node.state, edge_schema)
-
-        if edge_schema:
-            edge_schema, input = self.compute_next_edge_schema(edge_schema, input)
-            node_schema = edge_schema.to_node_schema
-
         direction = Direction.FWD
         prev_node = self.get_prev_node(edge_schema, node_schema, direction)
         last_msg = TC.get_user_message(content_only=True)
@@ -396,6 +385,21 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
             TC,
         )
 
+    def pre_init_next_node(
+        self,
+        node_schema: ConversationNodeSchema,
+        edge_schema: Optional[EdgeSchema],
+        input: Any = None,
+    ) -> None:
+        if input is None and edge_schema:
+            # TODO: this is bad. refactor this
+            if hasattr(self, "state"):
+                input = node_schema.get_input(self.state, edge_schema)
+            else:
+                input = node_schema.get_input(self.curr_node.state, edge_schema)
+
+        return node_schema, edge_schema, input
+
     def init_next_node(
         self,
         node_schema: ConversationNodeSchema,
@@ -403,22 +407,28 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
         TC,
         input: Any = None,
     ) -> None:
-        curr_node = self.curr_node
-        parent_node = self
-        transition_queue = self.transition_queue
-        while transition_queue:
-            curr_node = transition_queue.popleft()
+        while self.local_transition_queue:
+            curr_node = self.local_transition_queue.popleft()
             parent_node = curr_node.parent
             assert curr_node.status == Status.TRANSITIONING
             curr_node.mark_as_completed()
             parent_node.local_transition_queue.clear()
 
-        parent_node._init_next_node(
-            node_schema,
-            edge_schema,
-            TC,
-            input,
-        )
+        if self.curr_node is not None and isinstance(self.curr_node, BaseGraph):
+            self.curr_node.init_next_node(node_schema, edge_schema, TC, input)
+
+        if node_schema in self.schema.node_schemas:
+            node_schema, edge_schema, input = self.pre_init_next_node(
+                node_schema,
+                edge_schema,
+                input,
+            )
+            self._init_next_node(
+                node_schema,
+                edge_schema,
+                TC,
+                input,
+            )
 
     def execute_function_call(
         self, fn_call: FunctionCall, fn_callback: Optional[Callable] = None

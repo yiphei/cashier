@@ -33,7 +33,7 @@ class RequestGraph(BaseGraph):
 
     def get_graph_schemas(self, request):
         agent_selections = GraphSchemaSelectionPrompt.run(
-            request=request, graph_schemas=self.schema.node_schemas
+            request=request, graph_schemas=self.schema.target_node_schemas
         )
         self.graph_schema_sequence = []
         self.requests = []
@@ -54,7 +54,7 @@ class RequestGraph(BaseGraph):
 
     def add_tasks(self, request, tc):
         agent_selection = GraphSchemaAdditionPrompt.run(
-            graph_schemas=self.schema.node_schemas,
+            graph_schemas=self.schema.target_node_schemas,
             curr_agent_id=self.graph_schema_sequence[self.current_graph_schema_idx].id,
             curr_task=self.requests[self.current_graph_schema_idx],
             tc=tc,
@@ -141,9 +141,10 @@ class RequestGraphSchema(BaseGraphSchema):
         edge_schemas: List[EdgeSchema],
         node_schemas: List[ConversationNodeSchema],
     ):
-        super().__init__(description, node_schemas)
-        self.edge_schemas = edge_schemas
         self.start_node_schema = ConversationNodeSchema(node_prompt, node_system_prompt)
+        self.target_node_schemas = node_schemas
+        super().__init__(description, node_schemas + [self.start_node_schema])
+        self.edge_schemas = edge_schemas
         self.default_node_schema = ConversationNodeSchema(
             "You have just finished helping the customer with their requests. Ask if they need anything else.",
             node_system_prompt,
