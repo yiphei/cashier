@@ -10,7 +10,7 @@ from cashier.graph.conversation_node import (
     ConversationNodeSchema,
     Direction,
 )
-from cashier.graph.edge_schema import Edge, EdgeSchema, FwdSkipType
+from cashier.graph.edge_schema import Edge, EdgeSchema
 from cashier.graph.mixin.has_id_mixin import HasIdMixin
 from cashier.graph.mixin.has_status_mixin import Status
 from cashier.gui import MessageDisplay
