@@ -417,7 +417,7 @@ class BaseTerminableGraph(BaseGraph):
                     input = from_node.input
                 break
 
-        return edge_schema, input
+        return edge_schema.to_node_schema, input
 
     def pre_init_next_node(
         self,
@@ -432,8 +432,7 @@ class BaseTerminableGraph(BaseGraph):
         )
 
         if edge_schema:
-            edge_schema, input = self.compute_next_edge_schema(edge_schema, input)
-            node_schema = edge_schema.to_node_schema
+            node_schema, input = self.compute_next_edge_schema(edge_schema, input)
 
         if (
             isinstance(node_schema, ConversationNodeSchema)
