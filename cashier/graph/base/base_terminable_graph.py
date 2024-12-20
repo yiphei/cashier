@@ -406,9 +406,6 @@ class BaseTerminableGraph(BaseGraph):
                         input = edge_schema.to_node_schema.get_input(
                             from_node.state, edge_schema
                         )
-            else:
-                if from_node != self.curr_node:
-                    input = from_node.input
 
         return to_node_schema, input
 
