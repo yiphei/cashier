@@ -230,7 +230,7 @@ class BaseTerminableGraph(BaseGraph):
     ) -> Union[
         Tuple[EdgeSchema, ConversationNodeSchema, bool], Tuple[None, None, bool]
     ]:
-        fwd_skip_node_schemas = self.compute_fwd_skip_node_schemas(True)
+        fwd_skip_node_schemas = set(self.compute_fwd_skip_node_schemas(True))
         fwd_skip_node_schema_ids = {
             node_schema.id for node_schema in fwd_skip_node_schemas
         }
@@ -319,15 +319,15 @@ class BaseTerminableGraph(BaseGraph):
             else self.get_prev_node(None, start_edge_schema.from_node_schema)
         )
         if start_node is None or start_edge_schema is None:
-            return set()
+            return []
 
-        fwd_jump_node_schemas = set()
+        fwd_jump_node_schemas = []
         edge_schema = start_edge_schema
         next_edge_schema = start_edge_schema
         from_node = start_node
 
         if isinstance(start_edge_schema.from_node_schema, BaseGraphSchema):
-            fwd_jump_node_schemas |= start_node.compute_fwd_skip_node_schemas(True)
+            fwd_jump_node_schemas += start_node.compute_fwd_skip_node_schemas(True)
         while next_edge_schema and (
             self.get_edge_by_edge_schema_id(next_edge_schema.id, raise_if_none=False)
             is not None
@@ -349,10 +349,10 @@ class BaseTerminableGraph(BaseGraph):
                 node_schema = self.get_fwd_node_schema_and_parent_node(
                     edge_schema.to_node_schema
                 )
-                fwd_jump_node_schemas.add(node_schema)
+                fwd_jump_node_schemas.append(node_schema)
                 if isinstance(edge_schema.to_node_schema, BaseGraphSchema):
                     graph_node = self.get_prev_node(None, edge_schema.to_node_schema)
-                    fwd_jump_node_schemas |= graph_node.compute_fwd_skip_node_schemas(
+                    fwd_jump_node_schemas += graph_node.compute_fwd_skip_node_schemas(
                         False
                     )
                 if self.get_edge_schema_by_from_node_schema_id(to_node.schema.id):
