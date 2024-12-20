@@ -95,16 +95,16 @@ class EdgeSchema(BaseEdgeSchema, HasIdMixin, metaclass=AutoMixinInit):
             from_node.status, to_node.status, is_prev_from_node_completed
         )
         if skip_type is None:
-            return False, skip_type
+            return False
 
         if skip_type == FwdSkipType.SKIP:
-            return True, skip_type
+            return True
         elif (
             skip_type == FwdSkipType.SKIP_IF_INPUT_UNCHANGED
             and to_node.schema.get_input(state, self) == to_node.input
         ):
-            return True, skip_type
-        return False, skip_type
+            return True
+        return False
 
 
 class Edge:

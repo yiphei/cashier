@@ -344,7 +344,7 @@ class BaseTerminableGraph(BaseGraph):
                 from_node,
                 to_node,
                 self.is_prev_from_node_completed(edge_schema, from_node == start_node),
-            )[0]:
+            ):
 
                 node_schema = self.get_fwd_node_schema_and_parent_node(
                     edge_schema.to_node_schema
