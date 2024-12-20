@@ -375,14 +375,14 @@ class BaseTerminableGraph(BaseGraph):
             else start_edge_schema.to_node_schema
         )
         to_node = self.get_prev_node(None, to_node_schema)
-        if to_node.schema == self.curr_node.schema:
+        if to_node and to_node.schema == self.curr_node.schema:
             to_node = self.curr_node
 
         input = to_node.input if fwd_node_schemas else start_input
 
         edge_schema = self.get_edge_schema_by_from_node_schema_id(to_node_schema.id)
         if edge_schema is None:
-            return to_node_schema, start_input
+            return to_node_schema, input
 
         if (
             self.get_edge_by_edge_schema_id(edge_schema.id, raise_if_none=False)
