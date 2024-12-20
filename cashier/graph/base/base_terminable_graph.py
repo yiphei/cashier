@@ -391,8 +391,6 @@ class BaseTerminableGraph(BaseGraph):
             from_node = to_node
             edge = self.get_edge_by_edge_schema_id(edge_schema.id)
             to_node = edge.to_node
-            if from_node.schema == self.curr_node.schema:
-                from_node = self.curr_node
 
             _, skip_type = edge_schema.can_skip(
                 self.state,  # TODO: this class does not explicitly have a state
