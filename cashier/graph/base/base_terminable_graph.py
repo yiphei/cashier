@@ -376,6 +376,11 @@ class BaseTerminableGraph(BaseGraph):
         if edge_schema:
             edge_schema, input = self.compute_next_edge_schema(edge_schema, input)
             node_schema = edge_schema.to_node_schema
+
+        if isinstance(node_schema, ConversationNodeSchema) and node_schema.id in self.schema.to_conversation_node_schema_id_to_edge_schema:
+            edge_schema = self.schema.to_conversation_node_schema_id_to_edge_schema[
+                node_schema.id
+            ]
         return node_schema, edge_schema, input
 
     def handle_user_turn(self, msg, TC, model_provider, run_off_topic_check=True):
