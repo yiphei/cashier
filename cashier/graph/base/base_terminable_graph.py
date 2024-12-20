@@ -397,7 +397,10 @@ class BaseTerminableGraph(BaseGraph):
                 ),
             )
 
-            if skip_type == FwdSkipType.SKIP_IF_INPUT_UNCHANGED and from_node.status == Status.COMPLETED:
+            if (
+                skip_type == FwdSkipType.SKIP_IF_INPUT_UNCHANGED
+                and from_node.status == Status.COMPLETED
+            ):
                 to_node_schema = edge_schema.to_node_schema
                 if from_node != self.curr_node:
                     input = edge_schema.to_node_schema.get_input(
