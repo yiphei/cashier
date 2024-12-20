@@ -369,8 +369,6 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
         node_schema,
         edge_schema,
         TC,
-        direction,
-        last_msg,
         input,
     ) -> None:
         if input is None and edge_schema:
@@ -384,7 +382,9 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
             edge_schema, input = self.compute_next_edge_schema(edge_schema, input)
             node_schema = edge_schema.to_node_schema
 
+        direction = Direction.FWD
         prev_node = self.get_prev_node(edge_schema, node_schema, direction)
+        last_msg = TC.get_user_message(content_only=True)
 
         self.init_node(
             node_schema,
@@ -413,15 +413,10 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
             curr_node.mark_as_completed()
             parent_node.local_transition_queue.clear()
 
-        direction = Direction.FWD
-        last_msg = TC.get_user_message(content_only=True)
-
         parent_node._init_next_node(
             node_schema,
             edge_schema,
             TC,
-            direction,
-            last_msg,
             input,
         )
 
