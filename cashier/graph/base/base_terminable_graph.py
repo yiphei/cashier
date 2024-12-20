@@ -363,7 +363,7 @@ class BaseTerminableGraph(BaseGraph):
 
         return fwd_jump_node_schemas
 
-    def compute_next_edge_schema(
+    def compute_next_node_schema(
         self,
         start_node_schema,
         start_input: Any,
@@ -425,7 +425,7 @@ class BaseTerminableGraph(BaseGraph):
         )
 
         if edge_schema:
-            node_schema, input = self.compute_next_edge_schema(node_schema, input)
+            node_schema, input = self.compute_next_node_schema(node_schema, input)
 
         if (
             isinstance(node_schema, ConversationNodeSchema)
