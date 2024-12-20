@@ -369,11 +369,7 @@ class BaseTerminableGraph(BaseGraph):
         start_input: Any,
     ) -> Tuple[EdgeSchema, Any]:
         fwd_node_schemas = self.compute_fwd_skip_node_schemas(True)
-        to_node_schema = (
-            fwd_node_schemas[-1]
-            if fwd_node_schemas
-            else start_node_schema
-        )
+        to_node_schema = fwd_node_schemas[-1] if fwd_node_schemas else start_node_schema
         to_node = self.get_prev_node(None, to_node_schema)
         if to_node and to_node.schema == self.curr_node.schema:
             to_node = self.curr_node
