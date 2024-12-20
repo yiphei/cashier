@@ -67,24 +67,6 @@ class EdgeSchema(BaseEdgeSchema, HasIdMixin, metaclass=AutoMixinInit):
             self.from_node_schema.state_schema.resettable_fields,
         )
 
-    def _can_skip(
-        self,
-        state,
-        skip_type: Optional[FwdSkipType],
-        to_node: ConversationNode,
-    ) -> Tuple[bool, Optional[FwdSkipType]]:
-        if skip_type is None:
-            return False, skip_type
-
-        if skip_type == FwdSkipType.SKIP:
-            return True, skip_type
-        elif (
-            skip_type == FwdSkipType.SKIP_IF_INPUT_UNCHANGED
-            and to_node.schema.get_input(state, self) == to_node.input
-        ):
-            return True, skip_type
-        return False, skip_type
-
     def get_skip_type(
         self, from_node_status, to_node_status, is_prev_from_node_completed
     ):
@@ -112,7 +94,17 @@ class EdgeSchema(BaseEdgeSchema, HasIdMixin, metaclass=AutoMixinInit):
         skip_type = self.get_skip_type(
             from_node.status, to_node.status, is_prev_from_node_completed
         )
-        return self._can_skip(state, skip_type, to_node)
+        if skip_type is None:
+            return False, skip_type
+
+        if skip_type == FwdSkipType.SKIP:
+            return True, skip_type
+        elif (
+            skip_type == FwdSkipType.SKIP_IF_INPUT_UNCHANGED
+            and to_node.schema.get_input(state, self) == to_node.input
+        ):
+            return True, skip_type
+        return False, skip_type
 
 
 class Edge:
