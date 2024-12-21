@@ -146,11 +146,10 @@ class BaseTerminableGraph(BaseGraph):
         assert prev_node is not None
 
         if isinstance(node_schema, ConversationNodeSchema):
-            input = prev_node.input
             new_node = self.init_node_core(
                 node_schema,
                 edge_schema,
-                input,
+                prev_node.input,
                 last_msg,
                 prev_node,
                 direction,
