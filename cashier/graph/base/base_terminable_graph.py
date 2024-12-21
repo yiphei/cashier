@@ -178,9 +178,7 @@ class BaseTerminableGraph(BaseGraph):
         node_schema: ConversationNodeSchema,
         TC,
     ) -> None:
-        direction = Direction.FWD
-        if node_schema not in self.fwd_skip_node_schemas:
-            direction = Direction.BWD
+        direction = Direction.FWD if node_schema in self.fwd_skip_node_schemas else Direction.BWD
 
         parent_node = self.conv_node_schema_id_to_parent_node[node_schema.id]
         parent_node._init_skip_node(
