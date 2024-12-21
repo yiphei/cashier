@@ -81,7 +81,7 @@ class RequestGraph(BaseGraph):
                 current_node_schema=self.curr_conversation_node.schema,
                 tc=TC,
             ):
-                has_new_task = self.add_tasks(msg, TC)
+                has_new_task = self.add_tasks(TC)
                 if has_new_task:
                     fake_fn_call = create_think_fn_call(
                         "At least part of the customer request/question is off-topic for the current conversation and will actually be addressed later. According to the policies, I must tell the customer that 1) their off-topic request/question will be addressed later and 2) we must finish the current business before we can get to it. I must refuse to engage with the off-topic request/question in any way."

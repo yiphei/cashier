@@ -305,8 +305,10 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
         )
 
         if isinstance(node_schema, BaseGraphSchema):
-            node_schema, edge_schema = new_node.compute_init_node_edge_schema()
-            self.curr_node.init_next_node(node_schema, edge_schema, TC, None)
+            next_node_schema, next_edge_schema = new_node.get_next_node_schema_to_init()
+            while next_node_schema is not None:
+                self.curr_node.init_next_node(next_node_schema, next_edge_schema, TC, None)
+                next_node_schema, next_edge_schema = new_node.get_next_node_schema_to_init()
 
     def _init_next_node(
         self,
