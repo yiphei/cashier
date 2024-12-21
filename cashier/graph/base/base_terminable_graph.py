@@ -142,11 +142,6 @@ class BaseTerminableGraph(BaseGraph):
         direction: Direction,
         TC,
     ) -> None:
-        from cashier.graph.request_graph import RequestGraph
-
-        if edge_schema is None:
-            edge_schema = self.schema.from_node_schema_id_to_edge_schema[node_schema.id]
-
         if not isinstance(node_schema, BaseGraphSchema):
             new_node = self.init_node_core(
                 node_schema,
@@ -169,17 +164,6 @@ class BaseTerminableGraph(BaseGraph):
             True,
         )
 
-        if self.parent is not None and not isinstance(self.parent, RequestGraph):
-            self.parent.init_node_but_skip(
-                self.schema,
-                None,
-                None,
-                last_msg,
-                self,
-                direction,
-                TC,
-            )
-
     def _init_skip_node(
         self,
         node_schema: ConversationNodeSchema,
@@ -188,10 +172,15 @@ class BaseTerminableGraph(BaseGraph):
         last_msg,
         TC,
     ) -> None:
-
+        from cashier.graph.request_graph import RequestGraph
         prev_node = self.get_prev_node(node_schema)
         assert prev_node is not None
-        input = prev_node.input
+
+        if node_schema in self.schema.node_schemas:
+            input = prev_node.input
+        else:
+            edge_schema = self.schema.from_node_schema_id_to_edge_schema[node_schema.id]
+            input = None
 
         self.init_node_but_skip(
             node_schema,
@@ -202,6 +191,15 @@ class BaseTerminableGraph(BaseGraph):
             direction,
             TC,
         )
+
+        if self.parent is not None and not isinstance(self.parent, RequestGraph):
+            self.parent._init_skip_node(
+                self.schema,
+                None,
+                direction,
+                last_msg,
+                TC,
+            )
 
     def init_skip_node(
         self,
