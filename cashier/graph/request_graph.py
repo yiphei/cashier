@@ -115,7 +115,7 @@ class RequestGraph(BaseGraph):
         node_schema: ConversationNodeSchema,
         TC,
         input: Any = None,
-        request = None,
+        request=None,
     ) -> None:
         request = None
         if len(self.requests) > self.current_graph_schema_idx + 1:

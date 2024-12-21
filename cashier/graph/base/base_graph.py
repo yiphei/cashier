@@ -343,7 +343,7 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
         node_schema: ConversationNodeSchema,
         TC,
         input: Any = None,
-        request = None,
+        request=None,
     ) -> None:
         while self.local_transition_queue:
             curr_node = self.local_transition_queue.popleft()
