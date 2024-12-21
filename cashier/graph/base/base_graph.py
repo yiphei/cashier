@@ -275,6 +275,17 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
             self.add_edge(self.curr_node, new_node, edge_schema, direction)
 
         return new_node
+    
+    def get_next_node_schema_to_init(self):
+        if self.curr_node is None:
+            return self.schema.start_node_schema, None
+        else:
+            next_edge_schema = self.get_next_edge_schema()
+            if next_edge_schema and self.init_check_transition(next_edge_schema):
+                self.curr_node.mark_as_completed()
+                return next_edge_schema.to_node_schema, next_edge_schema
+            else:
+                return None, None
 
     def init_node(
         self,
