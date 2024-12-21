@@ -332,15 +332,15 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
             TC,
         )
 
+    def get_edge_schema_by_to_node_schema(self, node_schema):
+        return self.to_node_schema_id_to_edge_schema.get(node_schema.id, None)
+
     def pre_init_next_node(
         self,
         node_schema: ConversationNodeSchema,
-        edge_schema: Optional[EdgeSchema],
         input: Any = None,
     ) -> None:
-        edge_schema = self.to_node_schema_id_to_edge_schema.get(node_schema.id, None)
-
-        return node_schema, edge_schema, input
+        return node_schema, input
 
     def init_next_node(
         self,
@@ -359,11 +359,11 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
             self.curr_node.init_next_node(node_schema, TC, input)
 
         if node_schema in self.schema.node_schemas:
-            node_schema, edge_schema, input = self.pre_init_next_node(
+            node_schema, input = self.pre_init_next_node(
                 node_schema,
-                None,
                 input,
             )
+            edge_schema = self.get_edge_schema_by_to_node_schema(node_schema)
             if node_schema in self.schema.node_schemas:
                 self._init_next_node(
                     node_schema,

@@ -405,33 +405,26 @@ class BaseTerminableGraph(BaseGraph):
                     )
 
         return to_node_schema, input
-
-    def pre_init_next_node(
-        self,
-        node_schema: ConversationNodeSchema,
-        edge_schema: Optional[EdgeSchema],
-        input: Any = None,
-    ) -> None:
-        node_schema, edge_schema, input = super().pre_init_next_node(
-            node_schema,
-            edge_schema,
-            input,
-        )
-
-        node_schema, input = self.compute_next_node_schema(node_schema, input)
-
+    
+    def get_edge_schema_by_to_node_schema(self, node_schema):
         if (
             isinstance(node_schema, ConversationNodeSchema)
             and node_schema.id
             in self.schema.to_conversation_node_schema_id_to_edge_schema
         ):
-            edge_schema = self.schema.to_conversation_node_schema_id_to_edge_schema[
+            return self.schema.to_conversation_node_schema_id_to_edge_schema[
                 node_schema.id
             ]
         elif node_schema.id in self.to_node_schema_id_to_edge_schema:
-            edge_schema = self.to_node_schema_id_to_edge_schema[node_schema.id]
+            return self.to_node_schema_id_to_edge_schema.get(node_schema.id, None)
 
-        return node_schema, edge_schema, input
+    def pre_init_next_node(
+        self,
+        node_schema: ConversationNodeSchema,
+        input: Any = None,
+    ) -> None:
+        node_schema, input = self.compute_next_node_schema(node_schema, input)
+        return node_schema, input
 
     def handle_user_turn(self, msg, TC, model_provider, run_off_topic_check=True):
         if not run_off_topic_check or not OffTopicPrompt.run(
