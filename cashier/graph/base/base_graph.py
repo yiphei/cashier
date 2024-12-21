@@ -162,11 +162,12 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
     ) -> Optional[EdgeSchema]:
         return self.from_node_schema_id_to_edge_schema.get(node_schema_id, None)
 
-    def get_prev_node(
-        self,
-        node_schema
-    ) -> Optional[ConversationNode]:
-        return self.node_schema_id_to_nodes[node_schema.id][-1] if self.node_schema_id_to_nodes[node_schema.id] else None
+    def get_prev_node(self, node_schema) -> Optional[ConversationNode]:
+        return (
+            self.node_schema_id_to_nodes[node_schema.id][-1]
+            if self.node_schema_id_to_nodes[node_schema.id]
+            else None
+        )
 
     def is_prev_from_node_completed(
         self, edge_schema: EdgeSchema, is_start_node: bool
