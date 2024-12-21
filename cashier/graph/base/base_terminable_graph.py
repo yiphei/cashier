@@ -7,7 +7,7 @@ from pydantic import BaseModel
 from cashier.graph.base.base_edge_schema import FwdSkipType
 from cashier.graph.base.base_executable import BaseExecutableSchema
 from cashier.graph.base.base_graph import BaseGraph, BaseGraphSchema
-from cashier.graph.conversation_node import ConversationNode, ConversationNodeSchema
+from cashier.graph.conversation_node import ConversationNode, ConversationNodeSchema, Direction
 from cashier.graph.edge_schema import EdgeSchema
 from cashier.graph.mixin.has_id_mixin import HasIdMixin
 from cashier.graph.mixin.has_status_mixin import Status
@@ -131,7 +131,7 @@ class BaseTerminableGraph(BaseGraph):
     def _init_skip_node(
         self,
         node_schema,
-        edge_schema: EdgeSchema,
+        direction,
         TC,
     ) -> None:
         from cashier.graph.request_graph import RequestGraph
@@ -141,6 +141,7 @@ class BaseTerminableGraph(BaseGraph):
 
         if isinstance(node_schema, ConversationNodeSchema):
             last_msg = TC.get_asst_message(content_only=True)
+            edge_schema = self.get_edge_schema_by_node_schema(node_schema, direction)
             new_node = self.init_node_core(
                 node_schema,
                 edge_schema,
@@ -164,7 +165,7 @@ class BaseTerminableGraph(BaseGraph):
         if self.parent is not None and not isinstance(self.parent, RequestGraph):
             self.parent._init_skip_node(
                 self.schema,
-                None,
+                direction,
                 TC,
             )
 
@@ -173,19 +174,14 @@ class BaseTerminableGraph(BaseGraph):
         node_schema: ConversationNodeSchema,
         TC,
     ) -> None:
-        if node_schema in self.fwd_skip_node_schemas:
-            edge_schema = self.schema.to_conversation_node_schema_id_to_edge_schema[
-                node_schema.id
-            ]
-        else:
-            edge_schema = self.schema.from_conversation_node_schema_id_to_edge_schema[
-                node_schema.id
-            ]
+        direction = Direction.FWD
+        if node_schema not in self.fwd_skip_node_schemas:
+            direction = Direction.BWD
 
         parent_node = self.conv_node_schema_id_to_parent_node[node_schema.id]
         parent_node._init_skip_node(
             node_schema,
-            edge_schema,
+            direction,
             TC,
         )
 

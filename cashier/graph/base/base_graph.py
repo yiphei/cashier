@@ -346,6 +346,9 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
 
     def get_edge_schema_by_to_node_schema(self, node_schema):
         return self.to_node_schema_id_to_edge_schema.get(node_schema.id, None)
+    
+    def get_edge_schema_by_node_schema(self, node_schema, direction):
+        return self.get_edge_schema_by_to_node_schema(node_schema) if direction == Direction.FWD else self.get_edge_schema_by_from_node_schema_id(node_schema.id)
 
     def pre_init_next_node(
         self,
