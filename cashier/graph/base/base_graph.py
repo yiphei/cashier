@@ -282,7 +282,6 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
         else:
             new_edge_schema, new_node_schema = self.check_transition(None, None)
             if new_edge_schema is not None:
-                assert self.curr_node.status == Status.COMPLETED
                 return new_node_schema, new_edge_schema
             else:
                 return None, None
