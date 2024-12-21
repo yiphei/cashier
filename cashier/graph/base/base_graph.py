@@ -167,7 +167,7 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
             if self.node_schema_id_to_nodes[node_schema.id]
             else None
         )
-    
+
     def update_curr_node(self, new_node, edge_schema, prev_node, TC, is_skip):
         self.curr_node = new_node
         self.post_node_init(
