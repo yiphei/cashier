@@ -343,7 +343,6 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
                 TC,
             )
 
-
     def get_edge_schema_by_to_node_schema(self, node_schema):
         return self.to_node_schema_id_to_edge_schema.get(node_schema.id, None)
 
