@@ -405,7 +405,7 @@ class BaseTerminableGraph(BaseGraph):
                     )
 
         return to_node_schema, input
-    
+
     def get_edge_schema_by_to_node_schema(self, node_schema):
         if (
             isinstance(node_schema, ConversationNodeSchema)
