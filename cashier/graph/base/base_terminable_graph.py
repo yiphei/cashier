@@ -132,7 +132,6 @@ class BaseTerminableGraph(BaseGraph):
         self,
         node_schema,
         edge_schema: EdgeSchema,
-        last_msg,
         TC,
     ) -> None:
         from cashier.graph.request_graph import RequestGraph
@@ -141,6 +140,7 @@ class BaseTerminableGraph(BaseGraph):
         assert prev_node is not None
 
         if isinstance(node_schema, ConversationNodeSchema):
+            last_msg = TC.get_asst_message(content_only=True)
             new_node = self.init_node_core(
                 node_schema,
                 edge_schema,
@@ -165,7 +165,6 @@ class BaseTerminableGraph(BaseGraph):
             self.parent._init_skip_node(
                 self.schema,
                 None,
-                last_msg,
                 TC,
             )
 
@@ -183,12 +182,10 @@ class BaseTerminableGraph(BaseGraph):
                 node_schema.id
             ]
 
-        last_msg = TC.get_asst_message(content_only=True)
         parent_node = self.conv_node_schema_id_to_parent_node[node_schema.id]
         parent_node._init_skip_node(
             node_schema,
             edge_schema,
-            last_msg,
             TC,
         )
 
