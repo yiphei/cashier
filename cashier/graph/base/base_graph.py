@@ -281,33 +281,6 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
             else:
                 return None
 
-    def init_node(
-        self,
-        node_schema: ConversationNodeSchema,
-        edge_schema: Optional[EdgeSchema],
-        input: Any,
-        last_msg: Optional[str],
-        prev_node: Optional[ConversationNode],
-        TC,
-    ) -> None:
-
-        if isinstance(node_schema, BaseGraphSchema):
-            request = self.get_request_for_init_graph_core()
-        else:
-            request = self.request
-
-        if input is None and edge_schema:
-            # TODO: this is bad. refactor this
-            if hasattr(self, "state"):
-                input = node_schema.get_input(self.state, edge_schema)
-            else:
-                input = node_schema.get_input(self.curr_node.state, edge_schema)
-
-        new_node = self.init_node_core(
-            node_schema, edge_schema, input, last_msg, prev_node, request
-        )
-        self.update_curr_node(new_node, edge_schema, prev_node, TC, False)
-
     def init_next_node_parent(
         self,
         node_schema,
@@ -323,14 +296,22 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
             prev_node = self.get_prev_node(node_schema)
             last_msg = TC.get_user_message(content_only=True)
 
-            self.init_node(
-                node_schema,
-                edge_schema,
-                input,
-                last_msg,
-                prev_node,
-                TC,
+            if isinstance(node_schema, BaseGraphSchema):
+                request = self.get_request_for_init_graph_core()
+            else:
+                request = self.request
+
+            if input is None and edge_schema:
+                # TODO: this is bad. refactor this
+                if hasattr(self, "state"):
+                    input = node_schema.get_input(self.state, edge_schema)
+                else:
+                    input = node_schema.get_input(self.curr_node.state, edge_schema)
+
+            new_node = self.init_node_core(
+                node_schema, edge_schema, input, last_msg, prev_node, request
             )
+            self.update_curr_node(new_node, edge_schema, prev_node, TC, False)
 
             if isinstance(node_schema, BaseGraphSchema):
                 next_node_schema = self.curr_node.get_next_node_schema_to_init()
