@@ -316,8 +316,8 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
             node_schema,
             input,
         )
-        edge_schema = self.get_edge_schema_by_to_node_schema(node_schema)
         if node_schema in self.schema.node_schemas:
+            edge_schema = self.get_edge_schema_by_to_node_schema(node_schema)
             prev_node = self.get_prev_node(node_schema)
             last_msg = TC.get_user_message(content_only=True)
 
