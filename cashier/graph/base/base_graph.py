@@ -236,9 +236,6 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
                     "assistant", node_schema.first_turn.msg_content
                 )
 
-    def get_request_for_init_graph_core(self):
-        return self.request
-
     def init_node_core(
         self,
         node_schema: ConversationNodeSchema,
@@ -286,20 +283,17 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
         node_schema,
         TC,
         input,
+        request=None,
     ) -> None:
         node_schema, input = self.pre_init_next_node(
             node_schema,
             input,
         )
+        request = request or self.request
         if node_schema in self.schema.node_schemas:
             edge_schema = self.get_edge_schema_by_to_node_schema(node_schema)
             prev_node = self.get_prev_node(node_schema)
             last_msg = TC.get_user_message(content_only=True)
-
-            if isinstance(node_schema, BaseGraphSchema):
-                request = self.get_request_for_init_graph_core()
-            else:
-                request = self.request
 
             if input is None and edge_schema:
                 # TODO: this is bad. refactor this
@@ -349,6 +343,7 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
         node_schema: ConversationNodeSchema,
         TC,
         input: Any = None,
+        request = None,
     ) -> None:
         while self.local_transition_queue:
             curr_node = self.local_transition_queue.popleft()
@@ -361,7 +356,7 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
             self.curr_node.init_next_node(node_schema, TC, input)
 
         if node_schema in self.schema.node_schemas:
-            self.init_next_node_parent(node_schema, TC, input)
+            self.init_next_node_parent(node_schema, TC, input, request)
 
     def execute_function_call(
         self, fn_call: FunctionCall, fn_callback: Optional[Callable] = None
