@@ -214,11 +214,9 @@ class BaseTerminableGraph(BaseGraph):
                 node_schema.id
             ]
         else:
-            edge_schema = (
-                self.schema.from_conversation_node_schema_id_to_edge_schema[
-                    node_schema.id
-                ]
-            )
+            edge_schema = self.schema.from_conversation_node_schema_id_to_edge_schema[
+                node_schema.id
+            ]
 
         direction = direction or Direction.FWD
         if edge_schema.from_node_schema == node_schema:
@@ -366,7 +364,11 @@ class BaseTerminableGraph(BaseGraph):
         start_input: Any,
     ) -> Tuple[EdgeSchema, Any]:
         self.fwd_skip_node_schemas = self.compute_fwd_skip_node_schemas(True)
-        to_node_schema = self.fwd_skip_node_schemas[-1] if self.fwd_skip_node_schemas else start_node_schema
+        to_node_schema = (
+            self.fwd_skip_node_schemas[-1]
+            if self.fwd_skip_node_schemas
+            else start_node_schema
+        )
         to_node = self.get_prev_node(to_node_schema)
         if to_node and to_node.schema == self.curr_node.schema:
             to_node = self.curr_node
