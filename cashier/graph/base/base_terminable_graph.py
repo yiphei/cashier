@@ -157,14 +157,8 @@ class BaseTerminableGraph(BaseGraph):
         else:
             edge_schema = self.schema.from_node_schema_id_to_edge_schema[node_schema.id]
             new_node = prev_node
-
-        self.curr_node = new_node
-        self.post_node_init(
-            edge_schema,
-            prev_node,
-            TC,
-            True,
-        )
+        
+        self.update_curr_node(new_node, edge_schema, prev_node, TC, True)
 
         if self.parent is not None and not isinstance(self.parent, RequestGraph):
             self.parent._init_skip_node(

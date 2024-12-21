@@ -167,6 +167,15 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
             if self.node_schema_id_to_nodes[node_schema.id]
             else None
         )
+    
+    def update_curr_node(self, new_node, edge_schema, prev_node, TC, is_skip):
+        self.curr_node = new_node
+        self.post_node_init(
+            edge_schema,
+            prev_node,
+            TC,
+            is_skip,
+        )
 
     def is_prev_from_node_completed(
         self, edge_schema: EdgeSchema, is_start_node: bool
@@ -297,14 +306,7 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
         new_node = self.init_node_core(
             node_schema, edge_schema, input, last_msg, prev_node, request
         )
-        self.curr_node = new_node
-
-        self.post_node_init(
-            edge_schema,
-            prev_node,
-            TC,
-            False,
-        )
+        self.update_curr_node(new_node, edge_schema, prev_node, TC, False)
 
     def init_next_node_parent(
         self,
