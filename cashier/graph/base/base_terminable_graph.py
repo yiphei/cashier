@@ -130,6 +130,7 @@ class BaseTerminableGraph(BaseGraph):
         state = schema.state_schema(**(input or {}))
         state.__pydantic_fields_set__ = input_keys
         super().__init__(input, schema, edge_schemas, request, state=state)
+        self.fwd_skip_node_schemas = None
 
     def init_node_but_skip(
         self,
@@ -205,10 +206,19 @@ class BaseTerminableGraph(BaseGraph):
     def init_skip_node(
         self,
         node_schema: ConversationNodeSchema,
-        edge_schema: EdgeSchema,
         TC,
         direction=None,
     ) -> None:
+        if node_schema in self.fwd_skip_node_schemas:
+            edge_schema = self.schema.to_conversation_node_schema_id_to_edge_schema[
+                node_schema.id
+            ]
+        else:
+            edge_schema = (
+                self.schema.from_conversation_node_schema_id_to_edge_schema[
+                    node_schema.id
+                ]
+            )
 
         direction = direction or Direction.FWD
         if edge_schema.from_node_schema == node_schema:
@@ -230,13 +240,11 @@ class BaseTerminableGraph(BaseGraph):
     ) -> Union[
         Tuple[EdgeSchema, ConversationNodeSchema, bool], Tuple[None, None, bool]
     ]:
-        fwd_skip_node_schemas = set(self.compute_fwd_skip_node_schemas(True))
-        fwd_skip_node_schema_ids = {
-            node_schema.id for node_schema in fwd_skip_node_schemas
-        }
+        self.fwd_skip_node_schemas = self.compute_fwd_skip_node_schemas(True)
+        fwd_skip_node_schemas_set = set(self.fwd_skip_node_schemas)
 
         bwd_skip_node_schemas = self.compute_bwd_skip_node_schemas(True)
-        skip_node_schema = fwd_skip_node_schemas | bwd_skip_node_schemas
+        skip_node_schema = fwd_skip_node_schemas_set | bwd_skip_node_schemas
         remaining_node_schemas = (
             set(self.schema.all_conversation_node_schemas) - skip_node_schema
         )
@@ -244,27 +252,16 @@ class BaseTerminableGraph(BaseGraph):
             TC, self.curr_conversation_node.schema, remaining_node_schemas, True
         )
         if node_schema_id is not None:
-            return None, node_schema_id, True  # type: ignore
+            return node_schema_id, True  # type: ignore
 
         all_node_schemas = {self.curr_conversation_node.schema} | skip_node_schema
         node_schema_id = should_change_node_schema(
             TC, self.curr_conversation_node.schema, all_node_schemas, False
         )
         if node_schema_id is not None:
-            if node_schema_id in fwd_skip_node_schema_ids:
-                edge_schema = self.schema.to_conversation_node_schema_id_to_edge_schema[
-                    node_schema_id
-                ]
-            else:
-                edge_schema = (
-                    self.schema.from_conversation_node_schema_id_to_edge_schema[
-                        node_schema_id
-                    ]
-                )
-
-            return edge_schema, self.schema.conversation_node_schema_id_to_conversation_node_schema[node_schema_id], False  # type: ignore
+            return self.schema.conversation_node_schema_id_to_conversation_node_schema[node_schema_id], False  # type: ignore
         else:
-            return None, None, False
+            return None, False
 
     def get_bwd_node_schema_and_parent_node(self, node_schema):
         if isinstance(node_schema, BaseGraphSchema):
@@ -368,13 +365,13 @@ class BaseTerminableGraph(BaseGraph):
         start_node_schema,
         start_input: Any,
     ) -> Tuple[EdgeSchema, Any]:
-        fwd_node_schemas = self.compute_fwd_skip_node_schemas(True)
-        to_node_schema = fwd_node_schemas[-1] if fwd_node_schemas else start_node_schema
+        self.fwd_skip_node_schemas = self.compute_fwd_skip_node_schemas(True)
+        to_node_schema = self.fwd_skip_node_schemas[-1] if self.fwd_skip_node_schemas else start_node_schema
         to_node = self.get_prev_node(to_node_schema)
         if to_node and to_node.schema == self.curr_node.schema:
             to_node = self.curr_node
 
-        input = to_node.input if fwd_node_schemas else start_input
+        input = to_node.input if self.fwd_skip_node_schemas else start_input
 
         edge_schema = self.get_edge_schema_by_from_node_schema_id(to_node_schema.id)
         if edge_schema is None:
@@ -439,7 +436,7 @@ class BaseTerminableGraph(BaseGraph):
             current_node_schema=self.curr_conversation_node.schema,
             tc=TC,
         ):
-            edge_schema, node_schema, is_wait = self.handle_is_off_topic(TC)
+            node_schema, is_wait = self.handle_is_off_topic(TC)
             if node_schema:
                 if is_wait:
                     fake_fn_call = create_think_fn_call(
@@ -455,7 +452,6 @@ class BaseTerminableGraph(BaseGraph):
                 else:
                     self.init_skip_node(
                         node_schema,
-                        edge_schema,
                         TC,
                     )
 

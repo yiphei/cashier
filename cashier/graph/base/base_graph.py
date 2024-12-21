@@ -375,7 +375,6 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
                 # TODO: this is bad. refactor this
                 self.init_skip_node(
                     node_schema,
-                    edge_schema,
                     TC,
                 )
 
