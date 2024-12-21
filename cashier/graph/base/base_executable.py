@@ -70,19 +70,19 @@ class BaseGraphExecutable(BaseExecutable):
         ):
             self.curr_node.mark_as_transitioning()
             self.local_transition_queue.append(self.curr_node)
-            return self.next_edge_schema, self.next_edge_schema.to_node_schema
+            return self.next_edge_schema.to_node_schema
 
-        return None, None
+        return None
 
     def check_transition(self, fn_call, is_fn_call_success):
-        new_edge_schema, new_node_schema = None, None
+        new_node_schema = None
 
         if getattr(self, "curr_node", None) is not None:
             if not isinstance(self.curr_node, BaseGraphExecutable):
                 if self.curr_node.is_completed(fn_call, is_fn_call_success):
                     self.curr_node.mark_as_internally_completed()
             else:
-                new_edge_schema, new_node_schema = self.curr_node.check_transition(
+                new_node_schema = self.curr_node.check_transition(
                     fn_call, is_fn_call_success
                 )
 
@@ -94,7 +94,7 @@ class BaseGraphExecutable(BaseExecutable):
                 self.curr_node.mark_as_transitioning()
                 self.local_transition_queue.append(self.curr_node)
             self.mark_as_internally_completed()
-            return None, None
+            return None
         elif self.curr_node.status == Status.INTERNALLY_COMPLETED:
             return self.check_node_transition(fn_call, is_fn_call_success)
-        return new_edge_schema, new_node_schema
+        return new_node_schema

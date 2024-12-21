@@ -106,7 +106,6 @@ class RequestGraph(BaseGraph):
             if len(self.graph_schema_sequence) > 0:
                 self.init_next_node(
                     self.graph_schema_sequence[0],
-                    None,
                     TC,
                     None,
                 )

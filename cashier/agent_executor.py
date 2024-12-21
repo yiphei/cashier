@@ -25,7 +25,6 @@ class AgentExecutor:
         self.graph = RequestGraph(None, graph_schema)
         self.graph.init_next_node(
             graph_schema.start_node_schema,
-            None,
             self.TC,
         )
         self.force_tool_choice = None
