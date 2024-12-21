@@ -287,6 +287,13 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
         else:
             request = self.request
 
+        if input is None and edge_schema:
+            # TODO: this is bad. refactor this
+            if hasattr(self, "state"):
+                input = node_schema.get_input(self.state, edge_schema)
+            else:
+                input = node_schema.get_input(self.curr_node.state, edge_schema)
+
         new_node = self.init_node_core(
             node_schema, edge_schema, input, last_msg, prev_node, direction, request
         )
@@ -336,12 +343,6 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
         edge_schema: Optional[EdgeSchema],
         input: Any = None,
     ) -> None:
-        if input is None and edge_schema:
-            # TODO: this is bad. refactor this
-            if hasattr(self, "state"):
-                input = node_schema.get_input(self.state, edge_schema)
-            else:
-                input = node_schema.get_input(self.curr_node.state, edge_schema)
 
         return node_schema, edge_schema, input
 
