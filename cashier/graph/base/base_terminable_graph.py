@@ -173,6 +173,7 @@ class BaseTerminableGraph(BaseGraph):
         TC,
     ) -> None:
         from cashier.graph.request_graph import RequestGraph
+
         prev_node = self.get_prev_node(node_schema)
         assert prev_node is not None
 
