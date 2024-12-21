@@ -305,32 +305,44 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
             False,
         )
 
-        if isinstance(node_schema, BaseGraphSchema):
-            next_node_schema = new_node.get_next_node_schema_to_init()
-            while next_node_schema is not None:
-                self.curr_node.init_next_node(next_node_schema, TC, None)
-                next_node_schema = new_node.get_next_node_schema_to_init()
-
-    def _init_next_node(
+    def init_next_node_parent(
         self,
         node_schema,
-        edge_schema,
         TC,
         input,
     ) -> None:
-        direction = Direction.FWD
-        prev_node = self.get_prev_node(node_schema)
-        last_msg = TC.get_user_message(content_only=True)
-
-        self.init_node(
+        node_schema, input = self.pre_init_next_node(
             node_schema,
-            edge_schema,
             input,
-            last_msg,
-            prev_node,
-            direction,
-            TC,
         )
+        edge_schema = self.get_edge_schema_by_to_node_schema(node_schema)
+        if node_schema in self.schema.node_schemas:
+            direction = Direction.FWD
+            prev_node = self.get_prev_node(node_schema)
+            last_msg = TC.get_user_message(content_only=True)
+
+            self.init_node(
+                node_schema,
+                edge_schema,
+                input,
+                last_msg,
+                prev_node,
+                direction,
+                TC,
+            )
+
+            if isinstance(node_schema, BaseGraphSchema):
+                next_node_schema = self.curr_node.get_next_node_schema_to_init()
+                while next_node_schema is not None:
+                    self.curr_node.init_next_node(next_node_schema, TC, None)
+                    next_node_schema = self.curr_node.get_next_node_schema_to_init()
+        else:
+            # TODO: this is bad. refactor this
+            self.init_skip_node(
+                node_schema,
+                TC,
+            )
+
 
     def get_edge_schema_by_to_node_schema(self, node_schema):
         return self.to_node_schema_id_to_edge_schema.get(node_schema.id, None)
@@ -359,24 +371,7 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
             self.curr_node.init_next_node(node_schema, TC, input)
 
         if node_schema in self.schema.node_schemas:
-            node_schema, input = self.pre_init_next_node(
-                node_schema,
-                input,
-            )
-            edge_schema = self.get_edge_schema_by_to_node_schema(node_schema)
-            if node_schema in self.schema.node_schemas:
-                self._init_next_node(
-                    node_schema,
-                    edge_schema,
-                    TC,
-                    input,
-                )
-            else:
-                # TODO: this is bad. refactor this
-                self.init_skip_node(
-                    node_schema,
-                    TC,
-                )
+            self.init_next_node_parent(node_schema, TC, input)
 
     def execute_function_call(
         self, fn_call: FunctionCall, fn_callback: Optional[Callable] = None
