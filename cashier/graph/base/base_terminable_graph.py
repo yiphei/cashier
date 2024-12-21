@@ -7,10 +7,7 @@ from pydantic import BaseModel
 from cashier.graph.base.base_edge_schema import FwdSkipType
 from cashier.graph.base.base_executable import BaseExecutableSchema
 from cashier.graph.base.base_graph import BaseGraph, BaseGraphSchema
-from cashier.graph.conversation_node import (
-    ConversationNode,
-    ConversationNodeSchema
-)
+from cashier.graph.conversation_node import ConversationNode, ConversationNodeSchema
 from cashier.graph.edge_schema import EdgeSchema
 from cashier.graph.mixin.has_id_mixin import HasIdMixin
 from cashier.graph.mixin.has_status_mixin import Status
