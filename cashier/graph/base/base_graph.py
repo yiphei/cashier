@@ -343,6 +343,7 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
         edge_schema: Optional[EdgeSchema],
         input: Any = None,
     ) -> None:
+        edge_schema = self.to_node_schema_id_to_edge_schema.get(node_schema.id, None)
 
         return node_schema, edge_schema, input
 
@@ -361,12 +362,12 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
             parent_node.local_transition_queue.clear()
 
         if self.curr_node is not None and isinstance(self.curr_node, BaseGraph):
-            self.curr_node.init_next_node(node_schema, edge_schema, TC, input)
+            self.curr_node.init_next_node(node_schema, None, TC, input)
 
         if node_schema in self.schema.node_schemas:
             node_schema, edge_schema, input = self.pre_init_next_node(
                 node_schema,
-                edge_schema,
+                None,
                 input,
             )
             if node_schema in self.schema.node_schemas:
