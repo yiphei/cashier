@@ -132,41 +132,9 @@ class BaseTerminableGraph(BaseGraph):
         super().__init__(input, schema, edge_schemas, request, state=state)
         self.fwd_skip_node_schemas = None
 
-    def init_node_but_skip(
-        self,
-        node_schema: ConversationNodeSchema,
-        edge_schema: Optional[EdgeSchema],
-        input: Any,
-        last_msg: Optional[str],
-        prev_node: Optional[ConversationNode],
-        direction: Direction,
-        TC,
-    ) -> None:
-        if not isinstance(node_schema, BaseGraphSchema):
-            new_node = self.init_node_core(
-                node_schema,
-                edge_schema,
-                input,
-                last_msg,
-                prev_node,
-                direction,
-                self.request,
-            )
-        else:
-            new_node = prev_node
-
-        self.curr_node = new_node
-
-        self.post_node_init(
-            edge_schema,
-            prev_node,
-            TC,
-            True,
-        )
-
     def _init_skip_node(
         self,
-        node_schema: ConversationNodeSchema,
+        node_schema,
         edge_schema: EdgeSchema,
         direction,
         last_msg,
@@ -177,20 +145,27 @@ class BaseTerminableGraph(BaseGraph):
         prev_node = self.get_prev_node(node_schema)
         assert prev_node is not None
 
-        if node_schema in self.schema.node_schemas:
+        if isinstance(node_schema, ConversationNodeSchema):
             input = prev_node.input
+            new_node = self.init_node_core(
+                node_schema,
+                edge_schema,
+                input,
+                last_msg,
+                prev_node,
+                direction,
+                self.request,
+            )
         else:
             edge_schema = self.schema.from_node_schema_id_to_edge_schema[node_schema.id]
-            input = None
+            new_node = prev_node
 
-        self.init_node_but_skip(
-            node_schema,
+        self.curr_node = new_node
+        self.post_node_init(
             edge_schema,
-            input,
-            last_msg,
             prev_node,
-            direction,
             TC,
+            True,
         )
 
         if self.parent is not None and not isinstance(self.parent, RequestGraph):
