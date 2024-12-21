@@ -94,53 +94,18 @@ class ANDGraph(BaseTerminableGraph):
         if self.curr_node is None:
             return self.schema.start_node_schema, None
         else:
-            return None, None
-            # current_node_schema = self.curr_node.schema
-
-            # next_edge_schema = self.schema.default_from_node_schema_id_to_edge_schema[current_node_schema.id]
-            # if (
-            # next_edge_schema
-            # and next_edge_schema.check_transition_config(
-            #     self.state,
-            #     None,
-            #     None,
-            #     check_resettable_fields=False,
-            #     )
-            # ):
-            #     self.curr_node.mark_as_completed()
-            #     return next_edge_schema.to_node_schema, next_edge_schema
-            # else:
-            #     return None, None
-
-    def compute_init_node_edge_schema(
-        self,
-    ):
-        node_schema = self.schema.default_start_node_schema
-        edge_schema = None
-        # next_edge_schemas = self.schema.default_from_node_schema_id_to_edge_schema[
-        #     node_schema.id
-        # ]
-        # passed_check = True
-        # while passed_check:
-        #     passed_check = False
-        #     for next_edge_schema in next_edge_schemas:
-        #         if next_edge_schema.check_transition_config(
-        #             self.state,
-        #             None,
-        #             None,
-        #             check_resettable_fields=False,
-        #         ):
-        #             passed_check = True
-        #             node_schema = next_edge_schema.to_node_schema
-        #             edge_schema = next_edge_schema
-        #             next_edge_schemas = (
-        #                 self.schema.default_from_node_schema_id_to_edge_schema[
-        #                     node_schema.id
-        #                 ]
-        #             )
-        #             break
-
-        return node_schema, edge_schema
+            current_node_schema = self.curr_node.schema
+            next_edge_schema = self.schema.default_from_node_schema_id_to_edge_schema[
+                current_node_schema.id
+            ]
+            if (
+                next_edge_schema
+                and self.init_check_transition(next_edge_schema)
+            ):
+                self.curr_node.mark_as_completed()
+                return next_edge_schema.to_node_schema, next_edge_schema
+            else:
+                return None, None
 
     def get_next_edge_schema(self):
         return self.schema.default_from_node_schema_id_to_edge_schema.get(
