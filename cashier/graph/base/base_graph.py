@@ -333,7 +333,9 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
             if isinstance(node_schema, BaseGraphSchema):
                 next_node_schema = self.curr_node.get_next_node_schema_to_init()
                 while next_node_schema is not None:
-                    self.curr_node.init_next_node(next_node_schema, TC, None) # TODO: this can be shortcutted to use init_next_node_parent directly
+                    self.curr_node.init_next_node(
+                        next_node_schema, TC, None
+                    )  # TODO: this can be shortcutted to use init_next_node_parent directly
                     next_node_schema = self.curr_node.get_next_node_schema_to_init()
         else:
             # TODO: this is bad. refactor this
