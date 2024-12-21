@@ -237,9 +237,11 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
         input: Any,
         last_msg: Optional[str],
         prev_node: Optional[ConversationNode],
-        direction: Direction,
         request,
     ):
+        direction = Direction.FWD
+        if edge_schema is not None and edge_schema.from_node_schema == node_schema:
+            direction = Direction.BWD
         logger.debug(
             f"[NODE_SCHEMA] Initializing node with {Style.BRIGHT}node_schema_id: {node_schema.id}{Style.NORMAL}"
         )
@@ -277,7 +279,6 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
         input: Any,
         last_msg: Optional[str],
         prev_node: Optional[ConversationNode],
-        direction: Direction,
         TC,
     ) -> None:
 
@@ -294,7 +295,7 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
                 input = node_schema.get_input(self.curr_node.state, edge_schema)
 
         new_node = self.init_node_core(
-            node_schema, edge_schema, input, last_msg, prev_node, direction, request
+            node_schema, edge_schema, input, last_msg, prev_node, request
         )
         self.curr_node = new_node
 
@@ -317,7 +318,6 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
         )
         edge_schema = self.get_edge_schema_by_to_node_schema(node_schema)
         if node_schema in self.schema.node_schemas:
-            direction = Direction.FWD
             prev_node = self.get_prev_node(node_schema)
             last_msg = TC.get_user_message(content_only=True)
 
@@ -327,7 +327,6 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
                 input,
                 last_msg,
                 prev_node,
-                direction,
                 TC,
             )
 

@@ -9,8 +9,7 @@ from cashier.graph.base.base_executable import BaseExecutableSchema
 from cashier.graph.base.base_graph import BaseGraph, BaseGraphSchema
 from cashier.graph.conversation_node import (
     ConversationNode,
-    ConversationNodeSchema,
-    Direction,
+    ConversationNodeSchema
 )
 from cashier.graph.edge_schema import EdgeSchema
 from cashier.graph.mixin.has_id_mixin import HasIdMixin
@@ -136,7 +135,6 @@ class BaseTerminableGraph(BaseGraph):
         self,
         node_schema,
         edge_schema: EdgeSchema,
-        direction,
         last_msg,
         TC,
     ) -> None:
@@ -152,7 +150,6 @@ class BaseTerminableGraph(BaseGraph):
                 prev_node.input,
                 last_msg,
                 prev_node,
-                direction,
                 self.request,
             )
         else:
@@ -171,7 +168,6 @@ class BaseTerminableGraph(BaseGraph):
             self.parent._init_skip_node(
                 self.schema,
                 None,
-                direction,
                 last_msg,
                 TC,
             )
@@ -180,7 +176,6 @@ class BaseTerminableGraph(BaseGraph):
         self,
         node_schema: ConversationNodeSchema,
         TC,
-        direction=None,
     ) -> None:
         if node_schema in self.fwd_skip_node_schemas:
             edge_schema = self.schema.to_conversation_node_schema_id_to_edge_schema[
@@ -191,16 +186,11 @@ class BaseTerminableGraph(BaseGraph):
                 node_schema.id
             ]
 
-        direction = direction or Direction.FWD
-        if edge_schema.from_node_schema == node_schema:
-            direction = Direction.BWD
-
         last_msg = TC.get_asst_message(content_only=True)
         parent_node = self.conv_node_schema_id_to_parent_node[node_schema.id]
         parent_node._init_skip_node(
             node_schema,
             edge_schema,
-            direction,
             last_msg,
             TC,
         )
