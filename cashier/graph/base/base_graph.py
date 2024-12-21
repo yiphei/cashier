@@ -308,12 +308,8 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
         if isinstance(node_schema, BaseGraphSchema):
             next_node_schema = new_node.get_next_node_schema_to_init()
             while next_node_schema is not None:
-                self.curr_node.init_next_node(
-                    next_node_schema, TC, None
-                )
-                next_node_schema = (
-                    new_node.get_next_node_schema_to_init()
-                )
+                self.curr_node.init_next_node(next_node_schema, TC, None)
+                next_node_schema = new_node.get_next_node_schema_to_init()
 
     def _init_next_node(
         self,
@@ -452,9 +448,7 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
                 fn_calls.append(function_call)
                 need_user_input = False
 
-                (
-                    new_node_schema
-                ) = self.check_transition(function_call, is_success)
+                (new_node_schema) = self.check_transition(function_call, is_success)
                 if new_node_schema is not None:
                     self.new_node_schema = new_node_schema
                     if isinstance(self, RequestGraph):
