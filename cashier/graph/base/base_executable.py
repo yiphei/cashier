@@ -101,8 +101,8 @@ class BaseGraphExecutable(BaseExecutable):
 
     def init_check_transition(self, edge_schema):
         return self.is_completed(None, None) and edge_schema.check_transition_config(
-                    self.state,
-                    None,
-                    None,
-                    check_resettable_fields=False,
-                )
+            self.state,
+            None,
+            None,
+            check_resettable_fields=False,
+        )
