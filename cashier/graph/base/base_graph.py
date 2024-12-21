@@ -164,25 +164,9 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
 
     def get_prev_node(
         self,
-        edge_schema: Optional[EdgeSchema],
-        node_schema,
-        direction: Optional[Direction] = None,
+        node_schema
     ) -> Optional[ConversationNode]:
-        if (
-            edge_schema
-            and self.get_edge_by_edge_schema_id(edge_schema.id, raise_if_none=False)
-            is not None
-        ):
-            edge = self.get_edge_by_edge_schema_id(edge_schema.id)
-            return edge.to_node if direction == Direction.FWD else edge.from_node
-        elif (
-            edge_schema is None
-            and node_schema
-            and self.node_schema_id_to_nodes[node_schema.id]
-        ):
-            return self.node_schema_id_to_nodes[node_schema.id][-1]
-        else:
-            return None
+        return self.node_schema_id_to_nodes[node_schema.id][-1] if self.node_schema_id_to_nodes[node_schema.id] else None
 
     def is_prev_from_node_completed(
         self, edge_schema: EdgeSchema, is_start_node: bool
@@ -332,7 +316,7 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
         input,
     ) -> None:
         direction = Direction.FWD
-        prev_node = self.get_prev_node(edge_schema, node_schema, direction)
+        prev_node = self.get_prev_node(node_schema)
         last_msg = TC.get_user_message(content_only=True)
 
         self.init_node(

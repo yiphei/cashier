@@ -188,7 +188,7 @@ class BaseTerminableGraph(BaseGraph):
         TC,
     ) -> None:
 
-        prev_node = self.get_prev_node(edge_schema, node_schema, direction)
+        prev_node = self.get_prev_node(node_schema)
         assert prev_node is not None
         input = prev_node.input
 
@@ -277,7 +277,7 @@ class BaseTerminableGraph(BaseGraph):
         from_node = (
             self.curr_node
             if start_from_curr_node
-            else self.get_prev_node(None, self.schema.last_node_schema)
+            else self.get_prev_node(self.schema.last_node_schema)
         )
 
         if from_node is None:
@@ -316,7 +316,7 @@ class BaseTerminableGraph(BaseGraph):
         start_node = (
             self.curr_node
             if start_from_next_edge_schema
-            else self.get_prev_node(None, start_edge_schema.from_node_schema)
+            else self.get_prev_node(start_edge_schema.from_node_schema)
         )
         if start_node is None or start_edge_schema is None:
             return []
@@ -351,7 +351,7 @@ class BaseTerminableGraph(BaseGraph):
                 )
                 fwd_jump_node_schemas.append(node_schema)
                 if isinstance(edge_schema.to_node_schema, BaseGraphSchema):
-                    graph_node = self.get_prev_node(None, edge_schema.to_node_schema)
+                    graph_node = self.get_prev_node(edge_schema.to_node_schema)
                     fwd_jump_node_schemas += graph_node.compute_fwd_skip_node_schemas(
                         False
                     )
@@ -370,7 +370,7 @@ class BaseTerminableGraph(BaseGraph):
     ) -> Tuple[EdgeSchema, Any]:
         fwd_node_schemas = self.compute_fwd_skip_node_schemas(True)
         to_node_schema = fwd_node_schemas[-1] if fwd_node_schemas else start_node_schema
-        to_node = self.get_prev_node(None, to_node_schema)
+        to_node = self.get_prev_node(to_node_schema)
         if to_node and to_node.schema == self.curr_node.schema:
             to_node = self.curr_node
 
