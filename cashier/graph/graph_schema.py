@@ -60,21 +60,23 @@ class Graph(BaseTerminableGraph):
     ):
         super().__init__(input, request, schema, schema.edge_schemas)
 
-
     def get_next_node_schema_to_init(self):
         from cashier.graph.and_graph_schema import ANDGraphSchema
+
         if self.curr_node is None:
             return self.schema.start_node_schema, None
         else:
             current_node_schema = self.curr_node.schema
-            next_edge_schema = self.from_node_schema_id_to_edge_schema[current_node_schema.id]
+            next_edge_schema = self.from_node_schema_id_to_edge_schema[
+                current_node_schema.id
+            ]
             if (
-            next_edge_schema
-            and next_edge_schema.check_transition_config(
-                self.state,
-                None,
-                None,
-                check_resettable_fields=False,
+                next_edge_schema
+                and next_edge_schema.check_transition_config(
+                    self.state,
+                    None,
+                    None,
+                    check_resettable_fields=False,
                 )
                 and not isinstance(next_edge_schema.from_node_schema, ANDGraphSchema)
             ):
@@ -82,7 +84,6 @@ class Graph(BaseTerminableGraph):
                 return next_edge_schema.to_node_schema, next_edge_schema
             else:
                 return None, None
-
 
     def compute_init_node_edge_schema(
         self,

@@ -90,7 +90,6 @@ class ANDGraph(BaseTerminableGraph):
         super().__init__(input, request, schema)
         self.visited_node_schemas = set()
 
-
     def get_next_node_schema_to_init(self):
         if self.curr_node is None:
             return self.schema.start_node_schema, None
