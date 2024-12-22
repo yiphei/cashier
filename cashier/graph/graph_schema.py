@@ -47,9 +47,6 @@ class GraphSchema(BaseTerminableGraphSchema):
             schema=self,
         )
 
-    def get_node_schemas(self):
-        return self.node_schemas
-
 
 class Graph(BaseTerminableGraph):
     def __init__(
