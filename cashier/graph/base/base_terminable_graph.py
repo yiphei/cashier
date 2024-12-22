@@ -228,20 +228,20 @@ class BaseTerminableGraph(BaseGraph):
         if from_node is None:
             return set()
 
-        new_node_schemas = set()
+        bwd_node_schemas = set()
         if isinstance(from_node.schema, BaseGraphSchema):
-            new_node_schemas |= from_node.get_bwd_skip_node_schemas(True)
+            bwd_node_schemas |= from_node.get_bwd_skip_node_schemas(True)
         while self.to_node_id_to_edge[from_node.id] is not None:
             edge = self.to_node_id_to_edge[from_node.id]
 
             node_schema = self.get_leaf_end_node_schema(edge.from_node.schema)
-            new_node_schemas.add(node_schema)
+            bwd_node_schemas.add(node_schema)
             assert from_node == edge.to_node
             from_node = edge.from_node
             if isinstance(from_node.schema, BaseGraphSchema):
-                new_node_schemas |= from_node.get_bwd_skip_node_schemas(False)
+                bwd_node_schemas |= from_node.get_bwd_skip_node_schemas(False)
 
-        return new_node_schemas
+        return bwd_node_schemas
 
     def get_leaf_start_node_schema(self, node_schema):
         if isinstance(node_schema, BaseGraphSchema):
@@ -262,13 +262,13 @@ class BaseTerminableGraph(BaseGraph):
         if start_node is None or start_edge_schema is None:
             return []
 
-        fwd_jump_node_schemas = []
+        fwd_node_schemas = []
         edge_schema = start_edge_schema
         next_edge_schema = start_edge_schema
         from_node = start_node
 
         if isinstance(start_edge_schema.from_node_schema, BaseGraphSchema):
-            fwd_jump_node_schemas += start_node.get_fwd_skip_node_schemas(True)
+            fwd_node_schemas += start_node.get_fwd_skip_node_schemas(True)
         while next_edge_schema and (
             self.get_edge_by_edge_schema_id(next_edge_schema.id, raise_if_none=False)
             is not None
@@ -290,17 +290,17 @@ class BaseTerminableGraph(BaseGraph):
                 node_schema = self.get_leaf_start_node_schema(
                     edge_schema.to_node_schema
                 )
-                fwd_jump_node_schemas.append(node_schema)
+                fwd_node_schemas.append(node_schema)
                 if isinstance(edge_schema.to_node_schema, BaseGraphSchema):
                     graph_node = self.get_prev_node(edge_schema.to_node_schema)
-                    fwd_jump_node_schemas += graph_node.get_fwd_skip_node_schemas(False)
+                    fwd_node_schemas += graph_node.get_fwd_skip_node_schemas(False)
                 if self.get_edge_schema_by_from_node_schema_id(to_node.schema.id):
                     next_edge_schema = self.get_edge_schema_by_from_node_schema_id(
                         to_node.schema.id
                     )
                     from_node = to_node
 
-        return fwd_jump_node_schemas
+        return fwd_node_schemas
 
     def get_next_init_node_schema(
         self,
