@@ -108,7 +108,6 @@ class RequestGraph(BaseGraph):
                 self.init_next_node(
                     self.graph_schema_sequence[0],
                     TC,
-                    None,
                 )
 
     def init_next_node(
