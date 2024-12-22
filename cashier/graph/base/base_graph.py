@@ -104,13 +104,13 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
         )
 
     @property
-    def transition_queue(self):
-        sub_queue = (
-            self.curr_node.transition_queue
-            if isinstance(self.curr_node, BaseGraph)
-            else deque()
-        )
-        return sub_queue + self.local_transition_queue
+    def top_most_transition_node(self):
+        if self.curr_node is not None and self.curr_node.status == Status.TRANSITIONING:
+            return self.curr_node
+        elif isinstance(self.curr_node, BaseGraph):
+            return self.curr_node.top_most_transition_node
+        else:
+            return None
 
     @property
     def curr_conversation_node(self):
@@ -345,12 +345,11 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
         input: Any = None,
         request=None,
     ) -> None:
-        while self.local_transition_queue:
-            curr_node = self.local_transition_queue.popleft()
-            parent_node = curr_node.parent
-            assert curr_node.status == Status.TRANSITIONING
-            curr_node.mark_as_completed()
-            parent_node.local_transition_queue.clear()
+        if self.curr_node is not None:
+            if self.curr_node.status == Status.TRANSITIONING:
+                self.curr_node.mark_as_completed()
+            else:
+                assert self.curr_node.status == Status.IN_PROGRESS
 
         if self.curr_node is not None and isinstance(self.curr_node, BaseGraph):
             self.curr_node.init_next_node(node_schema, TC, input)
@@ -411,10 +410,10 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
         from cashier.graph.request_graph import RequestGraph
 
         if (
-            self.transition_queue
-            and self.transition_queue[-1].schema.run_assistant_turn_before_transition
+            self.top_most_transition_node
+            and self.top_most_transition_node.schema.run_assistant_turn_before_transition
         ):
-            self.transition_queue[-1].has_run_assistant_turn_before_transition = True
+            self.top_most_transition_node.has_run_assistant_turn_before_transition = True
 
         need_user_input = True
         fn_id_to_output = {}
@@ -452,9 +451,9 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
             fn_id_to_output,
         )
 
-        if self.transition_queue and (
-            not self.transition_queue[-1].schema.run_assistant_turn_before_transition
-            or self.transition_queue[-1].has_run_assistant_turn_before_transition
+        if self.top_most_transition_node and (
+            not self.top_most_transition_node.schema.run_assistant_turn_before_transition
+            or self.top_most_transition_node.has_run_assistant_turn_before_transition
         ):
             self.init_next_node(
                 self.new_node_schema,

@@ -104,6 +104,7 @@ class RequestGraph(BaseGraph):
         else:
             self.get_graph_schemas(msg)
             if len(self.graph_schema_sequence) > 0:
+                self.curr_node.mark_as_transitioning()
                 self.init_next_node(
                     self.graph_schema_sequence[0],
                     TC,
@@ -136,7 +137,6 @@ class RequestGraph(BaseGraph):
             new_node_schema = self.schema.default_node_schema
 
         self.curr_node.mark_as_transitioning()
-        self.local_transition_queue.append(self.curr_node)
         return new_edge_schema, new_node_schema
 
 
