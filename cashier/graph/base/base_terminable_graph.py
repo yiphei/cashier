@@ -146,7 +146,7 @@ class BaseTerminableGraph(BaseGraph):
         if isinstance(node_schema, ConversationNodeSchema):
             last_msg = TC.get_asst_message(content_only=True)
             edge_schema = self.get_edge_schema_by_node_schema(node_schema, direction)
-            new_node = self.init_node_core(
+            new_node = self.init_node(
                 node_schema,
                 edge_schema,
                 prev_node.input,

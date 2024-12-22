@@ -237,7 +237,7 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
                     "assistant", node_schema.first_turn.msg_content
                 )
 
-    def init_node_core(
+    def init_node(
         self,
         node_schema: ConversationNodeSchema,
         edge_schema: Optional[EdgeSchema],
@@ -299,7 +299,7 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
                 else:
                     input = node_schema.get_input(self.curr_node.state, edge_schema)
 
-            new_node = self.init_node_core(
+            new_node = self.init_node(
                 node_schema, edge_schema, input, last_msg, prev_node, request
             )
             self.update_curr_node(new_node, edge_schema, prev_node, TC, False)
