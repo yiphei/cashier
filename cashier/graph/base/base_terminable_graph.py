@@ -161,7 +161,7 @@ class BaseTerminableGraph(BaseGraph):
         self.update_curr_node(new_node, edge_schema, prev_node, TC, True)
 
         if self.parent is not None and not isinstance(self.parent, RequestGraph):
-            self.parent._init_skip_node(
+            self.parent.direct_init_skip_node(
                 self.schema,
                 direction,
                 TC,
@@ -179,7 +179,7 @@ class BaseTerminableGraph(BaseGraph):
         )
 
         parent_node = self.conv_node_schema_id_to_parent_node[node_schema.id]
-        parent_node._init_skip_node(
+        parent_node.direct_init_skip_node(
             node_schema,
             direction,
             TC,
