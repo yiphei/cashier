@@ -415,7 +415,7 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
                 fn_calls.append(function_call)
                 need_user_input = False
 
-                (new_node_schema) = self.check_transition(function_call, is_success)
+                new_node_schema = self.check_transition(function_call, is_success)
                 if new_node_schema is not None:
                     self.new_node_schema = new_node_schema
                     if isinstance(self, RequestGraph):
