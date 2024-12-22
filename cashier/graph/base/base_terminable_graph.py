@@ -132,7 +132,7 @@ class BaseTerminableGraph(BaseGraph):
         super().__init__(input, schema, edge_schemas, request, state=state)
         self.fwd_skip_node_schemas = None
 
-    def _init_skip_node(
+    def direct_init_skip_node(
         self,
         node_schema,
         direction,
@@ -362,7 +362,7 @@ class BaseTerminableGraph(BaseGraph):
         elif node_schema.id in self.to_node_schema_id_to_edge_schema:
             return self.to_node_schema_id_to_edge_schema.get(node_schema.id, None)
 
-    def init_next_node_parent(
+    def direct_init_next_node(
         self,
         node_schema,
         TC,
@@ -370,7 +370,7 @@ class BaseTerminableGraph(BaseGraph):
         request=None,
     ) -> None:
         node_schema, input = self.get_next_init_node_schema(node_schema, input)
-        super().init_next_node_parent(node_schema, TC, input, request)
+        super().direct_init_next_node(node_schema, TC, input, request)
 
     def handle_user_turn(self, msg, TC, model_provider, run_off_topic_check=True):
         if not run_off_topic_check or not OffTopicPrompt.run(

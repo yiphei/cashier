@@ -279,7 +279,7 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
             else:
                 return None
 
-    def init_next_node_parent(
+    def direct_init_next_node(
         self,
         node_schema,
         TC,
@@ -345,7 +345,7 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
             self.curr_node.init_next_node(node_schema, TC, input)
 
         if node_schema in self.schema.node_schemas:
-            self.init_next_node_parent(node_schema, TC, input, request)
+            self.direct_init_next_node(node_schema, TC, input, request)
 
     def execute_function_call(
         self, fn_call: FunctionCall, fn_callback: Optional[Callable] = None
