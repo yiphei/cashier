@@ -60,52 +60,52 @@ class BaseTerminableGraphSchema(HasIdMixin, BaseGraphSchema, BaseExecutableSchem
             node_schema.id: node_schema for node_schema in self.all_conv_node_schemas
         }
         self.to_conv_node_schema_id_to_edge_schema = {}
+        self.build_to_conv_node_schema_id_to_edge_schema(
+            self.to_conv_node_schema_id_to_edge_schema
+        )
         self.from_conv_node_schema_id_to_edge_schema = {}
+        self.build_from_conv_node_schema_id_to_edge_schema(
+            self.from_conv_node_schema_id_to_edge_schema
+        )
 
         self.from_node_schema_id_to_edge_schema = {
             edge_schema.from_node_schema.id: edge_schema
             for edge_schema in self.get_edge_schemas()
         }
 
-        edge_schemas_stack = self.get_edge_schemas()[:]
-        while edge_schemas_stack:
-            edge_schema = edge_schemas_stack.pop()
-            if isinstance(edge_schema.to_node_schema, BaseGraphSchema):
-                schema = (
-                    edge_schema.to_node_schema.start_node_schema
-                )  # TODO: this and the rest is not truly recursive
-                self.to_conv_node_schema_id_to_edge_schema[schema.id] = edge_schema
-            else:
-                self.to_conv_node_schema_id_to_edge_schema[
-                    edge_schema.to_node_schema.id
-                ] = edge_schema
+    def build_to_conv_node_schema_id_to_edge_schema(self, map, prev_edge_schema=None):
+        if isinstance(self.start_node_schema, BaseGraphSchema):
+            self.start_node_schema.build_to_conv_node_schema_id_to_edge_schema(
+                map, prev_edge_schema
+            )
+        elif prev_edge_schema is not None:
+            map[self.start_node_schema.id] = prev_edge_schema
 
+        for edge_schema in self.get_edge_schemas():
+            if isinstance(edge_schema.to_node_schema, BaseGraphSchema):
+                edge_schema.to_node_schema.build_to_conv_node_schema_id_to_edge_schema(
+                    map, edge_schema
+                )
+            else:
+                map[edge_schema.to_node_schema.id] = edge_schema
+
+    def build_from_conv_node_schema_id_to_edge_schema(self, map, prev_edge_schema=None):
+        if isinstance(self.end_node_schema, BaseGraphSchema):
+            self.end_node_schema.build_from_conv_node_schema_id_to_edge_schema(
+                map, prev_edge_schema
+            )
+        elif prev_edge_schema is not None:
+            map[self.end_node_schema.id] = prev_edge_schema
+
+        edge_schemas = self.get_edge_schemas()
+        for i in range(len(edge_schemas) - 1, -1, -1):
+            edge_schema = edge_schemas[i]
             if isinstance(edge_schema.from_node_schema, BaseGraphSchema):
-                schema = edge_schema.from_node_schema.end_node_schema
-                self.from_conv_node_schema_id_to_edge_schema[schema.id] = edge_schema
-                edge_schemas_stack.extend(
-                    edge_schema.from_node_schema.get_edge_schemas()
+                edge_schema.from_node_schema.build_from_conv_node_schema_id_to_edge_schema(
+                    map, edge_schema
                 )
             else:
-                self.from_conv_node_schema_id_to_edge_schema[
-                    edge_schema.from_node_schema.id
-                ] = edge_schema
-
-        # TODO: work in progress
-        last_to_node_schema = self.get_edge_schemas()[-1]
-        edge_schemas_stack = [last_to_node_schema]
-        while edge_schemas_stack:
-            edge_schema = edge_schemas_stack.pop()
-            if isinstance(edge_schema.to_node_schema, BaseGraphSchema):
-                schema = edge_schema.to_node_schema.start_node_schema
-                self.to_conv_node_schema_id_to_edge_schema[schema.id] = edge_schema
-                edge_schemas_stack.extend(
-                    edge_schema.to_node_schema.get_edge_schemas()[:].reverse()
-                )
-            else:
-                self.to_conv_node_schema_id_to_edge_schema[
-                    edge_schema.to_node_schema.id
-                ] = edge_schema
+                map[edge_schema.from_node_schema.id] = edge_schema
 
     def get_edge_schemas(self):
         return self.edge_schemas

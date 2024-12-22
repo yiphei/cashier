@@ -39,6 +39,8 @@ class ANDGraphSchema(BaseTerminableGraphSchema):
                 )
                 self.default_edge_schemas.append(edge_schema)
 
+        self.end_node_schema = node_schemas[-1]
+
         BaseTerminableGraphSchema.__init__(
             self,
             description,
@@ -51,7 +53,6 @@ class ANDGraphSchema(BaseTerminableGraphSchema):
             edge_schema.from_node_schema.id: edge_schema
             for edge_schema in self.default_edge_schemas
         }
-        self.end_node_schema = self.node_schemas[-1]
 
     @property
     def start_node_schema(self):

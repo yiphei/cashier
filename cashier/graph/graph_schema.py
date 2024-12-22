@@ -28,6 +28,8 @@ class GraphSchema(BaseTerminableGraphSchema):
         run_assistant_turn_before_transition: bool = False,
     ):
         self.edge_schemas = edge_schemas
+        self.start_node_schema = start_node_schema
+        self.end_node_schema = end_node_schema
         BaseTerminableGraphSchema.__init__(
             self,
             description,
@@ -37,8 +39,6 @@ class GraphSchema(BaseTerminableGraphSchema):
             completion_config,
         )
         self.output_schema = output_schema
-        self.start_node_schema = start_node_schema
-        self.end_node_schema = end_node_schema
 
     def create_node(self, input, last_msg, edge_schema, prev_node, direction, request):
         return Graph(
