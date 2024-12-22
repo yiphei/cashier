@@ -189,7 +189,7 @@ class BaseTerminableGraph(BaseGraph):
         bwd_skip_node_schemas = self.get_bwd_skip_node_schemas(True)
         skip_node_schema = set(self.fwd_skip_node_schemas) | bwd_skip_node_schemas
         remaining_node_schemas = (
-            set(self.schema.all_conversation_node_schemas) - skip_node_schema
+            set(self.schema.all_conv_node_schemas) - skip_node_schema
         )
         node_schema_id = should_change_node_schema(
             TC, self.curr_conversation_node.schema, remaining_node_schemas, True
@@ -202,7 +202,7 @@ class BaseTerminableGraph(BaseGraph):
             TC, self.curr_conversation_node.schema, all_node_schemas, False
         )
         if node_schema_id is not None:
-            return self.schema.conversation_node_schema_id_to_conversation_node_schema[node_schema_id], False  # type: ignore
+            return self.schema.conv_node_schema_id_to_conv_node_schema[node_schema_id], False  # type: ignore
         else:
             return None, False
 
@@ -347,9 +347,9 @@ class BaseTerminableGraph(BaseGraph):
         if (
             isinstance(node_schema, ConversationNodeSchema)
             and node_schema.id
-            in self.schema.to_conversation_node_schema_id_to_edge_schema
+            in self.schema.to_conv_node_schema_id_to_edge_schema
         ):
-            return self.schema.to_conversation_node_schema_id_to_edge_schema[
+            return self.schema.to_conv_node_schema_id_to_edge_schema[
                 node_schema.id
             ]
         elif node_schema.id in self.to_node_schema_id_to_edge_schema:
