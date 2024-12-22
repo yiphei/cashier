@@ -121,10 +121,6 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
             else self.curr_node
         )
 
-    @property
-    def curr_graph(self):
-        return self.curr_conversation_node.parent
-
     def add_fwd_edge(
         self,
         from_node: ConversationNode,
