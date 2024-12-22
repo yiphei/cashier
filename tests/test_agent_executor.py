@@ -908,7 +908,7 @@ class TestAgent:
         ].to_node_schema
 
         input_schema, input = (
-            agent_executor.graph.curr_graph.state.get_set_schema_and_fields()
+            agent_executor.graph.curr_node.curr_node.state.get_set_schema_and_fields()
         )
         node_turn = TurnArgs(
             turn=NodeSystemTurn(
@@ -999,7 +999,7 @@ class TestAgent:
             self.start_node_schema.start_node_schema.id
         ].to_node_schema
         input_schema, input = (
-            agent_executor.graph.curr_graph.state.get_set_schema_and_fields()
+            agent_executor.graph.curr_node.curr_node.state.get_set_schema_and_fields()
         )
         node_turn_1 = TurnArgs(
             turn=NodeSystemTurn(
@@ -1149,7 +1149,7 @@ class TestAgent:
             self.start_node_schema.start_node_schema.id
         ].to_node_schema
         input_schema, input = (
-            agent_executor.graph.curr_graph.state.get_set_schema_and_fields()
+            agent_executor.graph.curr_node.curr_node.state.get_set_schema_and_fields()
         )
         node_turn_1 = TurnArgs(
             turn=NodeSystemTurn(
@@ -1207,7 +1207,7 @@ class TestAgent:
             cashier_graph_schema.start_node_schema.id
         ].to_node_schema
         input_schema, input = (
-            agent_executor.graph.curr_graph.state.get_set_schema_and_fields()
+            agent_executor.graph.curr_node.state.get_set_schema_and_fields()
         )
         node_turn_2 = TurnArgs(
             turn=NodeSystemTurn(

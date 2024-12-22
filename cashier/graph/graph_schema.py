@@ -20,7 +20,7 @@ class GraphSchema(BaseTerminableGraphSchema):
         output_schema: Type[BaseModel],
         description: str,
         start_node_schema: ConversationNodeSchema,
-        last_node_schema: ConversationNodeSchema,
+        end_node_schema: ConversationNodeSchema,
         edge_schemas: List[EdgeSchema],
         node_schemas: List[ConversationNodeSchema],
         state_schema: Type[BaseModel],
@@ -38,7 +38,7 @@ class GraphSchema(BaseTerminableGraphSchema):
         )
         self.output_schema = output_schema
         self.start_node_schema = start_node_schema
-        self.last_node_schema = last_node_schema
+        self.end_node_schema = end_node_schema
 
     def create_node(self, input, last_msg, edge_schema, prev_node, direction, request):
         return Graph(
@@ -46,9 +46,6 @@ class GraphSchema(BaseTerminableGraphSchema):
             request=request,
             schema=self,
         )
-
-    def get_node_schemas(self):
-        return self.node_schemas
 
 
 class Graph(BaseTerminableGraph):

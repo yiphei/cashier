@@ -43,7 +43,7 @@ class BaseGraphSchema:
 
     def get_leaf_conv_node_schemas(self):
         all_node_schemas = []
-        for node_schema in self.get_node_schemas():
+        for node_schema in self.node_schemas:
             if isinstance(node_schema, BaseGraphSchema):
                 all_node_schemas.extend(node_schema.get_leaf_conv_node_schemas())
             else:
@@ -120,10 +120,6 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
             if isinstance(self.curr_node, BaseGraph)
             else self.curr_node
         )
-
-    @property
-    def curr_graph(self):
-        return self.curr_conversation_node.parent
 
     def add_fwd_edge(
         self,
@@ -237,7 +233,7 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
                     "assistant", node_schema.first_turn.msg_content
                 )
 
-    def init_node_core(
+    def init_node(
         self,
         node_schema: ConversationNodeSchema,
         edge_schema: Optional[EdgeSchema],
@@ -270,26 +266,19 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
         return new_node
 
     def get_next_node_schema_to_init(self):
-        if self.curr_node is None:
-            return self.schema.start_node_schema
-        else:
-            new_node_schema = self.check_transition(None, None)
-            if new_node_schema is not None:
-                return new_node_schema
-            else:
-                return None
+        return (
+            self.schema.start_node_schema
+            if self.curr_node is None
+            else self.check_transition(None, None)
+        )
 
-    def init_next_node_parent(
+    def direct_init_next_node(
         self,
         node_schema,
         TC,
         input,
         request=None,
     ) -> None:
-        node_schema, input = self.pre_init_next_node(
-            node_schema,
-            input,
-        )
         request = request or self.request
         if node_schema in self.schema.node_schemas:
             edge_schema = self.get_edge_schema_by_to_node_schema(node_schema)
@@ -303,7 +292,7 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
                 else:
                     input = node_schema.get_input(self.curr_node.state, edge_schema)
 
-            new_node = self.init_node_core(
+            new_node = self.init_node(
                 node_schema, edge_schema, input, last_msg, prev_node, request
             )
             self.update_curr_node(new_node, edge_schema, prev_node, TC, False)
@@ -332,13 +321,6 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
             else self.get_edge_schema_by_from_node_schema_id(node_schema.id)
         )
 
-    def pre_init_next_node(
-        self,
-        node_schema: ConversationNodeSchema,
-        input: Any = None,
-    ) -> None:
-        return node_schema, input
-
     def init_next_node(
         self,
         node_schema: ConversationNodeSchema,
@@ -356,7 +338,7 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
             self.curr_node.init_next_node(node_schema, TC, input)
 
         if node_schema in self.schema.node_schemas:
-            self.init_next_node_parent(node_schema, TC, input, request)
+            self.direct_init_next_node(node_schema, TC, input, request)
 
     def execute_function_call(
         self, fn_call: FunctionCall, fn_callback: Optional[Callable] = None
@@ -429,7 +411,7 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
                 fn_calls.append(function_call)
                 need_user_input = False
 
-                (new_node_schema) = self.check_transition(function_call, is_success)
+                new_node_schema = self.check_transition(function_call, is_success)
                 if new_node_schema is not None:
                     self.new_node_schema = new_node_schema
                     if isinstance(self, RequestGraph):

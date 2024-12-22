@@ -142,7 +142,7 @@ cashier_graph_schema = GraphSchema(
     description="Help the customer place a coffee order",
     output_schema=Order,
     start_node_schema=and_graph_schema,
-    last_node_schema=terminal_order_node_schema,
+    end_node_schema=terminal_order_node_schema,
     edge_schemas=[and_edge_schema],
     node_schemas=[
         and_graph_schema,

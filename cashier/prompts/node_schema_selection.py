@@ -1,11 +1,10 @@
 import copy
 import json
-from typing import Any, Dict, Set, Union
+from typing import Any, Dict, Set
 
 from pydantic import BaseModel, ConfigDict
 
 from cashier.graph.conversation_node import ConversationNodeSchema
-from cashier.graph.base.base_graph import BaseGraphSchema
 from cashier.logger import logger
 from cashier.model.model_completion import ModelOutput
 from cashier.model.model_util import ModelProvider
@@ -21,7 +20,7 @@ class Input(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     current_node_schema: ConversationNodeSchema
-    all_node_schemas: Set[Union[ConversationNodeSchema, BaseGraphSchema]]
+    all_node_schemas: Set[ConversationNodeSchema]
     tc: TurnContainer
     is_wait: bool
 
@@ -34,7 +33,7 @@ class NodeSchemaSelectionPrompt(BasePrompt):
     def dynamic_prompt(  # type: ignore
         self,
         background_prompt: str,
-        all_node_schemas: Set[Union[ConversationNodeSchema, BaseGraphSchema]],
+        all_node_schemas: Set[ConversationNodeSchema],
         model_provider: ModelProvider,
         last_customer_msg: str,
     ) -> str:

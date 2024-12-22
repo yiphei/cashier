@@ -12,7 +12,6 @@ from cashier.graph.base.base_terminable_graph import (
 from cashier.graph.conversation_node import ConversationNode, ConversationNodeSchema
 from cashier.graph.edge_schema import EdgeSchema
 from cashier.graph.mixin.has_status_mixin import Status
-from cashier.tool.tool_registry import ToolRegistry
 
 
 class ANDGraphSchema(BaseTerminableGraphSchema):
@@ -48,19 +47,11 @@ class ANDGraphSchema(BaseTerminableGraphSchema):
             run_assistant_turn_before_transition,
         )
 
-        all_tool_defs = []
-        for node_schema in node_schemas:
-            all_tool_defs.extend(
-                list(node_schema.tool_registry.openai_tool_name_to_tool_def.values())
-            )
-        self.tool_registry = ToolRegistry(all_tool_defs)
-        self.node_prompt = description
-
         self.default_from_node_schema_id_to_edge_schema = {
             edge_schema.from_node_schema.id: edge_schema
             for edge_schema in self.default_edge_schemas
         }
-        self.last_node_schema = self.node_schemas[-1]
+        self.end_node_schema = self.node_schemas[-1]
 
     @property
     def start_node_schema(self):
@@ -72,9 +63,6 @@ class ANDGraphSchema(BaseTerminableGraphSchema):
             request=request,
             schema=self,
         )
-
-    def get_node_schemas(self):
-        return self.node_schemas
 
     def get_edge_schemas(self):
         return self.default_edge_schemas
