@@ -270,7 +270,11 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
         return new_node
 
     def get_next_node_schema_to_init(self):
-        return self.schema.start_node_schema if self.curr_node is None else self.check_transition(None, None)
+        return (
+            self.schema.start_node_schema
+            if self.curr_node is None
+            else self.check_transition(None, None)
+        )
 
     def direct_init_next_node(
         self,
