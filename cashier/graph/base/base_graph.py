@@ -286,10 +286,6 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
         input,
         request=None,
     ) -> None:
-        node_schema, input = self.pre_init_next_node(
-            node_schema,
-            input,
-        )
         request = request or self.request
         if node_schema in self.schema.node_schemas:
             edge_schema = self.get_edge_schema_by_to_node_schema(node_schema)
@@ -331,13 +327,6 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
             if direction == Direction.FWD
             else self.get_edge_schema_by_from_node_schema_id(node_schema.id)
         )
-
-    def pre_init_next_node(
-        self,
-        node_schema: ConversationNodeSchema,
-        input: Any = None,
-    ) -> None:
-        return node_schema, input
 
     def init_next_node(
         self,

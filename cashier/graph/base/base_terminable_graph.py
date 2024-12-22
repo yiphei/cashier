@@ -362,12 +362,16 @@ class BaseTerminableGraph(BaseGraph):
         elif node_schema.id in self.to_node_schema_id_to_edge_schema:
             return self.to_node_schema_id_to_edge_schema.get(node_schema.id, None)
 
-    def pre_init_next_node(
+    def init_next_node_parent(
         self,
-        node_schema: ConversationNodeSchema,
-        input: Any = None,
+        node_schema,
+        TC,
+        input,
+        request=None,
     ) -> None:
-        return self.get_next_init_node_schema(node_schema, input)
+        node_schema, input = self.get_next_init_node_schema(node_schema, input)
+        super().init_next_node_parent(node_schema, TC, input, request)
+        
 
     def handle_user_turn(self, msg, TC, model_provider, run_off_topic_check=True):
         if not run_off_topic_check or not OffTopicPrompt.run(
