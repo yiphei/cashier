@@ -75,7 +75,9 @@ class BaseTerminableGraphSchema(HasIdMixin, BaseGraphSchema, BaseExecutableSchem
 
     def build_to_conv_node_schema_id_to_edge_schema(self, map, prev_edge_schema=None):
         if isinstance(self.start_node_schema, BaseGraphSchema):
-            self.start_node_schema.build_to_conv_node_schema_id_to_edge_schema(map, prev_edge_schema)
+            self.start_node_schema.build_to_conv_node_schema_id_to_edge_schema(
+                map, prev_edge_schema
+            )
         elif prev_edge_schema is not None:
             map[self.start_node_schema.id] = prev_edge_schema
 
@@ -89,7 +91,9 @@ class BaseTerminableGraphSchema(HasIdMixin, BaseGraphSchema, BaseExecutableSchem
 
     def build_from_conv_node_schema_id_to_edge_schema(self, map, prev_edge_schema=None):
         if isinstance(self.end_node_schema, BaseGraphSchema):
-            self.end_node_schema.build_from_conv_node_schema_id_to_edge_schema(map, prev_edge_schema)
+            self.end_node_schema.build_from_conv_node_schema_id_to_edge_schema(
+                map, prev_edge_schema
+            )
         elif prev_edge_schema is not None:
             map[self.end_node_schema.id] = prev_edge_schema
 
