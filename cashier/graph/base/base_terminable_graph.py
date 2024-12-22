@@ -293,9 +293,7 @@ class BaseTerminableGraph(BaseGraph):
                 fwd_jump_node_schemas.append(node_schema)
                 if isinstance(edge_schema.to_node_schema, BaseGraphSchema):
                     graph_node = self.get_prev_node(edge_schema.to_node_schema)
-                    fwd_jump_node_schemas += graph_node.get_fwd_skip_node_schemas(
-                        False
-                    )
+                    fwd_jump_node_schemas += graph_node.get_fwd_skip_node_schemas(False)
                 if self.get_edge_schema_by_from_node_schema_id(to_node.schema.id):
                     next_edge_schema = self.get_edge_schema_by_from_node_schema_id(
                         to_node.schema.id
