@@ -1,6 +1,6 @@
 import json
-from collections import defaultdict, deque
-from typing import Any, Callable, List, Literal, Optional, Set, Tuple, overload
+from collections import defaultdict
+from typing import Any, Callable, List, Literal, Optional, Tuple, overload
 
 from colorama import Style
 
@@ -10,7 +10,7 @@ from cashier.graph.conversation_node import (
     ConversationNodeSchema,
     Direction,
 )
-from cashier.graph.edge_schema import Edge, EdgeSchema, FwdSkipType
+from cashier.graph.edge_schema import Edge, EdgeSchema
 from cashier.graph.mixin.has_id_mixin import HasIdMixin
 from cashier.graph.mixin.has_status_mixin import Status
 from cashier.gui import MessageDisplay
@@ -32,7 +32,7 @@ class BaseGraphSchema:
     def __init__(
         self,
         description: str,
-        node_schemas: List[ConversationNode],
+        node_schemas: List[ConversationNodeSchema],
     ):
         self.description = description
         self.node_schemas = node_schemas
@@ -40,6 +40,15 @@ class BaseGraphSchema:
         self.node_schema_id_to_node_schema = {
             node_schema.id: node_schema for node_schema in self.node_schemas
         }
+
+    def get_leaf_conv_node_schemas(self):
+        all_node_schemas = []
+        for node_schema in self.get_node_schemas():
+            if isinstance(node_schema, BaseGraphSchema):
+                all_node_schemas.extend(node_schema.get_leaf_conv_node_schemas())
+            else:
+                all_node_schemas.append(node_schema)
+        return all_node_schemas
 
 
 class BaseGraph(BaseGraphExecutable, HasIdMixin):
@@ -79,9 +88,10 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
 
         # transition
         self.next_edge_schema: Optional[EdgeSchema] = None
-        self.bwd_skip_edge_schemas: Set[EdgeSchema] = set()
-        self.new_edge_schema = None
         self.new_node_schema = None
+
+        # shared recursively
+        self.conv_node_schema_id_to_parent_node = {}
 
     def add_edge_schema(self, edge_schema):
         self.edge_schemas.append(edge_schema)
@@ -94,13 +104,14 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
         )
 
     @property
-    def transition_queue(self):
-        sub_queue = (
-            self.curr_node.transition_queue
+    def top_most_transition_node(self):
+        if self.curr_node is not None and self.curr_node.status == Status.TRANSITIONING:
+            return self.curr_node
+        return (
+            self.curr_node.top_most_transition_node
             if isinstance(self.curr_node, BaseGraph)
-            else deque()
+            else None
         )
-        return sub_queue + self.local_transition_queue
 
     @property
     def curr_conversation_node(self):
@@ -151,73 +162,21 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
     ) -> Optional[EdgeSchema]:
         return self.from_node_schema_id_to_edge_schema.get(node_schema_id, None)
 
-    def get_prev_node(
-        self, edge_schema: Optional[EdgeSchema], node_schema, direction: Direction
-    ) -> Optional[ConversationNode]:
-        if (
-            edge_schema
-            and self.get_edge_by_edge_schema_id(edge_schema.id, raise_if_none=False)
-            is not None
-        ):
-            edge = self.get_edge_by_edge_schema_id(edge_schema.id)
-            return edge.to_node if direction == Direction.FWD else edge.from_node
-        elif (
-            edge_schema is None
-            and node_schema == self.schema.start_node_schema
-            and self.node_schema_id_to_nodes[self.schema.start_node_schema.id]
-        ):
-            return self.node_schema_id_to_nodes[self.schema.start_node_schema.id][-1]
-        else:
-            return None
-
-    def compute_bwd_skip_edge_schemas(self) -> Set[EdgeSchema]:
-        from_node = self.curr_node
-        new_edge_schemas = set()
-        curr_bwd_skip_edge_schemas = self.bwd_skip_edge_schemas
-        while self.to_node_id_to_edge[from_node.id] is not None:
-            edge = self.to_node_id_to_edge[from_node.id]
-            if edge.schema in curr_bwd_skip_edge_schemas:
-                break
-            new_edge_schemas.add(edge.schema)
-            assert from_node == edge.to_node
-            from_node = edge.from_node
-
-        self.bwd_skip_edge_schemas = new_edge_schemas | curr_bwd_skip_edge_schemas
-
-    def compute_fwd_skip_edge_schemas(self) -> Set[EdgeSchema]:
-        start_node = self.curr_node
-        fwd_jump_edge_schemas = set()
-        edge_schemas = (  # TODO: refactor this to not use a deque altogether
-            deque([self.next_edge_schema]) if self.next_edge_schema else deque()
+    def get_prev_node(self, node_schema) -> Optional[ConversationNode]:
+        return (
+            self.node_schema_id_to_nodes[node_schema.id][-1]
+            if self.node_schema_id_to_nodes[node_schema.id]
+            else None
         )
-        while edge_schemas:
-            edge_schema = edge_schemas.popleft()
-            if (
-                self.get_edge_by_edge_schema_id(edge_schema.id, raise_if_none=False)
-                is not None
-            ):
-                edge = self.get_edge_by_edge_schema_id(edge_schema.id)
-                from_node = edge.from_node
-                to_node = edge.to_node
-                if from_node.schema == start_node.schema:
-                    from_node = start_node
 
-                if edge_schema.can_skip(
-                    self.state,
-                    from_node,
-                    to_node,
-                    self.is_prev_from_node_completed(
-                        edge_schema, from_node == start_node
-                    ),
-                )[0]:
-                    fwd_jump_edge_schemas.add(edge_schema)
-                    next_edge_schema = self.get_edge_schema_by_from_node_schema_id(
-                        to_node.schema.id
-                    )
-                    if next_edge_schema:
-                        edge_schemas.append(next_edge_schema)
-
-        return fwd_jump_edge_schemas
+    def update_curr_node(self, new_node, edge_schema, prev_node, TC, is_skip):
+        self.curr_node = new_node
+        self.post_node_init(
+            edge_schema,
+            prev_node,
+            TC,
+            is_skip,
+        )
 
     def is_prev_from_node_completed(
         self, edge_schema: EdgeSchema, is_start_node: bool
@@ -225,62 +184,6 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
         idx = -1 if is_start_node else -2
         edge = self.get_edge_by_edge_schema_id(edge_schema.id, idx, raise_if_none=False)
         return edge.from_node.status == Status.COMPLETED if edge else False
-
-    def compute_next_edge_schema(
-        self,
-        start_edge_schema: EdgeSchema,
-        start_input: Any,
-    ) -> Tuple[EdgeSchema, Any]:
-        next_edge_schema = start_edge_schema
-        edge_schema = start_edge_schema
-        input = start_input
-        while (
-            self.get_edge_by_edge_schema_id(next_edge_schema.id, raise_if_none=False)
-            is not None
-        ):
-            edge = self.get_edge_by_edge_schema_id(next_edge_schema.id)
-            from_node = edge.from_node
-            to_node = edge.to_node
-            if from_node.schema == self.curr_node.schema:
-                from_node = self.curr_node
-
-            can_skip, skip_type = next_edge_schema.can_skip(
-                self.state,  # TODO: this class does not explicitly have a state
-                from_node,
-                to_node,
-                self.is_prev_from_node_completed(
-                    next_edge_schema, from_node == self.curr_node
-                ),
-            )
-
-            if can_skip:
-                edge_schema = next_edge_schema
-
-                next_next_edge_schema = self.get_edge_schema_by_from_node_schema_id(
-                    to_node.schema.id
-                )
-
-                if next_next_edge_schema:
-                    next_edge_schema = next_next_edge_schema
-                else:
-                    input = to_node.input
-                    break
-            elif skip_type == FwdSkipType.SKIP_IF_INPUT_UNCHANGED:
-                if from_node.status != Status.COMPLETED:
-                    input = from_node.input
-                else:
-                    edge_schema = next_edge_schema
-                    if from_node != self.curr_node:
-                        input = edge_schema.to_node_schema.get_input(
-                            from_node.state, edge_schema
-                        )
-                break
-            else:
-                if from_node != self.curr_node:
-                    input = from_node.input
-                break
-
-        return edge_schema, input
 
     def add_edge(
         self,
@@ -334,25 +237,18 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
                     "assistant", node_schema.first_turn.msg_content
                 )
 
-    def get_request_for_init_graph_core(self):
-        return self.request
-
-    def init_node(
+    def init_node_core(
         self,
         node_schema: ConversationNodeSchema,
         edge_schema: Optional[EdgeSchema],
         input: Any,
         last_msg: Optional[str],
         prev_node: Optional[ConversationNode],
-        direction: Direction,
-        TC,
-        is_skip: bool = False,
-    ) -> None:
-        if isinstance(node_schema, BaseGraphSchema):
-            request = self.get_request_for_init_graph_core()
-        else:
-            request = self.request
-
+        request,
+    ):
+        direction = Direction.FWD
+        if edge_schema is not None and edge_schema.from_node_schema == node_schema:
+            direction = Direction.BWD
         logger.debug(
             f"[NODE_SCHEMA] Initializing node with {Style.BRIGHT}node_schema_id: {node_schema.id}{Style.NORMAL}"
         )
@@ -361,140 +257,106 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
         )
         self.node_schema_id_to_nodes[node_schema.id].append(new_node)
         new_node.parent = self
+        if isinstance(node_schema, BaseGraphSchema):
+            new_node.conv_node_schema_id_to_parent_node = (
+                self.conv_node_schema_id_to_parent_node
+            )  # TODO: this is a hack. refactor later
+        else:
+            self.conv_node_schema_id_to_parent_node[node_schema.id] = self
 
         if edge_schema and self.curr_node is not None:
             self.add_edge(self.curr_node, new_node, edge_schema, direction)
 
-        self.curr_node = new_node
+        return new_node
 
-        self.post_node_init(
-            edge_schema,
-            prev_node,
-            TC,
-            is_skip,
-        )
-
-        if isinstance(node_schema, BaseGraphSchema):
-            node_schema, edge_schema = new_node.compute_init_node_edge_schema()
-            if is_skip:
-                self.curr_node.init_skip_node(node_schema, edge_schema, TC, direction)
+    def get_next_node_schema_to_init(self):
+        if self.curr_node is None:
+            return self.schema.start_node_schema
+        else:
+            new_node_schema = self.check_transition(None, None)
+            if new_node_schema is not None:
+                return new_node_schema
             else:
-                self.curr_node.init_next_node(node_schema, edge_schema, TC, None)
+                return None
 
-    def _init_next_node(
+    def init_next_node_parent(
         self,
         node_schema,
-        edge_schema,
         TC,
-        direction,
-        last_msg,
         input,
+        request=None,
     ) -> None:
-        if input is None and edge_schema:
-            # TODO: this is bad. refactor this
-            if hasattr(self, "state"):
-                input = node_schema.get_input(self.state, edge_schema)
-            else:
-                input = node_schema.get_input(self.curr_node.state, edge_schema)
-
-        if edge_schema:
-            edge_schema, input = self.compute_next_edge_schema(edge_schema, input)
-            node_schema = edge_schema.to_node_schema
-
-        prev_node = self.get_prev_node(edge_schema, node_schema, direction)
-
-        self.init_node(
+        node_schema, input = self.pre_init_next_node(
             node_schema,
-            edge_schema,
             input,
-            last_msg,
-            prev_node,
-            direction,
-            TC,
-            False,
         )
+        request = request or self.request
+        if node_schema in self.schema.node_schemas:
+            edge_schema = self.get_edge_schema_by_to_node_schema(node_schema)
+            prev_node = self.get_prev_node(node_schema)
+            last_msg = TC.get_user_message(content_only=True)
+
+            if input is None and edge_schema:
+                # TODO: this is bad. refactor this
+                if hasattr(self, "state"):
+                    input = node_schema.get_input(self.state, edge_schema)
+                else:
+                    input = node_schema.get_input(self.curr_node.state, edge_schema)
+
+            new_node = self.init_node_core(
+                node_schema, edge_schema, input, last_msg, prev_node, request
+            )
+            self.update_curr_node(new_node, edge_schema, prev_node, TC, False)
+
+            if isinstance(node_schema, BaseGraphSchema):
+                next_node_schema = self.curr_node.get_next_node_schema_to_init()
+                while next_node_schema is not None:
+                    self.curr_node.init_next_node(
+                        next_node_schema, TC, None
+                    )  # TODO: this can be shortcutted to use init_next_node_parent directly
+                    next_node_schema = self.curr_node.get_next_node_schema_to_init()
+        else:
+            # TODO: this is bad. refactor this
+            self.init_skip_node(
+                node_schema,
+                TC,
+            )
+
+    def get_edge_schema_by_to_node_schema(self, node_schema):
+        return self.to_node_schema_id_to_edge_schema.get(node_schema.id, None)
+
+    def get_edge_schema_by_node_schema(self, node_schema, direction):
+        return (
+            self.get_edge_schema_by_to_node_schema(node_schema)
+            if direction == Direction.FWD
+            else self.get_edge_schema_by_from_node_schema_id(node_schema.id)
+        )
+
+    def pre_init_next_node(
+        self,
+        node_schema: ConversationNodeSchema,
+        input: Any = None,
+    ) -> None:
+        return node_schema, input
 
     def init_next_node(
         self,
         node_schema: ConversationNodeSchema,
-        edge_schema: Optional[EdgeSchema],
         TC,
         input: Any = None,
+        request=None,
     ) -> None:
-        curr_node = self.curr_node
-        parent_node = self
-        transition_queue = self.transition_queue
-        while transition_queue:
-            curr_node = transition_queue.popleft()
-            parent_node = curr_node.parent
-            assert curr_node.status == Status.TRANSITIONING
-            curr_node.mark_as_completed()
-            parent_node.local_transition_queue.clear()
+        if self.curr_node is not None:
+            if self.curr_node.status == Status.TRANSITIONING:
+                self.curr_node.mark_as_completed()
+            else:
+                assert self.curr_node.status == Status.IN_PROGRESS
 
-        direction = Direction.FWD
-        last_msg = TC.get_user_message(content_only=True)
+        if self.curr_node is not None and isinstance(self.curr_node, BaseGraph):
+            self.curr_node.init_next_node(node_schema, TC, input)
 
-        parent_node._init_next_node(
-            node_schema,
-            edge_schema,
-            TC,
-            direction,
-            last_msg,
-            input,
-        )
-
-    def _init_skip_node(
-        self,
-        node_schema: ConversationNodeSchema,
-        edge_schema: EdgeSchema,
-        direction,
-        last_msg,
-        TC,
-    ) -> None:
-        if direction == Direction.BWD:
-            self.bwd_skip_edge_schemas.clear()
-
-        prev_node = self.get_prev_node(edge_schema, node_schema, direction)
-        assert prev_node is not None
-        input = prev_node.input
-
-        last_msg = TC.get_asst_message(content_only=True)
-        self.init_node(
-            node_schema,
-            edge_schema,
-            input,
-            last_msg,
-            prev_node,
-            direction,
-            TC,
-            True,
-        )
-
-    def init_skip_node(
-        self,
-        node_schema: ConversationNodeSchema,
-        edge_schema: EdgeSchema,
-        TC,
-        direction=None,
-    ) -> None:
-        parent_node = self
-
-        if edge_schema:
-            while edge_schema.from_node_schema not in parent_node.schema.node_schemas:
-                parent_node = parent_node.curr_node
-
-        direction = direction or Direction.FWD
-        if edge_schema and edge_schema.from_node_schema == node_schema:
-            direction = Direction.BWD
-
-        last_msg = TC.get_asst_message(content_only=True)
-        parent_node._init_skip_node(
-            node_schema,
-            edge_schema,
-            direction,
-            last_msg,
-            TC,
-        )
+        if node_schema in self.schema.node_schemas:
+            self.init_next_node_parent(node_schema, TC, input, request)
 
     def execute_function_call(
         self, fn_call: FunctionCall, fn_callback: Optional[Callable] = None
@@ -549,15 +411,17 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
         from cashier.graph.request_graph import RequestGraph
 
         if (
-            self.transition_queue
-            and self.transition_queue[-1].schema.run_assistant_turn_before_transition
+            self.top_most_transition_node
+            and self.top_most_transition_node.schema.run_assistant_turn_before_transition
         ):
-            self.transition_queue[-1].has_run_assistant_turn_before_transition = True
+            self.top_most_transition_node.has_run_assistant_turn_before_transition = (
+                True
+            )
 
         need_user_input = True
         fn_id_to_output = {}
         fn_calls = []
-        if self.new_edge_schema is None:
+        if self.new_node_schema is None:
             for function_call in model_completion.get_or_stream_fn_calls():
                 fn_id_to_output[function_call.id], is_success = (
                     self.execute_function_call(function_call, fn_callback)
@@ -565,12 +429,8 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
                 fn_calls.append(function_call)
                 need_user_input = False
 
-                (
-                    new_edge_schema,
-                    new_node_schema,
-                ) = self.check_transition(function_call, is_success)
+                (new_node_schema) = self.check_transition(function_call, is_success)
                 if new_node_schema is not None:
-                    self.new_edge_schema = new_edge_schema
                     self.new_node_schema = new_node_schema
                     if isinstance(self, RequestGraph):
                         if (
@@ -594,17 +454,15 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
             fn_id_to_output,
         )
 
-        if self.transition_queue and (
-            not self.transition_queue[-1].schema.run_assistant_turn_before_transition
-            or self.transition_queue[-1].has_run_assistant_turn_before_transition
+        if self.top_most_transition_node and (
+            not self.top_most_transition_node.schema.run_assistant_turn_before_transition
+            or self.top_most_transition_node.has_run_assistant_turn_before_transition
         ):
             self.init_next_node(
                 self.new_node_schema,
-                self.new_edge_schema,
                 TC,
                 None,
             )
-            self.new_edge_schema = None
             self.new_node_schema = None
 
         return need_user_input

@@ -33,7 +33,7 @@ class RequestGraph(BaseGraph):
 
     def get_graph_schemas(self, request):
         agent_selections = GraphSchemaSelectionPrompt.run(
-            request=request, graph_schemas=self.schema.node_schemas
+            request=request, graph_schemas=self.schema.graph_node_schemas
         )
         self.graph_schema_sequence = []
         self.requests = []
@@ -52,9 +52,9 @@ class RequestGraph(BaseGraph):
             f"agent_selections: {json.dumps(agent_selections, cls=CustomJSONEncoder, indent=4)}"
         )
 
-    def add_tasks(self, request, tc):
+    def add_tasks(self, tc):
         agent_selection = GraphSchemaAdditionPrompt.run(
-            graph_schemas=self.schema.node_schemas,
+            graph_schemas=self.schema.graph_node_schemas,
             curr_agent_id=self.graph_schema_sequence[self.current_graph_schema_idx].id,
             curr_task=self.requests[self.current_graph_schema_idx],
             tc=tc,
@@ -81,7 +81,7 @@ class RequestGraph(BaseGraph):
                 current_node_schema=self.curr_conversation_node.schema,
                 tc=TC,
             ):
-                has_new_task = self.add_tasks(msg, TC)
+                has_new_task = self.add_tasks(TC)
                 if has_new_task:
                     fake_fn_call = create_think_fn_call(
                         "At least part of the customer request/question is off-topic for the current conversation and will actually be addressed later. According to the policies, I must tell the customer that 1) their off-topic request/question will be addressed later and 2) we must finish the current business before we can get to it. I must refuse to engage with the off-topic request/question in any way."
@@ -104,12 +104,25 @@ class RequestGraph(BaseGraph):
         else:
             self.get_graph_schemas(msg)
             if len(self.graph_schema_sequence) > 0:
+                self.curr_node.mark_as_transitioning()
                 self.init_next_node(
                     self.graph_schema_sequence[0],
-                    None,
                     TC,
                     None,
                 )
+
+    def init_next_node(
+        self,
+        node_schema: ConversationNodeSchema,
+        TC,
+        input: Any = None,
+        request=None,
+    ) -> None:
+        request = None
+        if len(self.requests) > self.current_graph_schema_idx + 1:
+            self.current_graph_schema_idx += 1
+            request = self.requests[self.current_graph_schema_idx]
+        super().init_next_node(node_schema, TC, input, request)
 
     def is_completed(self, fn_call, is_fn_call_success):
         return False
@@ -124,12 +137,7 @@ class RequestGraph(BaseGraph):
             new_node_schema = self.schema.default_node_schema
 
         self.curr_node.mark_as_transitioning()
-        self.local_transition_queue.append(self.curr_node)
         return new_edge_schema, new_node_schema
-
-    def get_request_for_init_graph_core(self):
-        self.current_graph_schema_idx += 1
-        return self.requests[self.current_graph_schema_idx]
 
 
 class RequestGraphSchema(BaseGraphSchema):
@@ -141,9 +149,10 @@ class RequestGraphSchema(BaseGraphSchema):
         edge_schemas: List[EdgeSchema],
         node_schemas: List[ConversationNodeSchema],
     ):
-        super().__init__(description, node_schemas)
-        self.edge_schemas = edge_schemas
         self.start_node_schema = ConversationNodeSchema(node_prompt, node_system_prompt)
+        self.graph_node_schemas = node_schemas
+        super().__init__(description, node_schemas + [self.start_node_schema])
+        self.edge_schemas = edge_schemas
         self.default_node_schema = ConversationNodeSchema(
             "You have just finished helping the customer with their requests. Ask if they need anything else.",
             node_system_prompt,

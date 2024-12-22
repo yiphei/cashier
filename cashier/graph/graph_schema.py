@@ -27,6 +27,7 @@ class GraphSchema(BaseTerminableGraphSchema):
         completion_config: BaseTransitionConfig,
         run_assistant_turn_before_transition: bool = False,
     ):
+        self.edge_schemas = edge_schemas
         BaseTerminableGraphSchema.__init__(
             self,
             description,
@@ -35,7 +36,6 @@ class GraphSchema(BaseTerminableGraphSchema):
             run_assistant_turn_before_transition,
             completion_config,
         )
-        self.edge_schemas = edge_schemas
         self.output_schema = output_schema
         self.start_node_schema = start_node_schema
         self.last_node_schema = last_node_schema
@@ -47,6 +47,9 @@ class GraphSchema(BaseTerminableGraphSchema):
             schema=self,
         )
 
+    def get_node_schemas(self):
+        return self.node_schemas
+
 
 class Graph(BaseTerminableGraph):
     def __init__(
@@ -56,32 +59,3 @@ class Graph(BaseTerminableGraph):
         schema: BaseGraphSchema,
     ):
         super().__init__(input, request, schema, schema.edge_schemas)
-
-    def compute_init_node_edge_schema(
-        self,
-    ):
-        from cashier.graph.and_graph_schema import ANDGraphSchema
-
-        node_schema = self.schema.start_node_schema
-        edge_schema = None
-        next_edge_schema = self.from_node_schema_id_to_edge_schema[node_schema.id]
-        passed_check = True
-        while passed_check:
-            passed_check = False
-            if next_edge_schema.check_transition_config(
-                self.state,
-                None,
-                None,
-                check_resettable_fields=False,
-            ) and not isinstance(
-                next_edge_schema.from_node_schema, ANDGraphSchema
-            ):  # TODO: fix this
-                passed_check = True
-                node_schema = next_edge_schema.to_node_schema
-                edge_schema = next_edge_schema
-                next_edge_schema = self.schema.from_node_schema_id_to_edge_schema.get(
-                    node_schema.id, None
-                )
-                break
-
-        return node_schema, edge_schema

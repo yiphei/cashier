@@ -67,23 +67,19 @@ class EdgeSchema(BaseEdgeSchema, HasIdMixin, metaclass=AutoMixinInit):
             self.from_node_schema.state_schema.resettable_fields,
         )
 
-    def _can_skip(
-        self,
-        state,
-        skip_type: Optional[FwdSkipType],
-        to_node: ConversationNode,
-    ) -> Tuple[bool, Optional[FwdSkipType]]:
-        if skip_type is None:
-            return False, skip_type
-
-        if skip_type == FwdSkipType.SKIP:
-            return True, skip_type
-        elif (
-            skip_type == FwdSkipType.SKIP_IF_INPUT_UNCHANGED
-            and to_node.schema.get_input(state, self) == to_node.input
-        ):
-            return True, skip_type
-        return False, skip_type
+    def get_skip_type(
+        self, from_node_status, to_node_status, is_prev_from_node_completed
+    ):
+        if from_node_status == Status.COMPLETED:
+            if to_node_status == Status.COMPLETED:
+                return self.skip_from_complete_to_prev_complete
+            else:
+                return self.skip_from_complete_to_prev_incomplete
+        elif is_prev_from_node_completed:
+            if to_node_status == Status.COMPLETED:
+                return self.skip_from_incomplete_to_prev_complete
+            else:
+                return self.skip_from_incomplete_to_prev_incomplete
 
     def can_skip(
         self,
@@ -95,34 +91,20 @@ class EdgeSchema(BaseEdgeSchema, HasIdMixin, metaclass=AutoMixinInit):
         assert from_node.schema == self.from_node_schema
         assert to_node.schema == self.to_node_schema
 
-        if from_node.status == Status.COMPLETED:
-            if to_node.status == Status.COMPLETED:
-                return self._can_skip(
-                    state,
-                    self.skip_from_complete_to_prev_complete,
-                    to_node,
-                )
-            else:
-                return self._can_skip(
-                    state,
-                    self.skip_from_complete_to_prev_incomplete,
-                    to_node,
-                )
-        elif is_prev_from_node_completed:
-            if to_node.status == Status.COMPLETED:
-                return self._can_skip(
-                    state,
-                    self.skip_from_incomplete_to_prev_complete,
-                    to_node,
-                )
-            else:
-                return self._can_skip(
-                    state,
-                    self.skip_from_incomplete_to_prev_incomplete,
-                    to_node,
-                )
-        else:
-            return False, None
+        skip_type = self.get_skip_type(
+            from_node.status, to_node.status, is_prev_from_node_completed
+        )
+        if skip_type is None:
+            return False
+
+        if skip_type == FwdSkipType.SKIP:
+            return True
+        elif (
+            skip_type == FwdSkipType.SKIP_IF_INPUT_UNCHANGED
+            and to_node.schema.get_input(state, self) == to_node.input
+        ):
+            return True
+        return False
 
 
 class Edge:
