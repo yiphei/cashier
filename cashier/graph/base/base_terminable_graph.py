@@ -213,9 +213,9 @@ class BaseTerminableGraph(BaseGraph):
         else:
             return None, False
 
-    def get_bwd_node_schema_and_parent_node(self, node_schema):
+    def get_leaf_last_node_schema(self, node_schema):
         if isinstance(node_schema, BaseGraphSchema):
-            return self.get_bwd_node_schema_and_parent_node(
+            return self.get_leaf_last_node_schema(
                 node_schema.last_node_schema
             )
         return node_schema
@@ -236,7 +236,7 @@ class BaseTerminableGraph(BaseGraph):
         while self.to_node_id_to_edge[from_node.id] is not None:
             edge = self.to_node_id_to_edge[from_node.id]
 
-            node_schema = self.get_bwd_node_schema_and_parent_node(
+            node_schema = self.get_leaf_last_node_schema(
                 edge.from_node.schema
             )
             new_node_schemas.add(node_schema)
@@ -247,9 +247,9 @@ class BaseTerminableGraph(BaseGraph):
 
         return new_node_schemas
 
-    def get_fwd_node_schema_and_parent_node(self, node_schema):
+    def get_leaf_start_node_schema(self, node_schema):
         if isinstance(node_schema, BaseGraphSchema):
-            return self.get_fwd_node_schema_and_parent_node(
+            return self.get_leaf_start_node_schema(
                 node_schema.start_node_schema
             )
         return node_schema
@@ -293,7 +293,7 @@ class BaseTerminableGraph(BaseGraph):
                 self.is_prev_from_node_completed(edge_schema, from_node == start_node),
             ):
 
-                node_schema = self.get_fwd_node_schema_and_parent_node(
+                node_schema = self.get_leaf_start_node_schema(
                     edge_schema.to_node_schema
                 )
                 fwd_jump_node_schemas.append(node_schema)
