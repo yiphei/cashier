@@ -132,103 +132,56 @@ class BaseTerminableGraph(BaseGraph):
         super().__init__(input, schema, edge_schemas, request, state=state)
         self.fwd_skip_node_schemas = None
 
-    def init_node_but_skip(
+    def _init_skip_node(
         self,
-        node_schema: ConversationNodeSchema,
-        edge_schema: Optional[EdgeSchema],
-        input: Any,
-        last_msg: Optional[str],
-        prev_node: Optional[ConversationNode],
-        direction: Direction,
+        node_schema,
+        direction,
         TC,
     ) -> None:
         from cashier.graph.request_graph import RequestGraph
 
-        if edge_schema is None:
-            edge_schema = self.schema.from_node_schema_id_to_edge_schema[node_schema.id]
+        prev_node = self.get_prev_node(node_schema)
+        assert prev_node is not None
 
-        if not isinstance(node_schema, BaseGraphSchema):
+        if isinstance(node_schema, ConversationNodeSchema):
+            last_msg = TC.get_asst_message(content_only=True)
+            edge_schema = self.get_edge_schema_by_node_schema(node_schema, direction)
             new_node = self.init_node_core(
                 node_schema,
                 edge_schema,
-                input,
+                prev_node.input,
                 last_msg,
                 prev_node,
-                direction,
                 self.request,
             )
         else:
+            edge_schema = self.schema.from_node_schema_id_to_edge_schema[node_schema.id]
             new_node = prev_node
 
-        self.curr_node = new_node
-
-        self.post_node_init(
-            edge_schema,
-            prev_node,
-            TC,
-            True,
-        )
+        self.update_curr_node(new_node, edge_schema, prev_node, TC, True)
 
         if self.parent is not None and not isinstance(self.parent, RequestGraph):
-            self.parent.init_node_but_skip(
+            self.parent._init_skip_node(
                 self.schema,
-                None,
-                None,
-                last_msg,
-                self,
                 direction,
                 TC,
             )
-
-    def _init_skip_node(
-        self,
-        node_schema: ConversationNodeSchema,
-        edge_schema: EdgeSchema,
-        direction,
-        last_msg,
-        TC,
-    ) -> None:
-
-        prev_node = self.get_prev_node(node_schema)
-        assert prev_node is not None
-        input = prev_node.input
-
-        self.init_node_but_skip(
-            node_schema,
-            edge_schema,
-            input,
-            last_msg,
-            prev_node,
-            direction,
-            TC,
-        )
 
     def init_skip_node(
         self,
         node_schema: ConversationNodeSchema,
         TC,
-        direction=None,
     ) -> None:
-        if node_schema in self.fwd_skip_node_schemas:
-            edge_schema = self.schema.to_conversation_node_schema_id_to_edge_schema[
-                node_schema.id
-            ]
-        else:
-            edge_schema = self.schema.from_conversation_node_schema_id_to_edge_schema[
-                node_schema.id
-            ]
+        direction = (
+            Direction.FWD
+            if node_schema in self.fwd_skip_node_schemas
+            else Direction.BWD
+        )
 
-        direction = direction or Direction.FWD
-        if edge_schema.from_node_schema == node_schema:
-            direction = Direction.BWD
-
-        last_msg = TC.get_asst_message(content_only=True)
         parent_node = self.conv_node_schema_id_to_parent_node[node_schema.id]
         parent_node._init_skip_node(
             node_schema,
-            edge_schema,
             direction,
-            last_msg,
             TC,
         )
 
@@ -406,32 +359,24 @@ class BaseTerminableGraph(BaseGraph):
 
         return to_node_schema, input
 
-    def pre_init_next_node(
-        self,
-        node_schema: ConversationNodeSchema,
-        edge_schema: Optional[EdgeSchema],
-        input: Any = None,
-    ) -> None:
-        node_schema, edge_schema, input = super().pre_init_next_node(
-            node_schema,
-            edge_schema,
-            input,
-        )
-
-        node_schema, input = self.compute_next_node_schema(node_schema, input)
-
+    def get_edge_schema_by_to_node_schema(self, node_schema):
         if (
             isinstance(node_schema, ConversationNodeSchema)
             and node_schema.id
             in self.schema.to_conversation_node_schema_id_to_edge_schema
         ):
-            edge_schema = self.schema.to_conversation_node_schema_id_to_edge_schema[
+            return self.schema.to_conversation_node_schema_id_to_edge_schema[
                 node_schema.id
             ]
         elif node_schema.id in self.to_node_schema_id_to_edge_schema:
-            edge_schema = self.to_node_schema_id_to_edge_schema[node_schema.id]
+            return self.to_node_schema_id_to_edge_schema.get(node_schema.id, None)
 
-        return node_schema, edge_schema, input
+    def pre_init_next_node(
+        self,
+        node_schema: ConversationNodeSchema,
+        input: Any = None,
+    ) -> None:
+        return self.compute_next_node_schema(node_schema, input)
 
     def handle_user_turn(self, msg, TC, model_provider, run_off_topic_check=True):
         if not run_off_topic_check or not OffTopicPrompt.run(

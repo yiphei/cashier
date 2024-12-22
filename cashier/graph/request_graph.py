@@ -104,11 +104,25 @@ class RequestGraph(BaseGraph):
         else:
             self.get_graph_schemas(msg)
             if len(self.graph_schema_sequence) > 0:
+                self.curr_node.mark_as_transitioning()
                 self.init_next_node(
                     self.graph_schema_sequence[0],
                     TC,
                     None,
                 )
+
+    def init_next_node(
+        self,
+        node_schema: ConversationNodeSchema,
+        TC,
+        input: Any = None,
+        request=None,
+    ) -> None:
+        request = None
+        if len(self.requests) > self.current_graph_schema_idx + 1:
+            self.current_graph_schema_idx += 1
+            request = self.requests[self.current_graph_schema_idx]
+        super().init_next_node(node_schema, TC, input, request)
 
     def is_completed(self, fn_call, is_fn_call_success):
         return False
@@ -123,12 +137,7 @@ class RequestGraph(BaseGraph):
             new_node_schema = self.schema.default_node_schema
 
         self.curr_node.mark_as_transitioning()
-        self.local_transition_queue.append(self.curr_node)
         return new_edge_schema, new_node_schema
-
-    def get_request_for_init_graph_core(self):
-        self.current_graph_schema_idx += 1
-        return self.requests[self.current_graph_schema_idx]
 
 
 class RequestGraphSchema(BaseGraphSchema):
