@@ -192,10 +192,9 @@ class BaseTerminableGraph(BaseGraph):
         Tuple[EdgeSchema, ConversationNodeSchema, bool], Tuple[None, None, bool]
     ]:
         self.fwd_skip_node_schemas = self.compute_fwd_skip_node_schemas(True)
-        fwd_skip_node_schemas_set = set(self.fwd_skip_node_schemas)
 
         bwd_skip_node_schemas = self.compute_bwd_skip_node_schemas(True)
-        skip_node_schema = fwd_skip_node_schemas_set | bwd_skip_node_schemas
+        skip_node_schema = set(self.fwd_skip_node_schemas) | bwd_skip_node_schemas
         remaining_node_schemas = (
             set(self.schema.all_conversation_node_schemas) - skip_node_schema
         )
