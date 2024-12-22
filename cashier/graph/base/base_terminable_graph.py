@@ -371,7 +371,6 @@ class BaseTerminableGraph(BaseGraph):
     ) -> None:
         node_schema, input = self.get_next_init_node_schema(node_schema, input)
         super().init_next_node_parent(node_schema, TC, input, request)
-        
 
     def handle_user_turn(self, msg, TC, model_provider, run_off_topic_check=True):
         if not run_off_topic_check or not OffTopicPrompt.run(
