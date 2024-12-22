@@ -60,9 +60,13 @@ class BaseTerminableGraphSchema(HasIdMixin, BaseGraphSchema, BaseExecutableSchem
             node_schema.id: node_schema for node_schema in self.all_conv_node_schemas
         }
         self.to_conv_node_schema_id_to_edge_schema = {}
-        self.build_to_conv_node_schema_id_to_edge_schema(self.to_conv_node_schema_id_to_edge_schema)
+        self.build_to_conv_node_schema_id_to_edge_schema(
+            self.to_conv_node_schema_id_to_edge_schema
+        )
         self.from_conv_node_schema_id_to_edge_schema = {}
-        self.build_from_conv_node_schema_id_to_edge_schema(self.from_conv_node_schema_id_to_edge_schema)
+        self.build_from_conv_node_schema_id_to_edge_schema(
+            self.from_conv_node_schema_id_to_edge_schema
+        )
 
         self.from_node_schema_id_to_edge_schema = {
             edge_schema.from_node_schema.id: edge_schema
@@ -77,12 +81,11 @@ class BaseTerminableGraphSchema(HasIdMixin, BaseGraphSchema, BaseExecutableSchem
 
         for edge_schema in self.get_edge_schemas():
             if isinstance(edge_schema.to_node_schema, BaseGraphSchema):
-                edge_schema.to_node_schema.build_to_conv_node_schema_id_to_edge_schema(map, edge_schema)
+                edge_schema.to_node_schema.build_to_conv_node_schema_id_to_edge_schema(
+                    map, edge_schema
+                )
             else:
-                map[
-                    edge_schema.to_node_schema.id
-                ] = edge_schema
-
+                map[edge_schema.to_node_schema.id] = edge_schema
 
     def build_from_conv_node_schema_id_to_edge_schema(self, map, prev_edge_schema=None):
         if isinstance(self.end_node_schema, BaseGraphSchema):
@@ -94,11 +97,11 @@ class BaseTerminableGraphSchema(HasIdMixin, BaseGraphSchema, BaseExecutableSchem
         for i in range(len(edge_schemas) - 1, -1, -1):
             edge_schema = edge_schemas[i]
             if isinstance(edge_schema.from_node_schema, BaseGraphSchema):
-                edge_schema.from_node_schema.build_from_conv_node_schema_id_to_edge_schema(map, edge_schema)
+                edge_schema.from_node_schema.build_from_conv_node_schema_id_to_edge_schema(
+                    map, edge_schema
+                )
             else:
-                map[
-                    edge_schema.from_node_schema.id
-                ] = edge_schema
+                map[edge_schema.from_node_schema.id] = edge_schema
 
     def get_edge_schemas(self):
         return self.edge_schemas
