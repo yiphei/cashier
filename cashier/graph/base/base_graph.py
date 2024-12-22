@@ -1,5 +1,5 @@
 import json
-from collections import defaultdict, deque
+from collections import defaultdict
 from typing import Any, Callable, List, Literal, Optional, Tuple, overload
 
 from colorama import Style
@@ -413,7 +413,9 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
             self.top_most_transition_node
             and self.top_most_transition_node.schema.run_assistant_turn_before_transition
         ):
-            self.top_most_transition_node.has_run_assistant_turn_before_transition = True
+            self.top_most_transition_node.has_run_assistant_turn_before_transition = (
+                True
+            )
 
         need_user_input = True
         fn_id_to_output = {}
