@@ -302,7 +302,7 @@ class BaseTerminableGraph(BaseGraph):
 
         return fwd_jump_node_schemas
 
-    def compute_next_node_schema(
+    def get_next_init_node_schema(
         self,
         start_node_schema,
         start_input: Any,
@@ -367,7 +367,7 @@ class BaseTerminableGraph(BaseGraph):
         node_schema: ConversationNodeSchema,
         input: Any = None,
     ) -> None:
-        return self.compute_next_node_schema(node_schema, input)
+        return self.get_next_init_node_schema(node_schema, input)
 
     def handle_user_turn(self, msg, TC, model_provider, run_off_topic_check=True):
         if not run_off_topic_check or not OffTopicPrompt.run(
