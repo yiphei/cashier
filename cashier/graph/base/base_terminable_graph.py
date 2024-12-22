@@ -346,12 +346,9 @@ class BaseTerminableGraph(BaseGraph):
     def get_edge_schema_by_to_node_schema(self, node_schema):
         if (
             isinstance(node_schema, ConversationNodeSchema)
-            and node_schema.id
-            in self.schema.to_conv_node_schema_id_to_edge_schema
+            and node_schema.id in self.schema.to_conv_node_schema_id_to_edge_schema
         ):
-            return self.schema.to_conv_node_schema_id_to_edge_schema[
-                node_schema.id
-            ]
+            return self.schema.to_conv_node_schema_id_to_edge_schema[node_schema.id]
         elif node_schema.id in self.to_node_schema_id_to_edge_schema:
             return self.to_node_schema_id_to_edge_schema.get(node_schema.id, None)
 
