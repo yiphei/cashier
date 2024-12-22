@@ -215,9 +215,7 @@ class BaseTerminableGraph(BaseGraph):
 
     def get_leaf_last_node_schema(self, node_schema):
         if isinstance(node_schema, BaseGraphSchema):
-            return self.get_leaf_last_node_schema(
-                node_schema.last_node_schema
-            )
+            return self.get_leaf_last_node_schema(node_schema.last_node_schema)
         return node_schema
 
     def compute_bwd_skip_node_schemas(self, start_from_curr_node):
@@ -236,9 +234,7 @@ class BaseTerminableGraph(BaseGraph):
         while self.to_node_id_to_edge[from_node.id] is not None:
             edge = self.to_node_id_to_edge[from_node.id]
 
-            node_schema = self.get_leaf_last_node_schema(
-                edge.from_node.schema
-            )
+            node_schema = self.get_leaf_last_node_schema(edge.from_node.schema)
             new_node_schemas.add(node_schema)
             assert from_node == edge.to_node
             from_node = edge.from_node
@@ -249,9 +245,7 @@ class BaseTerminableGraph(BaseGraph):
 
     def get_leaf_start_node_schema(self, node_schema):
         if isinstance(node_schema, BaseGraphSchema):
-            return self.get_leaf_start_node_schema(
-                node_schema.start_node_schema
-            )
+            return self.get_leaf_start_node_schema(node_schema.start_node_schema)
         return node_schema
 
     def compute_fwd_skip_node_schemas(self, start_from_next_edge_schema):
