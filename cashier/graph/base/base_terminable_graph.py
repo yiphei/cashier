@@ -191,9 +191,9 @@ class BaseTerminableGraph(BaseGraph):
     ) -> Union[
         Tuple[EdgeSchema, ConversationNodeSchema, bool], Tuple[None, None, bool]
     ]:
-        self.fwd_skip_node_schemas = self.compute_fwd_skip_node_schemas(True)
+        self.fwd_skip_node_schemas = self.get_fwd_skip_node_schemas(True)
 
-        bwd_skip_node_schemas = self.compute_bwd_skip_node_schemas(True)
+        bwd_skip_node_schemas = self.get_bwd_skip_node_schemas(True)
         skip_node_schema = set(self.fwd_skip_node_schemas) | bwd_skip_node_schemas
         remaining_node_schemas = (
             set(self.schema.all_conversation_node_schemas) - skip_node_schema
@@ -218,7 +218,7 @@ class BaseTerminableGraph(BaseGraph):
             return self.get_leaf_last_node_schema(node_schema.last_node_schema)
         return node_schema
 
-    def compute_bwd_skip_node_schemas(self, start_from_curr_node):
+    def get_bwd_skip_node_schemas(self, start_from_curr_node):
         from_node = (
             self.curr_node
             if start_from_curr_node
@@ -230,7 +230,7 @@ class BaseTerminableGraph(BaseGraph):
 
         new_node_schemas = set()
         if isinstance(from_node.schema, BaseGraphSchema):
-            new_node_schemas |= from_node.compute_bwd_skip_node_schemas(True)
+            new_node_schemas |= from_node.get_bwd_skip_node_schemas(True)
         while self.to_node_id_to_edge[from_node.id] is not None:
             edge = self.to_node_id_to_edge[from_node.id]
 
@@ -239,7 +239,7 @@ class BaseTerminableGraph(BaseGraph):
             assert from_node == edge.to_node
             from_node = edge.from_node
             if isinstance(from_node.schema, BaseGraphSchema):
-                new_node_schemas |= from_node.compute_bwd_skip_node_schemas(False)
+                new_node_schemas |= from_node.get_bwd_skip_node_schemas(False)
 
         return new_node_schemas
 
@@ -248,7 +248,7 @@ class BaseTerminableGraph(BaseGraph):
             return self.get_leaf_start_node_schema(node_schema.start_node_schema)
         return node_schema
 
-    def compute_fwd_skip_node_schemas(self, start_from_next_edge_schema):
+    def get_fwd_skip_node_schemas(self, start_from_next_edge_schema):
         start_edge_schema = (
             self.next_edge_schema
             if start_from_next_edge_schema
@@ -268,7 +268,7 @@ class BaseTerminableGraph(BaseGraph):
         from_node = start_node
 
         if isinstance(start_edge_schema.from_node_schema, BaseGraphSchema):
-            fwd_jump_node_schemas += start_node.compute_fwd_skip_node_schemas(True)
+            fwd_jump_node_schemas += start_node.get_fwd_skip_node_schemas(True)
         while next_edge_schema and (
             self.get_edge_by_edge_schema_id(next_edge_schema.id, raise_if_none=False)
             is not None
@@ -293,7 +293,7 @@ class BaseTerminableGraph(BaseGraph):
                 fwd_jump_node_schemas.append(node_schema)
                 if isinstance(edge_schema.to_node_schema, BaseGraphSchema):
                     graph_node = self.get_prev_node(edge_schema.to_node_schema)
-                    fwd_jump_node_schemas += graph_node.compute_fwd_skip_node_schemas(
+                    fwd_jump_node_schemas += graph_node.get_fwd_skip_node_schemas(
                         False
                     )
                 if self.get_edge_schema_by_from_node_schema_id(to_node.schema.id):
@@ -309,7 +309,7 @@ class BaseTerminableGraph(BaseGraph):
         start_node_schema,
         start_input: Any,
     ) -> Tuple[EdgeSchema, Any]:
-        self.fwd_skip_node_schemas = self.compute_fwd_skip_node_schemas(True)
+        self.fwd_skip_node_schemas = self.get_fwd_skip_node_schemas(True)
         to_node_schema = (
             self.fwd_skip_node_schemas[-1]
             if self.fwd_skip_node_schemas
