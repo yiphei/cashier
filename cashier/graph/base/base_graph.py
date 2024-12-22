@@ -107,10 +107,7 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
     def top_most_transition_node(self):
         if self.curr_node is not None and self.curr_node.status == Status.TRANSITIONING:
             return self.curr_node
-        elif isinstance(self.curr_node, BaseGraph):
-            return self.curr_node.top_most_transition_node
-        else:
-            return None
+        return self.curr_node.top_most_transition_node if isinstance(self.curr_node, BaseGraph) else None
 
     @property
     def curr_conversation_node(self):
