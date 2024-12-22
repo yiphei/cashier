@@ -84,7 +84,7 @@ class BaseTerminableGraphSchema(HasIdMixin, BaseGraphSchema, BaseExecutableSchem
                 ] = edge_schema
 
             if isinstance(edge_schema.from_node_schema, BaseGraphSchema):
-                schema = edge_schema.from_node_schema.last_node_schema
+                schema = edge_schema.from_node_schema.end_node_schema
                 self.from_conversation_node_schema_id_to_edge_schema[schema.id] = (
                     edge_schema
                 )
@@ -213,16 +213,16 @@ class BaseTerminableGraph(BaseGraph):
         else:
             return None, False
 
-    def get_leaf_last_node_schema(self, node_schema):
+    def get_leaf_end_node_schema(self, node_schema):
         if isinstance(node_schema, BaseGraphSchema):
-            return self.get_leaf_last_node_schema(node_schema.last_node_schema)
+            return self.get_leaf_end_node_schema(node_schema.end_node_schema)
         return node_schema
 
     def get_bwd_skip_node_schemas(self, start_from_curr_node):
         from_node = (
             self.curr_node
             if start_from_curr_node
-            else self.get_prev_node(self.schema.last_node_schema)
+            else self.get_prev_node(self.schema.end_node_schema)
         )
 
         if from_node is None:
@@ -234,7 +234,7 @@ class BaseTerminableGraph(BaseGraph):
         while self.to_node_id_to_edge[from_node.id] is not None:
             edge = self.to_node_id_to_edge[from_node.id]
 
-            node_schema = self.get_leaf_last_node_schema(edge.from_node.schema)
+            node_schema = self.get_leaf_end_node_schema(edge.from_node.schema)
             new_node_schemas.add(node_schema)
             assert from_node == edge.to_node
             from_node = edge.from_node
@@ -434,7 +434,7 @@ class BaseTerminableGraph(BaseGraph):
     def is_completed(self, fn_call, is_fn_call_success):
         assert self.schema.completion_config is not None
         return (
-            self.curr_node.schema == self.schema.last_node_schema
+            self.curr_node.schema == self.schema.end_node_schema
             and self.schema.completion_config.run_check(
                 self.state, fn_call, is_fn_call_success
             )

@@ -51,7 +51,7 @@ class ANDGraphSchema(BaseTerminableGraphSchema):
             edge_schema.from_node_schema.id: edge_schema
             for edge_schema in self.default_edge_schemas
         }
-        self.last_node_schema = self.node_schemas[-1]
+        self.end_node_schema = self.node_schemas[-1]
 
     @property
     def start_node_schema(self):
