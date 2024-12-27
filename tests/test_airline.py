@@ -783,7 +783,6 @@ class TestAirline:
             model_provider,
         )
 
-
     @pytest.mark.parametrize(
         "other_fn_names",
         [
