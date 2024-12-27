@@ -301,9 +301,10 @@ class TestAirline:
         agent_executor,
         message,
         model_provider,
+        task,
     ):
         agent_selection = AgentSelection(
-            agent_id=BOOK_FLIGHT_GRAPH.id, task="customer wants to order coffee"
+            agent_id=BOOK_FLIGHT_GRAPH.id, task=task
         )
         graph_schema_selection_completion = self.create_mock_model_completion(
             model_provider, None, False, [agent_selection], 0.5
@@ -436,7 +437,7 @@ class TestAirline:
     @pytest.fixture
     def start_turns(self, remove_prev_tool_calls, agent_executor, model_provider):
         ut = self.add_request_user_turn(
-            agent_executor, "i want to order coffee", model_provider
+            agent_executor, "i want to book flight", model_provider, "customer wants to book flight"
         )
         second_node_schema = self.start_node_schema.start_node_schema
         return [
@@ -461,8 +462,8 @@ class TestAirline:
                         input=None,
                         node_input_json_schema=None,
                         state_json_schema=second_node_schema.state_schema.model_json_schema(),
-                        last_msg="i want to order coffee",
-                        curr_request="customer wants to order coffee",
+                        last_msg="i want to book flight",
+                        curr_request="customer wants to book flight",
                     ),
                     node_id=2,
                 ),
