@@ -1075,7 +1075,6 @@ class TestAirline:
             model_provider,
         )
 
-
     def test_forward_node_skip(
         self,
         model_provider,
@@ -1160,7 +1159,6 @@ class TestAirline:
             True,
         )
         self.run_message_dict_assertions(agent_executor, model_provider)
-
 
         flight_info = ModelFactory.create_factory(FlightInfo).build()
 
