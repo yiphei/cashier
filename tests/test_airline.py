@@ -980,7 +980,7 @@ class TestAirline:
         input_schema, input = (
             agent_executor.graph.curr_node.curr_node.state.get_set_schema_and_fields()
         )
-        node_turn = TurnArgs(
+        node_turn_1 = TurnArgs(
             turn=NodeSystemTurn(
                 msg_content=next_node_schema.node_system_prompt(
                     node_prompt=next_node_schema.node_prompt,
@@ -994,24 +994,22 @@ class TestAirline:
             ),
         )
         self.build_messages_from_turn(
-            node_turn,
+            node_turn_1,
             model_provider,
             remove_prev_tool_calls=remove_prev_tool_calls,
         )
 
-        # -------------
-
         t5 = self.add_assistant_turn(
             agent_executor,
             model_provider,
-            "can you confirm the order?",
+            "what flight do you want?",
             is_stream,
         )
         self.run_message_dict_assertions(agent_executor, model_provider)
 
         t6 = self.add_user_turn(
             agent_executor,
-            "i want to change order",
+            "i want to change my user details",
             model_provider,
             False,
             skip_node_schema_id=self.start_node_schema.start_node_schema.id,
@@ -1024,7 +1022,7 @@ class TestAirline:
                     input=None,
                     node_input_json_schema=self.start_node_schema.start_node_schema.input_from_state_schema,  # just to test that its None
                     state_json_schema=self.start_node_schema.start_node_schema.state_schema.model_json_schema(),
-                    last_msg="can you confirm the order?",
+                    last_msg="what flight do you want?",
                     curr_request="customer wants to book flight",
                 ),
                 node_id=4,
@@ -1061,7 +1059,7 @@ class TestAirline:
                 t2,
                 t3,
                 t4,
-                node_turn,
+                node_turn_1,
                 t5,
                 t6,
                 node_turn_2,
