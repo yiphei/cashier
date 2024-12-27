@@ -1150,8 +1150,6 @@ class TestAirline:
             is_stream,
         )
 
-        # ---------------------#
-
         t6 = self.add_user_turn(
             agent_executor,
             "i want flight from ... to ... on ...",
@@ -1275,7 +1273,7 @@ class TestAirline:
                 msg_content=next_node_schema.node_system_prompt(
                     node_prompt=next_node_schema.node_prompt,
                     input=next_node_schema.input_from_state_schema(
-                        **agent_executor.graph.curr_node.state.model_dump_fields_set()
+                        **agent_executor.graph.curr_node.curr_node.state.model_dump_fields_set()
                     ).model_dump_json(),
                     node_input_json_schema=next_node_schema.input_from_state_schema.model_json_schema(),
                     state_json_schema=next_node_schema.state_schema.model_json_schema(),
