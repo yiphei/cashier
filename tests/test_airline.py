@@ -904,7 +904,7 @@ class TestAirline:
                     node_input_json_schema=input_schema.model_json_schema(),
                     state_json_schema=next_node_schema.state_schema.model_json_schema(),
                     last_msg="i want pecan latte",
-                    curr_request="customer wants to order coffee",
+                    curr_request="customer wants to book flight",
                 ),
                 node_id=3,
             ),
