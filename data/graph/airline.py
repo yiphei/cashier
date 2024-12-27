@@ -290,6 +290,7 @@ BOOK_FLIGHT_GRAPH = GraphSchema(
 
 AIRLINE_REQUEST_GRAPH = RequestGraphSchema(
     node_schemas=[BOOK_FLIGHT_GRAPH],
+    edge_schemas=[],
     node_prompt="You are a helpful assistant that helps customers with flight-related requests.",
     node_system_prompt=AirlineNodeSystemPrompt,
     description="Help customers change flights and baggage information for a reservation.",
