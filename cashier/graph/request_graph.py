@@ -89,7 +89,7 @@ class RequestGraph(BaseGraph):
                     TC.add_assistant_turn(
                         None,
                         model_provider,
-                        self.curr_node.curr_node.schema.tool_registry,
+                        self.curr_conversation_node.schema.tool_registry,
                         [fake_fn_call],
                         {fake_fn_call.id: None},
                     )

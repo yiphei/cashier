@@ -83,7 +83,7 @@ class BaseGraphExecutable(BaseExecutable):
                     fn_call, is_fn_call_success
                 )
 
-        if self.curr_node.status == Status.INTERNALLY_COMPLETED:
+        if self.curr_node.status == Status.INTERNALLY_COMPLETED and getattr(self.curr_node, "state",None) is not None and getattr(self, "state",None) is not None: # TODO: remove the state check after refactor
             self.update_state_from_executable(self.curr_node)
 
         if self.is_completed(fn_call, is_fn_call_success):
