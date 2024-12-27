@@ -925,3 +925,4 @@ for tool in ALL_TOOLS:
     AIRLINE_TOOL_REGISTRY.add_tool_def_w_oai_def(
         get_tool_name(tool.get_info()), tool.get_info()
     )
+    AIRLINE_TOOL_REGISTRY.fn_name_to_fn[get_tool_name(tool.get_info())] = tool.invoke
