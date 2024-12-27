@@ -74,33 +74,30 @@ class RequestGraph(BaseGraph):
             )
 
         return True if agent_selection else False
+    
+
+    def handle_is_off_topic(self, TC, model_provider):
+        has_new_task = self.add_tasks(TC)
+        if has_new_task:
+            fake_fn_call = create_think_fn_call(
+                "At least part of the customer request/question is off-topic for the current conversation and will actually be addressed later. According to the policies, I must tell the customer that 1) their off-topic request/question will be addressed later and 2) we must finish the current business before we can get to it. I must refuse to engage with the off-topic request/question in any way."
+            )
+            TC.add_assistant_turn(
+                None,
+                model_provider,
+                self.curr_conversation_node.schema.tool_registry,
+                [fake_fn_call],
+                {fake_fn_call.id: None},
+            )
+        else:
+            self.curr_node.handle_is_off_topic(
+                TC,
+                model_provider,
+            )
 
     def handle_user_turn(self, msg, TC, model_provider):
         if isinstance(self.curr_node, Graph):
-            if not OffTopicPrompt.run(
-                current_node_schema=self.curr_conversation_node.schema,
-                tc=TC,
-            ):
-                has_new_task = self.add_tasks(TC)
-                if has_new_task:
-                    fake_fn_call = create_think_fn_call(
-                        "At least part of the customer request/question is off-topic for the current conversation and will actually be addressed later. According to the policies, I must tell the customer that 1) their off-topic request/question will be addressed later and 2) we must finish the current business before we can get to it. I must refuse to engage with the off-topic request/question in any way."
-                    )
-                    TC.add_assistant_turn(
-                        None,
-                        model_provider,
-                        self.curr_conversation_node.schema.tool_registry,
-                        [fake_fn_call],
-                        {fake_fn_call.id: None},
-                    )
-                else:
-                    self.curr_node.handle_user_turn(
-                        msg,
-                        TC,
-                        model_provider,
-                        run_off_topic_check=False,
-                    )
-            self.curr_conversation_node.update_first_user_message()  # TODO: remove this after refactor
+            super().handle_user_turn(msg, TC, model_provider)
         else:
             self.get_graph_schemas(msg)
             if len(self.graph_schema_sequence) > 0:

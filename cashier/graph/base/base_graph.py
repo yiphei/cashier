@@ -1,6 +1,7 @@
 import json
 from collections import defaultdict
 from typing import Any, Callable, List, Literal, Optional, Tuple, overload
+from abc import abstractmethod
 
 from colorama import Style
 
@@ -22,6 +23,7 @@ from cashier.model.model_util import (
     FunctionCall,
     create_think_fn_call,
 )
+from cashier.prompts.off_topic import OffTopicPrompt
 from cashier.tool.function_call_context import (
     FunctionCallContext,
     InexistentFunctionError,
@@ -379,6 +381,20 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
             return fn_output, (
                 type(fn_output) is not str or not fn_output.strip().startswith("Error:")
             )
+    
+    @abstractmethod
+    def handle_is_off_topic(self, TC, model_provider):
+        raise NotImplementedError()
+
+        
+    def handle_user_turn(self, msg, TC, model_provider):
+        is_off_topic = OffTopicPrompt.run(
+            current_node_schema=self.curr_conversation_node.schema,
+            tc=TC,
+        )
+        if is_off_topic:
+            self.handle_is_off_topic(TC, model_provider)
+        self.curr_conversation_node.update_first_user_message()
 
     def handle_assistant_turn(
         self, model_completion: ModelOutput, TC, fn_callback: Optional[Callable] = None
