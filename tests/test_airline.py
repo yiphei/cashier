@@ -865,7 +865,7 @@ class TestAirline:
             tool_names=fn_names,
         )
         t3 = self.add_user_turn(
-            agent_executor, "i want pecan latte", model_provider, True
+            agent_executor, "my username is ...", model_provider, True
         )
         self.run_message_dict_assertions(agent_executor, model_provider)
 
@@ -903,7 +903,7 @@ class TestAirline:
                     input=input.model_dump_json(),
                     node_input_json_schema=input_schema.model_json_schema(),
                     state_json_schema=next_node_schema.state_schema.model_json_schema(),
-                    last_msg="i want pecan latte",
+                    last_msg="my username is ...",
                     curr_request="customer wants to book flight",
                 ),
                 node_id=3,
