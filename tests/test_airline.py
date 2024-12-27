@@ -1207,14 +1207,14 @@ class TestAirline:
         t8 = self.add_assistant_turn(
             agent_executor,
             model_provider,
-            "thanks for confirming",
+            "thanks for confirming flights, now lets move on to ...",
             is_stream,
         )
         self.run_message_dict_assertions(agent_executor, model_provider)
 
         t9 = self.add_user_turn(
             agent_executor,
-            "actually, i want to change my order",
+            "actually, i want to change my user details",
             model_provider,
             False,
             skip_node_schema_id=BOOK_FLIGHT_GRAPH.start_node_schema.start_node_schema.id,
@@ -1228,7 +1228,7 @@ class TestAirline:
                     input=None,
                     node_input_json_schema=start_node_schema.input_from_state_schema,
                     state_json_schema=start_node_schema.state_schema.model_json_schema(),
-                    last_msg="thanks for confirming",
+                    last_msg="thanks for confirming flights, now lets move on to ...",
                     curr_request="customer wants to book flight",
                 ),
                 node_id=5,
