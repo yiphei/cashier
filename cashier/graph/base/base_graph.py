@@ -391,7 +391,7 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
             current_node_schema=self.curr_conversation_node.schema,
             tc=TC,
         )
-        if is_off_topic:
+        if not is_off_topic:
             self.handle_is_off_topic(TC, model_provider)
         self.curr_conversation_node.update_first_user_message()
 
