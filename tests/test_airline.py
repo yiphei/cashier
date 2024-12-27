@@ -1220,7 +1220,7 @@ class TestAirline:
             model_provider,
             False,
             skip_node_schema_id=BOOK_FLIGHT_GRAPH.start_node_schema.start_node_schema.id,
-            include_fwd_wait_node_schema_id=False,
+            include_fwd_wait_node_schema_id=True,
         )
         start_node_schema = BOOK_FLIGHT_GRAPH.start_node_schema.start_node_schema
         node_turn_3 = TurnArgs(
