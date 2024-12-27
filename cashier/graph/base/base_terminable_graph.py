@@ -17,7 +17,6 @@ from cashier.graph.mixin.has_id_mixin import HasIdMixin
 from cashier.graph.mixin.has_status_mixin import Status
 from cashier.model.model_util import FunctionCall, create_think_fn_call
 from cashier.prompts.node_schema_selection import NodeSchemaSelectionPrompt
-from cashier.prompts.off_topic import OffTopicPrompt
 from cashier.turn_container import TurnContainer
 
 
