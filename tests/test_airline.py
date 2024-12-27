@@ -28,6 +28,7 @@ from cashier.model.model_util import (
 from cashier.prompts.graph_schema_selection import AgentSelection
 from cashier.tool.function_call_context import (
     InexistentFunctionError,
+    StateUpdateError,
     ToolExceptionWrapper,
 )
 from cashier.turn_container import TurnContainer
@@ -773,6 +774,69 @@ class TestAirline:
 
         TC = self.create_turn_container(
             [*start_turns, user_turn, assistant_turn], remove_prev_tool_calls
+        )
+
+        self.run_assertions(
+            agent_executor,
+            TC,
+            self.start_node_schema.start_node_schema.tool_registry,
+            model_provider,
+        )
+
+
+    @pytest.mark.parametrize(
+        "other_fn_names",
+        [
+            [],
+            ["get_user_details"],
+            ["get_state"],
+            ["inexistent_fn"],
+            ["get_user_details", "get_user_details"],
+            ["get_state", "inexistent_fn"],
+            ["get_state", "get_user_details"],
+            [
+                "get_state",
+                "get_user_details",
+                "get_user_details",
+            ],
+        ],
+    )
+    def test_state_update_before_user_turn(
+        self,
+        model_provider,
+        remove_prev_tool_calls,
+        is_stream,
+        other_fn_names,
+        agent_executor,
+        start_turns,
+    ):
+        fn_calls, fn_call_id_to_fn_output = self.create_fake_fn_calls(
+            model_provider, other_fn_names, agent_executor.graph.curr_conversation_node
+        )
+        fn_call = FunctionCall.create(
+            name="update_state_user_details",
+            args={"user_details": None},
+            api_id_model_provider=model_provider,
+            api_id=FunctionCall.generate_fake_id(model_provider),
+        )
+        fn_calls.append(fn_call)
+        fn_call_id_to_fn_output[fn_call.id] = ToolExceptionWrapper(
+            StateUpdateError(
+                "cannot update any state field until you get the first customer message in the current conversation. Remember, the current conversation starts after <cutoff_msg>"
+            )
+        )
+
+        assistant_turn = self.add_assistant_turn(
+            agent_executor,
+            model_provider,
+            None,
+            is_stream,
+            fn_calls,
+            fn_call_id_to_fn_output,
+        )
+
+        TC = self.create_turn_container(
+            [*start_turns, assistant_turn], remove_prev_tool_calls
         )
 
         self.run_assertions(
