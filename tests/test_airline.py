@@ -31,7 +31,11 @@ from cashier.tool.function_call_context import (
     ToolExceptionWrapper,
 )
 from cashier.turn_container import TurnContainer
-from data.graph.airline import AIRLINE_REQUEST_GRAPH, BOOK_FLIGHT_GRAPH, find_flight_node_schema
+from data.graph.airline import (
+    AIRLINE_REQUEST_GRAPH,
+    BOOK_FLIGHT_GRAPH,
+    find_flight_node_schema,
+)
 
 
 class TurnArgs(BaseModel):
@@ -690,7 +694,6 @@ class TestAirline:
             self.start_node_schema.start_node_schema.tool_registry,
             model_provider,
         )
-
 
     def test_add_user_turn_with_wait(
         self,
