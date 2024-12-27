@@ -74,7 +74,6 @@ class RequestGraph(BaseGraph):
             )
 
         return True if agent_selection else False
-    
 
     def handle_is_off_topic(self, TC, model_provider):
         has_new_task = self.add_tasks(TC)

@@ -1,7 +1,7 @@
 import json
+from abc import abstractmethod
 from collections import defaultdict
 from typing import Any, Callable, List, Literal, Optional, Tuple, overload
-from abc import abstractmethod
 
 from colorama import Style
 
@@ -381,12 +381,11 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
             return fn_output, (
                 type(fn_output) is not str or not fn_output.strip().startswith("Error:")
             )
-    
+
     @abstractmethod
     def handle_is_off_topic(self, TC, model_provider):
         raise NotImplementedError()
 
-        
     def handle_user_turn(self, msg, TC, model_provider):
         is_off_topic = OffTopicPrompt.run(
             current_node_schema=self.curr_conversation_node.schema,

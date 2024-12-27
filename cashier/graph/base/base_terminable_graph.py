@@ -368,7 +368,6 @@ class BaseTerminableGraph(BaseGraph):
                 TC,
             )
 
-
     def handle_is_off_topic(self, TC, model_provider):
         node_schema, is_wait = self._handle_is_off_topic(TC)
         if node_schema:
