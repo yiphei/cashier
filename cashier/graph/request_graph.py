@@ -110,18 +110,18 @@ class RequestGraph(BaseGraph):
                     TC,
                 )
 
-    def init_next_node(
+    def direct_init_next_node(
         self,
-        node_schema: ConversationNodeSchema,
+        node_schema,
         TC,
-        input: Any = None,
+        input,
         request=None,
     ) -> None:
         request = None
         if len(self.requests) > self.current_graph_schema_idx + 1:
             self.current_graph_schema_idx += 1
             request = self.requests[self.current_graph_schema_idx]
-        super().init_next_node(node_schema, TC, input, request)
+        super().direct_init_next_node(node_schema, TC, input, request)
 
     def is_completed(self, fn_call, is_fn_call_success):
         return False
