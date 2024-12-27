@@ -432,7 +432,6 @@ class TestAirline:
     ):
         self.build_messages_from_turn(start_turns[1], model_provider)
         self.build_messages_from_turn(start_turns[2], model_provider)
-        self.build_messages_from_turn(start_turns[3], model_provider)
 
     @pytest.fixture
     def start_turns(self, remove_prev_tool_calls, agent_executor, model_provider):
@@ -468,7 +467,6 @@ class TestAirline:
                     node_id=2,
                 ),
             ),
-            second_node_schema.first_turn,
         ]
 
     @classmethod
