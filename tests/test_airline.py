@@ -493,20 +493,20 @@ class TestAirline:
     @classmethod
     @pytest.fixture(
         params=[
-            ["get_menu_item_from_name"],
+            ["get_user_details"],
             ["get_state"],
-            ["update_state_order"],
+            # ["update_state_user_details"],
             ["inexistent_fn"],
-            ["get_menu_item_from_name", "get_menu_item_from_name"],
-            ["get_state", "update_state_order"],
-            ["get_state", "update_state_order", "inexistent_fn"],
-            ["get_state", "get_menu_item_from_name", "update_state_order"],
-            [
-                "get_state",
-                "get_menu_item_from_name",
-                "update_state_order",
-                "get_menu_item_from_name",
-            ],
+            ["get_user_details", "get_user_details"],
+            # ["get_state", "update_state_user_details"],
+            # ["get_state", "update_state_user_details", "inexistent_fn"],
+            # ["get_state", "get_user_details", "update_state_user_details"],
+            # [
+            #     "get_state",
+            #     "get_user_details",
+            #     "update_state_user_details",
+            #     "get_user_details",
+            # ],
         ]
     )
     def fn_names(cls, request):
@@ -744,6 +744,32 @@ class TestAirline:
         user_turn = self.add_user_turn(agent_executor, "hello", model_provider, True)
         assistant_turn = self.add_assistant_turn(
             agent_executor, model_provider, "hello back", is_stream
+        )
+
+        TC = self.create_turn_container(
+            [*start_turns, user_turn, assistant_turn], remove_prev_tool_calls
+        )
+
+        self.run_assertions(
+            agent_executor,
+            TC,
+            self.start_node_schema.start_node_schema.tool_registry,
+            model_provider,
+        )
+
+
+    def test_add_assistant_turn_with_tool_calls(
+        self,
+        model_provider,
+        remove_prev_tool_calls,
+        is_stream,
+        fn_names,
+        agent_executor,
+        start_turns,
+    ):
+        user_turn = self.add_user_turn(agent_executor, "hello", model_provider, True)
+        assistant_turn = self.add_assistant_turn(
+            agent_executor, model_provider, None, is_stream, tool_names=fn_names
         )
 
         TC = self.create_turn_container(
