@@ -2,8 +2,8 @@ import abc
 import json
 from copy import deepcopy
 from typing import Any, Dict, List
-from cashier.tool.general import GeneralToolRegistry
 
+from cashier.tool.general import GeneralToolRegistry
 
 
 class Tool(abc.ABC):
@@ -310,7 +310,8 @@ class CancelReservation(Tool):
                 },
             },
         }
-    
+
+
 class GetReservationDetails(Tool):
     @staticmethod
     def invoke(data: Dict[str, Any], reservation_id: str) -> str:
@@ -367,7 +368,7 @@ class GetUserDetails(Tool):
                 },
             },
         }
-    
+
 
 class ListAllAirports(Tool):
     @staticmethod
@@ -478,7 +479,7 @@ class SearchDirectFlight(Tool):
             },
         }
 
-    
+
 class SearchOnestopFlight(Tool):
     @staticmethod
     def invoke(data: Dict[str, Any], origin: str, destination: str, date: str) -> str:
@@ -546,7 +547,7 @@ class SearchOnestopFlight(Tool):
                 },
             },
         }
-    
+
 
 class SendCertificate(Tool):
     @staticmethod
@@ -625,7 +626,8 @@ class TransferToHumanAgents(Tool):
                 },
             },
         }
-    
+
+
 class UpdateReservationBaggages(Tool):
     @staticmethod
     def invoke(
@@ -703,7 +705,8 @@ class UpdateReservationBaggages(Tool):
                 },
             },
         }
-    
+
+
 class UpdateReservationFlights(Tool):
     @staticmethod
     def invoke(
@@ -835,6 +838,7 @@ class UpdateReservationFlights(Tool):
             },
         }
 
+
 class UpdateReservationPassengers(Tool):
     @staticmethod
     def invoke(
@@ -912,8 +916,12 @@ ALL_TOOLS = [
 
 AIRLINE_TOOL_REGISTRY = GeneralToolRegistry()
 
+
 def get_tool_name(tool_def):
-    return tool_def['function']['name']
+    return tool_def["function"]["name"]
+
 
 for tool in ALL_TOOLS:
-    AIRLINE_TOOL_REGISTRY.add_tool_def_w_oai_def(get_tool_name(tool.get_info()), tool.get_info())
+    AIRLINE_TOOL_REGISTRY.add_tool_def_w_oai_def(
+        get_tool_name(tool.get_info()), tool.get_info()
+    )
