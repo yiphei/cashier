@@ -31,7 +31,7 @@ from cashier.tool.function_call_context import (
     ToolExceptionWrapper,
 )
 from cashier.turn_container import TurnContainer
-from data.graph.airline import AIRLINE_REQUEST_GRAPH, BOOK_FLIGHT_GRAPH
+from data.graph.airline import AIRLINE_REQUEST_GRAPH, BOOK_FLIGHT_GRAPH, find_flight_node_schema
 
 
 class TurnArgs(BaseModel):
@@ -669,6 +669,84 @@ class TestAirline:
         self, model_provider, remove_prev_tool_calls, agent_executor, start_turns
     ):
         TC = self.create_turn_container(start_turns, remove_prev_tool_calls)
+        self.run_assertions(
+            agent_executor,
+            TC,
+            self.start_node_schema.start_node_schema.tool_registry,
+            model_provider,
+        )
+
+    def test_add_user_turn(
+        self, model_provider, remove_prev_tool_calls, agent_executor, start_turns
+    ):
+        user_turn = self.add_user_turn(agent_executor, "hello", model_provider, True)
+
+        TC = self.create_turn_container(
+            [*start_turns, user_turn], remove_prev_tool_calls
+        )
+        self.run_assertions(
+            agent_executor,
+            TC,
+            self.start_node_schema.start_node_schema.tool_registry,
+            model_provider,
+        )
+
+
+    def test_add_user_turn_with_wait(
+        self,
+        model_provider,
+        remove_prev_tool_calls,
+        agent_executor,
+        start_turns,
+    ):
+        user_turn = self.add_user_turn(
+            agent_executor, "hello", model_provider, False, find_flight_node_schema.id
+        )
+
+        fake_fn_call = self.recreate_fake_single_fn_call(
+            "think",
+            {
+                "thought": "At least part of the customer request/question is off-topic for the current conversation and will actually be addressed later. According to the policies, I must tell the customer that 1) their off-topic request/question will be addressed later and 2) we must finish the current business before we can get to it. I must refuse to engage with the off-topic request/question in any way."
+            },
+        )
+
+        assistant_turn = AssistantTurn(
+            msg_content=None,
+            model_provider=model_provider,
+            tool_registry=self.start_node_schema.start_node_schema.tool_registry,
+            fn_calls=[fake_fn_call],
+            fn_call_id_to_fn_output={fake_fn_call.id: None},
+        )
+        self.build_messages_from_turn(assistant_turn, model_provider)
+
+        TC = self.create_turn_container(
+            [*start_turns, user_turn, assistant_turn], remove_prev_tool_calls
+        )
+
+        self.run_assertions(
+            agent_executor,
+            TC,
+            self.start_node_schema.start_node_schema.tool_registry,
+            model_provider,
+        )
+
+    def test_add_assistant_turn(
+        self,
+        model_provider,
+        remove_prev_tool_calls,
+        is_stream,
+        agent_executor,
+        start_turns,
+    ):
+        user_turn = self.add_user_turn(agent_executor, "hello", model_provider, True)
+        assistant_turn = self.add_assistant_turn(
+            agent_executor, model_provider, "hello back", is_stream
+        )
+
+        TC = self.create_turn_container(
+            [*start_turns, user_turn, assistant_turn], remove_prev_tool_calls
+        )
+
         self.run_assertions(
             agent_executor,
             TC,
