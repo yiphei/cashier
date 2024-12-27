@@ -495,18 +495,18 @@ class TestAirline:
         params=[
             ["get_user_details"],
             ["get_state"],
-            # ["update_state_user_details"],
+            ["update_state_user_details"],
             ["inexistent_fn"],
             ["get_user_details", "get_user_details"],
-            # ["get_state", "update_state_user_details"],
-            # ["get_state", "update_state_user_details", "inexistent_fn"],
-            # ["get_state", "get_user_details", "update_state_user_details"],
-            # [
-            #     "get_state",
-            #     "get_user_details",
-            #     "update_state_user_details",
-            #     "get_user_details",
-            # ],
+            ["get_state", "update_state_user_details"],
+            ["get_state", "update_state_user_details", "inexistent_fn"],
+            ["get_state", "get_user_details", "update_state_user_details"],
+            [
+                "get_state",
+                "get_user_details",
+                "update_state_user_details",
+                "get_user_details",
+            ],
         ]
     )
     def fn_names(cls, request):
