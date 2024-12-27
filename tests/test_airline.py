@@ -254,9 +254,9 @@ class TestAirline:
         message,
         model_provider,
         is_on_topic,
-        fwd_skip_node_schema_id=None,
-        include_fwd_skip_node_schema_id=True,
-        bwd_skip_node_schema_id=None,
+        fwd_wait_node_schema_id=None,
+        include_fwd_wait_node_schema_id=True,
+        skip_node_schema_id=None,
     ):
         model_chat_side_effects = []
 
@@ -270,27 +270,27 @@ class TestAirline:
             )
             model_chat_side_effects.append(agent_addition_completion)
 
-            if include_fwd_skip_node_schema_id:
+            if include_fwd_wait_node_schema_id:
                 is_wait_model_completion = self.create_mock_model_completion(
                     model_provider,
                     None,
                     False,
-                    fwd_skip_node_schema_id
+                    fwd_wait_node_schema_id
                     or agent_executor.graph.curr_conversation_node.schema.id,
                     0.5,
                 )
                 model_chat_side_effects.append(is_wait_model_completion)
 
-            if fwd_skip_node_schema_id is None:
-                bwd_skip_model_completion = self.create_mock_model_completion(
+            if fwd_wait_node_schema_id is None:
+                skip_model_completion = self.create_mock_model_completion(
                     model_provider,
                     None,
                     False,
-                    bwd_skip_node_schema_id
+                    skip_node_schema_id
                     or agent_executor.graph.curr_conversation_node.schema.id,
                     0.5,
                 )
-                model_chat_side_effects.append(bwd_skip_model_completion)
+                model_chat_side_effects.append(skip_model_completion)
 
         self.model_chat.side_effect = model_chat_side_effects
         with self.generate_random_string_context():
