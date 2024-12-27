@@ -387,11 +387,11 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
         raise NotImplementedError()
 
     def handle_user_turn(self, msg, TC, model_provider):
-        is_off_topic = OffTopicPrompt.run(
+        is_on_topic = OffTopicPrompt.run(
             current_node_schema=self.curr_conversation_node.schema,
             tc=TC,
         )
-        if not is_off_topic:
+        if not is_on_topic:
             self.handle_is_off_topic(TC, model_provider)
         self.curr_conversation_node.update_first_user_message()
 
