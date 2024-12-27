@@ -6,6 +6,7 @@ from unittest.mock import Mock, call, patch
 
 import pytest
 from deepdiff import DeepDiff
+from polyfactory.factories.pydantic_factory import ModelFactory
 from pydantic import BaseModel, Field
 
 from cashier.agent_executor import AgentExecutor
@@ -37,9 +38,8 @@ from data.graph.airline import (
     BOOK_FLIGHT_GRAPH,
     find_flight_node_schema,
 )
-from polyfactory.factories.pydantic_factory import ModelFactory
-
 from data.types.airline import UserDetails
+
 
 class TurnArgs(BaseModel):
     turn: ModelTurn
@@ -868,7 +868,6 @@ class TestAirline:
             agent_executor, "i want pecan latte", model_provider, True
         )
         self.run_message_dict_assertions(agent_executor, model_provider)
-
 
         user_details = ModelFactory.create_factory(UserDetails).build()
         fn_call_1 = FunctionCall.create(
