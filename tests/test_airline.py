@@ -757,7 +757,6 @@ class TestAirline:
             model_provider,
         )
 
-
     def test_add_assistant_turn_with_tool_calls(
         self,
         model_provider,
