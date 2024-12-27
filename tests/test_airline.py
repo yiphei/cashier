@@ -931,7 +931,6 @@ class TestAirline:
             agent_executor, TC, next_node_schema.tool_registry, model_provider
         )
 
-
     def test_backward_node_skip(
         self,
         model_provider,
@@ -1000,7 +999,7 @@ class TestAirline:
             remove_prev_tool_calls=remove_prev_tool_calls,
         )
 
-        #-------------
+        # -------------
 
         t5 = self.add_assistant_turn(
             agent_executor,
