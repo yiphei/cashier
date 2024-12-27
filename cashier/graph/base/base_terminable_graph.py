@@ -17,7 +17,6 @@ from cashier.graph.mixin.has_id_mixin import HasIdMixin
 from cashier.graph.mixin.has_status_mixin import Status
 from cashier.model.model_util import FunctionCall, create_think_fn_call
 from cashier.prompts.node_schema_selection import NodeSchemaSelectionPrompt
-from cashier.prompts.off_topic import OffTopicPrompt
 from cashier.turn_container import TurnContainer
 
 
@@ -178,7 +177,7 @@ class BaseTerminableGraph(BaseGraph):
             TC,
         )
 
-    def handle_is_off_topic(
+    def _handle_is_off_topic(
         self,
         TC,
     ) -> Union[
@@ -368,44 +367,39 @@ class BaseTerminableGraph(BaseGraph):
                 TC,
             )
 
-    def handle_user_turn(self, msg, TC, model_provider, run_off_topic_check=True):
-        if not run_off_topic_check or not OffTopicPrompt.run(
-            current_node_schema=self.curr_conversation_node.schema,
-            tc=TC,
-        ):
-            node_schema, is_wait = self.handle_is_off_topic(TC)
-            if node_schema:
-                if is_wait:
-                    fake_fn_call = create_think_fn_call(
-                        "At least part of the customer request/question is off-topic for the current conversation and will actually be addressed later. According to the policies, I must tell the customer that 1) their off-topic request/question will be addressed later and 2) we must finish the current business before we can get to it. I must refuse to engage with the off-topic request/question in any way."
-                    )
-                    TC.add_assistant_turn(
-                        None,
-                        model_provider,
-                        self.curr_conversation_node.schema.tool_registry,
-                        [fake_fn_call],
-                        {fake_fn_call.id: None},
-                    )
-                else:
-                    self.init_skip_node(
-                        node_schema,
-                        TC,
-                    )
+    def handle_is_off_topic(self, TC, model_provider):
+        node_schema, is_wait = self._handle_is_off_topic(TC)
+        if node_schema:
+            if is_wait:
+                fake_fn_call = create_think_fn_call(
+                    "At least part of the customer request/question is off-topic for the current conversation and will actually be addressed later. According to the policies, I must tell the customer that 1) their off-topic request/question will be addressed later and 2) we must finish the current business before we can get to it. I must refuse to engage with the off-topic request/question in any way."
+                )
+                TC.add_assistant_turn(
+                    None,
+                    model_provider,
+                    self.curr_conversation_node.schema.tool_registry,
+                    [fake_fn_call],
+                    {fake_fn_call.id: None},
+                )
+            else:
+                self.init_skip_node(
+                    node_schema,
+                    TC,
+                )
 
-                    fake_fn_call = FunctionCall.create(
-                        api_id=None,
-                        api_id_model_provider=None,
-                        name="get_state",
-                        args={},
-                    )
-                    TC.add_assistant_turn(
-                        None,
-                        model_provider,
-                        self.curr_conversation_node.schema.tool_registry,
-                        [fake_fn_call],
-                        {fake_fn_call.id: self.curr_conversation_node.get_state()},
-                    )
-        self.curr_conversation_node.update_first_user_message()
+                fake_fn_call = FunctionCall.create(
+                    api_id=None,
+                    api_id_model_provider=None,
+                    name="get_state",
+                    args={},
+                )
+                TC.add_assistant_turn(
+                    None,
+                    model_provider,
+                    self.curr_conversation_node.schema.tool_registry,
+                    [fake_fn_call],
+                    {fake_fn_call.id: self.curr_conversation_node.get_state()},
+                )
 
     def get_next_edge_schema(self):
         return self.from_node_schema_id_to_edge_schema.get(
