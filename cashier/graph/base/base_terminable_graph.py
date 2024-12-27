@@ -360,7 +360,13 @@ class BaseTerminableGraph(BaseGraph):
         request=None,
     ) -> None:
         node_schema, input = self.get_next_init_node_schema(node_schema, input)
-        super().direct_init_next_node(node_schema, TC, input, request)
+        if node_schema in self.schema.node_schemas:
+            super().direct_init_next_node(node_schema, TC, input, request)
+        else:
+            self.init_skip_node(
+                node_schema,
+                TC,
+            )
 
     def handle_user_turn(self, msg, TC, model_provider, run_off_topic_check=True):
         if not run_off_topic_check or not OffTopicPrompt.run(
