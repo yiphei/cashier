@@ -38,7 +38,7 @@ from data.graph.airline import (
     BOOK_FLIGHT_GRAPH,
     find_flight_node_schema,
 )
-from data.types.airline import UserDetails
+from data.types.airline import FlightInfo, UserDetails
 
 
 class TurnArgs(BaseModel):
@@ -1073,4 +1073,263 @@ class TestAirline:
             TC,
             self.start_node_schema.start_node_schema.tool_registry,
             model_provider,
+        )
+
+
+    def test_forward_node_skip(
+        self,
+        model_provider,
+        remove_prev_tool_calls,
+        is_stream,
+        fn_names,
+        agent_executor,
+        start_turns,
+    ):
+        t1 = self.add_user_turn(agent_executor, "hello", model_provider, True)
+        t2 = self.add_assistant_turn(
+            agent_executor,
+            model_provider,
+            None,
+            is_stream,
+            tool_names=fn_names,
+        )
+        t3 = self.add_user_turn(
+            agent_executor, "my username is ...", model_provider, True
+        )
+        self.run_message_dict_assertions(agent_executor, model_provider)
+
+        user_details = ModelFactory.create_factory(UserDetails).build()
+        fn_call_1 = FunctionCall.create(
+            api_id_model_provider=model_provider,
+            api_id=FunctionCall.generate_fake_id(model_provider),
+            name="update_state_user_details",
+            args={"user_details": user_details.model_dump()},
+        )
+        second_fn_calls = [fn_call_1]
+        second_fn_call_id_to_fn_output = {
+            fn_call.id: None for fn_call in second_fn_calls
+        }
+        t4 = self.add_assistant_turn(
+            agent_executor,
+            model_provider,
+            None,
+            is_stream,
+            second_fn_calls,
+            second_fn_call_id_to_fn_output,
+        )
+
+        next_node_schema = BOOK_FLIGHT_GRAPH.start_node_schema.default_from_node_schema_id_to_edge_schema[
+            self.start_node_schema.start_node_schema.id
+        ].to_node_schema
+
+        input_schema, input = (
+            agent_executor.graph.curr_node.curr_node.state.get_set_schema_and_fields()
+        )
+        node_turn_1 = TurnArgs(
+            turn=NodeSystemTurn(
+                msg_content=next_node_schema.node_system_prompt(
+                    node_prompt=next_node_schema.node_prompt,
+                    input=input.model_dump_json(),
+                    node_input_json_schema=input_schema.model_json_schema(),
+                    state_json_schema=next_node_schema.state_schema.model_json_schema(),
+                    last_msg="my username is ...",
+                    curr_request="customer wants to book flight",
+                ),
+                node_id=3,
+            ),
+        )
+        self.build_messages_from_turn(
+            node_turn_1,
+            model_provider,
+            remove_prev_tool_calls=remove_prev_tool_calls,
+        )
+
+        t5 = self.add_assistant_turn(
+            agent_executor,
+            model_provider,
+            "what flight do you want?",
+            is_stream,
+        )
+
+        # ---------------------#
+
+        t6 = self.add_user_turn(
+            agent_executor,
+            "i want flight from ... to ... on ...",
+            model_provider,
+            True,
+        )
+        self.run_message_dict_assertions(agent_executor, model_provider)
+
+
+        flight_info = ModelFactory.create_factory(FlightInfo).build()
+
+        fn_call_1 = FunctionCall.create(
+            api_id_model_provider=model_provider,
+            api_id=FunctionCall.generate_fake_id(model_provider),
+            name="update_state_flight_infos",
+            args={"flight_infos": [flight_info.model_dump()]},
+        )
+        third_fn_calls = [fn_call_1]
+        third_fn_calls_fn_call_id_to_fn_output = {
+            fn_call.id: None for fn_call in third_fn_calls
+        }
+        t7 = self.add_assistant_turn(
+            agent_executor,
+            model_provider,
+            None,
+            is_stream,
+            third_fn_calls,
+            third_fn_calls_fn_call_id_to_fn_output,
+        )
+
+        next_next_node_schema = BOOK_FLIGHT_GRAPH.start_node_schema.default_from_node_schema_id_to_edge_schema[
+            next_node_schema.id
+        ].to_node_schema
+
+        input_schema, input = (
+            agent_executor.graph.curr_node.curr_node.state.get_set_schema_and_fields()
+        )
+        node_turn_2 = TurnArgs(
+            turn=NodeSystemTurn(
+                msg_content=next_next_node_schema.node_system_prompt(
+                    node_prompt=next_next_node_schema.node_prompt,
+                    input=input.model_dump_json(),
+                    node_input_json_schema=input_schema.model_json_schema(),
+                    state_json_schema=next_next_node_schema.state_schema.model_json_schema(),
+                    last_msg="i want flight from ... to ... on ...",
+                    curr_request="customer wants to book flight",
+                ),
+                node_id=4,
+            ),
+        )
+        self.build_messages_from_turn(
+            node_turn_2,
+            model_provider,
+            remove_prev_tool_calls=remove_prev_tool_calls,
+        )
+        t8 = self.add_assistant_turn(
+            agent_executor,
+            model_provider,
+            "thanks for confirming",
+            is_stream,
+        )
+        self.run_message_dict_assertions(agent_executor, model_provider)
+
+        t9 = self.add_user_turn(
+            agent_executor,
+            "actually, i want to change my order",
+            model_provider,
+            False,
+            skip_node_schema_id=BOOK_FLIGHT_GRAPH.start_node_schema.start_node_schema.id,
+            include_fwd_wait_node_schema_id=False,
+        )
+        start_node_schema = BOOK_FLIGHT_GRAPH.start_node_schema.start_node_schema
+        node_turn_3 = TurnArgs(
+            turn=NodeSystemTurn(
+                msg_content=start_node_schema.node_system_prompt(
+                    node_prompt=start_node_schema.node_prompt,
+                    input=None,
+                    node_input_json_schema=start_node_schema.input_from_state_schema,
+                    state_json_schema=start_node_schema.state_schema.model_json_schema(),
+                    last_msg="thanks for confirming",
+                    curr_request="customer wants to book flight",
+                ),
+                node_id=5,
+            ),
+            kwargs={"is_skip": True},
+        )
+        self.build_messages_from_turn(
+            node_turn_3,
+            model_provider,
+            remove_prev_tool_calls=remove_prev_tool_calls,
+            is_skip=True,
+        )
+        get_state_fn_call = self.recreate_fake_single_fn_call("get_state", {})
+        t10 = AssistantTurn(
+            msg_content=None,
+            model_provider=model_provider,
+            tool_registry=self.start_node_schema.start_node_schema.tool_registry,
+            fn_calls=[get_state_fn_call],
+            fn_call_id_to_fn_output={
+                get_state_fn_call.id: agent_executor.graph.curr_conversation_node.state
+            },
+        )
+        self.build_messages_from_turn(t10, model_provider)
+        t11 = self.add_assistant_turn(
+            agent_executor,
+            model_provider,
+            "what do you want to change?",
+            is_stream,
+        )
+        self.run_message_dict_assertions(agent_executor, model_provider)
+
+        t12 = self.add_user_turn(
+            agent_executor,
+            "nvm, nothing",
+            model_provider,
+            False,
+            include_fwd_wait_node_schema_id=True,
+            skip_node_schema_id=next_node_schema.id,
+        )
+        node_turn_4 = TurnArgs(
+            turn=NodeSystemTurn(
+                msg_content=next_node_schema.node_system_prompt(
+                    node_prompt=next_node_schema.node_prompt,
+                    input=next_node_schema.input_from_state_schema(
+                        **agent_executor.graph.curr_node.state.model_dump_fields_set()
+                    ).model_dump_json(),
+                    node_input_json_schema=next_node_schema.input_from_state_schema.model_json_schema(),
+                    state_json_schema=next_node_schema.state_schema.model_json_schema(),
+                    last_msg="what do you want to change?",
+                    curr_request="customer wants to book flight",
+                ),
+                node_id=6,
+            ),
+            kwargs={"is_skip": True},
+        )
+        self.build_messages_from_turn(
+            node_turn_4,
+            model_provider,
+            remove_prev_tool_calls=remove_prev_tool_calls,
+            is_skip=True,
+        )
+        get_state_fn_call = self.recreate_fake_single_fn_call("get_state", {})
+        t13 = AssistantTurn(
+            msg_content=None,
+            model_provider=model_provider,
+            tool_registry=next_node_schema.tool_registry,
+            fn_calls=[get_state_fn_call],
+            fn_call_id_to_fn_output={
+                get_state_fn_call.id: agent_executor.graph.curr_conversation_node.state
+            },
+        )
+        self.build_messages_from_turn(t13, model_provider)
+
+        TC = self.create_turn_container(
+            [
+                *start_turns,
+                t1,
+                t2,
+                t3,
+                t4,
+                node_turn_1,
+                t5,
+                t6,
+                t7,
+                node_turn_2,
+                t8,
+                t9,
+                node_turn_3,
+                t10,
+                t11,
+                t12,
+                node_turn_4,
+                t13,
+            ],
+            remove_prev_tool_calls,
+        )
+
+        self.run_assertions(
+            agent_executor, TC, next_node_schema.tool_registry, model_provider
         )
