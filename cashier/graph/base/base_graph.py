@@ -458,7 +458,7 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
         return need_user_input
 
 
-def get_fn_names_fixture(conv_node_schema, exclude_update_fn = False):
+def get_fn_names_fixture(conv_node_schema, exclude_update_fn=False):
     update_state_fn_names = []
     non_state_fn_names = []
     for tool_name in conv_node_schema.tool_registry.openai_tool_name_to_tool_def.keys():
@@ -487,13 +487,20 @@ def get_fn_names_fixture(conv_node_schema, exclude_update_fn = False):
         fn_names_fixture.append([one_non_state_fn_name, one_non_state_fn_name])
     if get_state_fn_name and one_non_state_fn_name:
         fn_names_fixture.append([get_state_fn_name, one_non_state_fn_name])
-        fn_names_fixture.append([get_state_fn_name, one_non_state_fn_name, one_non_state_fn_name])
+        fn_names_fixture.append(
+            [get_state_fn_name, one_non_state_fn_name, one_non_state_fn_name]
+        )
     if get_state_fn_name and one_update_state_fn_name and not exclude_update_fn:
         fn_names_fixture.append([get_state_fn_name, one_update_state_fn_name])
         fn_names_fixture.append(
             [get_state_fn_name, one_update_state_fn_name, inexistent_fn_name]
         )
-    if get_state_fn_name and one_update_state_fn_name and one_non_state_fn_name and not exclude_update_fn:
+    if (
+        get_state_fn_name
+        and one_update_state_fn_name
+        and one_non_state_fn_name
+        and not exclude_update_fn
+    ):
         fn_names_fixture.append(
             [get_state_fn_name, one_non_state_fn_name, one_update_state_fn_name]
         )
