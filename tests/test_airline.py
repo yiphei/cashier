@@ -967,7 +967,7 @@ class TestAirline:
         node_turn_2 = TurnArgs(
             turn=NodeSystemTurn(
                 msg_content=self.start_conv_node_schema.node_system_prompt(
-                    node_prompt=BOOK_FLIGHT_GRAPH.start_node_schema.start_node_schema.node_prompt,
+                    node_prompt=self.start_conv_node_schema.node_prompt,
                     input=None,
                     node_input_json_schema=self.start_conv_node_schema.input_from_state_schema,  # just to test that its None
                     state_json_schema=self.start_conv_node_schema.state_schema.model_json_schema(),
@@ -1103,10 +1103,10 @@ class TestAirline:
             "actually, i want to change my user details",
             model_provider,
             False,
-            skip_node_schema_id=BOOK_FLIGHT_GRAPH.start_node_schema.start_node_schema.id,
+            skip_node_schema_id=self.start_conv_node_schema.id,
             include_fwd_wait_node_schema_id=True,
         )
-        start_node_schema = BOOK_FLIGHT_GRAPH.start_node_schema.start_node_schema
+        start_node_schema = self.start_conv_node_schema
         node_turn_3 = TurnArgs(
             turn=NodeSystemTurn(
                 msg_content=start_node_schema.node_system_prompt(
