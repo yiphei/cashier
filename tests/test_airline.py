@@ -276,7 +276,7 @@ class TestAirline:
         message,
         model_provider,
         is_on_topic,
-        fwd_wait_node_schema_id=None,
+        wait_node_schema_id=None,
         skip_node_schema_id=None,
     ):
         model_chat_side_effects = []
@@ -295,13 +295,13 @@ class TestAirline:
                 model_provider,
                 None,
                 False,
-                fwd_wait_node_schema_id
+                wait_node_schema_id
                 or agent_executor.graph.curr_conversation_node.schema.id,
                 0.5,
             )
             model_chat_side_effects.append(is_wait_model_completion)
 
-            if fwd_wait_node_schema_id is None:
+            if wait_node_schema_id is None:
                 skip_model_completion = self.create_mock_model_completion(
                     model_provider,
                     None,
