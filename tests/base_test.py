@@ -1,4 +1,3 @@
-import os
 import uuid
 from collections import defaultdict, deque
 from contextlib import ExitStack, contextmanager
@@ -7,7 +6,6 @@ from unittest.mock import Mock, call, patch
 
 import pytest
 from deepdiff import DeepDiff
-from polyfactory.factories.pydantic_factory import ModelFactory
 from pydantic import BaseModel, Field
 
 from cashier.agent_executor import AgentExecutor
@@ -29,17 +27,12 @@ from cashier.model.model_util import (
 from cashier.prompts.graph_schema_selection import AgentSelection
 from cashier.tool.function_call_context import (
     InexistentFunctionError,
-    StateUpdateError,
     ToolExceptionWrapper,
 )
 from cashier.turn_container import TurnContainer
 from data.graph.airline import (
     AIRLINE_REQUEST_SCHEMA,
-    BOOK_FLIGHT_GRAPH_SCHEMA,
-    find_flight_node_schema,
-    get_user_id_node_schema,
 )
-from data.types.airline import FlightInfo, UserDetails
 
 
 class TurnArgs(BaseModel):

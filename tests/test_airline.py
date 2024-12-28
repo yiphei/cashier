@@ -1,38 +1,20 @@
 import os
-import uuid
-from collections import defaultdict, deque
-from contextlib import ExitStack, contextmanager
-from typing import Any, Dict
-from unittest.mock import Mock, call, patch
 
 import pytest
-from deepdiff import DeepDiff
 from polyfactory.factories.pydantic_factory import ModelFactory
-from pydantic import BaseModel, Field
 
-from cashier.agent_executor import AgentExecutor
-from cashier.model.message_list import MessageList
-from cashier.model.model_completion import AnthropicModelOutput, OAIModelOutput
+
 from cashier.model.model_turn import (
     AssistantTurn,
-    ModelTurn,
     NodeSystemTurn,
-    SystemTurn,
-    UserTurn,
 )
 from cashier.model.model_util import (
-    MODEL_PROVIDER_TO_TOOL_CALL_ID_PREFIX,
     FunctionCall,
-    ModelProvider,
-    generate_random_string,
 )
-from cashier.prompts.graph_schema_selection import AgentSelection
 from cashier.tool.function_call_context import (
-    InexistentFunctionError,
     StateUpdateError,
     ToolExceptionWrapper,
 )
-from cashier.turn_container import TurnContainer
 from data.graph.airline import (
     AIRLINE_REQUEST_SCHEMA,
     BOOK_FLIGHT_GRAPH_SCHEMA,
@@ -41,7 +23,6 @@ from data.graph.airline import (
 )
 from data.types.airline import FlightInfo, UserDetails
 from tests.base_test import BaseTest, TurnArgs
-
 
 
 class TestAirline(BaseTest):
@@ -60,8 +41,6 @@ class TestAirline(BaseTest):
                 ]
             )
             self.edge_schema_id_to_to_cov_node_schema_id[edge_schema.id] = node_schema
-
-
 
     @pytest.fixture(autouse=True)
     def setup_start_message_list(
