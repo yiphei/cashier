@@ -38,6 +38,7 @@ from data.graph.airline import (
     AIRLINE_REQUEST_GRAPH,
     BOOK_FLIGHT_GRAPH,
     find_flight_node_schema,
+    get_user_id_node_schema,
 )
 from data.types.airline import FlightInfo, UserDetails
 
@@ -52,6 +53,7 @@ class TestAirline:
     def setup(self):
         ConversationNode._counter = 0
         self.start_node_schema = BOOK_FLIGHT_GRAPH.start_node_schema
+        self.start_conv_node_schema = get_user_id_node_schema
         self.rand_tool_ids = deque()
         self.rand_uuids = deque()
         self.model_chat_patcher = patch("cashier.model.model_completion.Model.chat")
@@ -448,7 +450,7 @@ class TestAirline:
             model_provider,
             "customer wants to book flight",
         )
-        second_node_schema = self.start_node_schema.start_node_schema
+        second_node_schema = self.start_conv_node_schema
         return [
             TurnArgs(
                 turn=NodeSystemTurn(
@@ -522,7 +524,7 @@ class TestAirline:
         )
 
         next_node_schema = BOOK_FLIGHT_GRAPH.start_node_schema.default_from_node_schema_id_to_edge_schema[
-            self.start_node_schema.start_node_schema.id
+            self.start_conv_node_schema.id
         ].to_node_schema
 
         input_schema, input = (
@@ -749,7 +751,7 @@ class TestAirline:
         self.run_assertions(
             agent_executor,
             TC,
-            self.start_node_schema.start_node_schema.tool_registry,
+            self.start_conv_node_schema.tool_registry,
             model_provider,
         )
 
@@ -764,7 +766,7 @@ class TestAirline:
         self.run_assertions(
             agent_executor,
             TC,
-            self.start_node_schema.start_node_schema.tool_registry,
+            self.start_conv_node_schema.tool_registry,
             model_provider,
         )
 
@@ -789,7 +791,7 @@ class TestAirline:
         assistant_turn = AssistantTurn(
             msg_content=None,
             model_provider=model_provider,
-            tool_registry=self.start_node_schema.start_node_schema.tool_registry,
+            tool_registry=self.start_conv_node_schema.tool_registry,
             fn_calls=[fake_fn_call],
             fn_call_id_to_fn_output={fake_fn_call.id: None},
         )
@@ -802,7 +804,7 @@ class TestAirline:
         self.run_assertions(
             agent_executor,
             TC,
-            self.start_node_schema.start_node_schema.tool_registry,
+            self.start_conv_node_schema.tool_registry,
             model_provider,
         )
 
@@ -826,7 +828,7 @@ class TestAirline:
         self.run_assertions(
             agent_executor,
             TC,
-            self.start_node_schema.start_node_schema.tool_registry,
+            self.start_conv_node_schema.tool_registry,
             model_provider,
         )
 
@@ -851,7 +853,7 @@ class TestAirline:
         self.run_assertions(
             agent_executor,
             TC,
-            self.start_node_schema.start_node_schema.tool_registry,
+            self.start_conv_node_schema.tool_registry,
             model_provider,
         )
 
@@ -913,7 +915,7 @@ class TestAirline:
         self.run_assertions(
             agent_executor,
             TC,
-            self.start_node_schema.start_node_schema.tool_registry,
+            self.start_conv_node_schema.tool_registry,
             model_provider,
         )
 
@@ -959,16 +961,16 @@ class TestAirline:
             "i want to change my user details",
             model_provider,
             False,
-            skip_node_schema_id=self.start_node_schema.start_node_schema.id,
+            skip_node_schema_id=self.start_conv_node_schema.id,
         )
 
         node_turn_2 = TurnArgs(
             turn=NodeSystemTurn(
-                msg_content=self.start_node_schema.start_node_schema.node_system_prompt(
+                msg_content=self.start_conv_node_schema.node_system_prompt(
                     node_prompt=BOOK_FLIGHT_GRAPH.start_node_schema.start_node_schema.node_prompt,
                     input=None,
-                    node_input_json_schema=self.start_node_schema.start_node_schema.input_from_state_schema,  # just to test that its None
-                    state_json_schema=self.start_node_schema.start_node_schema.state_schema.model_json_schema(),
+                    node_input_json_schema=self.start_conv_node_schema.input_from_state_schema,  # just to test that its None
+                    state_json_schema=self.start_conv_node_schema.state_schema.model_json_schema(),
                     last_msg="what flight do you want?",
                     curr_request="customer wants to book flight",
                 ),
@@ -991,7 +993,7 @@ class TestAirline:
         t7 = AssistantTurn(
             msg_content=None,
             model_provider=model_provider,
-            tool_registry=self.start_node_schema.start_node_schema.tool_registry,
+            tool_registry=self.start_conv_node_schema.tool_registry,
             fn_calls=[get_state_fn_call],
             fn_call_id_to_fn_output={
                 get_state_fn_call.id: agent_executor.graph.curr_conversation_node.state
@@ -1014,7 +1016,7 @@ class TestAirline:
         self.run_assertions(
             agent_executor,
             TC,
-            self.start_node_schema.start_node_schema.tool_registry,
+            self.start_conv_node_schema.tool_registry,
             model_provider,
         )
 
@@ -1129,7 +1131,7 @@ class TestAirline:
         t10 = AssistantTurn(
             msg_content=None,
             model_provider=model_provider,
-            tool_registry=self.start_node_schema.start_node_schema.tool_registry,
+            tool_registry=self.start_conv_node_schema.tool_registry,
             fn_calls=[get_state_fn_call],
             fn_call_id_to_fn_output={
                 get_state_fn_call.id: agent_executor.graph.curr_conversation_node.state
