@@ -477,6 +477,68 @@ class TestAirline:
                 ),
             ),
         ]
+    
+    @pytest.fixture
+    def first_into_second_conv_turns(self, agent_executor, model_provider, is_stream, fn_names, remove_prev_tool_calls):
+        t1 = self.add_user_turn(agent_executor, "hello", model_provider, True)
+        t2 = self.add_assistant_turn(
+            agent_executor,
+            model_provider,
+            None,
+            is_stream,
+            tool_names=fn_names,
+        )
+        t3 = self.add_user_turn(
+            agent_executor, "my username is ...", model_provider, True
+        )
+        self.run_message_dict_assertions(agent_executor, model_provider)
+
+        user_details = ModelFactory.create_factory(UserDetails).build()
+        fn_call_1 = FunctionCall.create(
+            api_id_model_provider=model_provider,
+            api_id=FunctionCall.generate_fake_id(model_provider),
+            name="update_state_user_details",
+            args={"user_details": user_details.model_dump()},
+        )
+        second_fn_calls = [fn_call_1]
+        second_fn_call_id_to_fn_output = {
+            fn_call.id: None for fn_call in second_fn_calls
+        }
+        t4 = self.add_assistant_turn(
+            agent_executor,
+            model_provider,
+            None,
+            is_stream,
+            second_fn_calls,
+            second_fn_call_id_to_fn_output,
+        )
+
+        next_node_schema = BOOK_FLIGHT_GRAPH.start_node_schema.default_from_node_schema_id_to_edge_schema[
+            self.start_node_schema.start_node_schema.id
+        ].to_node_schema
+
+        input_schema, input = (
+            agent_executor.graph.curr_node.curr_node.state.get_set_schema_and_fields()
+        )
+        node_turn = TurnArgs(
+            turn=NodeSystemTurn(
+                msg_content=next_node_schema.node_system_prompt(
+                    node_prompt=next_node_schema.node_prompt,
+                    input=input.model_dump_json(),
+                    node_input_json_schema=input_schema.model_json_schema(),
+                    state_json_schema=next_node_schema.state_schema.model_json_schema(),
+                    last_msg="my username is ...",
+                    curr_request="customer wants to book flight",
+                ),
+                node_id=3,
+            ),
+        )
+        self.build_messages_from_turn(
+            node_turn,
+            model_provider,
+            remove_prev_tool_calls=remove_prev_tool_calls,
+        )
+        return [t1, t2,t3,t4,node_turn]
 
     @classmethod
     @pytest.fixture(params=[ModelProvider.OPENAI, ModelProvider.ANTHROPIC])
@@ -855,80 +917,18 @@ class TestAirline:
         fn_names,
         agent_executor,
         start_turns,
+        first_into_second_conv_turns
     ):
-        t1 = self.add_user_turn(agent_executor, "hello", model_provider, True)
-        t2 = self.add_assistant_turn(
-            agent_executor,
-            model_provider,
-            None,
-            is_stream,
-            tool_names=fn_names,
-        )
-        t3 = self.add_user_turn(
-            agent_executor, "my username is ...", model_provider, True
-        )
-        self.run_message_dict_assertions(agent_executor, model_provider)
-
-        user_details = ModelFactory.create_factory(UserDetails).build()
-        fn_call_1 = FunctionCall.create(
-            api_id_model_provider=model_provider,
-            api_id=FunctionCall.generate_fake_id(model_provider),
-            name="update_state_user_details",
-            args={"user_details": user_details.model_dump()},
-        )
-        second_fn_calls = [fn_call_1]
-        second_fn_call_id_to_fn_output = {
-            fn_call.id: None for fn_call in second_fn_calls
-        }
-        t4 = self.add_assistant_turn(
-            agent_executor,
-            model_provider,
-            None,
-            is_stream,
-            second_fn_calls,
-            second_fn_call_id_to_fn_output,
-        )
-
-        next_node_schema = BOOK_FLIGHT_GRAPH.start_node_schema.default_from_node_schema_id_to_edge_schema[
-            self.start_node_schema.start_node_schema.id
-        ].to_node_schema
-
-        input_schema, input = (
-            agent_executor.graph.curr_node.curr_node.state.get_set_schema_and_fields()
-        )
-        node_turn = TurnArgs(
-            turn=NodeSystemTurn(
-                msg_content=next_node_schema.node_system_prompt(
-                    node_prompt=next_node_schema.node_prompt,
-                    input=input.model_dump_json(),
-                    node_input_json_schema=input_schema.model_json_schema(),
-                    state_json_schema=next_node_schema.state_schema.model_json_schema(),
-                    last_msg="my username is ...",
-                    curr_request="customer wants to book flight",
-                ),
-                node_id=3,
-            ),
-        )
-        self.build_messages_from_turn(
-            node_turn,
-            model_provider,
-            remove_prev_tool_calls=remove_prev_tool_calls,
-        )
-
         TC = self.create_turn_container(
             [
                 *start_turns,
-                t1,
-                t2,
-                t3,
-                t4,
-                node_turn,
+                *first_into_second_conv_turns,
             ],
             remove_prev_tool_calls,
         )
 
         self.run_assertions(
-            agent_executor, TC, next_node_schema.tool_registry, model_provider
+            agent_executor, TC, find_flight_node_schema.tool_registry, model_provider
         )
 
     def test_backward_node_skip(
@@ -939,66 +939,8 @@ class TestAirline:
         fn_names,
         agent_executor,
         start_turns,
+        first_into_second_conv_turns,
     ):
-        t1 = self.add_user_turn(agent_executor, "hello", model_provider, True)
-        t2 = self.add_assistant_turn(
-            agent_executor,
-            model_provider,
-            None,
-            is_stream,
-            tool_names=fn_names,
-        )
-        t3 = self.add_user_turn(
-            agent_executor, "my username is ...", model_provider, True
-        )
-        self.run_message_dict_assertions(agent_executor, model_provider)
-
-        user_details = ModelFactory.create_factory(UserDetails).build()
-        fn_call_1 = FunctionCall.create(
-            api_id_model_provider=model_provider,
-            api_id=FunctionCall.generate_fake_id(model_provider),
-            name="update_state_user_details",
-            args={"user_details": user_details.model_dump()},
-        )
-        second_fn_calls = [fn_call_1]
-        second_fn_call_id_to_fn_output = {
-            fn_call.id: None for fn_call in second_fn_calls
-        }
-        t4 = self.add_assistant_turn(
-            agent_executor,
-            model_provider,
-            None,
-            is_stream,
-            second_fn_calls,
-            second_fn_call_id_to_fn_output,
-        )
-
-        next_node_schema = BOOK_FLIGHT_GRAPH.start_node_schema.default_from_node_schema_id_to_edge_schema[
-            self.start_node_schema.start_node_schema.id
-        ].to_node_schema
-
-        input_schema, input = (
-            agent_executor.graph.curr_node.curr_node.state.get_set_schema_and_fields()
-        )
-        node_turn_1 = TurnArgs(
-            turn=NodeSystemTurn(
-                msg_content=next_node_schema.node_system_prompt(
-                    node_prompt=next_node_schema.node_prompt,
-                    input=input.model_dump_json(),
-                    node_input_json_schema=input_schema.model_json_schema(),
-                    state_json_schema=next_node_schema.state_schema.model_json_schema(),
-                    last_msg="my username is ...",
-                    curr_request="customer wants to book flight",
-                ),
-                node_id=3,
-            ),
-        )
-        self.build_messages_from_turn(
-            node_turn_1,
-            model_provider,
-            remove_prev_tool_calls=remove_prev_tool_calls,
-        )
-
         t5 = self.add_assistant_turn(
             agent_executor,
             model_provider,
@@ -1055,11 +997,7 @@ class TestAirline:
         TC = self.create_turn_container(
             [
                 *start_turns,
-                t1,
-                t2,
-                t3,
-                t4,
-                node_turn_1,
+                *first_into_second_conv_turns,
                 t5,
                 t6,
                 node_turn_2,
