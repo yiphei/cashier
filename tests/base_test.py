@@ -53,12 +53,6 @@ class BaseTest:
         self.rand_uuids.clear()
         self.model_chat_patcher.stop()
 
-    def get_next_conv_node_schema(self, curr_node_schema):
-        edge_schema = self.graph_schema.from_conv_node_schema_id_to_edge_schema[
-            curr_node_schema.id
-        ]
-        return self.edge_schema_id_to_to_cov_node_schema_id[edge_schema.id]
-
     @contextmanager
     def generate_random_string_context(self):
         original_generate_random_string = generate_random_string

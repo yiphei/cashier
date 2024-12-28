@@ -33,6 +33,12 @@ class TestAirline(BaseTest):
             )
             self.edge_schema_id_to_to_cov_node_schema_id[edge_schema.id] = node_schema
 
+    def get_next_conv_node_schema(self, curr_node_schema):
+        edge_schema = self.graph_schema.from_conv_node_schema_id_to_edge_schema[
+            curr_node_schema.id
+        ]
+        return self.edge_schema_id_to_to_cov_node_schema_id[edge_schema.id]
+
     @pytest.fixture(autouse=True)
     def setup_start_message_list(
         self, start_turns, setup_message_dicts, model_provider
