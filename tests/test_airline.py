@@ -1116,7 +1116,6 @@ class TestAirline:
             model_provider,
             False,
             skip_node_schema_id=self.start_conv_node_schema.id,
-            include_fwd_wait_node_schema_id=True,
         )
         start_node_schema = self.start_conv_node_schema
         node_turn_3 = TurnArgs(
@@ -1163,7 +1162,6 @@ class TestAirline:
             "nvm, nothing",
             model_provider,
             False,
-            include_fwd_wait_node_schema_id=True,
             skip_node_schema_id=find_flight_node_schema.id,
         )
         node_turn_4 = TurnArgs(
