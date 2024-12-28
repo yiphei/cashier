@@ -457,7 +457,7 @@ class TestAirline:
         self.build_messages_from_turn(start_turns[2], model_provider)
 
     @pytest.fixture
-    def start_turns(self, remove_prev_tool_calls, agent_executor, model_provider):
+    def start_turns(self, agent_executor, model_provider):
         ut = self.add_request_user_turn(
             agent_executor,
             "i want to book flight",
