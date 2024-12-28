@@ -458,7 +458,9 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
         return need_user_input
 
 
-def get_fn_names_fixture(conv_node_schema, exclude_update_fn=False, exclude_all_state_fn=False):
+def get_fn_names_fixture(
+    conv_node_schema, exclude_update_fn=False, exclude_all_state_fn=False
+):
     if exclude_all_state_fn is True:
         exclude_update_fn = True
     update_state_fn_names = []

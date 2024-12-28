@@ -19,7 +19,7 @@ class TestRequestAirline(BaseTest):
     @pytest.fixture(autouse=True)
     def setup(self):
         self.start_conv_node_schema = AIRLINE_REQUEST_SCHEMA.start_node_schema
-    
+
     @pytest.fixture(autouse=True)
     def setup_start_message_list(
         self, start_turns, setup_message_dicts, model_provider
@@ -58,7 +58,9 @@ class TestRequestAirline(BaseTest):
     def test_add_user_turn(
         self, model_provider, remove_prev_tool_calls, agent_executor, start_turns
     ):
-        user_turn = self.add_request_user_turn_2(agent_executor, "hello", model_provider)
+        user_turn = self.add_request_user_turn_2(
+            agent_executor, "hello", model_provider
+        )
 
         TC = self.create_turn_container(
             [*start_turns, user_turn], remove_prev_tool_calls
@@ -78,7 +80,9 @@ class TestRequestAirline(BaseTest):
         agent_executor,
         start_turns,
     ):
-        user_turn = self.add_request_user_turn_2(agent_executor, "hello", model_provider)
+        user_turn = self.add_request_user_turn_2(
+            agent_executor, "hello", model_provider
+        )
         assistant_turn = self.add_assistant_turn(
             agent_executor, model_provider, "hello back", is_stream
         )
@@ -200,7 +204,6 @@ class TestRequestAirline(BaseTest):
     #         agent_executor, TC, find_flight_node_schema.tool_registry, model_provider
     #     )
 
-   
 
 def test_class_test_count(request):
     assert_number_of_tests(TestRequestAirline, __file__, request, 564)
