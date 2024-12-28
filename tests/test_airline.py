@@ -52,8 +52,13 @@ class TestAirline:
     @pytest.fixture(autouse=True)
     def setup(self):
         ConversationNode._counter = 0
-        self.start_node_schema = BOOK_FLIGHT_GRAPH.start_node_schema
         self.start_conv_node_schema = get_user_id_node_schema
+        self.graph_schema = BOOK_FLIGHT_GRAPH
+        self.edge_schema_id_to_to_cov_node_schema_id = {}
+        for node_schema_id, edge_schema in BOOK_FLIGHT_GRAPH.to_conv_node_schema_id_to_edge_schema.items():
+            node_schema = BOOK_FLIGHT_GRAPH.conv_node_schema_id_to_conv_node_schema[node_schema_id]
+            self.edge_schema_id_to_to_cov_node_schema_id[edge_schema.id] = node_schema
+
         self.rand_tool_ids = deque()
         self.rand_uuids = deque()
         self.model_chat_patcher = patch("cashier.model.model_completion.Model.chat")
@@ -64,6 +69,10 @@ class TestAirline:
         self.rand_tool_ids.clear()
         self.rand_uuids.clear()
         self.model_chat_patcher.stop()
+
+    def get_next_conv_node_schema(self, curr_node_schema):
+        edge_schema = self.graph_schema.from_conv_node_schema_id_to_edge_schema[curr_node_schema.id]
+        return self.edge_schema_id_to_to_cov_node_schema_id[edge_schema.id]
 
     @contextmanager
     def generate_random_string_context(self):
@@ -313,7 +322,7 @@ class TestAirline:
         model_provider,
         task,
     ):
-        agent_selection = AgentSelection(agent_id=BOOK_FLIGHT_GRAPH.id, task=task)
+        agent_selection = AgentSelection(agent_id=self.graph_schema.id, task=task)
         graph_schema_selection_completion = self.create_mock_model_completion(
             model_provider, None, False, [agent_selection], 0.5
         )
@@ -523,9 +532,7 @@ class TestAirline:
             second_fn_call_id_to_fn_output,
         )
 
-        next_node_schema = BOOK_FLIGHT_GRAPH.start_node_schema.default_from_node_schema_id_to_edge_schema[
-            self.start_conv_node_schema.id
-        ].to_node_schema
+        next_node_schema = self.get_next_conv_node_schema(self.start_conv_node_schema)
 
         input_schema, input = (
             agent_executor.graph.curr_node.curr_node.state.get_set_schema_and_fields()
@@ -1065,9 +1072,7 @@ class TestAirline:
             third_fn_calls_fn_call_id_to_fn_output,
         )
 
-        next_next_node_schema = BOOK_FLIGHT_GRAPH.start_node_schema.default_from_node_schema_id_to_edge_schema[
-            find_flight_node_schema.id
-        ].to_node_schema
+        next_next_node_schema = self.get_next_conv_node_schema(find_flight_node_schema)
 
         input_schema, input = (
             agent_executor.graph.curr_node.curr_node.state.get_set_schema_and_fields()
