@@ -35,8 +35,8 @@ from cashier.tool.function_call_context import (
 )
 from cashier.turn_container import TurnContainer
 from data.graph.airline import (
-    AIRLINE_REQUEST_GRAPH,
-    BOOK_FLIGHT_GRAPH,
+    AIRLINE_REQUEST_SCHEMA,
+    BOOK_FLIGHT_GRAPH_SCHEMA,
     find_flight_node_schema,
     get_user_id_node_schema,
 )
@@ -53,13 +53,13 @@ class TestAirline:
     def setup(self):
         ConversationNode._counter = 0
         self.start_conv_node_schema = get_user_id_node_schema
-        self.graph_schema = BOOK_FLIGHT_GRAPH
+        self.graph_schema = BOOK_FLIGHT_GRAPH_SCHEMA
         self.edge_schema_id_to_to_cov_node_schema_id = {}
         for (
             node_schema_id,
             edge_schema,
-        ) in BOOK_FLIGHT_GRAPH.to_conv_node_schema_id_to_edge_schema.items():
-            node_schema = BOOK_FLIGHT_GRAPH.conv_node_schema_id_to_conv_node_schema[
+        ) in BOOK_FLIGHT_GRAPH_SCHEMA.to_conv_node_schema_id_to_edge_schema.items():
+            node_schema = BOOK_FLIGHT_GRAPH_SCHEMA.conv_node_schema_id_to_conv_node_schema[
                 node_schema_id
             ]
             self.edge_schema_id_to_to_cov_node_schema_id[edge_schema.id] = node_schema
@@ -434,7 +434,7 @@ class TestAirline:
     @pytest.fixture
     def agent_executor(self, remove_prev_tool_calls):
         return AgentExecutor(
-            graph_schema=AIRLINE_REQUEST_GRAPH,
+            graph_schema=AIRLINE_REQUEST_SCHEMA,
             audio_output=False,
             remove_prev_tool_calls=remove_prev_tool_calls,
         )
@@ -468,8 +468,8 @@ class TestAirline:
         return [
             TurnArgs(
                 turn=NodeSystemTurn(
-                    msg_content=AIRLINE_REQUEST_GRAPH.start_node_schema.node_system_prompt(
-                        node_prompt=AIRLINE_REQUEST_GRAPH.start_node_schema.node_prompt,
+                    msg_content=AIRLINE_REQUEST_SCHEMA.start_node_schema.node_system_prompt(
+                        node_prompt=AIRLINE_REQUEST_SCHEMA.start_node_schema.node_prompt,
                         input=None,
                         node_input_json_schema=None,
                         state_json_schema=None,

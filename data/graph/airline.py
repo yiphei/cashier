@@ -269,7 +269,7 @@ class StateSchema(BaseStateModel):
     payments: List[PaymentMethod] = Field(default_factory=list)
 
 
-BOOK_FLIGHT_GRAPH = GraphSchema(
+BOOK_FLIGHT_GRAPH_SCHEMA = GraphSchema(
     description="Help customers books flights",
     start_node_schema=AND_GRAPH_SCHEMA,
     output_schema=GraphOutputSchema,
@@ -288,8 +288,8 @@ BOOK_FLIGHT_GRAPH = GraphSchema(
 )
 
 
-AIRLINE_REQUEST_GRAPH = RequestGraphSchema(
-    node_schemas=[BOOK_FLIGHT_GRAPH],
+AIRLINE_REQUEST_SCHEMA = RequestGraphSchema(
+    node_schemas=[BOOK_FLIGHT_GRAPH_SCHEMA],
     edge_schemas=[],
     node_prompt="You are a helpful assistant that helps customers with flight-related requests.",
     node_system_prompt=AirlineNodeSystemPrompt,
