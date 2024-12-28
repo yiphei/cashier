@@ -1208,3 +1208,19 @@ class TestAirline:
         self.run_assertions(
             agent_executor, TC, find_flight_node_schema.tool_registry, model_provider
         )
+
+
+def test_class_test_count(request):
+    class_nodeid_prefix = "tests/test_airline.py::TestAirline::"
+    class_items = [
+        item 
+        for item in request.session.items 
+        if item.nodeid.startswith(class_nodeid_prefix)
+    ]
+    
+    expected = 372
+    actual = len(class_items)
+    
+    assert actual == expected, (
+        f"Expected {expected} tests in {class_nodeid_prefix}, but got {actual}"
+    )
