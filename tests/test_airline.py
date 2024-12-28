@@ -55,8 +55,13 @@ class TestAirline:
         self.start_conv_node_schema = get_user_id_node_schema
         self.graph_schema = BOOK_FLIGHT_GRAPH
         self.edge_schema_id_to_to_cov_node_schema_id = {}
-        for node_schema_id, edge_schema in BOOK_FLIGHT_GRAPH.to_conv_node_schema_id_to_edge_schema.items():
-            node_schema = BOOK_FLIGHT_GRAPH.conv_node_schema_id_to_conv_node_schema[node_schema_id]
+        for (
+            node_schema_id,
+            edge_schema,
+        ) in BOOK_FLIGHT_GRAPH.to_conv_node_schema_id_to_edge_schema.items():
+            node_schema = BOOK_FLIGHT_GRAPH.conv_node_schema_id_to_conv_node_schema[
+                node_schema_id
+            ]
             self.edge_schema_id_to_to_cov_node_schema_id[edge_schema.id] = node_schema
 
         self.rand_tool_ids = deque()
@@ -71,7 +76,9 @@ class TestAirline:
         self.model_chat_patcher.stop()
 
     def get_next_conv_node_schema(self, curr_node_schema):
-        edge_schema = self.graph_schema.from_conv_node_schema_id_to_edge_schema[curr_node_schema.id]
+        edge_schema = self.graph_schema.from_conv_node_schema_id_to_edge_schema[
+            curr_node_schema.id
+        ]
         return self.edge_schema_id_to_to_cov_node_schema_id[edge_schema.id]
 
     @contextmanager
