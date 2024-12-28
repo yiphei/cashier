@@ -51,7 +51,6 @@ class TurnArgs(BaseModel):
 class TestAirline:
     @pytest.fixture(autouse=True)
     def setup(self):
-        ConversationNode._counter = 0
         self.start_conv_node_schema = get_user_id_node_schema
         self.graph_schema = BOOK_FLIGHT_GRAPH_SCHEMA
         self.edge_schema_id_to_to_cov_node_schema_id = {}
