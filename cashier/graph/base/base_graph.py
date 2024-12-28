@@ -336,7 +336,7 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
             self.direct_init_next_node(node_schema, TC, input, request)
 
     def execute_function_call(
-        self, fn_call: FunctionCall, fn_callback: Optional[Callable] = None
+        self, fn_call: FunctionCall, is_for_benchmarking: bool = False
     ) -> Tuple[Any, bool]:
         function_args = fn_call.args
         logger.debug(
@@ -355,19 +355,16 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
                 )
             elif fn_call.name.startswith("update_state"):
                 fn_output = self.curr_conversation_node.update_state(**function_args)  # type: ignore
-            elif fn_callback is not None:
-                # TODO: this exists for benchmarking. remove this once done
-                fn_output = fn_callback(**function_args)
-                if fn_output and (
-                    type(fn_output) is not str
-                    or not fn_output.strip().startswith("Error:")
-                ):
-                    fn_output = json.loads(fn_output)
             else:
                 fn = self.curr_conversation_node.schema.tool_registry.fn_name_to_fn[
                     fn_call.name
                 ]
                 fn_output = fn(**function_args)
+                if is_for_benchmarking and fn_output and (
+                    type(fn_output) is not str
+                    or not fn_output.strip().startswith("Error:")
+                ):
+                    fn_output = json.loads(fn_output)
 
         if fn_call_context.has_exception():
             logger.debug(
@@ -396,7 +393,7 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
         self.curr_conversation_node.update_first_user_message()
 
     def handle_assistant_turn(
-        self, model_completion: ModelOutput, TC, fn_callback: Optional[Callable] = None
+        self, model_completion: ModelOutput, TC, is_for_benchmarking: bool = False
     ) -> None:
         from cashier.graph.request_graph import RequestGraph
 
@@ -414,7 +411,7 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
         if self.new_node_schema is None:
             for function_call in model_completion.get_or_stream_fn_calls():
                 fn_id_to_output[function_call.id], is_success = (
-                    self.execute_function_call(function_call, fn_callback)
+                    self.execute_function_call(function_call, is_for_benchmarking)
                 )
                 fn_calls.append(function_call)
                 need_user_input = False
