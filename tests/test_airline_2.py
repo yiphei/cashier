@@ -110,7 +110,9 @@ class TestRequestAirline(BaseTest):
         agent_executor,
         start_turns,
     ):
-        user_turn = self.add_request_user_turn_2(agent_executor, "hello", model_provider)
+        user_turn = self.add_request_user_turn_2(
+            agent_executor, "hello", model_provider
+        )
 
         if separate_fn_calls:
             tool_names_list = [[fn_name] for fn_name in fn_names]
