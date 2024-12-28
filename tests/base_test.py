@@ -298,28 +298,15 @@ class BaseTest:
         agent_executor,
         message,
         model_provider,
-        task,
+        task = None,
     ):
-        agent_selection = AgentSelection(agent_id=self.graph_schema.id, task=task)
-        graph_schema_selection_completion = self.create_mock_model_completion(
-            model_provider, None, False, [agent_selection], 0.5
-        )
-        self.model_chat.side_effect = [graph_schema_selection_completion]
-        with self.generate_random_string_context():
-            agent_executor.add_user_turn(message, model_provider)
+        if task is None:
+            agent_selections = []
+        else:
+            agent_selections = [AgentSelection(agent_id=self.graph_schema.id, task=task)]
 
-        ut = UserTurn(msg_content=message)
-        self.build_messages_from_turn(ut, model_provider)
-        return ut
-
-    def add_request_user_turn_2(
-        self,
-        agent_executor,
-        message,
-        model_provider,
-    ):
         graph_schema_selection_completion = self.create_mock_model_completion(
-            model_provider, None, False, [], 0.5
+            model_provider, None, False, agent_selections, 0.5
         )
         self.model_chat.side_effect = [graph_schema_selection_completion]
         with self.generate_random_string_context():

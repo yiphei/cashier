@@ -58,7 +58,7 @@ class TestRequestAirline(BaseTest):
     def test_add_user_turn(
         self, model_provider, remove_prev_tool_calls, agent_executor, start_turns
     ):
-        user_turn = self.add_request_user_turn_2(
+        user_turn = self.add_request_user_turn(
             agent_executor, "hello", model_provider
         )
 
@@ -80,7 +80,7 @@ class TestRequestAirline(BaseTest):
         agent_executor,
         start_turns,
     ):
-        user_turn = self.add_request_user_turn_2(
+        user_turn = self.add_request_user_turn(
             agent_executor, "hello", model_provider
         )
         assistant_turn = self.add_assistant_turn(
@@ -115,7 +115,7 @@ class TestRequestAirline(BaseTest):
         agent_executor,
         start_turns,
     ):
-        user_turn = self.add_request_user_turn_2(
+        user_turn = self.add_request_user_turn(
             agent_executor, "hello", model_provider
         )
 
