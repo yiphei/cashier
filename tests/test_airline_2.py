@@ -1,16 +1,12 @@
 import pytest
-from polyfactory.factories.pydantic_factory import ModelFactory
 
-from cashier.model.model_turn import AssistantTurn, NodeSystemTurn
-from cashier.model.model_util import FunctionCall
-from cashier.tool.function_call_context import StateUpdateError, ToolExceptionWrapper
+from cashier.model.model_turn import NodeSystemTurn
 from data.graph.airline import (
     AIRLINE_REQUEST_SCHEMA,
     BOOK_FLIGHT_GRAPH_SCHEMA,
-    find_flight_node_schema,
     get_user_id_node_schema,
 )
-from data.types.airline import FlightInfo, UserDetails
+
 from tests.base_test import (
     BaseTest,
     TurnArgs,
@@ -154,22 +150,27 @@ class TestRequestAirline(BaseTest):
         agent_executor,
         start_turns,
     ):
-        t1 = self.add_request_user_turn(agent_executor, "i want to book flight", model_provider, "customer wants to book a flight")
+        t1 = self.add_request_user_turn(
+            agent_executor,
+            "i want to book flight",
+            model_provider,
+            "customer wants to book a flight",
+        )
         self.build_messages_from_turn(t1, model_provider)
         graph_schema_start_node = get_user_id_node_schema
         node_turn = TurnArgs(
-                turn=NodeSystemTurn(
-                    msg_content=graph_schema_start_node.node_system_prompt(
-                        node_prompt=graph_schema_start_node.node_prompt,
-                        input=None,
-                        node_input_json_schema=None,
-                        state_json_schema=graph_schema_start_node.state_schema.model_json_schema(),
-                        last_msg="i want to book flight",
-                        curr_request="customer wants to book a flight",
-                    ),
-                    node_id=2,
+            turn=NodeSystemTurn(
+                msg_content=graph_schema_start_node.node_system_prompt(
+                    node_prompt=graph_schema_start_node.node_prompt,
+                    input=None,
+                    node_input_json_schema=None,
+                    state_json_schema=graph_schema_start_node.state_schema.model_json_schema(),
+                    last_msg="i want to book flight",
+                    curr_request="customer wants to book a flight",
                 ),
-            )
+                node_id=2,
+            ),
+        )
         self.build_messages_from_turn(
             node_turn,
             model_provider,
