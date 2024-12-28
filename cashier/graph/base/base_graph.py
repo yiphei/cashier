@@ -470,7 +470,9 @@ def get_fn_names_fixture(conv_node_schema):
             non_state_fn_names.append(tool_name)
 
     inexistent_fn_name = "inexistent_fn"
-    one_update_state_fn_name = update_state_fn_names[0] if update_state_fn_names else None
+    one_update_state_fn_name = (
+        update_state_fn_names[0] if update_state_fn_names else None
+    )
     get_state_fn_name = "get_state" if update_state_fn_names else None
     one_non_state_fn_name = non_state_fn_names[0] if non_state_fn_names else None
 
@@ -484,10 +486,20 @@ def get_fn_names_fixture(conv_node_schema):
         fn_names_fixture.append([one_non_state_fn_name, one_non_state_fn_name])
     if get_state_fn_name and one_update_state_fn_name:
         fn_names_fixture.append([get_state_fn_name, one_update_state_fn_name])
-        fn_names_fixture.append([get_state_fn_name, one_update_state_fn_name, inexistent_fn_name])
+        fn_names_fixture.append(
+            [get_state_fn_name, one_update_state_fn_name, inexistent_fn_name]
+        )
     if get_state_fn_name and one_update_state_fn_name and one_non_state_fn_name:
-        fn_names_fixture.append([get_state_fn_name, one_non_state_fn_name, one_update_state_fn_name])
-        fn_names_fixture.append([get_state_fn_name, one_non_state_fn_name, one_update_state_fn_name, one_non_state_fn_name])
-
+        fn_names_fixture.append(
+            [get_state_fn_name, one_non_state_fn_name, one_update_state_fn_name]
+        )
+        fn_names_fixture.append(
+            [
+                get_state_fn_name,
+                one_non_state_fn_name,
+                one_update_state_fn_name,
+                one_non_state_fn_name,
+            ]
+        )
 
     return fn_names_fixture
