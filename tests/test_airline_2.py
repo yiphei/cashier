@@ -1,7 +1,6 @@
 import pytest
 from polyfactory.factories.pydantic_factory import ModelFactory
 
-from tests.base_test import get_fn_names_fixture
 from cashier.model.model_turn import AssistantTurn, NodeSystemTurn
 from cashier.model.model_util import FunctionCall
 from cashier.tool.function_call_context import StateUpdateError, ToolExceptionWrapper
@@ -12,7 +11,12 @@ from data.graph.airline import (
     get_user_id_node_schema,
 )
 from data.types.airline import FlightInfo, UserDetails
-from tests.base_test import BaseTest, TurnArgs, assert_number_of_tests
+from tests.base_test import (
+    BaseTest,
+    TurnArgs,
+    assert_number_of_tests,
+    get_fn_names_fixture,
+)
 
 
 class TestRequestAirline(BaseTest):

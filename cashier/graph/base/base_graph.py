@@ -456,5 +456,3 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
             self.new_node_schema = None
 
         return need_user_input
-
-
