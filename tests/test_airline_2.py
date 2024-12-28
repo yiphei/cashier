@@ -155,7 +155,6 @@ class TestRequestAirline(BaseTest):
             model_provider,
             "customer wants to book a flight",
         )
-        self.build_messages_from_turn(t1, model_provider)
         graph_schema_start_node = get_user_id_node_schema
         node_turn = TurnArgs(
             turn=NodeSystemTurn(

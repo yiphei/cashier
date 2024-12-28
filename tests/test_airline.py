@@ -46,7 +46,7 @@ class TestAirline(BaseTest):
     def setup_start_message_list(
         self, start_turns, setup_message_dicts, model_provider
     ):
-        self.build_messages_from_turn(start_turns[1], model_provider)
+        self.build_messages_from_turn(start_turns[0], model_provider)
         self.build_messages_from_turn(start_turns[2], model_provider)
 
     @pytest.fixture

@@ -309,6 +309,7 @@ class BaseTest:
             agent_executor.add_user_turn(message, model_provider)
 
         ut = UserTurn(msg_content=message)
+        self.build_messages_from_turn(ut, model_provider)
         return ut
 
     def add_request_user_turn_2(
