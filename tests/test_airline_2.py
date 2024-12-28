@@ -98,42 +98,42 @@ class TestRequestAirline(BaseTest):
             model_provider,
         )
 
-    # @pytest.mark.parametrize("fn_names", get_fn_names_fixture(get_user_id_node_schema, exclude_all_state_fn=True))
-    # @pytest.mark.parametrize("separate_fn_calls", [True, False])
-    # def test_add_assistant_turn_with_tool_calls(
-    #     self,
-    #     model_provider,
-    #     remove_prev_tool_calls,
-    #     is_stream,
-    #     fn_names,
-    #     separate_fn_calls,
-    #     agent_executor,
-    #     start_turns,
-    # ):
-    #     user_turn = self.add_request_user_turn_2(agent_executor, "hello", model_provider)
+    @pytest.mark.parametrize("fn_names", [["inexistent_fn"]])
+    @pytest.mark.parametrize("separate_fn_calls", [True, False])
+    def test_add_assistant_turn_with_tool_calls(
+        self,
+        model_provider,
+        remove_prev_tool_calls,
+        is_stream,
+        fn_names,
+        separate_fn_calls,
+        agent_executor,
+        start_turns,
+    ):
+        user_turn = self.add_request_user_turn_2(agent_executor, "hello", model_provider)
 
-    #     if separate_fn_calls:
-    #         tool_names_list = [[fn_name] for fn_name in fn_names]
-    #     else:
-    #         tool_names_list = [fn_names]
+        if separate_fn_calls:
+            tool_names_list = [[fn_name] for fn_name in fn_names]
+        else:
+            tool_names_list = [fn_names]
 
-    #     a_turns = []
-    #     for tool_names in tool_names_list:
-    #         assistant_turn = self.add_assistant_turn(
-    #             agent_executor, model_provider, None, is_stream, tool_names=tool_names
-    #         )
-    #         a_turns.append(assistant_turn)
+        a_turns = []
+        for tool_names in tool_names_list:
+            assistant_turn = self.add_assistant_turn(
+                agent_executor, model_provider, None, is_stream, tool_names=tool_names
+            )
+            a_turns.append(assistant_turn)
 
-    #     TC = self.create_turn_container(
-    #         [*start_turns, user_turn, *a_turns], remove_prev_tool_calls
-    #     )
+        TC = self.create_turn_container(
+            [*start_turns, user_turn, *a_turns], remove_prev_tool_calls
+        )
 
-    #     self.run_assertions(
-    #         agent_executor,
-    #         TC,
-    #         self.start_conv_node_schema.tool_registry,
-    #         model_provider,
-    #     )
+        self.run_assertions(
+            agent_executor,
+            TC,
+            self.start_conv_node_schema.tool_registry,
+            model_provider,
+        )
 
     # @pytest.mark.parametrize(
     #     "fn_names",
