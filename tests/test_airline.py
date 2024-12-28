@@ -3,6 +3,7 @@ from collections import defaultdict, deque
 from contextlib import ExitStack, contextmanager
 from typing import Any, Dict
 from unittest.mock import Mock, call, patch
+import os
 
 import pytest
 from deepdiff import DeepDiff
@@ -1211,7 +1212,9 @@ class TestAirline:
 
 
 def test_class_test_count(request):
-    class_nodeid_prefix = "tests/test_airline.py::TestAirline::"
+    absolute_path = __file__
+    relative_path = os.path.relpath(absolute_path, os.getcwd())
+    class_nodeid_prefix = f"{relative_path}::{TestAirline.__name__}::"
     class_items = [
         item
         for item in request.session.items
