@@ -59,9 +59,11 @@ class TestAirline:
             node_schema_id,
             edge_schema,
         ) in BOOK_FLIGHT_GRAPH_SCHEMA.to_conv_node_schema_id_to_edge_schema.items():
-            node_schema = BOOK_FLIGHT_GRAPH_SCHEMA.conv_node_schema_id_to_conv_node_schema[
-                node_schema_id
-            ]
+            node_schema = (
+                BOOK_FLIGHT_GRAPH_SCHEMA.conv_node_schema_id_to_conv_node_schema[
+                    node_schema_id
+                ]
+            )
             self.edge_schema_id_to_to_cov_node_schema_id[edge_schema.id] = node_schema
 
         self.rand_tool_ids = deque()
