@@ -11,7 +11,6 @@ from polyfactory.factories.pydantic_factory import ModelFactory
 from pydantic import BaseModel, Field
 
 from cashier.agent_executor import AgentExecutor
-from cashier.graph.conversation_node import ConversationNode
 from cashier.model.message_list import MessageList
 from cashier.model.model_completion import AnthropicModelOutput, OAIModelOutput
 from cashier.model.model_turn import (
