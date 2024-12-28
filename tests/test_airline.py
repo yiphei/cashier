@@ -1,9 +1,9 @@
+import os
 import uuid
 from collections import defaultdict, deque
 from contextlib import ExitStack, contextmanager
 from typing import Any, Dict
 from unittest.mock import Mock, call, patch
-import os
 
 import pytest
 from deepdiff import DeepDiff
