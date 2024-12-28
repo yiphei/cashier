@@ -1,7 +1,7 @@
 import json
 from abc import abstractmethod
 from collections import defaultdict
-from typing import Any, Callable, List, Literal, Optional, Tuple, overload
+from typing import Any, List, Literal, Optional, Tuple, overload
 
 from colorama import Style
 
@@ -360,9 +360,13 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
                     fn_call.name
                 ]
                 fn_output = fn(**function_args)
-                if is_for_benchmarking and fn_output and (
-                    type(fn_output) is not str
-                    or not fn_output.strip().startswith("Error:")
+                if (
+                    is_for_benchmarking
+                    and fn_output
+                    and (
+                        type(fn_output) is not str
+                        or not fn_output.strip().startswith("Error:")
+                    )
                 ):
                     fn_output = json.loads(fn_output)
 
