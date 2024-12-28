@@ -113,17 +113,13 @@ class TestAirline(BaseTest):
             name="update_state_user_details",
             args={"user_details": user_details.model_dump()},
         )
-        second_fn_calls = [fn_call_1]
-        second_fn_call_id_to_fn_output = {
-            fn_call.id: None for fn_call in second_fn_calls
-        }
         t4 = self.add_assistant_turn(
             agent_executor,
             model_provider,
             None,
             is_stream,
-            second_fn_calls,
-            second_fn_call_id_to_fn_output,
+            [fn_call_1],
+            {fn_call_1.id: None},
         )
 
         next_node_schema = self.get_next_conv_node_schema(self.start_conv_node_schema)
