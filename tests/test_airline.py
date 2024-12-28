@@ -477,9 +477,16 @@ class TestAirline:
                 ),
             ),
         ]
-    
+
     @pytest.fixture
-    def first_into_second_conv_turns(self, agent_executor, model_provider, is_stream, fn_names, remove_prev_tool_calls):
+    def first_into_second_conv_turns(
+        self,
+        agent_executor,
+        model_provider,
+        is_stream,
+        fn_names,
+        remove_prev_tool_calls,
+    ):
         t1 = self.add_user_turn(agent_executor, "hello", model_provider, True)
         t2 = self.add_assistant_turn(
             agent_executor,
@@ -538,7 +545,7 @@ class TestAirline:
             model_provider,
             remove_prev_tool_calls=remove_prev_tool_calls,
         )
-        return [t1, t2,t3,t4,node_turn]
+        return [t1, t2, t3, t4, node_turn]
 
     @classmethod
     @pytest.fixture(params=[ModelProvider.OPENAI, ModelProvider.ANTHROPIC])
@@ -917,7 +924,7 @@ class TestAirline:
         fn_names,
         agent_executor,
         start_turns,
-        first_into_second_conv_turns
+        first_into_second_conv_turns,
     ):
         TC = self.create_turn_container(
             [
