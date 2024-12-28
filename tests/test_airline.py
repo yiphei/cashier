@@ -266,33 +266,20 @@ class TestAirline(BaseTest):
         )
 
     @pytest.mark.parametrize(
-        "other_fn_names",
-        [
-            [],
-            ["get_user_details"],
-            ["get_state"],
-            ["inexistent_fn"],
-            ["get_user_details", "get_user_details"],
-            ["get_state", "inexistent_fn"],
-            ["get_state", "get_user_details"],
-            [
-                "get_state",
-                "get_user_details",
-                "get_user_details",
-            ],
-        ],
+        "fn_names",
+        get_fn_names_fixture(get_user_id_node_schema, exclude_update_fn=True),
     )
     def test_state_update_before_user_turn(
         self,
         model_provider,
         remove_prev_tool_calls,
         is_stream,
-        other_fn_names,
+        fn_names,
         agent_executor,
         start_turns,
     ):
         fn_calls, fn_call_id_to_fn_output = self.create_fake_fn_calls(
-            model_provider, other_fn_names, agent_executor.graph.curr_conversation_node
+            model_provider, fn_names, agent_executor.graph.curr_conversation_node
         )
         fn_call = FunctionCall.create(
             name="update_state_user_details",
