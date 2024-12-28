@@ -3,6 +3,7 @@ from collections import defaultdict, deque
 from contextlib import ExitStack, contextmanager
 from typing import Any, Dict
 from unittest.mock import Mock, call, patch
+import os
 
 import pytest
 from deepdiff import DeepDiff
@@ -592,3 +593,18 @@ class BaseTest:
             )
         else:
             raise ValueError(f"Unknown turn type: {type(turn)}")
+
+def assert_number_of_tests(test_class, absolute_path, request, expected_test_count):
+    relative_path = os.path.relpath(absolute_path, os.getcwd())
+    class_nodeid_prefix = f"{relative_path}::{test_class.__name__}::"
+    class_items = [
+        item
+        for item in request.session.items
+        if item.nodeid.startswith(class_nodeid_prefix)
+    ]
+
+    actual = len(class_items)
+
+    assert (
+        actual == expected_test_count
+    ), f"Expected {expected_test_count} tests in {class_nodeid_prefix}, but got {actual}"

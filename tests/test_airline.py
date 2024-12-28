@@ -13,7 +13,7 @@ from data.graph.airline import (
     get_user_id_node_schema,
 )
 from data.types.airline import FlightInfo, UserDetails
-from tests.base_test import BaseTest, TurnArgs
+from tests.base_test import BaseTest, TurnArgs, assert_number_of_tests
 
 
 class TestAirline(BaseTest):
@@ -640,18 +640,4 @@ class TestAirline(BaseTest):
 
 
 def test_class_test_count(request):
-    absolute_path = __file__
-    relative_path = os.path.relpath(absolute_path, os.getcwd())
-    class_nodeid_prefix = f"{relative_path}::{TestAirline.__name__}::"
-    class_items = [
-        item
-        for item in request.session.items
-        if item.nodeid.startswith(class_nodeid_prefix)
-    ]
-
-    expected = 372
-    actual = len(class_items)
-
-    assert (
-        actual == expected
-    ), f"Expected {expected} tests in {class_nodeid_prefix}, but got {actual}"
+    assert_number_of_tests(TestAirline,  __file__, request, 372)
