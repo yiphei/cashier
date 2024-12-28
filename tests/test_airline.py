@@ -135,19 +135,19 @@ class TestAirline:
 
     def run_message_dict_assertions(self, agent_executor, model_provider):
         assert not DeepDiff(
-            self.message_list,
+            self.message_dicts,
             agent_executor.TC.model_provider_to_message_manager[
                 model_provider
             ].message_dicts,
         )
         assert not DeepDiff(
-            self.conversation_list,
+            self.conversation_dicts,
             agent_executor.TC.model_provider_to_message_manager[
                 model_provider
             ].conversation_dicts,
         )
         assert not DeepDiff(
-            self.node_conversation_list,
+            self.node_conversation_dicts,
             agent_executor.TC.model_provider_to_message_manager[
                 model_provider
             ].node_conversation_dicts,
@@ -442,13 +442,13 @@ class TestAirline:
 
     @pytest.fixture(autouse=True)
     def setup_message_dicts(self, model_provider):
-        self.message_list = MessageList(model_provider=model_provider)
-        self.conversation_list = MessageList(model_provider=model_provider)
-        self.node_conversation_list = MessageList(model_provider=model_provider)
+        self.message_dicts = MessageList(model_provider=model_provider)
+        self.conversation_dicts = MessageList(model_provider=model_provider)
+        self.node_conversation_dicts = MessageList(model_provider=model_provider)
         yield
-        self.message_list = None
-        self.conversation_list = None
-        self.node_conversation_list = None
+        self.message_dicts = None
+        self.conversation_dicts = None
+        self.node_conversation_dicts = None
 
     @pytest.fixture(autouse=True)
     def setup_start_message_list(
@@ -601,13 +601,13 @@ class TestAirline:
         return request.param
 
     def build_user_turn_messages(self, user_turn, model_provider):
-        self.message_list.extend(
+        self.message_dicts.extend(
             user_turn.build_messages(model_provider), MessageList.ItemType.USER
         )
-        self.conversation_list.extend(
+        self.conversation_dicts.extend(
             user_turn.build_messages(model_provider), MessageList.ItemType.USER
         )
-        self.node_conversation_list.extend(
+        self.node_conversation_dicts.extend(
             user_turn.build_messages(model_provider), MessageList.ItemType.USER
         )
 
@@ -618,28 +618,28 @@ class TestAirline:
                 if message.get("tool_calls", None) is not None:
                     tool_call_id = message["tool_calls"][0]["id"]
                     curr_fn_name = message["tool_calls"][0]["function"]["name"]
-                    self.message_list.append(
+                    self.message_dicts.append(
                         message, MessageList.ItemType.TOOL_CALL, tool_call_id
                     )
                 elif message["role"] == "tool":
                     tool_call_id = message["tool_call_id"]
-                    self.message_list.append(
+                    self.message_dicts.append(
                         message,
                         MessageList.ItemType.TOOL_OUTPUT,
                         MessageList.get_tool_output_uri_from_tool_id(tool_call_id),
                     )
                 elif message["role"] == "system" and curr_fn_name is not None:
-                    self.message_list.remove_by_uri(curr_fn_name, False)
-                    self.message_list.append(
+                    self.message_dicts.remove_by_uri(curr_fn_name, False)
+                    self.message_dicts.append(
                         message, MessageList.ItemType.TOOL_OUTPUT_SCHEMA, curr_fn_name
                     )
                     curr_fn_name = None
                 else:
-                    self.message_list.append(message, MessageList.ItemType.ASSISTANT)
-                    self.conversation_list.append(
+                    self.message_dicts.append(message, MessageList.ItemType.ASSISTANT)
+                    self.conversation_dicts.append(
                         message, MessageList.ItemType.ASSISTANT
                     )
-                    self.node_conversation_list.append(
+                    self.node_conversation_dicts.append(
                         message, MessageList.ItemType.ASSISTANT
                     )
         else:
@@ -650,36 +650,36 @@ class TestAirline:
                 message_2 = None
 
             contents = message_1["content"]
-            self.message_list.append(message_1)
+            self.message_dicts.append(message_1)
             has_fn_calls = False
             if type(contents) is list:
                 for content in contents:
                     if content["type"] == "tool_use":
                         tool_call_id = content["id"]
-                        self.message_list.track_idx(
+                        self.message_dicts.track_idx(
                             MessageList.ItemType.TOOL_CALL, uri=tool_call_id
                         )
                         has_fn_calls = True
 
             if not has_fn_calls:
-                self.message_list.track_idx(MessageList.ItemType.ASSISTANT)
+                self.message_dicts.track_idx(MessageList.ItemType.ASSISTANT)
                 ass_message = {
                     "role": "assistant",
                     "content": assistant_turn.msg_content,
                 }
-                self.conversation_list.append(
+                self.conversation_dicts.append(
                     ass_message, MessageList.ItemType.ASSISTANT
                 )
-                self.node_conversation_list.append(
+                self.node_conversation_dicts.append(
                     ass_message, MessageList.ItemType.ASSISTANT
                 )
 
             if message_2 is not None:
-                self.message_list.append(message_2)
+                self.message_dicts.append(message_2)
                 for content in message_2["content"]:
                     if content["type"] == "tool_result":
                         tool_id = content["tool_use_id"]
-                        self.message_list.track_idx(
+                        self.message_dicts.track_idx(
                             MessageList.ItemType.TOOL_OUTPUT,
                             uri=MessageList.get_tool_output_uri_from_tool_id(tool_id),
                         )
@@ -696,40 +696,40 @@ class TestAirline:
             assert remove_prev_fn_return_schema is not False
 
         if remove_prev_fn_return_schema is True or remove_prev_tool_calls:
-            self.message_list.clear(MessageList.ItemType.TOOL_OUTPUT_SCHEMA)
+            self.message_dicts.clear(MessageList.ItemType.TOOL_OUTPUT_SCHEMA)
 
         if remove_prev_tool_calls:
-            self.message_list.clear(
+            self.message_dicts.clear(
                 [MessageList.ItemType.TOOL_CALL, MessageList.ItemType.TOOL_OUTPUT]
             )
 
         if is_skip:
-            self.conversation_list.track_idx(
-                MessageList.ItemType.NODE, len(self.conversation_list) - 2
+            self.conversation_dicts.track_idx(
+                MessageList.ItemType.NODE, len(self.conversation_dicts) - 2
             )
-            self.node_conversation_list = self.node_conversation_list[-1:]
+            self.node_conversation_dicts = self.node_conversation_dicts[-1:]
         else:
-            self.conversation_list.track_idx(MessageList.ItemType.NODE)
-            self.node_conversation_list.clear()
+            self.conversation_dicts.track_idx(MessageList.ItemType.NODE)
+            self.node_conversation_dicts.clear()
 
         if model_provider == ModelProvider.OPENAI:
-            self.message_list.clear(MessageList.ItemType.NODE)
+            self.message_dicts.clear(MessageList.ItemType.NODE)
             [msg] = node_turn.build_oai_messages()
             if is_skip:
-                self.message_list.insert(
-                    len(self.message_list) - 1, msg, MessageList.ItemType.NODE
+                self.message_dicts.insert(
+                    len(self.message_dicts) - 1, msg, MessageList.ItemType.NODE
                 )
             else:
-                self.message_list.append(msg, MessageList.ItemType.NODE)
+                self.message_dicts.append(msg, MessageList.ItemType.NODE)
         else:
             self.system = node_turn.msg_content  # TODO: this is currently not used
 
             if is_skip:
-                self.message_list.track_idx(
-                    MessageList.ItemType.NODE, len(self.message_list) - 2
+                self.message_dicts.track_idx(
+                    MessageList.ItemType.NODE, len(self.message_dicts) - 2
                 )
             else:
-                self.message_list.track_idx(MessageList.ItemType.NODE)
+                self.message_dicts.track_idx(MessageList.ItemType.NODE)
 
     def build_messages_from_turn(
         self,
