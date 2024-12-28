@@ -252,11 +252,10 @@ class TestAirline(BaseTest):
         if separate_fn_calls:
             tool_names_list = [[fn_name] for fn_name in fn_names]
         else:
-            tool_names_list = [fn_names] 
+            tool_names_list = [fn_names]
 
-        
         a_turns = []
-        for tool_names in tool_names_list:        
+        for tool_names in tool_names_list:
             assistant_turn = self.add_assistant_turn(
                 agent_executor, model_provider, None, is_stream, tool_names=tool_names
             )
