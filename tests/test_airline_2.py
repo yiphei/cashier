@@ -102,7 +102,7 @@ class TestRequestAirline(BaseTest):
             model_provider,
         )
 
-    @pytest.mark.parametrize("fn_names", [["inexistent_fn"]])
+    @pytest.mark.parametrize("fn_names", get_fn_names_fixture(AIRLINE_REQUEST_SCHEMA.start_node_schema, exclude_all_state_fn=True))
     @pytest.mark.parametrize("separate_fn_calls", [True, False])
     def test_add_assistant_turn_with_tool_calls(
         self,
