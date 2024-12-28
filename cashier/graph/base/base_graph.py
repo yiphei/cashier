@@ -475,6 +475,8 @@ def get_fn_names_fixture(conv_node_schema, exclude_update_fn=False):
     )
     get_state_fn_name = "get_state" if update_state_fn_names else None
     one_non_state_fn_name = non_state_fn_names[0] if non_state_fn_names else None
+    if one_non_state_fn_name == "think" and len(non_state_fn_names) > 1:
+        one_non_state_fn_name = non_state_fn_names[1]
 
     fn_names_fixture = [[inexistent_fn_name]]
 
