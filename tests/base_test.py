@@ -298,12 +298,14 @@ class BaseTest:
         agent_executor,
         message,
         model_provider,
-        task = None,
+        task=None,
     ):
         if task is None:
             agent_selections = []
         else:
-            agent_selections = [AgentSelection(agent_id=self.graph_schema.id, task=task)]
+            agent_selections = [
+                AgentSelection(agent_id=self.graph_schema.id, task=task)
+            ]
 
         graph_schema_selection_completion = self.create_mock_model_completion(
             model_provider, None, False, agent_selections, 0.5

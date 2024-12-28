@@ -58,9 +58,7 @@ class TestRequestAirline(BaseTest):
     def test_add_user_turn(
         self, model_provider, remove_prev_tool_calls, agent_executor, start_turns
     ):
-        user_turn = self.add_request_user_turn(
-            agent_executor, "hello", model_provider
-        )
+        user_turn = self.add_request_user_turn(agent_executor, "hello", model_provider)
 
         TC = self.create_turn_container(
             [*start_turns, user_turn], remove_prev_tool_calls
@@ -80,9 +78,7 @@ class TestRequestAirline(BaseTest):
         agent_executor,
         start_turns,
     ):
-        user_turn = self.add_request_user_turn(
-            agent_executor, "hello", model_provider
-        )
+        user_turn = self.add_request_user_turn(agent_executor, "hello", model_provider)
         assistant_turn = self.add_assistant_turn(
             agent_executor, model_provider, "hello back", is_stream
         )
@@ -115,9 +111,7 @@ class TestRequestAirline(BaseTest):
         agent_executor,
         start_turns,
     ):
-        user_turn = self.add_request_user_turn(
-            agent_executor, "hello", model_provider
-        )
+        user_turn = self.add_request_user_turn(agent_executor, "hello", model_provider)
 
         if separate_fn_calls:
             tool_names_list = [[fn_name] for fn_name in fn_names]
