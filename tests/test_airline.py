@@ -1,6 +1,7 @@
 import pytest
 from polyfactory.factories.pydantic_factory import ModelFactory
 
+from cashier.graph.base.base_graph import get_fn_names_fixture
 from cashier.model.model_turn import AssistantTurn, NodeSystemTurn
 from cashier.model.model_util import FunctionCall
 from cashier.tool.function_call_context import StateUpdateError, ToolExceptionWrapper
@@ -83,13 +84,13 @@ class TestAirline(BaseTest):
             ),
         ]
 
-    @pytest.fixture
+    @pytest.fixture(params=get_fn_names_fixture(get_user_id_node_schema))
     def first_into_second_transition_turns(
         self,
         agent_executor,
         model_provider,
         is_stream,
-        fn_names,
+        request,
         remove_prev_tool_calls,
     ):
         t1 = self.add_user_turn(agent_executor, "hello", model_provider, True)
@@ -98,7 +99,7 @@ class TestAirline(BaseTest):
             model_provider,
             None,
             is_stream,
-            tool_names=fn_names,
+            tool_names=request.param,
         )
         t3 = self.add_user_turn(
             agent_executor, "my username is ...", model_provider, True
@@ -149,28 +150,6 @@ class TestAirline(BaseTest):
             remove_prev_tool_calls=remove_prev_tool_calls,
         )
         return [t1, t2, t3, t4, node_turn]
-
-    @classmethod
-    @pytest.fixture(
-        params=[
-            ["get_user_details"],
-            ["get_state"],
-            ["update_state_user_details"],
-            ["inexistent_fn"],
-            ["get_user_details", "get_user_details"],
-            ["get_state", "update_state_user_details"],
-            ["get_state", "update_state_user_details", "inexistent_fn"],
-            ["get_state", "get_user_details", "update_state_user_details"],
-            [
-                "get_state",
-                "get_user_details",
-                "update_state_user_details",
-                "get_user_details",
-            ],
-        ]
-    )
-    def fn_names(cls, request):
-        return request.param
 
     def test_graph_initialization(
         self, model_provider, remove_prev_tool_calls, agent_executor, start_turns
@@ -260,6 +239,7 @@ class TestAirline(BaseTest):
             model_provider,
         )
 
+    @pytest.mark.parametrize("fn_names", get_fn_names_fixture(get_user_id_node_schema))
     def test_add_assistant_turn_with_tool_calls(
         self,
         model_provider,
