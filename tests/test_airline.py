@@ -496,7 +496,7 @@ class TestAirline:
         ]
 
     @pytest.fixture
-    def first_into_second_conv_turns(
+    def first_into_second_transition_turns(
         self,
         agent_executor,
         model_provider,
@@ -937,12 +937,12 @@ class TestAirline:
         remove_prev_tool_calls,
         agent_executor,
         start_turns,
-        first_into_second_conv_turns,
+        first_into_second_transition_turns,
     ):
         TC = self.create_turn_container(
             [
                 *start_turns,
-                *first_into_second_conv_turns,
+                *first_into_second_transition_turns,
             ],
             remove_prev_tool_calls,
         )
@@ -958,7 +958,7 @@ class TestAirline:
         is_stream,
         agent_executor,
         start_turns,
-        first_into_second_conv_turns,
+        first_into_second_transition_turns,
     ):
         t5 = self.add_assistant_turn(
             agent_executor,
@@ -1016,7 +1016,7 @@ class TestAirline:
         TC = self.create_turn_container(
             [
                 *start_turns,
-                *first_into_second_conv_turns,
+                *first_into_second_transition_turns,
                 t5,
                 t6,
                 node_turn_2,
@@ -1039,7 +1039,7 @@ class TestAirline:
         is_stream,
         agent_executor,
         start_turns,
-        first_into_second_conv_turns,
+        first_into_second_transition_turns,
     ):
         t5 = self.add_assistant_turn(
             agent_executor,
@@ -1199,7 +1199,7 @@ class TestAirline:
         TC = self.create_turn_container(
             [
                 *start_turns,
-                *first_into_second_conv_turns,
+                *first_into_second_transition_turns,
                 t5,
                 t6,
                 t7,
