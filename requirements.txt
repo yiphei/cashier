@@ -26,6 +26,8 @@ elevenlabs==1.9.0
 email_validator==2.2.0
 eval_type_backport==0.2.0
 executing==2.1.0
+Faker==33.1.0
+fastapi==0.115.5
 filelock==3.16.1
 flake8==7.1.1
 frozenlist==1.4.1
@@ -76,6 +78,7 @@ pathspec==0.12.1
 pexpect==4.9.0
 platformdirs==4.3.6
 pluggy==1.5.0
+polyfactory==2.18.1
 postgrest==0.16.11
 pre-commit==3.8.0
 prompt_toolkit==3.0.48
