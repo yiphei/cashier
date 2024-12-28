@@ -1,7 +1,7 @@
 import pytest
 from polyfactory.factories.pydantic_factory import ModelFactory
 
-from cashier.graph.base.base_graph import get_fn_names_fixture
+from tests.base_test import get_fn_names_fixture
 from cashier.model.model_turn import AssistantTurn, NodeSystemTurn
 from cashier.model.model_util import FunctionCall
 from cashier.tool.function_call_context import StateUpdateError, ToolExceptionWrapper
