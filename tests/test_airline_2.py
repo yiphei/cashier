@@ -23,6 +23,7 @@ class TestRequestAirline(BaseTest):
     @pytest.fixture(autouse=True)
     def setup(self):
         self.start_conv_node_schema = AIRLINE_REQUEST_SCHEMA.start_node_schema
+        self.graph_schema = BOOK_FLIGHT_GRAPH_SCHEMA
 
     @pytest.fixture(autouse=True)
     def setup_start_message_list(
@@ -146,75 +147,47 @@ class TestRequestAirline(BaseTest):
             model_provider,
         )
 
-    # @pytest.mark.parametrize(
-    #     "fn_names",
-    #     get_fn_names_fixture(get_user_id_node_schema, exclude_update_fn=True),
-    # )
-    # def test_state_update_before_user_turn(
-    #     self,
-    #     model_provider,
-    #     remove_prev_tool_calls,
-    #     is_stream,
-    #     fn_names,
-    #     agent_executor,
-    #     start_turns,
-    # ):
-    #     fn_calls, fn_call_id_to_fn_output = self.create_fake_fn_calls(
-    #         model_provider, fn_names, agent_executor.graph.curr_conversation_node
-    #     )
-    #     fn_call = FunctionCall.create(
-    #         name="update_state_user_details",
-    #         args={"user_details": None},
-    #         api_id_model_provider=model_provider,
-    #         api_id=FunctionCall.generate_fake_id(model_provider),
-    #     )
-    #     fn_calls.append(fn_call)
-    #     fn_call_id_to_fn_output[fn_call.id] = ToolExceptionWrapper(
-    #         StateUpdateError(
-    #             "cannot update any state field until you get the first customer message in the current conversation. Remember, the current conversation starts after <cutoff_msg>"
-    #         )
-    #     )
+    def test_node_transition(
+        self,
+        model_provider,
+        remove_prev_tool_calls,
+        agent_executor,
+        start_turns,
+    ):
+        t1 = self.add_request_user_turn(agent_executor, "i want to book flight", model_provider, "customer wants to book a flight")
+        self.build_messages_from_turn(t1, model_provider)
+        graph_schema_start_node = get_user_id_node_schema
+        node_turn = TurnArgs(
+                turn=NodeSystemTurn(
+                    msg_content=graph_schema_start_node.node_system_prompt(
+                        node_prompt=graph_schema_start_node.node_prompt,
+                        input=None,
+                        node_input_json_schema=None,
+                        state_json_schema=graph_schema_start_node.state_schema.model_json_schema(),
+                        last_msg="i want to book flight",
+                        curr_request="customer wants to book a flight",
+                    ),
+                    node_id=2,
+                ),
+            )
+        self.build_messages_from_turn(
+            node_turn,
+            model_provider,
+            remove_prev_tool_calls=remove_prev_tool_calls,
+        )
+        TC = self.create_turn_container(
+            [
+                *start_turns,
+                t1,
+                node_turn,
+            ],
+            remove_prev_tool_calls,
+        )
 
-    #     assistant_turn = self.add_assistant_turn(
-    #         agent_executor,
-    #         model_provider,
-    #         None,
-    #         is_stream,
-    #         fn_calls,
-    #         fn_call_id_to_fn_output,
-    #     )
-
-    #     TC = self.create_turn_container(
-    #         [*start_turns, assistant_turn], remove_prev_tool_calls
-    #     )
-
-    #     self.run_assertions(
-    #         agent_executor,
-    #         TC,
-    #         self.start_conv_node_schema.tool_registry,
-    #         model_provider,
-    #     )
-
-    # def test_node_transition(
-    #     self,
-    #     model_provider,
-    #     remove_prev_tool_calls,
-    #     agent_executor,
-    #     start_turns,
-    #     first_into_second_transition_turns,
-    # ):
-    #     TC = self.create_turn_container(
-    #         [
-    #             *start_turns,
-    #             *first_into_second_transition_turns,
-    #         ],
-    #         remove_prev_tool_calls,
-    #     )
-
-    #     self.run_assertions(
-    #         agent_executor, TC, find_flight_node_schema.tool_registry, model_provider
-    #     )
+        self.run_assertions(
+            agent_executor, TC, get_user_id_node_schema.tool_registry, model_provider
+        )
 
 
 def test_class_test_count(request):
-    assert_number_of_tests(TestRequestAirline, __file__, request, 564)
+    assert_number_of_tests(TestRequestAirline, __file__, request, 36)
