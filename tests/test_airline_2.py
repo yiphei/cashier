@@ -149,14 +149,13 @@ class TestRequestAirline(BaseTest):
             model_provider,
             "customer wants to book a flight",
         )
-        graph_schema_start_node = get_user_id_node_schema
         node_turn = TurnArgs(
             turn=NodeSystemTurn(
-                msg_content=graph_schema_start_node.node_system_prompt(
-                    node_prompt=graph_schema_start_node.node_prompt,
+                msg_content=get_user_id_node_schema.node_system_prompt(
+                    node_prompt=get_user_id_node_schema.node_prompt,
                     input=None,
                     node_input_json_schema=None,
-                    state_json_schema=graph_schema_start_node.state_schema.model_json_schema(),
+                    state_json_schema=get_user_id_node_schema.state_schema.model_json_schema(),
                     last_msg="i want to book flight",
                     curr_request="customer wants to book a flight",
                 ),
