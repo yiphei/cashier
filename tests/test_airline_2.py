@@ -6,7 +6,6 @@ from data.graph.airline import (
     BOOK_FLIGHT_GRAPH_SCHEMA,
     get_user_id_node_schema,
 )
-
 from tests.base_test import (
     BaseTest,
     TurnArgs,
