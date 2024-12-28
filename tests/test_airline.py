@@ -278,7 +278,7 @@ class TestAirline(BaseTest):
 
     @pytest.mark.parametrize(
         "fn_names",
-        get_fn_names_fixture(get_user_id_node_schema, exclude_update_fn=True),
+        get_fn_names_fixture(get_user_id_node_schema, exclude_update_fn=True) + [[]],
     )
     def test_state_update_before_user_turn(
         self,

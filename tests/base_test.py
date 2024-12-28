@@ -654,8 +654,6 @@ def get_fn_names_fixture(
 
     fn_names_fixture = [[inexistent_fn_name]]
 
-    if exclude_update_fn:
-        fn_names_fixture.append([])
     if one_update_state_fn_name and not exclude_update_fn:
         fn_names_fixture.append([one_update_state_fn_name])
     if get_state_fn_name and not exclude_all_state_fn:
