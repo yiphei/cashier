@@ -1,5 +1,3 @@
-import os
-
 import pytest
 from polyfactory.factories.pydantic_factory import ModelFactory
 
@@ -640,4 +638,4 @@ class TestAirline(BaseTest):
 
 
 def test_class_test_count(request):
-    assert_number_of_tests(TestAirline,  __file__, request, 372)
+    assert_number_of_tests(TestAirline, __file__, request, 372)
