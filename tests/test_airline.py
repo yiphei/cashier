@@ -236,22 +236,34 @@ class TestAirline(BaseTest):
         )
 
     @pytest.mark.parametrize("fn_names", get_fn_names_fixture(get_user_id_node_schema))
+    @pytest.mark.parametrize("separate_fn_calls", [True, False])
     def test_add_assistant_turn_with_tool_calls(
         self,
         model_provider,
         remove_prev_tool_calls,
         is_stream,
         fn_names,
+        separate_fn_calls,
         agent_executor,
         start_turns,
     ):
         user_turn = self.add_user_turn(agent_executor, "hello", model_provider, True)
-        assistant_turn = self.add_assistant_turn(
-            agent_executor, model_provider, None, is_stream, tool_names=fn_names
-        )
+
+        if separate_fn_calls:
+            tool_names_list = [[fn_name] for fn_name in fn_names]
+        else:
+            tool_names_list = [fn_names] 
+
+        
+        a_turns = []
+        for tool_names in tool_names_list:        
+            assistant_turn = self.add_assistant_turn(
+                agent_executor, model_provider, None, is_stream, tool_names=tool_names
+            )
+            a_turns.append(assistant_turn)
 
         TC = self.create_turn_container(
-            [*start_turns, user_turn, assistant_turn], remove_prev_tool_calls
+            [*start_turns, user_turn, *a_turns], remove_prev_tool_calls
         )
 
         self.run_assertions(
@@ -601,4 +613,4 @@ class TestAirline(BaseTest):
 
 
 def test_class_test_count(request):
-    assert_number_of_tests(TestAirline, __file__, request, 468)
+    assert_number_of_tests(TestAirline, __file__, request, 564)
