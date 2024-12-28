@@ -25,6 +25,7 @@ dnspython==2.7.0
 elevenlabs==1.9.0
 email_validator==2.2.0
 eval_type_backport==0.2.0
+execnet==2.1.1
 executing==2.1.0
 Faker==33.1.0
 fastapi==0.115.5
@@ -93,6 +94,7 @@ pydantic_core==2.23.4
 pyflakes==3.2.0
 Pygments==2.18.0
 pytest==8.3.3
+pytest-xdist==3.6.1
 python-dateutil==2.9.0.post0
 python-dotenv==1.0.1
 python-multipart==0.0.17
