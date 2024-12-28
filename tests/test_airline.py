@@ -3,18 +3,9 @@ import os
 import pytest
 from polyfactory.factories.pydantic_factory import ModelFactory
 
-
-from cashier.model.model_turn import (
-    AssistantTurn,
-    NodeSystemTurn,
-)
-from cashier.model.model_util import (
-    FunctionCall,
-)
-from cashier.tool.function_call_context import (
-    StateUpdateError,
-    ToolExceptionWrapper,
-)
+from cashier.model.model_turn import AssistantTurn, NodeSystemTurn
+from cashier.model.model_util import FunctionCall
+from cashier.tool.function_call_context import StateUpdateError, ToolExceptionWrapper
 from data.graph.airline import (
     AIRLINE_REQUEST_SCHEMA,
     BOOK_FLIGHT_GRAPH_SCHEMA,

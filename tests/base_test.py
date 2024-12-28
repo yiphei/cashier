@@ -30,9 +30,7 @@ from cashier.tool.function_call_context import (
     ToolExceptionWrapper,
 )
 from cashier.turn_container import TurnContainer
-from data.graph.airline import (
-    AIRLINE_REQUEST_SCHEMA,
-)
+from data.graph.airline import AIRLINE_REQUEST_SCHEMA
 
 
 class TurnArgs(BaseModel):
