@@ -298,17 +298,24 @@ class BaseTest:
         agent_executor,
         message,
         model_provider,
-        task,
+        task=None,
     ):
-        agent_selection = AgentSelection(agent_id=self.graph_schema.id, task=task)
+        if task is None:
+            agent_selections = []
+        else:
+            agent_selections = [
+                AgentSelection(agent_id=self.graph_schema.id, task=task)
+            ]
+
         graph_schema_selection_completion = self.create_mock_model_completion(
-            model_provider, None, False, [agent_selection], 0.5
+            model_provider, None, False, agent_selections, 0.5
         )
         self.model_chat.side_effect = [graph_schema_selection_completion]
         with self.generate_random_string_context():
             agent_executor.add_user_turn(message, model_provider)
 
         ut = UserTurn(msg_content=message)
+        self.build_messages_from_turn(ut, model_provider)
         return ut
 
     def add_assistant_turn(
@@ -609,3 +616,68 @@ def assert_number_of_tests(test_class, absolute_path, request, expected_test_cou
     assert (
         actual == expected_test_count
     ), f"Expected {expected_test_count} tests in {class_nodeid_prefix}, but got {actual}"
+
+
+def get_fn_names_fixture(
+    conv_node_schema, exclude_update_fn=False, exclude_all_state_fn=False
+):
+    if exclude_all_state_fn is True:
+        exclude_update_fn = True
+    update_state_fn_names = []
+    non_state_fn_names = []
+    for tool_name in conv_node_schema.tool_registry.openai_tool_name_to_tool_def.keys():
+        if tool_name.startswith("update_state_"):
+            update_state_fn_names.append(tool_name)
+        elif tool_name == "get_state":
+            pass
+        else:
+            non_state_fn_names.append(tool_name)
+
+    inexistent_fn_name = "inexistent_fn"
+    one_update_state_fn_name = (
+        update_state_fn_names[0] if update_state_fn_names else None
+    )
+    get_state_fn_name = "get_state" if update_state_fn_names else None
+    one_non_state_fn_name = non_state_fn_names[0] if non_state_fn_names else None
+    if one_non_state_fn_name == "think" and len(non_state_fn_names) > 1:
+        one_non_state_fn_name = non_state_fn_names[1]
+
+    fn_names_fixture = [[inexistent_fn_name]]
+
+    if one_update_state_fn_name and not exclude_update_fn:
+        fn_names_fixture.append([one_update_state_fn_name])
+    if get_state_fn_name and not exclude_all_state_fn:
+        fn_names_fixture.append([get_state_fn_name])
+        fn_names_fixture.append([get_state_fn_name, inexistent_fn_name])
+    if one_non_state_fn_name:
+        fn_names_fixture.append([one_non_state_fn_name])
+        fn_names_fixture.append([one_non_state_fn_name, one_non_state_fn_name])
+    if get_state_fn_name and one_non_state_fn_name and not exclude_all_state_fn:
+        fn_names_fixture.append([get_state_fn_name, one_non_state_fn_name])
+        fn_names_fixture.append(
+            [get_state_fn_name, one_non_state_fn_name, one_non_state_fn_name]
+        )
+    if get_state_fn_name and one_update_state_fn_name and not exclude_update_fn:
+        fn_names_fixture.append([get_state_fn_name, one_update_state_fn_name])
+        fn_names_fixture.append(
+            [get_state_fn_name, one_update_state_fn_name, inexistent_fn_name]
+        )
+    if (
+        get_state_fn_name
+        and one_update_state_fn_name
+        and one_non_state_fn_name
+        and not exclude_update_fn
+    ):
+        fn_names_fixture.append(
+            [get_state_fn_name, one_non_state_fn_name, one_update_state_fn_name]
+        )
+        fn_names_fixture.append(
+            [
+                get_state_fn_name,
+                one_non_state_fn_name,
+                one_update_state_fn_name,
+                one_non_state_fn_name,
+            ]
+        )
+
+    return fn_names_fixture

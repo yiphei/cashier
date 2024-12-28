@@ -1,7 +1,6 @@
 import pytest
 from polyfactory.factories.pydantic_factory import ModelFactory
 
-from cashier.graph.base.base_graph import get_fn_names_fixture
 from cashier.model.model_turn import AssistantTurn, NodeSystemTurn
 from cashier.model.model_util import FunctionCall
 from cashier.tool.function_call_context import StateUpdateError, ToolExceptionWrapper
@@ -12,7 +11,12 @@ from data.graph.airline import (
     get_user_id_node_schema,
 )
 from data.types.airline import FlightInfo, UserDetails
-from tests.base_test import BaseTest, TurnArgs, assert_number_of_tests
+from tests.base_test import (
+    BaseTest,
+    TurnArgs,
+    assert_number_of_tests,
+    get_fn_names_fixture,
+)
 
 
 class TestAirline(BaseTest):
@@ -42,7 +46,7 @@ class TestAirline(BaseTest):
     def setup_start_message_list(
         self, start_turns, setup_message_dicts, model_provider
     ):
-        self.build_messages_from_turn(start_turns[1], model_provider)
+        self.build_messages_from_turn(start_turns[0], model_provider)
         self.build_messages_from_turn(start_turns[2], model_provider)
 
     @pytest.fixture
@@ -274,7 +278,7 @@ class TestAirline(BaseTest):
 
     @pytest.mark.parametrize(
         "fn_names",
-        get_fn_names_fixture(get_user_id_node_schema, exclude_update_fn=True),
+        get_fn_names_fixture(get_user_id_node_schema, exclude_update_fn=True) + [[]],
     )
     def test_state_update_before_user_turn(
         self,
