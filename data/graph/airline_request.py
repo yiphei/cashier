@@ -16,7 +16,11 @@ GRAPH_EDGE_SCHEMA_1 = GraphEdgeSchema(
 )
 
 AIRLINE_REQUEST_GRAPH = RequestGraphSchema(
-    node_schemas=[BOOK_FLIGHT_GRAPH_SCHEMA, CHANGE_FLIGHT_GRAPH_SCHEMA, CHANGE_BAGGAGE_GRAPH_SCHEMA],
+    node_schemas=[
+        BOOK_FLIGHT_GRAPH_SCHEMA,
+        CHANGE_FLIGHT_GRAPH_SCHEMA,
+        CHANGE_BAGGAGE_GRAPH_SCHEMA,
+    ],
     edge_schemas=[GRAPH_EDGE_SCHEMA_1],
     node_prompt="You are a helpful assistant that helps customers with flight-related requests.",
     node_system_prompt=AirlineNodeSystemPrompt,
