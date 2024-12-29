@@ -202,9 +202,7 @@ class TestAndGraph(BaseTest):
         start_turns,
     ):
         user_turn = self.add_user_turn("hello", True)
-        assistant_turn = self.add_assistant_turn(
-             "hello back"
-        )
+        assistant_turn = self.add_assistant_turn("hello back")
 
         TC = self.create_turn_container([*start_turns, user_turn, assistant_turn])
 
@@ -234,9 +232,7 @@ class TestAndGraph(BaseTest):
 
         a_turns = []
         for tool_names in tool_names_list:
-            assistant_turn = self.add_assistant_turn(
-                 None, tool_names=tool_names
-            )
+            assistant_turn = self.add_assistant_turn(None, tool_names=tool_names)
             a_turns.append(assistant_turn)
 
         TC = self.create_turn_container([*start_turns, user_turn, *a_turns])

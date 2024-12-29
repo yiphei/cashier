@@ -138,9 +138,7 @@ class TestRequest(BaseTest):
         start_turns,
     ):
         user_turn = self.add_request_user_turn("hello")
-        assistant_turn = self.add_assistant_turn(
-             "hello back"
-        )
+        assistant_turn = self.add_assistant_turn("hello back")
 
         TC = self.create_turn_container([*start_turns, user_turn, assistant_turn])
 
@@ -175,9 +173,7 @@ class TestRequest(BaseTest):
 
         a_turns = []
         for tool_names in tool_names_list:
-            assistant_turn = self.add_assistant_turn(
-                None, tool_names=tool_names
-            )
+            assistant_turn = self.add_assistant_turn(None, tool_names=tool_names)
             a_turns.append(assistant_turn)
 
         TC = self.create_turn_container([*start_turns, user_turn, *a_turns])
