@@ -1,25 +1,28 @@
-from cashier.graph.conversation_node import ConversationNodeSchema
-from cashier.graph.base.base_state import BaseStateModel
-from cashier.graph.edge_schema import EdgeSchema
+from typing import List, Optional
+
+from pydantic import BaseModel
+
 from cashier.graph.base.base_edge_schema import (
+    FunctionState,
+    FunctionTransitionConfig,
     StateTransitionConfig,
 )
-from cashier.graph.base.base_edge_schema import FunctionTransitionConfig, FunctionState
+from cashier.graph.base.base_state import BaseStateModel
+from cashier.graph.conversation_node import ConversationNodeSchema
+from cashier.graph.edge_schema import EdgeSchema
 from cashier.graph.graph_schema import GraphSchema
-from typing import Optional, List
+from data.prompt.airline import AirlineNodeSystemPrompt
+from data.tool_registry.airline_tool_registry import AIRLINE_TOOL_REGISTRY
 from data.types.airline import (
     CabinType,
     FlightReservationInfo,
     FlightType,
+    InsuranceValue,
     PassengerInfo,
     PaymentDetails,
-    InsuranceValue,
     ReservationDetails,
     UserDetails,
 )
-from data.prompt.airline import AirlineNodeSystemPrompt
-from pydantic import BaseModel
-from data.tool_registry.airline_tool_registry import AIRLINE_TOOL_REGISTRY
 
 ## book flight graph
 
@@ -81,6 +84,7 @@ luggage_node_schema = ConversationNodeSchema(
 )
 
 # ---------------------------------------------------------
+
 
 class PaymentState(BaseStateModel):
     payment_id: Optional[str] = None
@@ -195,6 +199,10 @@ CHANGE_BAGGAGE_GRAPH = GraphSchema(
         payment_node_schema,
         book_flight_node_schema,
     ],
-    completion_config=FunctionTransitionConfig(need_user_msg=False,fn_name="update_reservation_baggages", state=FunctionState.CALLED_AND_SUCCEEDED),
+    completion_config=FunctionTransitionConfig(
+        need_user_msg=False,
+        fn_name="update_reservation_baggages",
+        state=FunctionState.CALLED_AND_SUCCEEDED,
+    ),
     state_schema=ChangeBaggageGraphStateSchema,
 )
