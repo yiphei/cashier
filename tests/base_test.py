@@ -453,7 +453,7 @@ class BaseTest:
         return request.param
 
     @pytest.fixture(params=[True, False], autouse=True)
-    def is_stream(self, base_setup, request):
+    def is_stream(self, base_setup, request): # TODO: this fixture can prob be deleted. Streaming should not affect test integrity
         self.fixtures.is_stream = request.param
         return request.param
 
