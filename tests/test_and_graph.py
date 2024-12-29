@@ -97,10 +97,7 @@ class TestAndGraph(BaseTest):
     ):
         t1 = self.add_user_turn("hello", True)
         t2 = self.add_assistant_turn(
-            agent_executor,
-            model_provider,
             None,
-            is_stream,
             tool_names=request.param,
         )
         t3 = self.add_user_turn("my username is ...", True)
@@ -114,10 +111,7 @@ class TestAndGraph(BaseTest):
             args={"user_details": user_details.model_dump()},
         )
         t4 = self.add_assistant_turn(
-            agent_executor,
-            model_provider,
             None,
-            is_stream,
             [fn_call_1],
             {fn_call_1.id: None},
         )
@@ -209,7 +203,7 @@ class TestAndGraph(BaseTest):
     ):
         user_turn = self.add_user_turn("hello", True)
         assistant_turn = self.add_assistant_turn(
-            agent_executor, model_provider, "hello back", is_stream
+             "hello back"
         )
 
         TC = self.create_turn_container([*start_turns, user_turn, assistant_turn])
@@ -241,7 +235,7 @@ class TestAndGraph(BaseTest):
         a_turns = []
         for tool_names in tool_names_list:
             assistant_turn = self.add_assistant_turn(
-                agent_executor, model_provider, None, is_stream, tool_names=tool_names
+                 None, tool_names=tool_names
             )
             a_turns.append(assistant_turn)
 
@@ -282,10 +276,7 @@ class TestAndGraph(BaseTest):
         )
 
         assistant_turn = self.add_assistant_turn(
-            agent_executor,
-            model_provider,
             None,
-            is_stream,
             fn_calls,
             fn_call_id_to_fn_output,
         )
@@ -324,10 +315,7 @@ class TestAndGraph(BaseTest):
         first_into_second_transition_turns,
     ):
         t5 = self.add_assistant_turn(
-            agent_executor,
-            model_provider,
             "what flight do you want?",
-            is_stream,
         )
         self.run_message_dict_assertions()
 
@@ -400,10 +388,7 @@ class TestAndGraph(BaseTest):
         first_into_second_transition_turns,
     ):
         t5 = self.add_assistant_turn(
-            agent_executor,
-            model_provider,
             "what flight do you want?",
-            is_stream,
         )
 
         t6 = self.add_user_turn(
@@ -425,10 +410,7 @@ class TestAndGraph(BaseTest):
             fn_call.id: None for fn_call in third_fn_calls
         }
         t7 = self.add_assistant_turn(
-            agent_executor,
-            model_provider,
             None,
-            is_stream,
             third_fn_calls,
             third_fn_calls_fn_call_id_to_fn_output,
         )
@@ -457,10 +439,7 @@ class TestAndGraph(BaseTest):
             remove_prev_tool_calls=remove_prev_tool_calls,
         )
         t8 = self.add_assistant_turn(
-            agent_executor,
-            model_provider,
             "thanks for confirming flights, now lets move on to ...",
-            is_stream,
         )
         self.run_message_dict_assertions()
 
@@ -502,10 +481,7 @@ class TestAndGraph(BaseTest):
         )
         self.build_messages_from_turn(t10, model_provider)
         t11 = self.add_assistant_turn(
-            agent_executor,
-            model_provider,
             "what do you want to change?",
-            is_stream,
         )
         self.run_message_dict_assertions()
 

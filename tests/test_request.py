@@ -139,7 +139,7 @@ class TestRequest(BaseTest):
     ):
         user_turn = self.add_request_user_turn("hello")
         assistant_turn = self.add_assistant_turn(
-            agent_executor, model_provider, "hello back", is_stream
+             "hello back"
         )
 
         TC = self.create_turn_container([*start_turns, user_turn, assistant_turn])
@@ -176,7 +176,7 @@ class TestRequest(BaseTest):
         a_turns = []
         for tool_names in tool_names_list:
             assistant_turn = self.add_assistant_turn(
-                agent_executor, model_provider, None, is_stream, tool_names=tool_names
+                None, tool_names=tool_names
             )
             a_turns.append(assistant_turn)
 
@@ -330,10 +330,7 @@ class TestRequest(BaseTest):
             args={"args": "1"},
         )
         t10 = self.add_assistant_turn(
-            agent_executor,
-            model_provider,
             None,
-            is_stream,
             [fn_call_1],
             {fn_call_1.id: None},
         )
@@ -347,10 +344,7 @@ class TestRequest(BaseTest):
         # --------------------------------
 
         t11 = self.add_assistant_turn(
-            agent_executor,
-            model_provider,
             "finished task",
-            is_stream,
         )
 
         # --------------------------------

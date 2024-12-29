@@ -330,10 +330,7 @@ class BaseTest:
 
     def add_assistant_turn(
         self,
-        agent_executor,
-        model_provider,
         message,
-        is_stream,
         fn_calls=None,
         fn_call_id_to_fn_output=None,
         tool_names=None,
@@ -635,10 +632,7 @@ class BaseTest:
     ):
         t2 = self.add_user_turn(user_msg)
         t3 = self.add_assistant_turn(
-            self.fixtures.agent_executor,
-            self.fixtures.model_provider,
             None,
-            self.fixtures.is_stream,
             fn_calls,
             fn_call_id_to_fn_output,
         )
