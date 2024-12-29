@@ -452,7 +452,7 @@ class BaseTest:
         self.fixtures.remove_prev_tool_calls = request.param
         return request.param
 
-    @pytest.fixture(params=[True, False])
+    @pytest.fixture(params=[True, False], autouse=True)
     def is_stream(self, base_setup, request):
         self.fixtures.is_stream = request.param
         return request.param

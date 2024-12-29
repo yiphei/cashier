@@ -122,7 +122,6 @@ class TestRequest(BaseTest):
 
     def test_add_assistant_turn(
         self,
-        is_stream,
         agent_executor,
         start_turns,
     ):
@@ -145,7 +144,6 @@ class TestRequest(BaseTest):
     @pytest.mark.parametrize("separate_fn_calls", [True, False])
     def test_add_assistant_turn_with_tool_calls(
         self,
-        is_stream,
         fn_names,
         separate_fn_calls,
         agent_executor,
@@ -190,7 +188,6 @@ class TestRequest(BaseTest):
         model_provider,
         agent_executor,
         start_turns,
-        is_stream,
         into_graph_transition_turns,
     ):
 
@@ -394,4 +391,4 @@ class TestRequest(BaseTest):
 
 
 def test_class_test_count(request):
-    assert_number_of_tests(TestRequest, __file__, request, 44)
+    assert_number_of_tests(TestRequest, __file__, request, 56)
