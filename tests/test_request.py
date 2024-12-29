@@ -260,9 +260,7 @@ class TestRequest(BaseTest):
 
         # --------------------------------
 
-        edge_schema = self.get_edge_schema(
-            CHANGE_FLIGHT_GRAPH_SCHEMA.start_node_schema
-        )
+        edge_schema = self.get_edge_schema(CHANGE_FLIGHT_GRAPH_SCHEMA.start_node_schema)
         next_node_schema = self.get_next_conv_node_schema(
             CHANGE_FLIGHT_GRAPH_SCHEMA.start_node_schema
         )
