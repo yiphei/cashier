@@ -34,6 +34,11 @@ class TestRequest(BaseTest):
             )
             self.edge_schema_id_to_to_cov_node_schema_id[edge_schema.id] = node_schema
 
+    def get_edge_schema(self, curr_node_schema):
+        return self.graph_schema.from_conv_node_schema_id_to_edge_schema[
+            curr_node_schema.id
+        ]
+
     def get_next_conv_node_schema(self, curr_node_schema):
         edge_schema = self.graph_schema.from_conv_node_schema_id_to_edge_schema[
             curr_node_schema.id
@@ -254,18 +259,18 @@ class TestRequest(BaseTest):
 
         # --------------------------------
 
+        edge_schema = self.get_edge_schema(agent_executor.graph.curr_conversation_node.schema)
         next_node_schema = self.get_next_conv_node_schema(
             agent_executor.graph.curr_conversation_node.schema
         )
-        input_schema, input = (
-            agent_executor.graph.curr_node.curr_node.state.get_set_schema_and_fields()
-        )
+        input = next_node_schema.get_input(agent_executor.graph.curr_node.state, edge_schema)
+
         node_turn_2 = TurnArgs(
             turn=NodeSystemTurn(
                 msg_content=next_node_schema.node_system_prompt(
                     node_prompt=next_node_schema.node_prompt,
                     input=input.model_dump_json(),
-                    node_input_json_schema=input_schema.model_json_schema(),
+                    node_input_json_schema=next_node_schema.input_schema.model_json_schema(),
                     state_json_schema=next_node_schema.state_schema.model_json_schema(),
                     last_msg="my user details are ...",
                     curr_request="customer wants to change a flight",
@@ -300,18 +305,19 @@ class TestRequest(BaseTest):
 
         # --------------------------------
 
+        edge_schema = self.get_edge_schema(agent_executor.graph.curr_conversation_node.schema)
         next_next_node_schema = self.get_next_conv_node_schema(
             agent_executor.graph.curr_conversation_node.schema
         )
-        input_schema, input = (
-            agent_executor.graph.curr_node.curr_node.state.get_set_schema_and_fields()
-        )
+        input = next_next_node_schema.get_input(agent_executor.graph.curr_node.state, edge_schema)
+
+
         node_turn_3 = TurnArgs(
             turn=NodeSystemTurn(
                 msg_content=next_next_node_schema.node_system_prompt(
                     node_prompt=next_next_node_schema.node_prompt,
                     input=input.model_dump_json(),
-                    node_input_json_schema=input_schema.model_json_schema(),
+                    node_input_json_schema=next_next_node_schema.input_schema.model_json_schema(),
                     state_json_schema=next_next_node_schema.state_schema.model_json_schema(),
                     last_msg="my reservation details are ...",
                     curr_request="customer wants to change a flightt",
