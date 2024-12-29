@@ -3,12 +3,23 @@ from polyfactory.factories.pydantic_factory import ModelFactory
 
 from cashier.model.model_turn import NodeSystemTurn
 from cashier.model.model_util import FunctionCall
+from data.graph.airline_change_baggage import (
+    CHANGE_BAGGAGE_GRAPH_SCHEMA,
+    edge_1,
+    edge_2,
+)
+from data.graph.airline_change_baggage import (
+    get_reservation_details_node_schema as luggage_get_reservation_details_node_schema,
+)
+from data.graph.airline_change_baggage import (
+    get_user_id_node_schema as luggage_get_user_id_node_schema,
+)
+from data.graph.airline_change_baggage import luggage_node_schema
 from data.graph.airline_change_flight import (
     CHANGE_FLIGHT_GRAPH_SCHEMA,
     get_user_id_node_schema,
 )
-from data.graph.airline_change_baggage import CHANGE_BAGGAGE_GRAPH_SCHEMA,luggage_node_schema, edge_1, edge_2, get_user_id_node_schema as luggage_get_user_id_node_schema, get_reservation_details_node_schema as luggage_get_reservation_details_node_schema
-from data.graph.airline_request import AIRLINE_REQUEST_SCHEMA, GRAPH_EDGE_SCHEMA_1
+from data.graph.airline_request import AIRLINE_REQUEST_SCHEMA
 from data.types.airline import FlightInfo, ReservationDetails, UserDetails
 from tests.base_test import (
     BaseTest,
@@ -457,17 +468,19 @@ class TestRequest(BaseTest):
 
         agent_executor.graph.requests.append("change baggage")
         agent_executor.graph.graph_schema_sequence.append(CHANGE_BAGGAGE_GRAPH_SCHEMA)
-        agent_executor.graph.graph_schema_id_to_task[CHANGE_BAGGAGE_GRAPH_SCHEMA.id] = "change baggage"
+        agent_executor.graph.graph_schema_id_to_task[CHANGE_BAGGAGE_GRAPH_SCHEMA.id] = (
+            "change baggage"
+        )
 
         # --------------------------------
-        
+
         t11 = self.add_assistant_turn(
-                agent_executor,
-                model_provider,
-                "finished task",
-                is_stream,
-            )
-        
+            agent_executor,
+            model_provider,
+            "finished task",
+            is_stream,
+        )
+
         # --------------------------------
 
         a_node_schema = luggage_get_user_id_node_schema
@@ -478,7 +491,7 @@ class TestRequest(BaseTest):
                     input=None,
                     node_input_json_schema=None,
                     state_json_schema=a_node_schema.state_schema.model_json_schema(),
-                    last_msg="the payment method is ...", # TODO: fix this. the last message should be "finished task"
+                    last_msg="the payment method is ...",  # TODO: fix this. the last message should be "finished task"
                     curr_request="change baggage",
                 ),
                 node_id=3,
@@ -490,11 +503,8 @@ class TestRequest(BaseTest):
             remove_prev_tool_calls=remove_prev_tool_calls,
         )
 
-
         b_node_schema = luggage_get_reservation_details_node_schema
-        input = b_node_schema.get_input(
-            agent_executor.graph.curr_node.state, edge_1
-        )
+        input = b_node_schema.get_input(agent_executor.graph.curr_node.state, edge_1)
         node_turn_6_b = TurnArgs(
             turn=NodeSystemTurn(
                 msg_content=b_node_schema.node_system_prompt(
@@ -515,11 +525,9 @@ class TestRequest(BaseTest):
         )
 
         # --------------------------------
-        
+
         new_node_schema = luggage_node_schema
-        input = new_node_schema.get_input(
-            agent_executor.graph.curr_node.state, edge_2
-        )
+        input = new_node_schema.get_input(agent_executor.graph.curr_node.state, edge_2)
         node_turn_6 = TurnArgs(
             turn=NodeSystemTurn(
                 msg_content=new_node_schema.node_system_prompt(
