@@ -259,11 +259,15 @@ class TestRequest(BaseTest):
 
         # --------------------------------
 
-        edge_schema = self.get_edge_schema(agent_executor.graph.curr_conversation_node.schema)
+        edge_schema = self.get_edge_schema(
+            agent_executor.graph.curr_conversation_node.schema
+        )
         next_node_schema = self.get_next_conv_node_schema(
             agent_executor.graph.curr_conversation_node.schema
         )
-        input = next_node_schema.get_input(agent_executor.graph.curr_node.state, edge_schema)
+        input = next_node_schema.get_input(
+            agent_executor.graph.curr_node.state, edge_schema
+        )
 
         node_turn_2 = TurnArgs(
             turn=NodeSystemTurn(
@@ -305,12 +309,15 @@ class TestRequest(BaseTest):
 
         # --------------------------------
 
-        edge_schema = self.get_edge_schema(agent_executor.graph.curr_conversation_node.schema)
+        edge_schema = self.get_edge_schema(
+            agent_executor.graph.curr_conversation_node.schema
+        )
         next_next_node_schema = self.get_next_conv_node_schema(
             agent_executor.graph.curr_conversation_node.schema
         )
-        input = next_next_node_schema.get_input(agent_executor.graph.curr_node.state, edge_schema)
-
+        input = next_next_node_schema.get_input(
+            agent_executor.graph.curr_node.state, edge_schema
+        )
 
         node_turn_3 = TurnArgs(
             turn=NodeSystemTurn(
