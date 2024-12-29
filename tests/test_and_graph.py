@@ -318,9 +318,7 @@ class TestAndGraph(BaseTest):
             ],
         )
 
-        self.run_assertions(
-             TC, find_flight_node_schema.tool_registry
-        )
+        self.run_assertions(TC, find_flight_node_schema.tool_registry)
 
     def test_backward_node_skip(
         self,
@@ -583,9 +581,7 @@ class TestAndGraph(BaseTest):
             ],
         )
 
-        self.run_assertions(
-             TC, find_flight_node_schema.tool_registry
-        )
+        self.run_assertions(TC, find_flight_node_schema.tool_registry)
 
 
 def test_class_test_count(request):

@@ -204,9 +204,7 @@ class TestRequest(BaseTest):
             ],
         )
 
-        self.run_assertions(
-             TC, get_user_id_node_schema.tool_registry
-        )
+        self.run_assertions(TC, get_user_id_node_schema.tool_registry)
 
     def test_graph_transition(
         self,
