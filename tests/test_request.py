@@ -127,9 +127,7 @@ class TestRequest(BaseTest):
     ):
         user_turn = self.add_request_user_turn(agent_executor, "hello", model_provider)
 
-        TC = self.create_turn_container(
-            [*start_turns, user_turn]
-        )
+        TC = self.create_turn_container([*start_turns, user_turn])
         self.run_assertions(
             agent_executor,
             TC,
@@ -150,9 +148,7 @@ class TestRequest(BaseTest):
             agent_executor, model_provider, "hello back", is_stream
         )
 
-        TC = self.create_turn_container(
-            [*start_turns, user_turn, assistant_turn]
-        )
+        TC = self.create_turn_container([*start_turns, user_turn, assistant_turn])
 
         self.run_assertions(
             agent_executor,
@@ -192,9 +188,7 @@ class TestRequest(BaseTest):
             )
             a_turns.append(assistant_turn)
 
-        TC = self.create_turn_container(
-            [*start_turns, user_turn, *a_turns]
-        )
+        TC = self.create_turn_container([*start_turns, user_turn, *a_turns])
 
         self.run_assertions(
             agent_executor,
