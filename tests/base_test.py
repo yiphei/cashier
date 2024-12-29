@@ -213,7 +213,7 @@ class BaseTest:
         fn.model_fields_set.remove("id")
         return fn
 
-    def create_fake_fn_calls(self, model_provider, fn_names, node):
+    def create_fake_fn_calls(self, fn_names, node):
         fn_calls = []
         tool_registry = node.schema.tool_registry
         fn_call_id_to_fn_output = {}
@@ -344,7 +344,6 @@ class BaseTest:
     ):
         if tool_names is not None:
             fn_calls, fn_call_id_to_fn_output = self.create_fake_fn_calls(
-                self.fixtures.model_provider,
                 tool_names,
                 self.fixtures.agent_executor.graph.curr_conversation_node,
             )

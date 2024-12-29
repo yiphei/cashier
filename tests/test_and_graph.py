@@ -272,7 +272,7 @@ class TestAndGraph(BaseTest):
         start_turns,
     ):
         fn_calls, fn_call_id_to_fn_output = self.create_fake_fn_calls(
-            model_provider, fn_names, agent_executor.graph.curr_conversation_node
+            fn_names, agent_executor.graph.curr_conversation_node
         )
         fn_call = FunctionCall.create(
             name="update_state_user_details",
