@@ -298,7 +298,9 @@ class BaseTest:
 
         self.model_chat.side_effect = model_chat_side_effects
         with self.generate_random_string_context():
-            self.fixtures.agent_executor.add_user_turn(message, self.fixtures.model_provider)
+            self.fixtures.agent_executor.add_user_turn(
+                message, self.fixtures.model_provider
+            )
 
         ut = UserTurn(msg_content=message)
         self.build_messages_from_turn(ut, self.fixtures.model_provider)
@@ -341,7 +343,9 @@ class BaseTest:
     ):
         if tool_names is not None:
             fn_calls, fn_call_id_to_fn_output = self.create_fake_fn_calls(
-                self.fixtures.model_provider, tool_names, agent_executor.graph.curr_conversation_node
+                self.fixtures.model_provider,
+                tool_names,
+                agent_executor.graph.curr_conversation_node,
             )
 
         model_completion = self.create_mock_model_completion(
@@ -459,13 +463,16 @@ class BaseTest:
 
     def build_user_turn_messages(self, user_turn, model_provider):
         self.message_dicts.extend(
-            user_turn.build_messages(self.fixtures.model_provider), MessageList.ItemType.USER
+            user_turn.build_messages(self.fixtures.model_provider),
+            MessageList.ItemType.USER,
         )
         self.conversation_dicts.extend(
-            user_turn.build_messages(self.fixtures.model_provider), MessageList.ItemType.USER
+            user_turn.build_messages(self.fixtures.model_provider),
+            MessageList.ItemType.USER,
         )
         self.node_conversation_dicts.extend(
-            user_turn.build_messages(self.fixtures.model_provider), MessageList.ItemType.USER
+            user_turn.build_messages(self.fixtures.model_provider),
+            MessageList.ItemType.USER,
         )
 
     def build_assistant_turn_messages(self, assistant_turn, model_provider):
