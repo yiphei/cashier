@@ -80,14 +80,10 @@ class TestRequest(BaseTest):
                 ),
             ),
         ]
-    
+
     @pytest.fixture
     def into_graph_transition_turns(
-        self,
-        agent_executor,
-        model_provider,
-        remove_prev_tool_calls,
-        start_turns
+        self, agent_executor, model_provider, remove_prev_tool_calls, start_turns
     ):
         t1 = self.add_request_user_turn(
             agent_executor,
@@ -213,7 +209,7 @@ class TestRequest(BaseTest):
         remove_prev_tool_calls,
         agent_executor,
         start_turns,
-        into_graph_transition_turns
+        into_graph_transition_turns,
     ):
         TC = self.create_turn_container(
             [
@@ -234,7 +230,7 @@ class TestRequest(BaseTest):
         agent_executor,
         start_turns,
         is_stream,
-        into_graph_transition_turns
+        into_graph_transition_turns,
     ):
 
         t2 = self.add_user_turn(
