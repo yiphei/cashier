@@ -116,7 +116,9 @@ class BaseTest:
             TC.turns.append(turn)
         return TC
 
-    def run_message_dict_assertions(self,):
+    def run_message_dict_assertions(
+        self,
+    ):
         assert not DeepDiff(
             self.message_dicts,
             self.fixtures.agent_executor.TC.model_provider_to_message_manager[
