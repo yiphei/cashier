@@ -119,19 +119,19 @@ class BaseTest:
     def run_message_dict_assertions(self, agent_executor, model_provider):
         assert not DeepDiff(
             self.message_dicts,
-            agent_executor.TC.model_provider_to_message_manager[
+            self.fixtures.agent_executor.TC.model_provider_to_message_manager[
                 self.fixtures.model_provider
             ].message_dicts,
         )
         assert not DeepDiff(
             self.conversation_dicts,
-            agent_executor.TC.model_provider_to_message_manager[
+            self.fixtures.agent_executor.TC.model_provider_to_message_manager[
                 self.fixtures.model_provider
             ].conversation_dicts,
         )
         assert not DeepDiff(
             self.node_conversation_dicts,
-            agent_executor.TC.model_provider_to_message_manager[
+            self.fixtures.agent_executor.TC.model_provider_to_message_manager[
                 self.fixtures.model_provider
             ].node_conversation_dicts,
         )
@@ -139,14 +139,14 @@ class BaseTest:
     def run_assertions(self, agent_executor, TC, tool_registry, model_provider):
         self.run_message_dict_assertions(agent_executor, model_provider)
         assert not DeepDiff(
-            agent_executor.get_model_completion_kwargs(),
+            self.fixtures.agent_executor.get_model_completion_kwargs(),
             {
                 "turn_container": TC,
                 "tool_registry": tool_registry,
                 "force_tool_choice": None,
                 "exclude_update_state_fns": (
-                    not agent_executor.graph.curr_conversation_node.first_user_message
-                    if agent_executor.graph.curr_conversation_node is not None
+                    not self.fixtures.agent_executor.graph.curr_conversation_node.first_user_message
+                    if self.fixtures.agent_executor.graph.curr_conversation_node is not None
                     else False
                 ),
             },
@@ -169,7 +169,7 @@ class BaseTest:
         )
         fn_calls = fn_calls or []
 
-        model_completion = model_completion_class(output_obj=None, is_stream=is_stream)
+        model_completion = model_completion_class(output_obj=None, is_stream=self.fixtures.is_stream)
         model_completion.msg_content = message
         model_completion.get_message = Mock(return_value=message)
         if message is not None:
@@ -325,7 +325,7 @@ class BaseTest:
         )
         self.model_chat.side_effect = [graph_schema_selection_completion]
         with self.generate_random_string_context():
-            agent_executor.add_user_turn(message, self.fixtures.model_provider)
+            self.fixtures.agent_executor.add_user_turn(message, self.fixtures.model_provider)
 
         ut = UserTurn(msg_content=message)
         self.build_messages_from_turn(ut, self.fixtures.model_provider)
@@ -345,11 +345,11 @@ class BaseTest:
             fn_calls, fn_call_id_to_fn_output = self.create_fake_fn_calls(
                 self.fixtures.model_provider,
                 tool_names,
-                agent_executor.graph.curr_conversation_node,
+                self.fixtures.agent_executor.graph.curr_conversation_node,
             )
 
         model_completion = self.create_mock_model_completion(
-            self.fixtures.model_provider, message, is_stream, fn_calls=fn_calls
+            self.fixtures.model_provider, message, self.fixtures.is_stream, fn_calls=fn_calls
         )
         get_state_fn_call = (
             next((fn_call for fn_call in fn_calls if fn_call.name == "get_state"), None)
@@ -362,7 +362,7 @@ class BaseTest:
             else []
         )
 
-        tool_registry = agent_executor.graph.curr_conversation_node.schema.tool_registry
+        tool_registry = self.fixtures.agent_executor.graph.curr_conversation_node.schema.tool_registry
 
         fn_calls = fn_calls or []
         expected_calls_map = defaultdict(list)
@@ -376,26 +376,26 @@ class BaseTest:
                 for fn_call in fn_calls
             },
         ) as patched_fn_name_to_fn, ExitStack() as stack:
-            curr_node = agent_executor.graph.curr_conversation_node
+            curr_node = self.fixtures.agent_executor.graph.curr_conversation_node
             if get_state_fn_call is not None:
                 stack.enter_context(
                     patch.object(
-                        agent_executor.graph.curr_conversation_node,
+                        self.fixtures.agent_executor.graph.curr_conversation_node,
                         "get_state",
-                        wraps=agent_executor.graph.curr_conversation_node.get_state,
+                        wraps=self.fixtures.agent_executor.graph.curr_conversation_node.get_state,
                     )
                 )
 
             if update_state_fn_calls:
                 stack.enter_context(
                     patch.object(
-                        agent_executor.graph.curr_conversation_node,
+                        self.fixtures.agent_executor.graph.curr_conversation_node,
                         "update_state",
-                        wraps=agent_executor.graph.curr_conversation_node.update_state,
+                        wraps=self.fixtures.agent_executor.graph.curr_conversation_node.update_state,
                     )
                 )
 
-            agent_executor.add_assistant_turn(model_completion)
+            self.fixtures.agent_executor.add_assistant_turn(model_completion)
 
             visited_fn_call_ids = set()
             for fn_call in fn_calls:
@@ -634,18 +634,18 @@ class BaseTest:
         next_node_schema,
         curr_request,
     ):
-        t2 = self.add_user_turn(agent_executor, user_msg, self.fixtures.model_provider)
+        t2 = self.add_user_turn(self.fixtures.agent_executor, user_msg, self.fixtures.model_provider)
         t3 = self.add_assistant_turn(
-            agent_executor,
+            self.fixtures.agent_executor,
             self.fixtures.model_provider,
             None,
-            is_stream,
+            self.fixtures.is_stream,
             fn_calls,
             fn_call_id_to_fn_output,
         )
 
         input = next_node_schema.get_input(
-            agent_executor.graph.curr_node.state, edge_schema
+            self.fixtures.agent_executor.graph.curr_node.state, edge_schema
         )
 
         node_turn_2 = TurnArgs(
