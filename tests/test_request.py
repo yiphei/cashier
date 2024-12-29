@@ -114,7 +114,7 @@ class TestRequest(BaseTest):
     def test_graph_initialization(
         self, model_provider, remove_prev_tool_calls, agent_executor, start_turns
     ):
-        TC = self.create_turn_container(start_turns, remove_prev_tool_calls)
+        TC = self.create_turn_container(start_turns)
         self.run_assertions(
             agent_executor,
             TC,
@@ -128,7 +128,7 @@ class TestRequest(BaseTest):
         user_turn = self.add_request_user_turn(agent_executor, "hello", model_provider)
 
         TC = self.create_turn_container(
-            [*start_turns, user_turn], remove_prev_tool_calls
+            [*start_turns, user_turn]
         )
         self.run_assertions(
             agent_executor,
@@ -151,7 +151,7 @@ class TestRequest(BaseTest):
         )
 
         TC = self.create_turn_container(
-            [*start_turns, user_turn, assistant_turn], remove_prev_tool_calls
+            [*start_turns, user_turn, assistant_turn]
         )
 
         self.run_assertions(
@@ -193,7 +193,7 @@ class TestRequest(BaseTest):
             a_turns.append(assistant_turn)
 
         TC = self.create_turn_container(
-            [*start_turns, user_turn, *a_turns], remove_prev_tool_calls
+            [*start_turns, user_turn, *a_turns]
         )
 
         self.run_assertions(
@@ -216,7 +216,6 @@ class TestRequest(BaseTest):
                 *start_turns,
                 *into_graph_transition_turns,
             ],
-            remove_prev_tool_calls,
         )
 
         self.run_assertions(
@@ -452,7 +451,6 @@ class TestRequest(BaseTest):
                 node_turn_6_b,
                 node_turn_6,
             ],
-            remove_prev_tool_calls,
         )
 
         self.run_assertions(

@@ -86,7 +86,7 @@ class BaseTest:
         ), patch("cashier.model.model_util.uuid.uuid4", side_effect=capture_uuid_call):
             yield
 
-    def create_turn_container(self, turn_args_list, remove_prev_tool_calls):
+    def create_turn_container(self, turn_args_list):
         TC = TurnContainer(remove_prev_tool_calls=self.fixtures.remove_prev_tool_calls)
         for turn_args in turn_args_list:
             add_fn = None
