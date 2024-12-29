@@ -2,12 +2,12 @@ import os
 import uuid
 from collections import defaultdict, deque
 from contextlib import ExitStack, contextmanager
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 from unittest.mock import Mock, call, patch
 
 import pytest
 from deepdiff import DeepDiff
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from cashier.agent_executor import AgentExecutor
 from cashier.model.message_list import MessageList
@@ -39,6 +39,15 @@ class TurnArgs(BaseModel):
     kwargs: Dict[str, Any] = Field(default_factory=dict)
 
 
+class Fixtures(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    model_provider: Optional[ModelProvider] = None
+    remove_prev_tool_calls: Optional[bool] = None
+    is_stream: Optional[bool] = None
+    agent_executor: Optional[AgentExecutor] = None
+
+
 class BaseTest:
     @pytest.fixture(autouse=True)
     def base_setup(self):
@@ -47,9 +56,11 @@ class BaseTest:
         self.rand_uuids = deque()
         self.model_chat_patcher = patch("cashier.model.model_completion.Model.chat")
         self.model_chat = self.model_chat_patcher.start()
+        self.fixtures = Fixtures()
 
         yield
 
+        self.fixtures = None
         self.rand_tool_ids.clear()
         self.rand_uuids.clear()
         self.model_chat_patcher.stop()
@@ -75,15 +86,15 @@ class BaseTest:
         ), patch("cashier.model.model_util.uuid.uuid4", side_effect=capture_uuid_call):
             yield
 
-    def create_turn_container(self, turn_args_list, remove_prev_tool_calls):
-        TC = TurnContainer(remove_prev_tool_calls=remove_prev_tool_calls)
+    def create_turn_container(self, turn_args_list):
+        TC = TurnContainer(remove_prev_tool_calls=self.fixtures.remove_prev_tool_calls)
         for turn_args in turn_args_list:
             add_fn = None
             if isinstance(turn_args, TurnArgs):
                 turn = turn_args.turn
                 kwargs = {
                     "turn": turn_args.turn,
-                    "remove_prev_tool_calls": remove_prev_tool_calls,
+                    "remove_prev_tool_calls": self.fixtures.remove_prev_tool_calls,
                     **turn_args.kwargs,
                 }
             else:
@@ -105,37 +116,40 @@ class BaseTest:
             TC.turns.append(turn)
         return TC
 
-    def run_message_dict_assertions(self, agent_executor, model_provider):
+    def run_message_dict_assertions(
+        self,
+    ):
         assert not DeepDiff(
             self.message_dicts,
-            agent_executor.TC.model_provider_to_message_manager[
-                model_provider
+            self.fixtures.agent_executor.TC.model_provider_to_message_manager[
+                self.fixtures.model_provider
             ].message_dicts,
         )
         assert not DeepDiff(
             self.conversation_dicts,
-            agent_executor.TC.model_provider_to_message_manager[
-                model_provider
+            self.fixtures.agent_executor.TC.model_provider_to_message_manager[
+                self.fixtures.model_provider
             ].conversation_dicts,
         )
         assert not DeepDiff(
             self.node_conversation_dicts,
-            agent_executor.TC.model_provider_to_message_manager[
-                model_provider
+            self.fixtures.agent_executor.TC.model_provider_to_message_manager[
+                self.fixtures.model_provider
             ].node_conversation_dicts,
         )
 
-    def run_assertions(self, agent_executor, TC, tool_registry, model_provider):
-        self.run_message_dict_assertions(agent_executor, model_provider)
+    def run_assertions(self, TC, tool_registry):
+        self.run_message_dict_assertions()
         assert not DeepDiff(
-            agent_executor.get_model_completion_kwargs(),
+            self.fixtures.agent_executor.get_model_completion_kwargs(),
             {
                 "turn_container": TC,
                 "tool_registry": tool_registry,
                 "force_tool_choice": None,
                 "exclude_update_state_fns": (
-                    not agent_executor.graph.curr_conversation_node.first_user_message
-                    if agent_executor.graph.curr_conversation_node is not None
+                    not self.fixtures.agent_executor.graph.curr_conversation_node.first_user_message
+                    if self.fixtures.agent_executor.graph.curr_conversation_node
+                    is not None
                     else False
                 ),
             },
@@ -144,21 +158,21 @@ class BaseTest:
 
     def create_mock_model_completion(
         self,
-        model_provider,
         message=None,
-        is_stream=False,
         message_prop=None,
         prob=None,
         fn_calls=None,
     ):
         model_completion_class = (
             OAIModelOutput
-            if model_provider == ModelProvider.OPENAI
+            if self.fixtures.model_provider == ModelProvider.OPENAI
             else AnthropicModelOutput
         )
         fn_calls = fn_calls or []
 
-        model_completion = model_completion_class(output_obj=None, is_stream=is_stream)
+        model_completion = model_completion_class(
+            output_obj=None, is_stream=self.fixtures.is_stream
+        )
         model_completion.msg_content = message
         model_completion.get_message = Mock(return_value=message)
         if message is not None:
@@ -174,7 +188,7 @@ class BaseTest:
             if message_prop == "null":  # TODO: fix this
                 message_prop = None
             model_completion.get_message_prop = Mock(return_value=message_prop)
-            if model_provider == ModelProvider.OPENAI:
+            if self.fixtures.model_provider == ModelProvider.OPENAI:
                 model_completion.get_prob = Mock(return_value=prob)
         return model_completion
 
@@ -199,7 +213,7 @@ class BaseTest:
         fn.model_fields_set.remove("id")
         return fn
 
-    def create_fake_fn_calls(self, model_provider, fn_names, node):
+    def create_fake_fn_calls(self, fn_names, node):
         fn_calls = []
         tool_registry = node.schema.tool_registry
         fn_call_id_to_fn_output = {}
@@ -221,8 +235,8 @@ class BaseTest:
                 args = {field_name: default_value}
 
             fn_call = FunctionCall.create(
-                api_id_model_provider=model_provider,
-                api_id=FunctionCall.generate_fake_id(model_provider),
+                api_id_model_provider=self.fixtures.model_provider,
+                api_id=FunctionCall.generate_fake_id(self.fixtures.model_provider),
                 name=fn_name,
                 args=args,
             )
@@ -245,9 +259,7 @@ class BaseTest:
 
     def add_user_turn(
         self,
-        agent_executor,
         message,
-        model_provider,
         is_on_topic=True,
         wait_node_schema_id=None,
         skip_node_schema_id=None,
@@ -255,49 +267,45 @@ class BaseTest:
         model_chat_side_effects = []
 
         is_on_topic_model_completion = self.create_mock_model_completion(
-            model_provider, None, False, is_on_topic, 0.5
+            None, is_on_topic, 0.5
         )
         model_chat_side_effects.append(is_on_topic_model_completion)
         if not is_on_topic:
             agent_addition_completion = self.create_mock_model_completion(
-                model_provider, None, False, "null", 0.5
+                None, "null", 0.5
             )
             model_chat_side_effects.append(agent_addition_completion)
 
             is_wait_model_completion = self.create_mock_model_completion(
-                model_provider,
                 None,
-                False,
                 wait_node_schema_id
-                or agent_executor.graph.curr_conversation_node.schema.id,
+                or self.fixtures.agent_executor.graph.curr_conversation_node.schema.id,
                 0.5,
             )
             model_chat_side_effects.append(is_wait_model_completion)
 
             if wait_node_schema_id is None:
                 skip_model_completion = self.create_mock_model_completion(
-                    model_provider,
                     None,
-                    False,
                     skip_node_schema_id
-                    or agent_executor.graph.curr_conversation_node.schema.id,
+                    or self.fixtures.agent_executor.graph.curr_conversation_node.schema.id,
                     0.5,
                 )
                 model_chat_side_effects.append(skip_model_completion)
 
         self.model_chat.side_effect = model_chat_side_effects
         with self.generate_random_string_context():
-            agent_executor.add_user_turn(message, model_provider)
+            self.fixtures.agent_executor.add_user_turn(
+                message, self.fixtures.model_provider
+            )
 
         ut = UserTurn(msg_content=message)
-        self.build_messages_from_turn(ut, model_provider)
+        self.build_messages_from_turn(ut)
         return ut
 
     def add_request_user_turn(
         self,
-        agent_executor,
         message,
-        model_provider,
         task=None,
     ):
         if task is None:
@@ -308,33 +316,34 @@ class BaseTest:
             ]
 
         graph_schema_selection_completion = self.create_mock_model_completion(
-            model_provider, None, False, agent_selections, 0.5
+            None, agent_selections, 0.5
         )
         self.model_chat.side_effect = [graph_schema_selection_completion]
         with self.generate_random_string_context():
-            agent_executor.add_user_turn(message, model_provider)
+            self.fixtures.agent_executor.add_user_turn(
+                message, self.fixtures.model_provider
+            )
 
         ut = UserTurn(msg_content=message)
-        self.build_messages_from_turn(ut, model_provider)
+        self.build_messages_from_turn(ut)
         return ut
 
     def add_assistant_turn(
         self,
-        agent_executor,
-        model_provider,
         message,
-        is_stream,
         fn_calls=None,
         fn_call_id_to_fn_output=None,
         tool_names=None,
     ):
         if tool_names is not None:
             fn_calls, fn_call_id_to_fn_output = self.create_fake_fn_calls(
-                model_provider, tool_names, agent_executor.graph.curr_conversation_node
+                tool_names,
+                self.fixtures.agent_executor.graph.curr_conversation_node,
             )
 
         model_completion = self.create_mock_model_completion(
-            model_provider, message, is_stream, fn_calls=fn_calls
+            message,
+            fn_calls=fn_calls,
         )
         get_state_fn_call = (
             next((fn_call for fn_call in fn_calls if fn_call.name == "get_state"), None)
@@ -347,7 +356,9 @@ class BaseTest:
             else []
         )
 
-        tool_registry = agent_executor.graph.curr_conversation_node.schema.tool_registry
+        tool_registry = (
+            self.fixtures.agent_executor.graph.curr_conversation_node.schema.tool_registry
+        )
 
         fn_calls = fn_calls or []
         expected_calls_map = defaultdict(list)
@@ -361,26 +372,26 @@ class BaseTest:
                 for fn_call in fn_calls
             },
         ) as patched_fn_name_to_fn, ExitStack() as stack:
-            curr_node = agent_executor.graph.curr_conversation_node
+            curr_node = self.fixtures.agent_executor.graph.curr_conversation_node
             if get_state_fn_call is not None:
                 stack.enter_context(
                     patch.object(
-                        agent_executor.graph.curr_conversation_node,
+                        self.fixtures.agent_executor.graph.curr_conversation_node,
                         "get_state",
-                        wraps=agent_executor.graph.curr_conversation_node.get_state,
+                        wraps=self.fixtures.agent_executor.graph.curr_conversation_node.get_state,
                     )
                 )
 
             if update_state_fn_calls:
                 stack.enter_context(
                     patch.object(
-                        agent_executor.graph.curr_conversation_node,
+                        self.fixtures.agent_executor.graph.curr_conversation_node,
                         "update_state",
-                        wraps=agent_executor.graph.curr_conversation_node.update_state,
+                        wraps=self.fixtures.agent_executor.graph.curr_conversation_node.update_state,
                     )
                 )
 
-            agent_executor.add_assistant_turn(model_completion)
+            self.fixtures.agent_executor.add_assistant_turn(model_completion)
 
             visited_fn_call_ids = set()
             for fn_call in fn_calls:
@@ -403,21 +414,23 @@ class BaseTest:
 
         at = AssistantTurn(
             msg_content=message,
-            model_provider=model_provider,
+            model_provider=self.fixtures.model_provider,
             tool_registry=tool_registry,
             fn_calls=fn_calls,
             fn_call_id_to_fn_output=fn_call_id_to_fn_output or {},
         )
-        self.build_assistant_turn_messages(at, model_provider)
+        self.build_assistant_turn_messages(at)
         return at
 
     @pytest.fixture
-    def agent_executor(self, remove_prev_tool_calls):
-        return AgentExecutor(
+    def agent_executor(self, base_setup, remove_prev_tool_calls):
+        ae = AgentExecutor(
             graph_schema=AIRLINE_REQUEST_SCHEMA,
             audio_output=False,
             remove_prev_tool_calls=remove_prev_tool_calls,
         )
+        self.fixtures.agent_executor = ae
+        return ae
 
     @pytest.fixture(autouse=True)
     def setup_message_dicts(self, model_provider):
@@ -429,35 +442,40 @@ class BaseTest:
         self.conversation_dicts = None
         self.node_conversation_dicts = None
 
-    @classmethod
     @pytest.fixture(params=[ModelProvider.OPENAI, ModelProvider.ANTHROPIC])
-    def model_provider(cls, request):
+    def model_provider(self, base_setup, request):
+        self.fixtures.model_provider = request.param
         return request.param
 
-    @classmethod
     @pytest.fixture(params=[True, False])
-    def remove_prev_tool_calls(cls, request):
+    def remove_prev_tool_calls(self, base_setup, request):
+        self.fixtures.remove_prev_tool_calls = request.param
         return request.param
 
-    @classmethod
-    @pytest.fixture(params=[True, False])
-    def is_stream(cls, request):
+    @pytest.fixture(params=[True, False], autouse=True)
+    def is_stream(
+        self, base_setup, request
+    ):  # TODO: this fixture can prob be deleted. Streaming should not affect test integrity
+        self.fixtures.is_stream = request.param
         return request.param
 
-    def build_user_turn_messages(self, user_turn, model_provider):
+    def build_user_turn_messages(self, user_turn):
         self.message_dicts.extend(
-            user_turn.build_messages(model_provider), MessageList.ItemType.USER
+            user_turn.build_messages(self.fixtures.model_provider),
+            MessageList.ItemType.USER,
         )
         self.conversation_dicts.extend(
-            user_turn.build_messages(model_provider), MessageList.ItemType.USER
+            user_turn.build_messages(self.fixtures.model_provider),
+            MessageList.ItemType.USER,
         )
         self.node_conversation_dicts.extend(
-            user_turn.build_messages(model_provider), MessageList.ItemType.USER
+            user_turn.build_messages(self.fixtures.model_provider),
+            MessageList.ItemType.USER,
         )
 
-    def build_assistant_turn_messages(self, assistant_turn, model_provider):
-        messages = assistant_turn.build_messages(model_provider)
-        if model_provider == ModelProvider.OPENAI:
+    def build_assistant_turn_messages(self, assistant_turn):
+        messages = assistant_turn.build_messages(self.fixtures.model_provider)
+        if self.fixtures.model_provider == ModelProvider.OPENAI:
             for message in messages:
                 if message.get("tool_calls", None) is not None:
                     tool_call_id = message["tool_calls"][0]["id"]
@@ -531,18 +549,16 @@ class BaseTest:
     def build_node_turn_messages(
         self,
         node_turn,
-        model_provider,
         remove_prev_fn_return_schema,
-        remove_prev_tool_calls,
         is_skip,
     ):
-        if remove_prev_tool_calls:
+        if self.fixtures.remove_prev_tool_calls:
             assert remove_prev_fn_return_schema is not False
 
-        if remove_prev_fn_return_schema is True or remove_prev_tool_calls:
+        if remove_prev_fn_return_schema is True or self.fixtures.remove_prev_tool_calls:
             self.message_dicts.clear(MessageList.ItemType.TOOL_OUTPUT_SCHEMA)
 
-        if remove_prev_tool_calls:
+        if self.fixtures.remove_prev_tool_calls:
             self.message_dicts.clear(
                 [MessageList.ItemType.TOOL_CALL, MessageList.ItemType.TOOL_OUTPUT]
             )
@@ -556,7 +572,7 @@ class BaseTest:
             self.conversation_dicts.track_idx(MessageList.ItemType.NODE)
             self.node_conversation_dicts.clear()
 
-        if model_provider == ModelProvider.OPENAI:
+        if self.fixtures.model_provider == ModelProvider.OPENAI:
             self.message_dicts.clear(MessageList.ItemType.NODE)
             [msg] = node_turn.build_oai_messages()
             if is_skip:
@@ -578,24 +594,20 @@ class BaseTest:
     def build_messages_from_turn(
         self,
         turn,
-        model_provider,
         remove_prev_fn_return_schema=None,
-        remove_prev_tool_calls=False,
         is_skip=False,
     ):
         if isinstance(turn, TurnArgs):
             turn = turn.turn
 
         if isinstance(turn, UserTurn):
-            self.build_user_turn_messages(turn, model_provider)
+            self.build_user_turn_messages(turn)
         elif isinstance(turn, AssistantTurn):
-            self.build_assistant_turn_messages(turn, model_provider)
+            self.build_assistant_turn_messages(turn)
         elif isinstance(turn, NodeSystemTurn):
             self.build_node_turn_messages(
                 turn,
-                model_provider,
                 remove_prev_fn_return_schema,
-                remove_prev_tool_calls,
                 is_skip,
             )
         else:
@@ -603,29 +615,22 @@ class BaseTest:
 
     def build_transition_turns(
         self,
-        agent_executor,
-        model_provider,
-        is_stream,
         fn_calls,
         fn_call_id_to_fn_output,
         user_msg,
-        remove_prev_tool_calls,
         edge_schema,
         next_node_schema,
         curr_request,
     ):
-        t2 = self.add_user_turn(agent_executor, user_msg, model_provider)
+        t2 = self.add_user_turn(user_msg)
         t3 = self.add_assistant_turn(
-            agent_executor,
-            model_provider,
             None,
-            is_stream,
             fn_calls,
             fn_call_id_to_fn_output,
         )
 
         input = next_node_schema.get_input(
-            agent_executor.graph.curr_node.state, edge_schema
+            self.fixtures.agent_executor.graph.curr_node.state, edge_schema
         )
 
         node_turn_2 = TurnArgs(
@@ -651,8 +656,6 @@ class BaseTest:
         )
         self.build_messages_from_turn(
             node_turn_2,
-            model_provider,
-            remove_prev_tool_calls=remove_prev_tool_calls,
         )
 
         return [t2, t3, node_turn_2]

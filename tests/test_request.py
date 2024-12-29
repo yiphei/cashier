@@ -57,15 +57,9 @@ class TestRequest(BaseTest):
         ]
         return self.edge_schema_id_to_to_cov_node_schema_id[edge_schema.id]
 
-    @pytest.fixture(autouse=True)
-    def setup_start_message_list(
-        self, start_turns, setup_message_dicts, model_provider
-    ):
-        self.build_messages_from_turn(start_turns[0], model_provider)
-
     @pytest.fixture
-    def start_turns(self):
-        return [
+    def start_turns(self, setup_message_dicts, model_provider):
+        turns = [
             TurnArgs(
                 turn=NodeSystemTurn(
                     msg_content=AIRLINE_REQUEST_SCHEMA.start_node_schema.node_system_prompt(
@@ -81,14 +75,13 @@ class TestRequest(BaseTest):
             ),
         ]
 
+        self.build_messages_from_turn(turns[0])
+        return turns
+
     @pytest.fixture
-    def into_graph_transition_turns(
-        self, agent_executor, model_provider, remove_prev_tool_calls, start_turns
-    ):
+    def into_graph_transition_turns(self, agent_executor, start_turns):
         t1 = self.add_request_user_turn(
-            agent_executor,
             "i want to change flight",
-            model_provider,
             "customer wants to change a flight",
         )
         node_turn = TurnArgs(
@@ -106,59 +99,40 @@ class TestRequest(BaseTest):
         )
         self.build_messages_from_turn(
             node_turn,
-            model_provider,
-            remove_prev_tool_calls=remove_prev_tool_calls,
         )
         return [t1, node_turn]
 
-    def test_graph_initialization(
-        self, model_provider, remove_prev_tool_calls, agent_executor, start_turns
-    ):
-        TC = self.create_turn_container(start_turns, remove_prev_tool_calls)
+    @pytest.mark.usefixtures("agent_executor")
+    def test_graph_initialization(self, start_turns):
+        TC = self.create_turn_container(start_turns)
         self.run_assertions(
-            agent_executor,
             TC,
             self.start_conv_node_schema.tool_registry,
-            model_provider,
         )
 
-    def test_add_user_turn(
-        self, model_provider, remove_prev_tool_calls, agent_executor, start_turns
-    ):
-        user_turn = self.add_request_user_turn(agent_executor, "hello", model_provider)
+    @pytest.mark.usefixtures("agent_executor")
+    def test_add_user_turn(self, start_turns):
+        user_turn = self.add_request_user_turn("hello")
 
-        TC = self.create_turn_container(
-            [*start_turns, user_turn], remove_prev_tool_calls
-        )
+        TC = self.create_turn_container([*start_turns, user_turn])
         self.run_assertions(
-            agent_executor,
             TC,
             self.start_conv_node_schema.tool_registry,
-            model_provider,
         )
 
+    @pytest.mark.usefixtures("agent_executor")
     def test_add_assistant_turn(
         self,
-        model_provider,
-        remove_prev_tool_calls,
-        is_stream,
-        agent_executor,
         start_turns,
     ):
-        user_turn = self.add_request_user_turn(agent_executor, "hello", model_provider)
-        assistant_turn = self.add_assistant_turn(
-            agent_executor, model_provider, "hello back", is_stream
-        )
+        user_turn = self.add_request_user_turn("hello")
+        assistant_turn = self.add_assistant_turn("hello back")
 
-        TC = self.create_turn_container(
-            [*start_turns, user_turn, assistant_turn], remove_prev_tool_calls
-        )
+        TC = self.create_turn_container([*start_turns, user_turn, assistant_turn])
 
         self.run_assertions(
-            agent_executor,
             TC,
             self.start_conv_node_schema.tool_registry,
-            model_provider,
         )
 
     @pytest.mark.parametrize(
@@ -168,17 +142,14 @@ class TestRequest(BaseTest):
         ),
     )
     @pytest.mark.parametrize("separate_fn_calls", [True, False])
+    @pytest.mark.usefixtures("agent_executor")
     def test_add_assistant_turn_with_tool_calls(
         self,
-        model_provider,
-        remove_prev_tool_calls,
-        is_stream,
         fn_names,
         separate_fn_calls,
-        agent_executor,
         start_turns,
     ):
-        user_turn = self.add_request_user_turn(agent_executor, "hello", model_provider)
+        user_turn = self.add_request_user_turn("hello")
 
         if separate_fn_calls:
             tool_names_list = [[fn_name] for fn_name in fn_names]
@@ -187,27 +158,19 @@ class TestRequest(BaseTest):
 
         a_turns = []
         for tool_names in tool_names_list:
-            assistant_turn = self.add_assistant_turn(
-                agent_executor, model_provider, None, is_stream, tool_names=tool_names
-            )
+            assistant_turn = self.add_assistant_turn(None, tool_names=tool_names)
             a_turns.append(assistant_turn)
 
-        TC = self.create_turn_container(
-            [*start_turns, user_turn, *a_turns], remove_prev_tool_calls
-        )
+        TC = self.create_turn_container([*start_turns, user_turn, *a_turns])
 
         self.run_assertions(
-            agent_executor,
             TC,
             self.start_conv_node_schema.tool_registry,
-            model_provider,
         )
 
+    @pytest.mark.usefixtures("agent_executor")
     def test_node_transition(
         self,
-        model_provider,
-        remove_prev_tool_calls,
-        agent_executor,
         start_turns,
         into_graph_transition_turns,
     ):
@@ -216,20 +179,15 @@ class TestRequest(BaseTest):
                 *start_turns,
                 *into_graph_transition_turns,
             ],
-            remove_prev_tool_calls,
         )
 
-        self.run_assertions(
-            agent_executor, TC, get_user_id_node_schema.tool_registry, model_provider
-        )
+        self.run_assertions(TC, get_user_id_node_schema.tool_registry)
 
     def test_graph_transition(
         self,
         model_provider,
-        remove_prev_tool_calls,
         agent_executor,
         start_turns,
-        is_stream,
         into_graph_transition_turns,
     ):
 
@@ -246,13 +204,9 @@ class TestRequest(BaseTest):
         )
 
         turnzzz = self.build_transition_turns(
-            agent_executor,
-            model_provider,
-            is_stream,
             [fn_call_1],
             {fn_call_1.id: None},
             "my user details are ...",
-            remove_prev_tool_calls,
             self.get_edge_schema(CHANGE_FLIGHT_GRAPH_SCHEMA.start_node_schema),
             self.get_next_conv_node_schema(
                 CHANGE_FLIGHT_GRAPH_SCHEMA.start_node_schema
@@ -271,13 +225,9 @@ class TestRequest(BaseTest):
         next_next_node_schema = self.get_next_conv_node_schema(next_node_schema)
 
         turnzzz22 = self.build_transition_turns(
-            agent_executor,
-            model_provider,
-            is_stream,
             [fn_call_1],
             {fn_call_1.id: None},
             "my reservation details are ...",
-            remove_prev_tool_calls,
             self.get_edge_schema(next_node_schema),
             next_next_node_schema,
             "customer wants to change a flight",
@@ -307,13 +257,9 @@ class TestRequest(BaseTest):
             next_next_node_schema
         )
         turnzzz33 = self.build_transition_turns(
-            agent_executor,
-            model_provider,
-            is_stream,
             [fn_call_1, fn_call_2, fn_call_3],
             {fn_call_1.id: None, fn_call_2.id: None, fn_call_3.id: None},
             "the new flight is ...",
-            remove_prev_tool_calls,
             self.get_edge_schema(next_next_node_schema),
             next_next_next_node_schema,
             "customer wants to change a flight",
@@ -330,13 +276,9 @@ class TestRequest(BaseTest):
         )
 
         turnzzz44 = self.build_transition_turns(
-            agent_executor,
-            model_provider,
-            is_stream,
             [fn_call_1],
             {fn_call_1.id: None},
             "the payment method is ...",
-            remove_prev_tool_calls,
             self.get_edge_schema(next_next_next_node_schema),
             next_next_next_next_node_schema,
             "customer wants to change a flight",
@@ -349,10 +291,7 @@ class TestRequest(BaseTest):
             args={"args": "1"},
         )
         t10 = self.add_assistant_turn(
-            agent_executor,
-            model_provider,
             None,
-            is_stream,
             [fn_call_1],
             {fn_call_1.id: None},
         )
@@ -366,10 +305,7 @@ class TestRequest(BaseTest):
         # --------------------------------
 
         t11 = self.add_assistant_turn(
-            agent_executor,
-            model_provider,
             "finished task",
-            is_stream,
         )
 
         # --------------------------------
@@ -390,8 +326,6 @@ class TestRequest(BaseTest):
         )
         self.build_messages_from_turn(
             node_turn_6_a,
-            model_provider,
-            remove_prev_tool_calls=remove_prev_tool_calls,
         )
 
         b_node_schema = luggage_get_reservation_details_node_schema
@@ -411,8 +345,6 @@ class TestRequest(BaseTest):
         )
         self.build_messages_from_turn(
             node_turn_6_b,
-            model_provider,
-            remove_prev_tool_calls=remove_prev_tool_calls,
         )
 
         # --------------------------------
@@ -434,8 +366,6 @@ class TestRequest(BaseTest):
         )
         self.build_messages_from_turn(
             node_turn_6,
-            model_provider,
-            remove_prev_tool_calls=remove_prev_tool_calls,
         )
 
         TC = self.create_turn_container(
@@ -452,16 +382,13 @@ class TestRequest(BaseTest):
                 node_turn_6_b,
                 node_turn_6,
             ],
-            remove_prev_tool_calls,
         )
 
         self.run_assertions(
-            agent_executor,
             TC,
             new_node_schema.tool_registry,
-            model_provider,
         )
 
 
 def test_class_test_count(request):
-    assert_number_of_tests(TestRequest, __file__, request, 44)
+    assert_number_of_tests(TestRequest, __file__, request, 56)
