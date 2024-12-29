@@ -381,7 +381,7 @@ class TestRequest(BaseTest):
                     node_input_json_schema=next_next_next_node_schema.input_schema.model_json_schema(),
                     state_json_schema=next_next_next_node_schema.state_schema.model_json_schema(),
                     last_msg="the new flight is ...",
-                    curr_request="customer wants to change a flightt",
+                    curr_request="customer wants to change a flight",
                 ),
                 node_id=3,
             ),
@@ -429,7 +429,7 @@ class TestRequest(BaseTest):
                     node_input_json_schema=next_next_next_next_node_schema.input_schema.model_json_schema(),
                     state_json_schema=None,
                     last_msg="the payment method is ...",
-                    curr_request="customer wants to change a flightt",
+                    curr_request="customer wants to change a flight",
                 ),
                 node_id=3,
             ),
@@ -478,8 +478,8 @@ class TestRequest(BaseTest):
         )
 
         assert not DeepDiff(
-            TC.turns[:11],
-            agent_executor.TC.turns[:11],
+            TC.turns[:16],
+            agent_executor.TC.turns[:16],
             exclude_regex_paths=r".*node_id$",
         )
         # assert len(TC.turns) == len(agent_executor.TC.turns)
