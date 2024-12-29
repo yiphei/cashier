@@ -108,7 +108,7 @@ class TestAndGraph(BaseTest):
         t3 = self.add_user_turn(
             agent_executor, "my username is ...", model_provider, True
         )
-        self.run_message_dict_assertions(agent_executor, model_provider)
+        self.run_message_dict_assertions()
 
         user_details = ModelFactory.create_factory(UserDetails).build()
         fn_call_1 = FunctionCall.create(
@@ -349,7 +349,7 @@ class TestAndGraph(BaseTest):
             "what flight do you want?",
             is_stream,
         )
-        self.run_message_dict_assertions(agent_executor, model_provider)
+        self.run_message_dict_assertions()
 
         t6 = self.add_user_turn(
             agent_executor,
@@ -436,7 +436,7 @@ class TestAndGraph(BaseTest):
             model_provider,
             True,
         )
-        self.run_message_dict_assertions(agent_executor, model_provider)
+        self.run_message_dict_assertions()
 
         flight_info = ModelFactory.create_factory(FlightInfo).build()
 
@@ -488,7 +488,7 @@ class TestAndGraph(BaseTest):
             "thanks for confirming flights, now lets move on to ...",
             is_stream,
         )
-        self.run_message_dict_assertions(agent_executor, model_provider)
+        self.run_message_dict_assertions()
 
         t9 = self.add_user_turn(
             agent_executor,
@@ -535,7 +535,7 @@ class TestAndGraph(BaseTest):
             "what do you want to change?",
             is_stream,
         )
-        self.run_message_dict_assertions(agent_executor, model_provider)
+        self.run_message_dict_assertions()
 
         t12 = self.add_user_turn(
             agent_executor,

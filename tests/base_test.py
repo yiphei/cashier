@@ -116,7 +116,7 @@ class BaseTest:
             TC.turns.append(turn)
         return TC
 
-    def run_message_dict_assertions(self, agent_executor, model_provider):
+    def run_message_dict_assertions(self,):
         assert not DeepDiff(
             self.message_dicts,
             self.fixtures.agent_executor.TC.model_provider_to_message_manager[
@@ -137,7 +137,7 @@ class BaseTest:
         )
 
     def run_assertions(self, agent_executor, TC, tool_registry, model_provider):
-        self.run_message_dict_assertions(agent_executor, model_provider)
+        self.run_message_dict_assertions()
         assert not DeepDiff(
             self.fixtures.agent_executor.get_model_completion_kwargs(),
             {
