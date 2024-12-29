@@ -79,9 +79,7 @@ class TestRequest(BaseTest):
         return turns
 
     @pytest.fixture
-    def into_graph_transition_turns(
-        self, agent_executor, model_provider, remove_prev_tool_calls, start_turns
-    ):
+    def into_graph_transition_turns(self, agent_executor, start_turns):
         t1 = self.add_request_user_turn(
             "i want to change flight",
             "customer wants to change a flight",
@@ -104,18 +102,16 @@ class TestRequest(BaseTest):
         )
         return [t1, node_turn]
 
-    def test_graph_initialization(
-        self, model_provider, remove_prev_tool_calls, agent_executor, start_turns
-    ):
+    @pytest.mark.usefixtures("agent_executor")
+    def test_graph_initialization(self, start_turns):
         TC = self.create_turn_container(start_turns)
         self.run_assertions(
             TC,
             self.start_conv_node_schema.tool_registry,
         )
 
-    def test_add_user_turn(
-        self, model_provider, remove_prev_tool_calls, agent_executor, start_turns
-    ):
+    @pytest.mark.usefixtures("agent_executor")
+    def test_add_user_turn(self, start_turns):
         user_turn = self.add_request_user_turn("hello")
 
         TC = self.create_turn_container([*start_turns, user_turn])
@@ -124,12 +120,9 @@ class TestRequest(BaseTest):
             self.start_conv_node_schema.tool_registry,
         )
 
+    @pytest.mark.usefixtures("agent_executor")
     def test_add_assistant_turn(
         self,
-        model_provider,
-        remove_prev_tool_calls,
-        is_stream,
-        agent_executor,
         start_turns,
     ):
         user_turn = self.add_request_user_turn("hello")
@@ -149,14 +142,11 @@ class TestRequest(BaseTest):
         ),
     )
     @pytest.mark.parametrize("separate_fn_calls", [True, False])
+    @pytest.mark.usefixtures("agent_executor")
     def test_add_assistant_turn_with_tool_calls(
         self,
-        model_provider,
-        remove_prev_tool_calls,
-        is_stream,
         fn_names,
         separate_fn_calls,
-        agent_executor,
         start_turns,
     ):
         user_turn = self.add_request_user_turn("hello")
@@ -178,11 +168,9 @@ class TestRequest(BaseTest):
             self.start_conv_node_schema.tool_registry,
         )
 
+    @pytest.mark.usefixtures("agent_executor")
     def test_node_transition(
         self,
-        model_provider,
-        remove_prev_tool_calls,
-        agent_executor,
         start_turns,
         into_graph_transition_turns,
     ):
@@ -198,10 +186,8 @@ class TestRequest(BaseTest):
     def test_graph_transition(
         self,
         model_provider,
-        remove_prev_tool_calls,
         agent_executor,
         start_turns,
-        is_stream,
         into_graph_transition_turns,
     ):
 
@@ -405,4 +391,4 @@ class TestRequest(BaseTest):
 
 
 def test_class_test_count(request):
-    assert_number_of_tests(TestRequest, __file__, request, 44)
+    assert_number_of_tests(TestRequest, __file__, request, 56)

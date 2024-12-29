@@ -88,9 +88,7 @@ class TestAndGraph(BaseTest):
         self,
         agent_executor,
         model_provider,
-        is_stream,
         request,
-        remove_prev_tool_calls,
     ):
         t1 = self.add_user_turn("hello")
         t2 = self.add_assistant_turn(
@@ -136,18 +134,14 @@ class TestAndGraph(BaseTest):
         )
         return [t1, t2, t3, t4, node_turn]
 
-    def test_graph_initialization(
-        self, model_provider, remove_prev_tool_calls, agent_executor, start_turns
-    ):
+    def test_graph_initialization(self, start_turns):
         TC = self.create_turn_container(start_turns)
         self.run_assertions(
             TC,
             self.start_conv_node_schema.tool_registry,
         )
 
-    def test_add_user_turn(
-        self, model_provider, remove_prev_tool_calls, agent_executor, start_turns
-    ):
+    def test_add_user_turn(self, start_turns):
         user_turn = self.add_user_turn("hello")
 
         TC = self.create_turn_container([*start_turns, user_turn])
@@ -159,8 +153,6 @@ class TestAndGraph(BaseTest):
     def test_add_user_turn_with_wait(
         self,
         model_provider,
-        remove_prev_tool_calls,
-        agent_executor,
         start_turns,
     ):
         user_turn = self.add_user_turn("hello", False, find_flight_node_schema.id)
@@ -190,10 +182,6 @@ class TestAndGraph(BaseTest):
 
     def test_add_assistant_turn(
         self,
-        model_provider,
-        remove_prev_tool_calls,
-        is_stream,
-        agent_executor,
         start_turns,
     ):
         user_turn = self.add_user_turn("hello")
@@ -210,12 +198,8 @@ class TestAndGraph(BaseTest):
     @pytest.mark.parametrize("separate_fn_calls", [True, False])
     def test_add_assistant_turn_with_tool_calls(
         self,
-        model_provider,
-        remove_prev_tool_calls,
-        is_stream,
         fn_names,
         separate_fn_calls,
-        agent_executor,
         start_turns,
     ):
         user_turn = self.add_user_turn("hello")
@@ -244,8 +228,6 @@ class TestAndGraph(BaseTest):
     def test_state_update_before_user_turn(
         self,
         model_provider,
-        remove_prev_tool_calls,
-        is_stream,
         fn_names,
         agent_executor,
         start_turns,
@@ -281,9 +263,6 @@ class TestAndGraph(BaseTest):
 
     def test_node_transition(
         self,
-        model_provider,
-        remove_prev_tool_calls,
-        agent_executor,
         start_turns,
         first_into_second_transition_turns,
     ):
@@ -299,8 +278,6 @@ class TestAndGraph(BaseTest):
     def test_backward_node_skip(
         self,
         model_provider,
-        remove_prev_tool_calls,
-        is_stream,
         agent_executor,
         start_turns,
         first_into_second_transition_turns,
@@ -370,8 +347,6 @@ class TestAndGraph(BaseTest):
     def test_forward_node_skip(
         self,
         model_provider,
-        remove_prev_tool_calls,
-        is_stream,
         agent_executor,
         start_turns,
         first_into_second_transition_turns,
@@ -529,4 +504,4 @@ class TestAndGraph(BaseTest):
 
 
 def test_class_test_count(request):
-    assert_number_of_tests(TestAndGraph, __file__, request, 564)
+    assert_number_of_tests(TestAndGraph, __file__, request, 576)
