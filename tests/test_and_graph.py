@@ -89,7 +89,6 @@ class TestAndGraph(BaseTest):
         agent_executor,
         model_provider,
         request,
-        remove_prev_tool_calls,
     ):
         t1 = self.add_user_turn("hello")
         t2 = self.add_assistant_turn(
