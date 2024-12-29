@@ -638,7 +638,7 @@ class BaseTest:
                         if next_node_schema.input_schema is not None
                         else None
                     ),
-                    state_json_schema=next_node_schema.state_schema.model_json_schema(),
+                    state_json_schema=next_node_schema.state_schema.model_json_schema() if next_node_schema.state_schema else None,
                     last_msg=user_msg,
                     curr_request=curr_request,
                 ),

@@ -319,52 +319,27 @@ class TestRequest(BaseTest):
             "customer wants to change a flight",
         )
 
-        t8 = self.add_user_turn(
-            agent_executor, "the payment method is ...", model_provider
-        )
-
         fn_call_1 = FunctionCall.create(
             api_id_model_provider=model_provider,
             api_id=FunctionCall.generate_fake_id(model_provider),
             name="update_state_payment_id",
             args={"payment_id": "123"},
         )
-        t9 = self.add_assistant_turn(
-            agent_executor,
-            model_provider,
-            None,
-            is_stream,
-            [fn_call_1],
-            {fn_call_1.id: None},
-        )
-
-        # --------------------------------
-
-        edge_schema = self.get_edge_schema(next_next_next_node_schema)
         next_next_next_next_node_schema = self.get_next_conv_node_schema(
             next_next_next_node_schema
         )
-        input = next_next_next_next_node_schema.get_input(
-            agent_executor.graph.curr_node.state, edge_schema
-        )
 
-        node_turn_5 = TurnArgs(
-            turn=NodeSystemTurn(
-                msg_content=next_next_next_next_node_schema.node_system_prompt(
-                    node_prompt=next_next_next_next_node_schema.node_prompt,
-                    input=input.model_dump_json(),
-                    node_input_json_schema=next_next_next_next_node_schema.input_schema.model_json_schema(),
-                    state_json_schema=None,
-                    last_msg="the payment method is ...",
-                    curr_request="customer wants to change a flight",
-                ),
-                node_id=3,
-            ),
-        )
-        self.build_messages_from_turn(
-            node_turn_5,
+        turnzzz44 = self.build_transition_turns(
+            agent_executor,
             model_provider,
-            remove_prev_tool_calls=remove_prev_tool_calls,
+            is_stream,
+            [fn_call_1],
+            {fn_call_1.id: None},
+            "the payment method is ...",
+            remove_prev_tool_calls,
+            self.get_edge_schema(next_next_next_node_schema),
+            next_next_next_next_node_schema,
+            "customer wants to change a flight",
         )
 
         fn_call_1 = FunctionCall.create(
@@ -470,9 +445,7 @@ class TestRequest(BaseTest):
                 *turnzzz,
                 *turnzzz22,
                 *turnzzz33,
-                t8,
-                t9,
-                node_turn_5,
+                *turnzzz44,
                 t10,
                 t11,
                 node_turn_6_a,
