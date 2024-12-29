@@ -2,7 +2,7 @@ import os
 import uuid
 from collections import defaultdict, deque
 from contextlib import ExitStack, contextmanager
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 from unittest.mock import Mock, call, patch
 
 import pytest
@@ -32,11 +32,21 @@ from cashier.tool.function_call_context import (
 )
 from cashier.turn_container import TurnContainer
 from data.graph.airline_request import AIRLINE_REQUEST_SCHEMA
+from pydantic import BaseModel, ConfigDict
 
 
 class TurnArgs(BaseModel):
     turn: ModelTurn
     kwargs: Dict[str, Any] = Field(default_factory=dict)
+
+
+class Fixtures(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    model_provider: Optional[ModelProvider] = None
+    remove_prev_tool_calls: Optional[bool] = None
+    is_stream: Optional[bool] = None
+    agent_executor: Optional[AgentExecutor] = None
 
 
 class BaseTest:
@@ -47,9 +57,11 @@ class BaseTest:
         self.rand_uuids = deque()
         self.model_chat_patcher = patch("cashier.model.model_completion.Model.chat")
         self.model_chat = self.model_chat_patcher.start()
+        self.fixtures = Fixtures()
 
         yield
 
+        self.fixtures = None
         self.rand_tool_ids.clear()
         self.rand_uuids.clear()
         self.model_chat_patcher.stop()
@@ -269,7 +281,7 @@ class BaseTest:
                 None,
                 False,
                 wait_node_schema_id
-                or agent_executor.graph.curr_conversation_node.schema.id,
+                or self.fixtures.agent_executor.graph.curr_conversation_node.schema.id,
                 0.5,
             )
             model_chat_side_effects.append(is_wait_model_completion)
@@ -280,14 +292,14 @@ class BaseTest:
                     None,
                     False,
                     skip_node_schema_id
-                    or agent_executor.graph.curr_conversation_node.schema.id,
+                    or self.fixtures.agent_executor.graph.curr_conversation_node.schema.id,
                     0.5,
                 )
                 model_chat_side_effects.append(skip_model_completion)
 
         self.model_chat.side_effect = model_chat_side_effects
         with self.generate_random_string_context():
-            agent_executor.add_user_turn(message, model_provider)
+            self.fixtures.agent_executor.add_user_turn(message, model_provider)
 
         ut = UserTurn(msg_content=message)
         self.build_messages_from_turn(ut, model_provider)
@@ -412,12 +424,14 @@ class BaseTest:
         return at
 
     @pytest.fixture
-    def agent_executor(self, remove_prev_tool_calls):
-        return AgentExecutor(
+    def agent_executor(self, base_setup, remove_prev_tool_calls):
+        ae =  AgentExecutor(
             graph_schema=AIRLINE_REQUEST_SCHEMA,
             audio_output=False,
             remove_prev_tool_calls=remove_prev_tool_calls,
         )
+        self.fixtures.agent_executor = ae
+        return ae
 
     @pytest.fixture(autouse=True)
     def setup_message_dicts(self, model_provider):
@@ -430,15 +444,18 @@ class BaseTest:
         self.node_conversation_dicts = None
 
     @pytest.fixture(params=[ModelProvider.OPENAI, ModelProvider.ANTHROPIC])
-    def model_provider(self, request):
+    def model_provider(self, base_setup, request):
+        self.fixtures.model_provider = request.param
         return request.param
 
     @pytest.fixture(params=[True, False])
-    def remove_prev_tool_calls(self, request):
+    def remove_prev_tool_calls(self, base_setup, request):
+        self.fixtures.remove_prev_tool_calls = request.param
         return request.param
 
     @pytest.fixture(params=[True, False])
-    def is_stream(self, request):
+    def is_stream(self, base_setup, request):
+        self.fixtures.is_stream = request.param
         return request.param
 
     def build_user_turn_messages(self, user_turn, model_provider):
