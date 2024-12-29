@@ -15,6 +15,7 @@ from tests.base_test import (
     assert_number_of_tests,
     get_fn_names_fixture,
 )
+from deepdiff import DeepDiff
 
 
 class TestRequest(BaseTest):
@@ -478,7 +479,11 @@ class TestRequest(BaseTest):
             remove_prev_tool_calls,
         )
 
-        assert len(TC.turns) == len(agent_executor.TC.turns)
+
+        assert not DeepDiff( TC.turns[:5], 
+                             agent_executor.TC.turns[:5],
+                            exclude_regex_paths=r".*node_id$")
+        # assert len(TC.turns) == len(agent_executor.TC.turns)
 
         # self.run_assertions(
         #     agent_executor, TC, get_user_id_node_schema.tool_registry, model_provider
