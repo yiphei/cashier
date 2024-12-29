@@ -1,13 +1,18 @@
-from cashier.graph.request_graph import RequestGraphSchema, GraphEdgeSchema
+from cashier.graph.request_graph import GraphEdgeSchema, RequestGraphSchema
 from data.graph.airline_book_flight import BOOK_FLIGHT_GRAPH_SCHEMA
-from data.prompt.airline import AirlineNodeSystemPrompt
+from data.graph.airline_change_baggage import (
+    CHANGE_BAGGAGE_GRAPH,
+    ChangeBaggageGraphStateSchema,
+)
 from data.graph.airline_change_flight import CHANGE_FLIGHT_GRAPH
-from data.graph.airline_change_baggage import CHANGE_BAGGAGE_GRAPH, ChangeBaggageGraphStateSchema
+from data.prompt.airline import AirlineNodeSystemPrompt
 
 GRAPH_EDGE_SCHEMA_1 = GraphEdgeSchema(
     from_node_schema=CHANGE_FLIGHT_GRAPH,
     to_node_schema=CHANGE_BAGGAGE_GRAPH,
-    new_input_fn = lambda state: ChangeBaggageGraphStateSchema(user_details=state.user_details, reservation_details=state.reservation_details).model_dump(include={"user_details", "reservation_details"})
+    new_input_fn=lambda state: ChangeBaggageGraphStateSchema(
+        user_details=state.user_details, reservation_details=state.reservation_details
+    ).model_dump(include={"user_details", "reservation_details"}),
 )
 
 AIRLINE_REQUEST_SCHEMA = RequestGraphSchema(
