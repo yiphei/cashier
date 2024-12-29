@@ -14,7 +14,7 @@ from tests.base_test import (
 )
 
 
-class TestRequestAirline(BaseTest):
+class TestRequest(BaseTest):
     @pytest.fixture(autouse=True)
     def setup(self):
         self.start_conv_node_schema = AIRLINE_REQUEST_SCHEMA.start_node_schema
@@ -182,4 +182,4 @@ class TestRequestAirline(BaseTest):
 
 
 def test_class_test_count(request):
-    assert_number_of_tests(TestRequestAirline, __file__, request, 36)
+    assert_number_of_tests(TestRequest, __file__, request, 36)
