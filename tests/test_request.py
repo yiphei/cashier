@@ -477,16 +477,9 @@ class TestRequest(BaseTest):
             remove_prev_tool_calls,
         )
 
-        assert not DeepDiff(
-            TC.turns[:16],
-            agent_executor.TC.turns[:16],
-            exclude_regex_paths=r".*node_id$",
+        self.run_assertions(
+            agent_executor, TC, next_next_next_next_node_schema.tool_registry, model_provider
         )
-        # assert len(TC.turns) == len(agent_executor.TC.turns)
-
-        # self.run_assertions(
-        #     agent_executor, TC, get_user_id_node_schema.tool_registry, model_provider
-        # )
 
 
 def test_class_test_count(request):
