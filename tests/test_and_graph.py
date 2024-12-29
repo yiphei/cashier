@@ -105,9 +105,7 @@ class TestAndGraph(BaseTest):
             is_stream,
             tool_names=request.param,
         )
-        t3 = self.add_user_turn(
-         "my username is ...", True
-        )
+        t3 = self.add_user_turn("my username is ...", True)
         self.run_message_dict_assertions()
 
         user_details = ModelFactory.create_factory(UserDetails).build()
@@ -163,7 +161,7 @@ class TestAndGraph(BaseTest):
     def test_add_user_turn(
         self, model_provider, remove_prev_tool_calls, agent_executor, start_turns
     ):
-        user_turn = self.add_user_turn( "hello", True)
+        user_turn = self.add_user_turn("hello", True)
 
         TC = self.create_turn_container([*start_turns, user_turn])
         self.run_assertions(
@@ -178,9 +176,7 @@ class TestAndGraph(BaseTest):
         agent_executor,
         start_turns,
     ):
-        user_turn = self.add_user_turn(
-         "hello", False, find_flight_node_schema.id
-        )
+        user_turn = self.add_user_turn("hello", False, find_flight_node_schema.id)
 
         fake_fn_call = self.recreate_fake_single_fn_call(
             "think",
@@ -213,7 +209,7 @@ class TestAndGraph(BaseTest):
         agent_executor,
         start_turns,
     ):
-        user_turn = self.add_user_turn( "hello", True)
+        user_turn = self.add_user_turn("hello", True)
         assistant_turn = self.add_assistant_turn(
             agent_executor, model_provider, "hello back", is_stream
         )
@@ -237,7 +233,7 @@ class TestAndGraph(BaseTest):
         agent_executor,
         start_turns,
     ):
-        user_turn = self.add_user_turn( "hello", True)
+        user_turn = self.add_user_turn("hello", True)
 
         if separate_fn_calls:
             tool_names_list = [[fn_name] for fn_name in fn_names]

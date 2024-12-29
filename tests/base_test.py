@@ -635,9 +635,7 @@ class BaseTest:
         next_node_schema,
         curr_request,
     ):
-        t2 = self.add_user_turn(
-            user_msg
-        )
+        t2 = self.add_user_turn(user_msg)
         t3 = self.add_assistant_turn(
             self.fixtures.agent_executor,
             self.fixtures.model_provider,
