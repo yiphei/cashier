@@ -621,7 +621,7 @@ class BaseTest:
         edge_schema,
         next_node_schema,
         curr_request,
-        last_assistant_msg = "good, lets move on to ..."
+        last_assistant_msg="good, lets move on to ...",
     ):
         t1 = self.add_user_turn(user_msg)
         t2 = self.add_assistant_turn(
@@ -659,9 +659,7 @@ class BaseTest:
             node_turn,
         )
 
-        t3 = self.add_assistant_turn(
-            last_assistant_msg
-        )
+        t3 = self.add_assistant_turn(last_assistant_msg)
         return [t1, t2, node_turn, t3]
 
 
