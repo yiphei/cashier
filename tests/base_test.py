@@ -248,7 +248,7 @@ class BaseTest:
         agent_executor,
         message,
         model_provider,
-        is_on_topic,
+        is_on_topic=True,
         wait_node_schema_id=None,
         skip_node_schema_id=None,
     ):
