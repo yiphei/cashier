@@ -15,7 +15,7 @@ GRAPH_EDGE_SCHEMA_1 = GraphEdgeSchema(
     ).model_dump(include={"user_details", "reservation_details"}),
 )
 
-AIRLINE_REQUEST_GRAPH = RequestGraphSchema(
+AIRLINE_REQUEST_SCHEMA = RequestGraphSchema(
     node_schemas=[
         BOOK_FLIGHT_GRAPH_SCHEMA,
         CHANGE_FLIGHT_GRAPH_SCHEMA,
