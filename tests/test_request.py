@@ -86,9 +86,7 @@ class TestRequest(BaseTest):
         self, agent_executor, model_provider, remove_prev_tool_calls, start_turns
     ):
         t1 = self.add_request_user_turn(
-            agent_executor,
             "i want to change flight",
-            model_provider,
             "customer wants to change a flight",
         )
         node_turn = TurnArgs(
@@ -123,7 +121,7 @@ class TestRequest(BaseTest):
     def test_add_user_turn(
         self, model_provider, remove_prev_tool_calls, agent_executor, start_turns
     ):
-        user_turn = self.add_request_user_turn(agent_executor, "hello", model_provider)
+        user_turn = self.add_request_user_turn( "hello")
 
         TC = self.create_turn_container([*start_turns, user_turn])
         self.run_assertions(
@@ -139,7 +137,7 @@ class TestRequest(BaseTest):
         agent_executor,
         start_turns,
     ):
-        user_turn = self.add_request_user_turn(agent_executor, "hello", model_provider)
+        user_turn = self.add_request_user_turn( "hello")
         assistant_turn = self.add_assistant_turn(
             agent_executor, model_provider, "hello back", is_stream
         )
@@ -168,7 +166,7 @@ class TestRequest(BaseTest):
         agent_executor,
         start_turns,
     ):
-        user_turn = self.add_request_user_turn(agent_executor, "hello", model_provider)
+        user_turn = self.add_request_user_turn( "hello")
 
         if separate_fn_calls:
             tool_names_list = [[fn_name] for fn_name in fn_names]

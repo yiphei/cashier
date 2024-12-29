@@ -52,9 +52,7 @@ class TestAndGraph(BaseTest):
     @pytest.fixture
     def start_turns(self, agent_executor, model_provider):
         ut = self.add_request_user_turn(
-            agent_executor,
             "i want to book flight",
-            model_provider,
             "customer wants to book flight",
         )
         second_node_schema = self.start_conv_node_schema

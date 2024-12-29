@@ -305,9 +305,7 @@ class BaseTest:
 
     def add_request_user_turn(
         self,
-        agent_executor,
         message,
-        model_provider,
         task=None,
     ):
         if task is None:
