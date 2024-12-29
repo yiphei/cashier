@@ -200,7 +200,6 @@ class TestRequest(BaseTest):
             agent_executor, TC, get_user_id_node_schema.tool_registry, model_provider
         )
 
-
     def test_graph_transition(
         self,
         model_provider,
@@ -234,7 +233,9 @@ class TestRequest(BaseTest):
             remove_prev_tool_calls=remove_prev_tool_calls,
         )
 
-        t2 = self.add_user_turn(agent_executor, "my user details are ...", model_provider)
+        t2 = self.add_user_turn(
+            agent_executor, "my user details are ...", model_provider
+        )
         user_details = ModelFactory.create_factory(UserDetails).build()
         fn_call_1 = FunctionCall.create(
             api_id_model_provider=model_provider,
@@ -242,14 +243,20 @@ class TestRequest(BaseTest):
             name="update_state_user_details",
             args={"user_details": user_details.model_dump()},
         )
-        t3 = self.add_assistant_turn(agent_executor, model_provider, None, is_stream,
-                                                 [fn_call_1],
+        t3 = self.add_assistant_turn(
+            agent_executor,
+            model_provider,
+            None,
+            is_stream,
+            [fn_call_1],
             {fn_call_1.id: None},
-                                     )
-        
-        #--------------------------------
+        )
 
-        next_node_schema = self.get_next_conv_node_schema(agent_executor.graph.curr_conversation_node.schema)
+        # --------------------------------
+
+        next_node_schema = self.get_next_conv_node_schema(
+            agent_executor.graph.curr_conversation_node.schema
+        )
         input_schema, input = (
             agent_executor.graph.curr_node.curr_node.state.get_set_schema_and_fields()
         )
@@ -272,7 +279,9 @@ class TestRequest(BaseTest):
             remove_prev_tool_calls=remove_prev_tool_calls,
         )
 
-        t4 = self.add_user_turn(agent_executor, "my reservation details are ...", model_provider)
+        t4 = self.add_user_turn(
+            agent_executor, "my reservation details are ...", model_provider
+        )
         res_details = ModelFactory.create_factory(ReservationDetails).build()
         fn_call_1 = FunctionCall.create(
             api_id_model_provider=model_provider,
@@ -280,15 +289,20 @@ class TestRequest(BaseTest):
             name="update_state_reservation_details",
             args={"reservation_details": res_details.model_dump()},
         )
-        t5 = self.add_assistant_turn(agent_executor, model_provider, None, is_stream,
-                                                 [fn_call_1],
+        t5 = self.add_assistant_turn(
+            agent_executor,
+            model_provider,
+            None,
+            is_stream,
+            [fn_call_1],
             {fn_call_1.id: None},
-                                     )
+        )
 
+        # --------------------------------
 
-        #--------------------------------
-
-        next_next_node_schema = self.get_next_conv_node_schema(agent_executor.graph.curr_conversation_node.schema)
+        next_next_node_schema = self.get_next_conv_node_schema(
+            agent_executor.graph.curr_conversation_node.schema
+        )
         input_schema, input = (
             agent_executor.graph.curr_node.curr_node.state.get_set_schema_and_fields()
         )
@@ -313,8 +327,6 @@ class TestRequest(BaseTest):
 
         t6 = self.add_user_turn(agent_executor, "the new flight is ...", model_provider)
 
-
-
         flight_info = ModelFactory.create_factory(FlightInfo).build()
         fn_call_1 = FunctionCall.create(
             api_id_model_provider=model_provider,
@@ -334,16 +346,20 @@ class TestRequest(BaseTest):
             name="update_state_has_confirmed_new_flights",
             args={"has_confirmed_new_flights": True},
         )
-        t7 = self.add_assistant_turn(agent_executor, model_provider, None, is_stream,
-                                                 [fn_call_1, fn_call_2, fn_call_3],
+        t7 = self.add_assistant_turn(
+            agent_executor,
+            model_provider,
+            None,
+            is_stream,
+            [fn_call_1, fn_call_2, fn_call_3],
             {fn_call_1.id: None, fn_call_2.id: None, fn_call_3.id: None},
-                                     )
-        
+        )
 
-        #--------------------------------
+        # --------------------------------
 
-
-        next_next_next_node_schema = self.get_next_conv_node_schema(agent_executor.graph.curr_conversation_node.schema)
+        next_next_next_node_schema = self.get_next_conv_node_schema(
+            agent_executor.graph.curr_conversation_node.schema
+        )
         input_schema, input = (
             agent_executor.graph.curr_node.curr_node.state.get_set_schema_and_fields()
         )
@@ -366,22 +382,30 @@ class TestRequest(BaseTest):
             remove_prev_tool_calls=remove_prev_tool_calls,
         )
 
-        t8 = self.add_user_turn(agent_executor, "the payment method is ...", model_provider)
+        t8 = self.add_user_turn(
+            agent_executor, "the payment method is ...", model_provider
+        )
 
         fn_call_1 = FunctionCall.create(
             api_id_model_provider=model_provider,
             api_id=FunctionCall.generate_fake_id(model_provider),
             name="update_state_payment_id",
-            args={"payment_id": '123'},
+            args={"payment_id": "123"},
         )
-        t9 = self.add_assistant_turn(agent_executor, model_provider, None, is_stream,
-                                                 [fn_call_1],
+        t9 = self.add_assistant_turn(
+            agent_executor,
+            model_provider,
+            None,
+            is_stream,
+            [fn_call_1],
             {fn_call_1.id: None},
-                                     )
+        )
 
-        #--------------------------------
+        # --------------------------------
 
-        next_next_next_next_node_schema = self.get_next_conv_node_schema(agent_executor.graph.curr_conversation_node.schema)
+        next_next_next_next_node_schema = self.get_next_conv_node_schema(
+            agent_executor.graph.curr_conversation_node.schema
+        )
         input_schema, input = (
             agent_executor.graph.curr_node.curr_node.state.get_set_schema_and_fields()
         )
@@ -403,18 +427,21 @@ class TestRequest(BaseTest):
             model_provider,
             remove_prev_tool_calls=remove_prev_tool_calls,
         )
-        
 
         fn_call_1 = FunctionCall.create(
             api_id_model_provider=model_provider,
             api_id=FunctionCall.generate_fake_id(model_provider),
             name="update_reservation_flights",
-            args={"args": '1'},
+            args={"args": "1"},
         )
-        t10 = self.add_assistant_turn(agent_executor, model_provider, None, is_stream,
-                                                 [fn_call_1],
+        t10 = self.add_assistant_turn(
+            agent_executor,
+            model_provider,
+            None,
+            is_stream,
+            [fn_call_1],
             {fn_call_1.id: None},
-                                     )
+        )
 
         TC = self.create_turn_container(
             [
