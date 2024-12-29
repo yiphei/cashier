@@ -261,10 +261,10 @@ class TestRequest(BaseTest):
         # --------------------------------
 
         edge_schema = self.get_edge_schema(
-            agent_executor.graph.curr_conversation_node.schema
+            CHANGE_FLIGHT_GRAPH_SCHEMA.start_node_schema
         )
         next_node_schema = self.get_next_conv_node_schema(
-            agent_executor.graph.curr_conversation_node.schema
+            CHANGE_FLIGHT_GRAPH_SCHEMA.start_node_schema
         )
         input = next_node_schema.get_input(
             agent_executor.graph.curr_node.state, edge_schema
@@ -480,7 +480,7 @@ class TestRequest(BaseTest):
         )
 
         assert not DeepDiff(
-            TC.turns[:5], agent_executor.TC.turns[:5], exclude_regex_paths=r".*node_id$"
+            TC.turns[:6], agent_executor.TC.turns[:6], exclude_regex_paths=r".*node_id$"
         )
         # assert len(TC.turns) == len(agent_executor.TC.turns)
 
