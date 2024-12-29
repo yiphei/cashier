@@ -622,8 +622,8 @@ class BaseTest:
         next_node_schema,
         curr_request,
     ):
-        t2 = self.add_user_turn(user_msg)
-        t3 = self.add_assistant_turn(
+        t1 = self.add_user_turn(user_msg)
+        t2 = self.add_assistant_turn(
             None,
             fn_calls,
             fn_call_id_to_fn_output,
@@ -633,7 +633,7 @@ class BaseTest:
             self.fixtures.agent_executor.graph.curr_node.state, edge_schema
         )
 
-        node_turn_2 = TurnArgs(
+        node_turn = TurnArgs(
             turn=NodeSystemTurn(
                 msg_content=next_node_schema.node_system_prompt(
                     node_prompt=next_node_schema.node_prompt,
@@ -655,10 +655,9 @@ class BaseTest:
             ),
         )
         self.build_messages_from_turn(
-            node_turn_2,
+            node_turn,
         )
-
-        return [t2, t3, node_turn_2]
+        return [t1, t2, node_turn]
 
 
 def assert_number_of_tests(test_class, absolute_path, request, expected_test_count):
