@@ -104,18 +104,14 @@ class TestRequest(BaseTest):
         )
         return [t1, node_turn]
 
-    def test_graph_initialization(
-        self, agent_executor, start_turns
-    ):
+    def test_graph_initialization(self, agent_executor, start_turns):
         TC = self.create_turn_container(start_turns)
         self.run_assertions(
             TC,
             self.start_conv_node_schema.tool_registry,
         )
 
-    def test_add_user_turn(
-        self, agent_executor, start_turns
-    ):
+    def test_add_user_turn(self, agent_executor, start_turns):
         user_turn = self.add_request_user_turn("hello")
 
         TC = self.create_turn_container([*start_turns, user_turn])
