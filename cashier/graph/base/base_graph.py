@@ -271,7 +271,7 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
         return (
             self.schema.start_node_schema
             if self.curr_node is None
-            else self.check_transition(None, None)
+            else self.check_transition(None, None, False)
         )
 
     def direct_init_next_node(
@@ -288,7 +288,7 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
 
         if input is None and edge_schema:
             # TODO: this is bad. refactor this
-            if hasattr(self, "state"):
+            if getattr(self, "state", None) is not None:
                 input = node_schema.get_input(self.state, edge_schema)
             else:
                 input = node_schema.get_input(self.curr_node.state, edge_schema)
