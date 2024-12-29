@@ -158,9 +158,7 @@ class BaseTest:
 
     def create_mock_model_completion(
         self,
-        model_provider,
         message=None,
-        is_stream=False,
         message_prop=None,
         prob=None,
         fn_calls=None,
@@ -271,19 +269,17 @@ class BaseTest:
         model_chat_side_effects = []
 
         is_on_topic_model_completion = self.create_mock_model_completion(
-            self.fixtures.model_provider, None, False, is_on_topic, 0.5
+             None, is_on_topic, 0.5
         )
         model_chat_side_effects.append(is_on_topic_model_completion)
         if not is_on_topic:
             agent_addition_completion = self.create_mock_model_completion(
-                self.fixtures.model_provider, None, False, "null", 0.5
+                 None, "null", 0.5
             )
             model_chat_side_effects.append(agent_addition_completion)
 
             is_wait_model_completion = self.create_mock_model_completion(
-                self.fixtures.model_provider,
                 None,
-                False,
                 wait_node_schema_id
                 or self.fixtures.agent_executor.graph.curr_conversation_node.schema.id,
                 0.5,
@@ -292,9 +288,7 @@ class BaseTest:
 
             if wait_node_schema_id is None:
                 skip_model_completion = self.create_mock_model_completion(
-                    self.fixtures.model_provider,
                     None,
-                    False,
                     skip_node_schema_id
                     or self.fixtures.agent_executor.graph.curr_conversation_node.schema.id,
                     0.5,
@@ -326,7 +320,7 @@ class BaseTest:
             ]
 
         graph_schema_selection_completion = self.create_mock_model_completion(
-            self.fixtures.model_provider, None, False, agent_selections, 0.5
+            None, agent_selections, 0.5
         )
         self.model_chat.side_effect = [graph_schema_selection_completion]
         with self.generate_random_string_context():
@@ -356,9 +350,7 @@ class BaseTest:
             )
 
         model_completion = self.create_mock_model_completion(
-            self.fixtures.model_provider,
             message,
-            self.fixtures.is_stream,
             fn_calls=fn_calls,
         )
         get_state_fn_call = (
