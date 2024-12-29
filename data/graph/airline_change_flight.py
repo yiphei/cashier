@@ -1,26 +1,29 @@
-from cashier.graph.conversation_node import ConversationNodeSchema
-from cashier.graph.base.base_state import BaseStateModel
-from cashier.graph.base.base_edge_schema import FunctionTransitionConfig, FunctionState
-from cashier.graph.edge_schema import EdgeSchema
+from typing import List, Optional
+
+from pydantic import BaseModel, Field
+
 from cashier.graph.base.base_edge_schema import (
+    FunctionState,
+    FunctionTransitionConfig,
     StateTransitionConfig,
 )
+from cashier.graph.base.base_state import BaseStateModel
+from cashier.graph.conversation_node import ConversationNodeSchema
+from cashier.graph.edge_schema import EdgeSchema
 from cashier.graph.graph_schema import GraphSchema
-from typing import Optional, List
+from data.prompt.airline import AirlineNodeSystemPrompt
+from data.tool_registry.airline_tool_registry import AIRLINE_TOOL_REGISTRY
 from data.types.airline import (
     CabinType,
     FlightInfo,
     FlightReservationInfo,
     FlightType,
+    InsuranceValue,
     PassengerInfo,
     PaymentDetails,
-    InsuranceValue,
+    ReservationDetails,
     UserDetails,
-    ReservationDetails
 )
-from data.prompt.airline import AirlineNodeSystemPrompt
-from pydantic import Field, BaseModel
-from data.tool_registry.airline_tool_registry import AIRLINE_TOOL_REGISTRY
 
 ## book flight graph
 
@@ -40,7 +43,6 @@ get_user_id_node_schema = ConversationNodeSchema(
 )
 
 # ---------------------------------------------------------
-
 
 
 class ReservationDetailsState(BaseStateModel):
@@ -64,14 +66,16 @@ get_reservation_details_node_schema = ConversationNodeSchema(
 # ---------------------------------------------------------
 
 
-
 class FlightOrder(BaseStateModel):
     resettable_fields = ["has_confirmed_new_flights"]
     flight_infos: List[FlightInfo] = Field(
         default_factory=list,
         descripion="An array of objects containing details about each piece of flight in the ENTIRE new reservation. Even if the a flight segment is not changed, it should still be included in the array.",
     )
-    net_new_cost: int = Field(default=None, description="the total difference in cost between the old and new flights")
+    net_new_cost: int = Field(
+        default=None,
+        description="the total difference in cost between the old and new flights",
+    )
     has_confirmed_new_flights: bool = Field(
         default=False,
         descripion="this can only be set to true if the customer has explicitly confirmed the new flights",
@@ -94,7 +98,10 @@ find_flight_node_schema = ConversationNodeSchema(
         "list_all_airports",
         "calculate",
     ],
-    completion_config=StateTransitionConfig(need_user_msg=False,state_check_fn_map={"has_confirmed_new_flights": lambda val: val is True}),
+    completion_config=StateTransitionConfig(
+        need_user_msg=False,
+        state_check_fn_map={"has_confirmed_new_flights": lambda val: val is True},
+    ),
 )
 
 
@@ -155,7 +162,10 @@ edge_schema_3 = EdgeSchema(
     to_node_schema=get_payment_node_schema,
     transition_config=StateTransitionConfig(
         need_user_msg=True,
-        state_check_fn_map={"flight_infos": lambda val: val and len(val) > 0, "net_new_cost": lambda val: val is not None},
+        state_check_fn_map={
+            "flight_infos": lambda val: val and len(val) > 0,
+            "net_new_cost": lambda val: val is not None,
+        },
     ),
 )
 
@@ -210,6 +220,10 @@ CHANGE_FLIGHT_GRAPH = GraphSchema(
     ],
     edge_schemas=[edge_schema_1, edge_schema_2, edge_schema_3, edge_schema_4],
     state_schema=StateSchema,
-    completion_config=FunctionTransitionConfig(need_user_msg=False,fn_name="update_reservation_flights", state=FunctionState.CALLED_AND_SUCCEEDED),
+    completion_config=FunctionTransitionConfig(
+        need_user_msg=False,
+        fn_name="update_reservation_flights",
+        state=FunctionState.CALLED_AND_SUCCEEDED,
+    ),
     run_assistant_turn_before_transition=True,
 )
