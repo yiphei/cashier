@@ -95,12 +95,12 @@ class TestAndGraph(BaseTest):
         request,
         remove_prev_tool_calls,
     ):
-        t1 = self.add_user_turn("hello", True)
+        t1 = self.add_user_turn("hello")
         t2 = self.add_assistant_turn(
             None,
             tool_names=request.param,
         )
-        t3 = self.add_user_turn("my username is ...", True)
+        t3 = self.add_user_turn("my username is ...")
         self.run_message_dict_assertions()
 
         user_details = ModelFactory.create_factory(UserDetails).build()
@@ -151,7 +151,7 @@ class TestAndGraph(BaseTest):
     def test_add_user_turn(
         self, model_provider, remove_prev_tool_calls, agent_executor, start_turns
     ):
-        user_turn = self.add_user_turn("hello", True)
+        user_turn = self.add_user_turn("hello")
 
         TC = self.create_turn_container([*start_turns, user_turn])
         self.run_assertions(
@@ -199,7 +199,7 @@ class TestAndGraph(BaseTest):
         agent_executor,
         start_turns,
     ):
-        user_turn = self.add_user_turn("hello", True)
+        user_turn = self.add_user_turn("hello")
         assistant_turn = self.add_assistant_turn("hello back")
 
         TC = self.create_turn_container([*start_turns, user_turn, assistant_turn])
@@ -221,7 +221,7 @@ class TestAndGraph(BaseTest):
         agent_executor,
         start_turns,
     ):
-        user_turn = self.add_user_turn("hello", True)
+        user_turn = self.add_user_turn("hello")
 
         if separate_fn_calls:
             tool_names_list = [[fn_name] for fn_name in fn_names]
@@ -385,7 +385,6 @@ class TestAndGraph(BaseTest):
 
         t6 = self.add_user_turn(
             "i want flight from ... to ... on ...",
-            True,
         )
         self.run_message_dict_assertions()
 
