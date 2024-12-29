@@ -478,7 +478,7 @@ class TestRequest(BaseTest):
         )
 
         assert not DeepDiff(
-            TC.turns[:6], agent_executor.TC.turns[:6], exclude_regex_paths=r".*node_id$"
+            TC.turns[:8], agent_executor.TC.turns[:8], exclude_regex_paths=r".*node_id$"
         )
         # assert len(TC.turns) == len(agent_executor.TC.turns)
 
