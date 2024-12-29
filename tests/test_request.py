@@ -233,9 +233,6 @@ class TestRequest(BaseTest):
         into_graph_transition_turns,
     ):
 
-        t2 = self.add_user_turn(
-            agent_executor, "my user details are ...", model_provider
-        )
         user_details = ModelFactory.create_factory(UserDetails).build()
         fn_call_1 = FunctionCall.create(
             api_id_model_provider=model_provider,
@@ -243,47 +240,26 @@ class TestRequest(BaseTest):
             name="update_state_user_details",
             args={"user_details": user_details.model_dump()},
         )
-        t3 = self.add_assistant_turn(
-            agent_executor,
-            model_provider,
-            None,
-            is_stream,
-            [fn_call_1],
-            {fn_call_1.id: None},
-        )
 
-        # --------------------------------
-
-        edge_schema = self.get_edge_schema(CHANGE_FLIGHT_GRAPH_SCHEMA.start_node_schema)
         next_node_schema = self.get_next_conv_node_schema(
             CHANGE_FLIGHT_GRAPH_SCHEMA.start_node_schema
         )
-        input = next_node_schema.get_input(
-            agent_executor.graph.curr_node.state, edge_schema
-        )
 
-        node_turn_2 = TurnArgs(
-            turn=NodeSystemTurn(
-                msg_content=next_node_schema.node_system_prompt(
-                    node_prompt=next_node_schema.node_prompt,
-                    input=input.model_dump_json(),
-                    node_input_json_schema=next_node_schema.input_schema.model_json_schema(),
-                    state_json_schema=next_node_schema.state_schema.model_json_schema(),
-                    last_msg="my user details are ...",
-                    curr_request="customer wants to change a flight",
-                ),
-                node_id=3,
-            ),
-        )
-        self.build_messages_from_turn(
-            node_turn_2,
+        turnzzz = self.build_transition_turns(
+            agent_executor,
             model_provider,
-            remove_prev_tool_calls=remove_prev_tool_calls,
+            is_stream,
+            [fn_call_1],
+            {fn_call_1.id: None},
+            "my user details are ...",
+            remove_prev_tool_calls,
+            self.get_edge_schema(CHANGE_FLIGHT_GRAPH_SCHEMA.start_node_schema),
+            self.get_next_conv_node_schema(
+                CHANGE_FLIGHT_GRAPH_SCHEMA.start_node_schema
+            ),
+            "customer wants to change a flight",
         )
 
-        t4 = self.add_user_turn(
-            agent_executor, "my reservation details are ...", model_provider
-        )
         res_details = ModelFactory.create_factory(ReservationDetails).build()
         fn_call_1 = FunctionCall.create(
             api_id_model_provider=model_provider,
@@ -291,43 +267,21 @@ class TestRequest(BaseTest):
             name="update_state_reservation_details",
             args={"reservation_details": res_details.model_dump()},
         )
-        t5 = self.add_assistant_turn(
+
+        next_next_node_schema = self.get_next_conv_node_schema(next_node_schema)
+
+        turnzzz22 = self.build_transition_turns(
             agent_executor,
             model_provider,
-            None,
             is_stream,
             [fn_call_1],
             {fn_call_1.id: None},
+            "my reservation details are ...",
+            remove_prev_tool_calls,
+            self.get_edge_schema(next_node_schema),
+            next_next_node_schema,
+            "customer wants to change a flight",
         )
-
-        # --------------------------------
-
-        edge_schema = self.get_edge_schema(next_node_schema)
-        next_next_node_schema = self.get_next_conv_node_schema(next_node_schema)
-        input = next_next_node_schema.get_input(
-            agent_executor.graph.curr_node.state, edge_schema
-        )
-
-        node_turn_3 = TurnArgs(
-            turn=NodeSystemTurn(
-                msg_content=next_next_node_schema.node_system_prompt(
-                    node_prompt=next_next_node_schema.node_prompt,
-                    input=input.model_dump_json(),
-                    node_input_json_schema=next_next_node_schema.input_schema.model_json_schema(),
-                    state_json_schema=next_next_node_schema.state_schema.model_json_schema(),
-                    last_msg="my reservation details are ...",
-                    curr_request="customer wants to change a flight",
-                ),
-                node_id=3,
-            ),
-        )
-        self.build_messages_from_turn(
-            node_turn_3,
-            model_provider,
-            remove_prev_tool_calls=remove_prev_tool_calls,
-        )
-
-        t6 = self.add_user_turn(agent_executor, "the new flight is ...", model_provider)
 
         flight_info = ModelFactory.create_factory(FlightInfo).build()
         fn_call_1 = FunctionCall.create(
@@ -348,46 +302,21 @@ class TestRequest(BaseTest):
             name="update_state_has_confirmed_new_flights",
             args={"has_confirmed_new_flights": True},
         )
-        t7 = self.add_assistant_turn(
-            agent_executor,
-            model_provider,
-            None,
-            is_stream,
-            [fn_call_1, fn_call_2, fn_call_3],
-            {fn_call_1.id: None, fn_call_2.id: None, fn_call_3.id: None},
-        )
 
-        # --------------------------------
-
-        edge_schema = self.get_edge_schema(next_next_node_schema)
         next_next_next_node_schema = self.get_next_conv_node_schema(
             next_next_node_schema
         )
-        input = next_next_next_node_schema.get_input(
-            agent_executor.graph.curr_node.state, edge_schema
-        )
-
-        node_turn_4 = TurnArgs(
-            turn=NodeSystemTurn(
-                msg_content=next_next_next_node_schema.node_system_prompt(
-                    node_prompt=next_next_next_node_schema.node_prompt,
-                    input=input.model_dump_json(),
-                    node_input_json_schema=next_next_next_node_schema.input_schema.model_json_schema(),
-                    state_json_schema=next_next_next_node_schema.state_schema.model_json_schema(),
-                    last_msg="the new flight is ...",
-                    curr_request="customer wants to change a flight",
-                ),
-                node_id=3,
-            ),
-        )
-        self.build_messages_from_turn(
-            node_turn_4,
+        turnzzz33 = self.build_transition_turns(
+            agent_executor,
             model_provider,
-            remove_prev_tool_calls=remove_prev_tool_calls,
-        )
-
-        t8 = self.add_user_turn(
-            agent_executor, "the payment method is ...", model_provider
+            is_stream,
+            [fn_call_1, fn_call_2, fn_call_3],
+            {fn_call_1.id: None, fn_call_2.id: None, fn_call_3.id: None},
+            "the new flight is ...",
+            remove_prev_tool_calls,
+            self.get_edge_schema(next_next_node_schema),
+            next_next_next_node_schema,
+            "customer wants to change a flight",
         )
 
         fn_call_1 = FunctionCall.create(
@@ -396,42 +325,21 @@ class TestRequest(BaseTest):
             name="update_state_payment_id",
             args={"payment_id": "123"},
         )
-        t9 = self.add_assistant_turn(
-            agent_executor,
-            model_provider,
-            None,
-            is_stream,
-            [fn_call_1],
-            {fn_call_1.id: None},
-        )
-
-        # --------------------------------
-
-        edge_schema = self.get_edge_schema(next_next_next_node_schema)
         next_next_next_next_node_schema = self.get_next_conv_node_schema(
             next_next_next_node_schema
         )
-        input = next_next_next_next_node_schema.get_input(
-            agent_executor.graph.curr_node.state, edge_schema
-        )
 
-        node_turn_5 = TurnArgs(
-            turn=NodeSystemTurn(
-                msg_content=next_next_next_next_node_schema.node_system_prompt(
-                    node_prompt=next_next_next_next_node_schema.node_prompt,
-                    input=input.model_dump_json(),
-                    node_input_json_schema=next_next_next_next_node_schema.input_schema.model_json_schema(),
-                    state_json_schema=None,
-                    last_msg="the payment method is ...",
-                    curr_request="customer wants to change a flight",
-                ),
-                node_id=3,
-            ),
-        )
-        self.build_messages_from_turn(
-            node_turn_5,
+        turnzzz44 = self.build_transition_turns(
+            agent_executor,
             model_provider,
-            remove_prev_tool_calls=remove_prev_tool_calls,
+            is_stream,
+            [fn_call_1],
+            {fn_call_1.id: None},
+            "the payment method is ...",
+            remove_prev_tool_calls,
+            self.get_edge_schema(next_next_next_node_schema),
+            next_next_next_next_node_schema,
+            "customer wants to change a flight",
         )
 
         fn_call_1 = FunctionCall.create(
@@ -534,18 +442,10 @@ class TestRequest(BaseTest):
             [
                 *start_turns,
                 *into_graph_transition_turns,
-                t2,
-                t3,
-                node_turn_2,
-                t4,
-                t5,
-                node_turn_3,
-                t6,
-                t7,
-                node_turn_4,
-                t8,
-                t9,
-                node_turn_5,
+                *turnzzz,
+                *turnzzz22,
+                *turnzzz33,
+                *turnzzz44,
                 t10,
                 t11,
                 node_turn_6_a,
