@@ -19,7 +19,7 @@ from tests.base_test import (
 )
 
 
-class TestAndGraph(BaseTest):
+class TestAirline(BaseTest):
     @pytest.fixture(autouse=True)
     def setup(self):
         self.start_conv_node_schema = get_user_id_node_schema
@@ -616,4 +616,4 @@ class TestAndGraph(BaseTest):
 
 
 def test_class_test_count(request):
-    assert_number_of_tests(TestAndGraph, __file__, request, 564)
+    assert_number_of_tests(TestAirline, __file__, request, 564)
