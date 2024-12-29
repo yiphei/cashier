@@ -61,7 +61,7 @@ class TestRequest(BaseTest):
     def setup_start_message_list(
         self, start_turns, setup_message_dicts, model_provider
     ):
-        self.build_messages_from_turn(start_turns[0], model_provider)
+        self.build_messages_from_turn(start_turns[0])
 
     @pytest.fixture
     def start_turns(self):
@@ -104,8 +104,6 @@ class TestRequest(BaseTest):
         )
         self.build_messages_from_turn(
             node_turn,
-            model_provider,
-            remove_prev_tool_calls=remove_prev_tool_calls,
         )
         return [t1, node_turn]
 
@@ -361,8 +359,6 @@ class TestRequest(BaseTest):
         )
         self.build_messages_from_turn(
             node_turn_6_a,
-            model_provider,
-            remove_prev_tool_calls=remove_prev_tool_calls,
         )
 
         b_node_schema = luggage_get_reservation_details_node_schema
@@ -382,8 +378,6 @@ class TestRequest(BaseTest):
         )
         self.build_messages_from_turn(
             node_turn_6_b,
-            model_provider,
-            remove_prev_tool_calls=remove_prev_tool_calls,
         )
 
         # --------------------------------
@@ -405,8 +399,6 @@ class TestRequest(BaseTest):
         )
         self.build_messages_from_turn(
             node_turn_6,
-            model_provider,
-            remove_prev_tool_calls=remove_prev_tool_calls,
         )
 
         TC = self.create_turn_container(

@@ -300,7 +300,7 @@ class BaseTest:
             )
 
         ut = UserTurn(msg_content=message)
-        self.build_messages_from_turn(ut, self.fixtures.model_provider)
+        self.build_messages_from_turn(ut)
         return ut
 
     def add_request_user_turn(
@@ -325,7 +325,7 @@ class BaseTest:
             )
 
         ut = UserTurn(msg_content=message)
-        self.build_messages_from_turn(ut, self.fixtures.model_provider)
+        self.build_messages_from_turn(ut)
         return ut
 
     def add_assistant_turn(
@@ -592,9 +592,7 @@ class BaseTest:
     def build_messages_from_turn(
         self,
         turn,
-        model_provider,
         remove_prev_fn_return_schema=None,
-        remove_prev_tool_calls=False,
         is_skip=False,
     ):
         if isinstance(turn, TurnArgs):
@@ -660,8 +658,6 @@ class BaseTest:
         )
         self.build_messages_from_turn(
             node_turn_2,
-            self.fixtures.model_provider,
-            remove_prev_tool_calls=self.fixtures.remove_prev_tool_calls,
         )
 
         return [t2, t3, node_turn_2]

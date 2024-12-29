@@ -46,8 +46,8 @@ class TestAndGraph(BaseTest):
     def setup_start_message_list(
         self, start_turns, setup_message_dicts, model_provider
     ):
-        self.build_messages_from_turn(start_turns[0], model_provider)
-        self.build_messages_from_turn(start_turns[2], model_provider)
+        self.build_messages_from_turn(start_turns[0])
+        self.build_messages_from_turn(start_turns[2])
 
     @pytest.fixture
     def start_turns(self, agent_executor, model_provider):
@@ -136,8 +136,6 @@ class TestAndGraph(BaseTest):
         )
         self.build_messages_from_turn(
             node_turn,
-            model_provider,
-            remove_prev_tool_calls=remove_prev_tool_calls,
         )
         return [t1, t2, t3, t4, node_turn]
 
@@ -184,7 +182,7 @@ class TestAndGraph(BaseTest):
             fn_calls=[fake_fn_call],
             fn_call_id_to_fn_output={fake_fn_call.id: None},
         )
-        self.build_messages_from_turn(assistant_turn, model_provider)
+        self.build_messages_from_turn(assistant_turn)
 
         TC = self.create_turn_container([*start_turns, user_turn, assistant_turn])
 
@@ -337,8 +335,6 @@ class TestAndGraph(BaseTest):
         )
         self.build_messages_from_turn(
             node_turn_2,
-            model_provider,
-            remove_prev_tool_calls=remove_prev_tool_calls,
             is_skip=True,
         )
 
@@ -356,7 +352,7 @@ class TestAndGraph(BaseTest):
                 get_state_fn_call.id: agent_executor.graph.curr_conversation_node.state
             },
         )
-        self.build_messages_from_turn(t7, model_provider)
+        self.build_messages_from_turn(t7)
 
         TC = self.create_turn_container(
             [
@@ -431,8 +427,6 @@ class TestAndGraph(BaseTest):
         )
         self.build_messages_from_turn(
             node_turn_2,
-            model_provider,
-            remove_prev_tool_calls=remove_prev_tool_calls,
         )
         t8 = self.add_assistant_turn(
             "thanks for confirming flights, now lets move on to ...",
@@ -461,8 +455,6 @@ class TestAndGraph(BaseTest):
         )
         self.build_messages_from_turn(
             node_turn_3,
-            model_provider,
-            remove_prev_tool_calls=remove_prev_tool_calls,
             is_skip=True,
         )
         get_state_fn_call = self.recreate_fake_single_fn_call("get_state", {})
@@ -475,7 +467,7 @@ class TestAndGraph(BaseTest):
                 get_state_fn_call.id: agent_executor.graph.curr_conversation_node.state
             },
         )
-        self.build_messages_from_turn(t10, model_provider)
+        self.build_messages_from_turn(t10)
         t11 = self.add_assistant_turn(
             "what do you want to change?",
         )
@@ -504,8 +496,6 @@ class TestAndGraph(BaseTest):
         )
         self.build_messages_from_turn(
             node_turn_4,
-            model_provider,
-            remove_prev_tool_calls=remove_prev_tool_calls,
             is_skip=True,
         )
         get_state_fn_call = self.recreate_fake_single_fn_call("get_state", {})
@@ -518,7 +508,7 @@ class TestAndGraph(BaseTest):
                 get_state_fn_call.id: agent_executor.graph.curr_conversation_node.state
             },
         )
-        self.build_messages_from_turn(t13, model_provider)
+        self.build_messages_from_turn(t13)
 
         TC = self.create_turn_container(
             [
