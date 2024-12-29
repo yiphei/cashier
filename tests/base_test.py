@@ -657,7 +657,11 @@ class BaseTest:
         self.build_messages_from_turn(
             node_turn,
         )
-        return [t1, t2, node_turn]
+
+        t3 = self.add_assistant_turn(
+            "good, lets move on to ...",
+        )
+        return [t1, t2, node_turn, t3]
 
 
 def assert_number_of_tests(test_class, absolute_path, request, expected_test_count):
