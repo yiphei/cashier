@@ -97,7 +97,7 @@ class TestAndGraph(BaseTest):
         request,
         remove_prev_tool_calls,
     ):
-        t1 = self.add_user_turn(agent_executor, "hello", model_provider, True)
+        t1 = self.add_user_turn("hello", True)
         t2 = self.add_assistant_turn(
             agent_executor,
             model_provider,
@@ -106,7 +106,7 @@ class TestAndGraph(BaseTest):
             tool_names=request.param,
         )
         t3 = self.add_user_turn(
-            agent_executor, "my username is ...", model_provider, True
+         "my username is ...", True
         )
         self.run_message_dict_assertions()
 
@@ -163,7 +163,7 @@ class TestAndGraph(BaseTest):
     def test_add_user_turn(
         self, model_provider, remove_prev_tool_calls, agent_executor, start_turns
     ):
-        user_turn = self.add_user_turn(agent_executor, "hello", model_provider, True)
+        user_turn = self.add_user_turn( "hello", True)
 
         TC = self.create_turn_container([*start_turns, user_turn])
         self.run_assertions(
@@ -179,7 +179,7 @@ class TestAndGraph(BaseTest):
         start_turns,
     ):
         user_turn = self.add_user_turn(
-            agent_executor, "hello", model_provider, False, find_flight_node_schema.id
+         "hello", False, find_flight_node_schema.id
         )
 
         fake_fn_call = self.recreate_fake_single_fn_call(
@@ -213,7 +213,7 @@ class TestAndGraph(BaseTest):
         agent_executor,
         start_turns,
     ):
-        user_turn = self.add_user_turn(agent_executor, "hello", model_provider, True)
+        user_turn = self.add_user_turn( "hello", True)
         assistant_turn = self.add_assistant_turn(
             agent_executor, model_provider, "hello back", is_stream
         )
@@ -237,7 +237,7 @@ class TestAndGraph(BaseTest):
         agent_executor,
         start_turns,
     ):
-        user_turn = self.add_user_turn(agent_executor, "hello", model_provider, True)
+        user_turn = self.add_user_turn( "hello", True)
 
         if separate_fn_calls:
             tool_names_list = [[fn_name] for fn_name in fn_names]
@@ -338,9 +338,7 @@ class TestAndGraph(BaseTest):
         self.run_message_dict_assertions()
 
         t6 = self.add_user_turn(
-            agent_executor,
             "i want to change my user details",
-            model_provider,
             False,
             skip_node_schema_id=self.start_conv_node_schema.id,
         )
@@ -415,9 +413,7 @@ class TestAndGraph(BaseTest):
         )
 
         t6 = self.add_user_turn(
-            agent_executor,
             "i want flight from ... to ... on ...",
-            model_provider,
             True,
         )
         self.run_message_dict_assertions()
@@ -475,9 +471,7 @@ class TestAndGraph(BaseTest):
         self.run_message_dict_assertions()
 
         t9 = self.add_user_turn(
-            agent_executor,
             "actually, i want to change my user details",
-            model_provider,
             False,
             skip_node_schema_id=self.start_conv_node_schema.id,
         )
@@ -522,9 +516,7 @@ class TestAndGraph(BaseTest):
         self.run_message_dict_assertions()
 
         t12 = self.add_user_turn(
-            agent_executor,
             "nvm, nothing",
-            model_provider,
             False,
             skip_node_schema_id=find_flight_node_schema.id,
         )

@@ -259,9 +259,7 @@ class BaseTest:
 
     def add_user_turn(
         self,
-        agent_executor,
         message,
-        model_provider,
         is_on_topic=True,
         wait_node_schema_id=None,
         skip_node_schema_id=None,
@@ -638,7 +636,7 @@ class BaseTest:
         curr_request,
     ):
         t2 = self.add_user_turn(
-            self.fixtures.agent_executor, user_msg, self.fixtures.model_provider
+            user_msg
         )
         t3 = self.add_assistant_turn(
             self.fixtures.agent_executor,
