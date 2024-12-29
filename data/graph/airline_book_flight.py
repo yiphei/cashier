@@ -12,7 +12,6 @@ from cashier.graph.base.base_state import BaseStateModel
 from cashier.graph.conversation_node import ConversationNodeSchema
 from cashier.graph.edge_schema import EdgeSchema
 from cashier.graph.graph_schema import GraphSchema
-from cashier.graph.request_graph import RequestGraphSchema
 from data.prompt.airline import AirlineNodeSystemPrompt
 from data.tool_registry.airline_tool_registry import AIRLINE_TOOL_REGISTRY
 from data.types.airline import (
@@ -285,13 +284,4 @@ BOOK_FLIGHT_GRAPH_SCHEMA = GraphSchema(
         state=FunctionState.CALLED_AND_SUCCEEDED,
     ),
     state_schema=StateSchema,
-)
-
-
-AIRLINE_REQUEST_SCHEMA = RequestGraphSchema(
-    node_schemas=[BOOK_FLIGHT_GRAPH_SCHEMA],
-    edge_schemas=[],
-    node_prompt="You are a helpful assistant that helps customers with flight-related requests.",
-    node_system_prompt=AirlineNodeSystemPrompt,
-    description="Help customers change flights and baggage information for a reservation.",
 )

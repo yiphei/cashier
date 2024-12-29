@@ -4,12 +4,12 @@ from polyfactory.factories.pydantic_factory import ModelFactory
 from cashier.model.model_turn import AssistantTurn, NodeSystemTurn
 from cashier.model.model_util import FunctionCall
 from cashier.tool.function_call_context import StateUpdateError, ToolExceptionWrapper
-from data.graph.airline import (
-    AIRLINE_REQUEST_SCHEMA,
+from data.graph.airline_book_flight import (
     BOOK_FLIGHT_GRAPH_SCHEMA,
     find_flight_node_schema,
     get_user_id_node_schema,
 )
+from data.graph.airline_request import AIRLINE_REQUEST_SCHEMA
 from data.types.airline import FlightInfo, UserDetails
 from tests.base_test import (
     BaseTest,
