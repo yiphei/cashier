@@ -71,7 +71,7 @@ class BaseGraphExecutable(BaseExecutable):
 
         return None
 
-    def check_transition(self, fn_call, is_fn_call_success):
+    def check_transition(self, fn_call, is_fn_call_success, not_for_skipping=True):
         new_node_schema = None
 
         if getattr(self, "curr_node", None) is not None:
@@ -87,6 +87,7 @@ class BaseGraphExecutable(BaseExecutable):
             self.curr_node.status == Status.INTERNALLY_COMPLETED
             and getattr(self.curr_node, "state", None) is not None
             and getattr(self, "state", None) is not None
+            and not_for_skipping
         ):  # TODO: remove the state check after refactor. Self.curr_node.state can be None because the end node schema is always stateless. Self.state can be None because request is stateless.
             self.update_state_from_executable(self.curr_node)
 
@@ -96,5 +97,19 @@ class BaseGraphExecutable(BaseExecutable):
             self.mark_as_internally_completed()
             return None
         elif self.curr_node.status == Status.INTERNALLY_COMPLETED:
-            return self.check_node_transition(fn_call, is_fn_call_success)
+            if not_for_skipping:
+                return self.check_node_transition(fn_call, is_fn_call_success)
+            else:
+                # TODO: refactor this
+                assert self.curr_node.status == Status.INTERNALLY_COMPLETED
+                if (
+                    self.next_edge_schema is not None
+                    and self.next_edge_schema.check_transition_config(
+                        self.state, fn_call, is_fn_call_success
+                    )
+                ):
+                    self.curr_node.mark_as_transitioning()
+                    return self.next_edge_schema.to_node_schema
+
+                return None
         return new_node_schema

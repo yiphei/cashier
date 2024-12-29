@@ -248,7 +248,7 @@ class BaseTest:
         agent_executor,
         message,
         model_provider,
-        is_on_topic,
+        is_on_topic=True,
         wait_node_schema_id=None,
         skip_node_schema_id=None,
     ):
@@ -600,6 +600,62 @@ class BaseTest:
             )
         else:
             raise ValueError(f"Unknown turn type: {type(turn)}")
+
+    def build_transition_turns(
+        self,
+        agent_executor,
+        model_provider,
+        is_stream,
+        fn_calls,
+        fn_call_id_to_fn_output,
+        user_msg,
+        remove_prev_tool_calls,
+        edge_schema,
+        next_node_schema,
+        curr_request,
+    ):
+        t2 = self.add_user_turn(agent_executor, user_msg, model_provider)
+        t3 = self.add_assistant_turn(
+            agent_executor,
+            model_provider,
+            None,
+            is_stream,
+            fn_calls,
+            fn_call_id_to_fn_output,
+        )
+
+        input = next_node_schema.get_input(
+            agent_executor.graph.curr_node.state, edge_schema
+        )
+
+        node_turn_2 = TurnArgs(
+            turn=NodeSystemTurn(
+                msg_content=next_node_schema.node_system_prompt(
+                    node_prompt=next_node_schema.node_prompt,
+                    input=input.model_dump_json() if input is not None else None,
+                    node_input_json_schema=(
+                        next_node_schema.input_schema.model_json_schema()
+                        if next_node_schema.input_schema is not None
+                        else None
+                    ),
+                    state_json_schema=(
+                        next_node_schema.state_schema.model_json_schema()
+                        if next_node_schema.state_schema
+                        else None
+                    ),
+                    last_msg=user_msg,
+                    curr_request=curr_request,
+                ),
+                node_id=3,
+            ),
+        )
+        self.build_messages_from_turn(
+            node_turn_2,
+            model_provider,
+            remove_prev_tool_calls=remove_prev_tool_calls,
+        )
+
+        return [t2, t3, node_turn_2]
 
 
 def assert_number_of_tests(test_class, absolute_path, request, expected_test_count):
