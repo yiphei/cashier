@@ -14,7 +14,7 @@ from tests.base_test import (
 )
 
 
-class TestRequestAirline(BaseTest):
+class TestRequest(BaseTest):
     @pytest.fixture(autouse=True)
     def setup(self):
         self.start_conv_node_schema = AIRLINE_REQUEST_SCHEMA.start_node_schema
@@ -149,14 +149,13 @@ class TestRequestAirline(BaseTest):
             model_provider,
             "customer wants to book a flight",
         )
-        graph_schema_start_node = get_user_id_node_schema
         node_turn = TurnArgs(
             turn=NodeSystemTurn(
-                msg_content=graph_schema_start_node.node_system_prompt(
-                    node_prompt=graph_schema_start_node.node_prompt,
+                msg_content=get_user_id_node_schema.node_system_prompt(
+                    node_prompt=get_user_id_node_schema.node_prompt,
                     input=None,
                     node_input_json_schema=None,
-                    state_json_schema=graph_schema_start_node.state_schema.model_json_schema(),
+                    state_json_schema=get_user_id_node_schema.state_schema.model_json_schema(),
                     last_msg="i want to book flight",
                     curr_request="customer wants to book a flight",
                 ),
@@ -183,4 +182,4 @@ class TestRequestAirline(BaseTest):
 
 
 def test_class_test_count(request):
-    assert_number_of_tests(TestRequestAirline, __file__, request, 36)
+    assert_number_of_tests(TestRequest, __file__, request, 36)
