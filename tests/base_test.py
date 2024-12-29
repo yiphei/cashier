@@ -146,7 +146,8 @@ class BaseTest:
                 "force_tool_choice": None,
                 "exclude_update_state_fns": (
                     not self.fixtures.agent_executor.graph.curr_conversation_node.first_user_message
-                    if self.fixtures.agent_executor.graph.curr_conversation_node is not None
+                    if self.fixtures.agent_executor.graph.curr_conversation_node
+                    is not None
                     else False
                 ),
             },
@@ -169,7 +170,9 @@ class BaseTest:
         )
         fn_calls = fn_calls or []
 
-        model_completion = model_completion_class(output_obj=None, is_stream=self.fixtures.is_stream)
+        model_completion = model_completion_class(
+            output_obj=None, is_stream=self.fixtures.is_stream
+        )
         model_completion.msg_content = message
         model_completion.get_message = Mock(return_value=message)
         if message is not None:
@@ -325,7 +328,9 @@ class BaseTest:
         )
         self.model_chat.side_effect = [graph_schema_selection_completion]
         with self.generate_random_string_context():
-            self.fixtures.agent_executor.add_user_turn(message, self.fixtures.model_provider)
+            self.fixtures.agent_executor.add_user_turn(
+                message, self.fixtures.model_provider
+            )
 
         ut = UserTurn(msg_content=message)
         self.build_messages_from_turn(ut, self.fixtures.model_provider)
@@ -349,7 +354,10 @@ class BaseTest:
             )
 
         model_completion = self.create_mock_model_completion(
-            self.fixtures.model_provider, message, self.fixtures.is_stream, fn_calls=fn_calls
+            self.fixtures.model_provider,
+            message,
+            self.fixtures.is_stream,
+            fn_calls=fn_calls,
         )
         get_state_fn_call = (
             next((fn_call for fn_call in fn_calls if fn_call.name == "get_state"), None)
@@ -362,7 +370,9 @@ class BaseTest:
             else []
         )
 
-        tool_registry = self.fixtures.agent_executor.graph.curr_conversation_node.schema.tool_registry
+        tool_registry = (
+            self.fixtures.agent_executor.graph.curr_conversation_node.schema.tool_registry
+        )
 
         fn_calls = fn_calls or []
         expected_calls_map = defaultdict(list)
@@ -634,7 +644,9 @@ class BaseTest:
         next_node_schema,
         curr_request,
     ):
-        t2 = self.add_user_turn(self.fixtures.agent_executor, user_msg, self.fixtures.model_provider)
+        t2 = self.add_user_turn(
+            self.fixtures.agent_executor, user_msg, self.fixtures.model_provider
+        )
         t3 = self.add_assistant_turn(
             self.fixtures.agent_executor,
             self.fixtures.model_provider,
