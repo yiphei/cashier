@@ -131,7 +131,7 @@ class RequestGraph(BaseGraph):
             new_node_schema = self.schema.default_node_schema
 
         self.curr_node.mark_as_transitioning()
-        return new_edge_schema, new_node_schema
+        return new_node_schema
 
 
 class RequestGraphSchema(BaseGraphSchema):
