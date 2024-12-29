@@ -105,7 +105,7 @@ class TestRequest(BaseTest):
         return [t1, node_turn]
 
     def test_graph_initialization(
-        self, model_provider, remove_prev_tool_calls, agent_executor, start_turns
+        self, agent_executor, start_turns
     ):
         TC = self.create_turn_container(start_turns)
         self.run_assertions(
@@ -114,7 +114,7 @@ class TestRequest(BaseTest):
         )
 
     def test_add_user_turn(
-        self, model_provider, remove_prev_tool_calls, agent_executor, start_turns
+        self, agent_executor, start_turns
     ):
         user_turn = self.add_request_user_turn("hello")
 
@@ -126,8 +126,6 @@ class TestRequest(BaseTest):
 
     def test_add_assistant_turn(
         self,
-        model_provider,
-        remove_prev_tool_calls,
         is_stream,
         agent_executor,
         start_turns,
@@ -151,8 +149,6 @@ class TestRequest(BaseTest):
     @pytest.mark.parametrize("separate_fn_calls", [True, False])
     def test_add_assistant_turn_with_tool_calls(
         self,
-        model_provider,
-        remove_prev_tool_calls,
         is_stream,
         fn_names,
         separate_fn_calls,
@@ -180,8 +176,6 @@ class TestRequest(BaseTest):
 
     def test_node_transition(
         self,
-        model_provider,
-        remove_prev_tool_calls,
         agent_executor,
         start_turns,
         into_graph_transition_turns,
@@ -198,7 +192,6 @@ class TestRequest(BaseTest):
     def test_graph_transition(
         self,
         model_provider,
-        remove_prev_tool_calls,
         agent_executor,
         start_turns,
         is_stream,

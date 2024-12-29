@@ -137,7 +137,7 @@ class TestAndGraph(BaseTest):
         return [t1, t2, t3, t4, node_turn]
 
     def test_graph_initialization(
-        self, model_provider, remove_prev_tool_calls, agent_executor, start_turns
+        self, start_turns
     ):
         TC = self.create_turn_container(start_turns)
         self.run_assertions(
@@ -146,7 +146,7 @@ class TestAndGraph(BaseTest):
         )
 
     def test_add_user_turn(
-        self, model_provider, remove_prev_tool_calls, agent_executor, start_turns
+        self, start_turns
     ):
         user_turn = self.add_user_turn("hello")
 
@@ -159,8 +159,6 @@ class TestAndGraph(BaseTest):
     def test_add_user_turn_with_wait(
         self,
         model_provider,
-        remove_prev_tool_calls,
-        agent_executor,
         start_turns,
     ):
         user_turn = self.add_user_turn("hello", False, find_flight_node_schema.id)
@@ -190,10 +188,7 @@ class TestAndGraph(BaseTest):
 
     def test_add_assistant_turn(
         self,
-        model_provider,
-        remove_prev_tool_calls,
         is_stream,
-        agent_executor,
         start_turns,
     ):
         user_turn = self.add_user_turn("hello")
@@ -210,12 +205,9 @@ class TestAndGraph(BaseTest):
     @pytest.mark.parametrize("separate_fn_calls", [True, False])
     def test_add_assistant_turn_with_tool_calls(
         self,
-        model_provider,
-        remove_prev_tool_calls,
         is_stream,
         fn_names,
         separate_fn_calls,
-        agent_executor,
         start_turns,
     ):
         user_turn = self.add_user_turn("hello")
@@ -244,7 +236,6 @@ class TestAndGraph(BaseTest):
     def test_state_update_before_user_turn(
         self,
         model_provider,
-        remove_prev_tool_calls,
         is_stream,
         fn_names,
         agent_executor,
@@ -281,9 +272,6 @@ class TestAndGraph(BaseTest):
 
     def test_node_transition(
         self,
-        model_provider,
-        remove_prev_tool_calls,
-        agent_executor,
         start_turns,
         first_into_second_transition_turns,
     ):
@@ -299,7 +287,6 @@ class TestAndGraph(BaseTest):
     def test_backward_node_skip(
         self,
         model_provider,
-        remove_prev_tool_calls,
         is_stream,
         agent_executor,
         start_turns,
@@ -370,7 +357,6 @@ class TestAndGraph(BaseTest):
     def test_forward_node_skip(
         self,
         model_provider,
-        remove_prev_tool_calls,
         is_stream,
         agent_executor,
         start_turns,
