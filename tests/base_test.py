@@ -7,7 +7,7 @@ from unittest.mock import Mock, call, patch
 
 import pytest
 from deepdiff import DeepDiff
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from cashier.agent_executor import AgentExecutor
 from cashier.model.message_list import MessageList
@@ -32,7 +32,6 @@ from cashier.tool.function_call_context import (
 )
 from cashier.turn_container import TurnContainer
 from data.graph.airline_request import AIRLINE_REQUEST_SCHEMA
-from pydantic import BaseModel, ConfigDict
 
 
 class TurnArgs(BaseModel):
@@ -425,7 +424,7 @@ class BaseTest:
 
     @pytest.fixture
     def agent_executor(self, base_setup, remove_prev_tool_calls):
-        ae =  AgentExecutor(
+        ae = AgentExecutor(
             graph_schema=AIRLINE_REQUEST_SCHEMA,
             audio_output=False,
             remove_prev_tool_calls=remove_prev_tool_calls,
