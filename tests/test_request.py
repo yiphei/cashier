@@ -59,7 +59,7 @@ class TestRequest(BaseTest):
 
     @pytest.fixture
     def start_turns(self, setup_message_dicts, model_provider):
-        turns =  [
+        turns = [
             TurnArgs(
                 turn=NodeSystemTurn(
                     msg_content=AIRLINE_REQUEST_SCHEMA.start_node_schema.node_system_prompt(
@@ -74,7 +74,7 @@ class TestRequest(BaseTest):
                 ),
             ),
         ]
-        
+
         self.build_messages_from_turn(turns[0])
         return turns
 
