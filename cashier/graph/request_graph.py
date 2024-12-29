@@ -24,7 +24,7 @@ class RequestGraph(BaseGraph):
         input: Any,
         schema: BaseGraphSchema,
     ):
-        super().__init__(input, schema)
+        super().__init__(input, schema, edge_schemas=schema.edge_schemas)
         self.requests = []
         self.graph_schema_sequence = []
         self.current_graph_schema_idx = -1

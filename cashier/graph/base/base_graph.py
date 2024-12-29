@@ -288,7 +288,7 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
 
         if input is None and edge_schema:
             # TODO: this is bad. refactor this
-            if hasattr(self, "state"):
+            if getattr(self, "state", None) is not None:
                 input = node_schema.get_input(self.state, edge_schema)
             else:
                 input = node_schema.get_input(self.curr_node.state, edge_schema)
