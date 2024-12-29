@@ -252,15 +252,13 @@ class TestRequest(BaseTest):
             [fn_call_1],
             {fn_call_1.id: None},
             "my user details are ...",
-                        remove_prev_tool_calls,
+            remove_prev_tool_calls,
             self.get_edge_schema(CHANGE_FLIGHT_GRAPH_SCHEMA.start_node_schema),
             self.get_next_conv_node_schema(
-            CHANGE_FLIGHT_GRAPH_SCHEMA.start_node_schema
-        ),
+                CHANGE_FLIGHT_GRAPH_SCHEMA.start_node_schema
+            ),
             "customer wants to change a flight",
         )
-
-
 
         # -------------------------------------
 
