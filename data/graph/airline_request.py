@@ -2,7 +2,6 @@ from cashier.graph.request_graph import RequestGraphSchema
 from data.graph.airline_book_flight import BOOK_FLIGHT_GRAPH_SCHEMA
 from data.prompt.airline import AirlineNodeSystemPrompt
 
-
 AIRLINE_REQUEST_SCHEMA = RequestGraphSchema(
     node_schemas=[BOOK_FLIGHT_GRAPH_SCHEMA],
     edge_schemas=[],

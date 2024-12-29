@@ -285,5 +285,3 @@ BOOK_FLIGHT_GRAPH_SCHEMA = GraphSchema(
     ),
     state_schema=StateSchema,
 )
-
-
