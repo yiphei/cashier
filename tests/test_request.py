@@ -79,9 +79,7 @@ class TestRequest(BaseTest):
         return turns
 
     @pytest.fixture
-    def into_graph_transition_turns(
-        self, agent_executor, start_turns
-    ):
+    def into_graph_transition_turns(self, agent_executor, start_turns):
         t1 = self.add_request_user_turn(
             "i want to change flight",
             "customer wants to change a flight",
