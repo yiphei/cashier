@@ -283,8 +283,6 @@ class TestRequest(BaseTest):
             "customer wants to change a flight",
         )
 
-        t6 = self.add_user_turn(agent_executor, "the new flight is ...", model_provider)
-
         flight_info = ModelFactory.create_factory(FlightInfo).build()
         fn_call_1 = FunctionCall.create(
             api_id_model_provider=model_provider,
@@ -304,42 +302,21 @@ class TestRequest(BaseTest):
             name="update_state_has_confirmed_new_flights",
             args={"has_confirmed_new_flights": True},
         )
-        t7 = self.add_assistant_turn(
-            agent_executor,
-            model_provider,
-            None,
-            is_stream,
-            [fn_call_1, fn_call_2, fn_call_3],
-            {fn_call_1.id: None, fn_call_2.id: None, fn_call_3.id: None},
-        )
 
-        # --------------------------------
-
-        edge_schema = self.get_edge_schema(next_next_node_schema)
         next_next_next_node_schema = self.get_next_conv_node_schema(
             next_next_node_schema
         )
-        input = next_next_next_node_schema.get_input(
-            agent_executor.graph.curr_node.state, edge_schema
-        )
-
-        node_turn_4 = TurnArgs(
-            turn=NodeSystemTurn(
-                msg_content=next_next_next_node_schema.node_system_prompt(
-                    node_prompt=next_next_next_node_schema.node_prompt,
-                    input=input.model_dump_json(),
-                    node_input_json_schema=next_next_next_node_schema.input_schema.model_json_schema(),
-                    state_json_schema=next_next_next_node_schema.state_schema.model_json_schema(),
-                    last_msg="the new flight is ...",
-                    curr_request="customer wants to change a flight",
-                ),
-                node_id=3,
-            ),
-        )
-        self.build_messages_from_turn(
-            node_turn_4,
+        turnzzz33 = self.build_transition_turns(
+            agent_executor,
             model_provider,
-            remove_prev_tool_calls=remove_prev_tool_calls,
+            is_stream,
+            [fn_call_1, fn_call_2, fn_call_3],
+            {fn_call_1.id: None, fn_call_2.id: None, fn_call_3.id: None},
+            "the new flight is ...",
+            remove_prev_tool_calls,
+            self.get_edge_schema(next_next_node_schema),
+            next_next_next_node_schema,
+            "customer wants to change a flight",
         )
 
         t8 = self.add_user_turn(
@@ -492,9 +469,7 @@ class TestRequest(BaseTest):
                 *into_graph_transition_turns,
                 *turnzzz,
                 *turnzzz22,
-                t6,
-                t7,
-                node_turn_4,
+                *turnzzz33,
                 t8,
                 t9,
                 node_turn_5,
