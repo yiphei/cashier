@@ -206,7 +206,7 @@ class StateSchema(BaseStateModel):
     payment_id: Optional[str] = None
 
 
-CHANGE_FLIGHT_GRAPH = GraphSchema(
+CHANGE_FLIGHT_GRAPH_SCHEMA = GraphSchema(
     description="Help customers change flights",
     start_node_schema=get_user_id_node_schema,
     end_node_schema=update_flight_node_schema,

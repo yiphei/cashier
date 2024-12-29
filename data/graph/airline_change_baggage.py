@@ -186,7 +186,7 @@ class ChangeBaggageGraphStateSchema(BaseStateModel):
     payment_id: Optional[str] = None
 
 
-CHANGE_BAGGAGE_GRAPH = GraphSchema(
+CHANGE_BAGGAGE_GRAPH_SCHEMA = GraphSchema(
     description="Help customers update baggage information for a reservation",
     start_node_schema=get_user_id_node_schema,
     output_schema=GraphOutputSchema,
