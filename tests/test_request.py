@@ -1,5 +1,4 @@
 import pytest
-from deepdiff import DeepDiff
 from polyfactory.factories.pydantic_factory import ModelFactory
 
 from cashier.model.model_turn import NodeSystemTurn
@@ -478,7 +477,10 @@ class TestRequest(BaseTest):
         )
 
         self.run_assertions(
-            agent_executor, TC, next_next_next_next_node_schema.tool_registry, model_provider
+            agent_executor,
+            TC,
+            next_next_next_next_node_schema.tool_registry,
+            model_provider,
         )
 
 
