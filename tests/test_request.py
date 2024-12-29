@@ -309,10 +309,10 @@ class TestRequest(BaseTest):
         # --------------------------------
 
         edge_schema = self.get_edge_schema(
-            agent_executor.graph.curr_conversation_node.schema
+            next_node_schema
         )
         next_next_node_schema = self.get_next_conv_node_schema(
-            agent_executor.graph.curr_conversation_node.schema
+            next_node_schema
         )
         input = next_next_node_schema.get_input(
             agent_executor.graph.curr_node.state, edge_schema
@@ -326,7 +326,7 @@ class TestRequest(BaseTest):
                     node_input_json_schema=next_next_node_schema.input_schema.model_json_schema(),
                     state_json_schema=next_next_node_schema.state_schema.model_json_schema(),
                     last_msg="my reservation details are ...",
-                    curr_request="customer wants to change a flightt",
+                    curr_request="customer wants to change a flight",
                 ),
                 node_id=3,
             ),
@@ -478,7 +478,7 @@ class TestRequest(BaseTest):
         )
 
         assert not DeepDiff(
-            TC.turns[:8], agent_executor.TC.turns[:8], exclude_regex_paths=r".*node_id$"
+            TC.turns[:10], agent_executor.TC.turns[:10], exclude_regex_paths=r".*node_id$"
         )
         # assert len(TC.turns) == len(agent_executor.TC.turns)
 
