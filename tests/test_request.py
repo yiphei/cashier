@@ -4,7 +4,6 @@ from polyfactory.factories.pydantic_factory import ModelFactory
 
 from cashier.model.model_turn import NodeSystemTurn
 from cashier.model.model_util import FunctionCall
-from cashier.tool.function_call_context import ToolExceptionWrapper
 from data.graph.airline_change_flight import (
     CHANGE_FLIGHT_GRAPH_SCHEMA,
     get_user_id_node_schema,
@@ -366,9 +365,10 @@ class TestRequest(BaseTest):
 
         # --------------------------------
 
-
         edge_schema = self.get_edge_schema(next_next_node_schema)
-        next_next_next_node_schema = self.get_next_conv_node_schema(next_next_node_schema)
+        next_next_next_node_schema = self.get_next_conv_node_schema(
+            next_next_node_schema
+        )
         input = next_next_next_node_schema.get_input(
             agent_executor.graph.curr_node.state, edge_schema
         )
@@ -413,9 +413,10 @@ class TestRequest(BaseTest):
 
         # --------------------------------
 
-
         edge_schema = self.get_edge_schema(next_next_next_node_schema)
-        next_next_next_next_node_schema = self.get_next_conv_node_schema(next_next_next_node_schema)
+        next_next_next_next_node_schema = self.get_next_conv_node_schema(
+            next_next_next_node_schema
+        )
         input = next_next_next_next_node_schema.get_input(
             agent_executor.graph.curr_node.state, edge_schema
         )
