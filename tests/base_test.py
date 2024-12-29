@@ -427,7 +427,7 @@ class BaseTest:
         ae = AgentExecutor(
             graph_schema=AIRLINE_REQUEST_SCHEMA,
             audio_output=False,
-            remove_prev_tool_calls=self.fixtures.remove_prev_tool_calls,
+            remove_prev_tool_calls=remove_prev_tool_calls,
         )
         self.fixtures.agent_executor = ae
         return ae
