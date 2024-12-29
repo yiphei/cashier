@@ -57,15 +57,9 @@ class TestRequest(BaseTest):
         ]
         return self.edge_schema_id_to_to_cov_node_schema_id[edge_schema.id]
 
-    @pytest.fixture(autouse=True)
-    def setup_start_message_list(
-        self, start_turns, setup_message_dicts, model_provider
-    ):
-        self.build_messages_from_turn(start_turns[0])
-
     @pytest.fixture
-    def start_turns(self):
-        return [
+    def start_turns(self, setup_message_dicts, model_provider):
+        turns =  [
             TurnArgs(
                 turn=NodeSystemTurn(
                     msg_content=AIRLINE_REQUEST_SCHEMA.start_node_schema.node_system_prompt(
@@ -80,6 +74,9 @@ class TestRequest(BaseTest):
                 ),
             ),
         ]
+        
+        self.build_messages_from_turn(turns[0])
+        return turns
 
     @pytest.fixture
     def into_graph_transition_turns(

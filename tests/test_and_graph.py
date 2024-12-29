@@ -42,21 +42,14 @@ class TestAndGraph(BaseTest):
         ]
         return self.edge_schema_id_to_to_cov_node_schema_id[edge_schema.id]
 
-    @pytest.fixture(autouse=True)
-    def setup_start_message_list(
-        self, start_turns, setup_message_dicts, model_provider
-    ):
-        self.build_messages_from_turn(start_turns[0])
-        self.build_messages_from_turn(start_turns[2])
-
     @pytest.fixture
-    def start_turns(self, agent_executor, model_provider):
+    def start_turns(self, agent_executor, model_provider, setup_message_dicts):
         ut = self.add_request_user_turn(
             "i want to book flight",
             "customer wants to book flight",
         )
         second_node_schema = self.start_conv_node_schema
-        return [
+        turns = [
             TurnArgs(
                 turn=NodeSystemTurn(
                     msg_content=AIRLINE_REQUEST_SCHEMA.start_node_schema.node_system_prompt(
@@ -85,6 +78,10 @@ class TestAndGraph(BaseTest):
                 ),
             ),
         ]
+
+        self.build_messages_from_turn(turns[0])
+        self.build_messages_from_turn(turns[2])
+        return turns
 
     @pytest.fixture(params=get_fn_names_fixture(get_user_id_node_schema))
     def first_into_second_transition_turns(
