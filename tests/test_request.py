@@ -4,6 +4,7 @@ from polyfactory.factories.pydantic_factory import ModelFactory
 
 from cashier.model.model_turn import NodeSystemTurn
 from cashier.model.model_util import FunctionCall
+from cashier.tool.function_call_context import ToolExceptionWrapper
 from data.graph.airline_change_flight import (
     CHANGE_FLIGHT_GRAPH_SCHEMA,
     get_user_id_node_schema,
@@ -365,18 +366,19 @@ class TestRequest(BaseTest):
 
         # --------------------------------
 
-        next_next_next_node_schema = self.get_next_conv_node_schema(
-            agent_executor.graph.curr_conversation_node.schema
+
+        edge_schema = self.get_edge_schema(next_next_node_schema)
+        next_next_next_node_schema = self.get_next_conv_node_schema(next_next_node_schema)
+        input = next_next_next_node_schema.get_input(
+            agent_executor.graph.curr_node.state, edge_schema
         )
-        input_schema, input = (
-            agent_executor.graph.curr_node.curr_node.state.get_set_schema_and_fields()
-        )
+
         node_turn_4 = TurnArgs(
             turn=NodeSystemTurn(
                 msg_content=next_next_next_node_schema.node_system_prompt(
                     node_prompt=next_next_next_node_schema.node_prompt,
                     input=input.model_dump_json(),
-                    node_input_json_schema=input_schema.model_json_schema(),
+                    node_input_json_schema=next_next_next_node_schema.input_schema.model_json_schema(),
                     state_json_schema=next_next_next_node_schema.state_schema.model_json_schema(),
                     last_msg="the new flight is ...",
                     curr_request="customer wants to change a flightt",
@@ -411,19 +413,20 @@ class TestRequest(BaseTest):
 
         # --------------------------------
 
-        next_next_next_next_node_schema = self.get_next_conv_node_schema(
-            agent_executor.graph.curr_conversation_node.schema
+
+        edge_schema = self.get_edge_schema(next_next_next_node_schema)
+        next_next_next_next_node_schema = self.get_next_conv_node_schema(next_next_next_node_schema)
+        input = next_next_next_next_node_schema.get_input(
+            agent_executor.graph.curr_node.state, edge_schema
         )
-        input_schema, input = (
-            agent_executor.graph.curr_node.curr_node.state.get_set_schema_and_fields()
-        )
+
         node_turn_5 = TurnArgs(
             turn=NodeSystemTurn(
                 msg_content=next_next_next_next_node_schema.node_system_prompt(
                     node_prompt=next_next_next_next_node_schema.node_prompt,
                     input=input.model_dump_json(),
-                    node_input_json_schema=input_schema.model_json_schema(),
-                    state_json_schema=next_next_next_next_node_schema.state_schema.model_json_schema(),
+                    node_input_json_schema=next_next_next_next_node_schema.input_schema.model_json_schema(),
+                    state_json_schema=None,
                     last_msg="the payment method is ...",
                     curr_request="customer wants to change a flightt",
                 ),
@@ -474,8 +477,8 @@ class TestRequest(BaseTest):
         )
 
         assert not DeepDiff(
-            TC.turns[:10],
-            agent_executor.TC.turns[:10],
+            TC.turns[:11],
+            agent_executor.TC.turns[:11],
             exclude_regex_paths=r".*node_id$",
         )
         # assert len(TC.turns) == len(agent_executor.TC.turns)
