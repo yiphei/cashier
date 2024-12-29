@@ -429,19 +429,16 @@ class BaseTest:
         self.conversation_dicts = None
         self.node_conversation_dicts = None
 
-    @classmethod
     @pytest.fixture(params=[ModelProvider.OPENAI, ModelProvider.ANTHROPIC])
-    def model_provider(cls, request):
+    def model_provider(self, request):
         return request.param
 
-    @classmethod
     @pytest.fixture(params=[True, False])
-    def remove_prev_tool_calls(cls, request):
+    def remove_prev_tool_calls(self, request):
         return request.param
 
-    @classmethod
     @pytest.fixture(params=[True, False])
-    def is_stream(cls, request):
+    def is_stream(self, request):
         return request.param
 
     def build_user_turn_messages(self, user_turn, model_provider):
