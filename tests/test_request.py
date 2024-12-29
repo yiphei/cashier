@@ -145,9 +145,9 @@ class TestRequest(BaseTest):
     ):
         t1 = self.add_request_user_turn(
             agent_executor,
-            "i want to book flight",
+            "i want to change flight",
             model_provider,
-            "customer wants to book a flight",
+            "customer wants to change a flight",
         )
         node_turn = TurnArgs(
             turn=NodeSystemTurn(
@@ -156,8 +156,8 @@ class TestRequest(BaseTest):
                     input=None,
                     node_input_json_schema=None,
                     state_json_schema=get_user_id_node_schema.state_schema.model_json_schema(),
-                    last_msg="i want to book flight",
-                    curr_request="customer wants to book a flight",
+                    last_msg="i want to change flight",
+                    curr_request="customer wants to change a flight",
                 ),
                 node_id=2,
             ),
