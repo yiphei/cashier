@@ -80,6 +80,40 @@ class TestRequest(BaseTest):
                 ),
             ),
         ]
+    
+    @pytest.fixture
+    def into_graph_transition_turns(
+        self,
+        agent_executor,
+        model_provider,
+        remove_prev_tool_calls,
+        start_turns
+    ):
+        t1 = self.add_request_user_turn(
+            agent_executor,
+            "i want to change flight",
+            model_provider,
+            "customer wants to change a flight",
+        )
+        node_turn = TurnArgs(
+            turn=NodeSystemTurn(
+                msg_content=get_user_id_node_schema.node_system_prompt(
+                    node_prompt=get_user_id_node_schema.node_prompt,
+                    input=None,
+                    node_input_json_schema=None,
+                    state_json_schema=get_user_id_node_schema.state_schema.model_json_schema(),
+                    last_msg="i want to change flight",
+                    curr_request="customer wants to change a flight",
+                ),
+                node_id=2,
+            ),
+        )
+        self.build_messages_from_turn(
+            node_turn,
+            model_provider,
+            remove_prev_tool_calls=remove_prev_tool_calls,
+        )
+        return [t1, node_turn]
 
     def test_graph_initialization(
         self, model_provider, remove_prev_tool_calls, agent_executor, start_turns
@@ -179,36 +213,12 @@ class TestRequest(BaseTest):
         remove_prev_tool_calls,
         agent_executor,
         start_turns,
+        into_graph_transition_turns
     ):
-        t1 = self.add_request_user_turn(
-            agent_executor,
-            "i want to change flight",
-            model_provider,
-            "customer wants to change a flight",
-        )
-        node_turn = TurnArgs(
-            turn=NodeSystemTurn(
-                msg_content=get_user_id_node_schema.node_system_prompt(
-                    node_prompt=get_user_id_node_schema.node_prompt,
-                    input=None,
-                    node_input_json_schema=None,
-                    state_json_schema=get_user_id_node_schema.state_schema.model_json_schema(),
-                    last_msg="i want to change flight",
-                    curr_request="customer wants to change a flight",
-                ),
-                node_id=2,
-            ),
-        )
-        self.build_messages_from_turn(
-            node_turn,
-            model_provider,
-            remove_prev_tool_calls=remove_prev_tool_calls,
-        )
         TC = self.create_turn_container(
             [
                 *start_turns,
-                t1,
-                node_turn,
+                *into_graph_transition_turns,
             ],
             remove_prev_tool_calls,
         )
@@ -224,31 +234,8 @@ class TestRequest(BaseTest):
         agent_executor,
         start_turns,
         is_stream,
+        into_graph_transition_turns
     ):
-        t1 = self.add_request_user_turn(
-            agent_executor,
-            "i want to change flight",
-            model_provider,
-            "customer wants to change a flight",
-        )
-        node_turn = TurnArgs(
-            turn=NodeSystemTurn(
-                msg_content=get_user_id_node_schema.node_system_prompt(
-                    node_prompt=get_user_id_node_schema.node_prompt,
-                    input=None,
-                    node_input_json_schema=None,
-                    state_json_schema=get_user_id_node_schema.state_schema.model_json_schema(),
-                    last_msg="i want to change flight",
-                    curr_request="customer wants to change a flight",
-                ),
-                node_id=2,
-            ),
-        )
-        self.build_messages_from_turn(
-            node_turn,
-            model_provider,
-            remove_prev_tool_calls=remove_prev_tool_calls,
-        )
 
         t2 = self.add_user_turn(
             agent_executor, "my user details are ...", model_provider
@@ -550,8 +537,7 @@ class TestRequest(BaseTest):
         TC = self.create_turn_container(
             [
                 *start_turns,
-                t1,
-                node_turn,
+                *into_graph_transition_turns,
                 t2,
                 t3,
                 node_turn_2,
@@ -582,4 +568,4 @@ class TestRequest(BaseTest):
 
 
 def test_class_test_count(request):
-    assert_number_of_tests(TestRequest, __file__, request, 36)
+    assert_number_of_tests(TestRequest, __file__, request, 44)
