@@ -156,10 +156,8 @@ class TestAndGraph(BaseTest):
     ):
         TC = self.create_turn_container(start_turns)
         self.run_assertions(
-            agent_executor,
             TC,
             self.start_conv_node_schema.tool_registry,
-            model_provider,
         )
 
     def test_add_user_turn(
@@ -169,10 +167,8 @@ class TestAndGraph(BaseTest):
 
         TC = self.create_turn_container([*start_turns, user_turn])
         self.run_assertions(
-            agent_executor,
             TC,
             self.start_conv_node_schema.tool_registry,
-            model_provider,
         )
 
     def test_add_user_turn_with_wait(
@@ -205,10 +201,8 @@ class TestAndGraph(BaseTest):
         TC = self.create_turn_container([*start_turns, user_turn, assistant_turn])
 
         self.run_assertions(
-            agent_executor,
             TC,
             self.start_conv_node_schema.tool_registry,
-            model_provider,
         )
 
     def test_add_assistant_turn(
@@ -227,10 +221,8 @@ class TestAndGraph(BaseTest):
         TC = self.create_turn_container([*start_turns, user_turn, assistant_turn])
 
         self.run_assertions(
-            agent_executor,
             TC,
             self.start_conv_node_schema.tool_registry,
-            model_provider,
         )
 
     @pytest.mark.parametrize("fn_names", get_fn_names_fixture(get_user_id_node_schema))
@@ -262,10 +254,8 @@ class TestAndGraph(BaseTest):
         TC = self.create_turn_container([*start_turns, user_turn, *a_turns])
 
         self.run_assertions(
-            agent_executor,
             TC,
             self.start_conv_node_schema.tool_registry,
-            model_provider,
         )
 
     @pytest.mark.parametrize(
@@ -309,10 +299,8 @@ class TestAndGraph(BaseTest):
         TC = self.create_turn_container([*start_turns, assistant_turn])
 
         self.run_assertions(
-            agent_executor,
             TC,
             self.start_conv_node_schema.tool_registry,
-            model_provider,
         )
 
     def test_node_transition(
@@ -331,7 +319,7 @@ class TestAndGraph(BaseTest):
         )
 
         self.run_assertions(
-            agent_executor, TC, find_flight_node_schema.tool_registry, model_provider
+             TC, find_flight_node_schema.tool_registry
         )
 
     def test_backward_node_skip(
@@ -408,10 +396,8 @@ class TestAndGraph(BaseTest):
         )
 
         self.run_assertions(
-            agent_executor,
             TC,
             self.start_conv_node_schema.tool_registry,
-            model_provider,
         )
 
     def test_forward_node_skip(
@@ -598,7 +584,7 @@ class TestAndGraph(BaseTest):
         )
 
         self.run_assertions(
-            agent_executor, TC, find_flight_node_schema.tool_registry, model_provider
+             TC, find_flight_node_schema.tool_registry
         )
 
 

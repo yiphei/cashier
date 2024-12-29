@@ -138,7 +138,7 @@ class BaseTest:
             ].node_conversation_dicts,
         )
 
-    def run_assertions(self, agent_executor, TC, tool_registry, model_provider):
+    def run_assertions(self, TC, tool_registry):
         self.run_message_dict_assertions()
         assert not DeepDiff(
             self.fixtures.agent_executor.get_model_completion_kwargs(),

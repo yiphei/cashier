@@ -116,10 +116,8 @@ class TestRequest(BaseTest):
     ):
         TC = self.create_turn_container(start_turns)
         self.run_assertions(
-            agent_executor,
             TC,
             self.start_conv_node_schema.tool_registry,
-            model_provider,
         )
 
     def test_add_user_turn(
@@ -129,10 +127,8 @@ class TestRequest(BaseTest):
 
         TC = self.create_turn_container([*start_turns, user_turn])
         self.run_assertions(
-            agent_executor,
             TC,
             self.start_conv_node_schema.tool_registry,
-            model_provider,
         )
 
     def test_add_assistant_turn(
@@ -151,10 +147,8 @@ class TestRequest(BaseTest):
         TC = self.create_turn_container([*start_turns, user_turn, assistant_turn])
 
         self.run_assertions(
-            agent_executor,
             TC,
             self.start_conv_node_schema.tool_registry,
-            model_provider,
         )
 
     @pytest.mark.parametrize(
@@ -191,10 +185,8 @@ class TestRequest(BaseTest):
         TC = self.create_turn_container([*start_turns, user_turn, *a_turns])
 
         self.run_assertions(
-            agent_executor,
             TC,
             self.start_conv_node_schema.tool_registry,
-            model_provider,
         )
 
     def test_node_transition(
@@ -213,7 +205,7 @@ class TestRequest(BaseTest):
         )
 
         self.run_assertions(
-            agent_executor, TC, get_user_id_node_schema.tool_registry, model_provider
+             TC, get_user_id_node_schema.tool_registry
         )
 
     def test_graph_transition(
@@ -448,10 +440,8 @@ class TestRequest(BaseTest):
         )
 
         self.run_assertions(
-            agent_executor,
             TC,
             new_node_schema.tool_registry,
-            model_provider,
         )
 
 
