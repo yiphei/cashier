@@ -613,13 +613,9 @@ class BaseTest:
 
     def build_transition_turns(
         self,
-        agent_executor,
-        model_provider,
-        is_stream,
         fn_calls,
         fn_call_id_to_fn_output,
         user_msg,
-        remove_prev_tool_calls,
         edge_schema,
         next_node_schema,
         curr_request,

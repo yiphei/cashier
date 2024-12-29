@@ -221,13 +221,9 @@ class TestRequest(BaseTest):
         )
 
         turnzzz = self.build_transition_turns(
-            agent_executor,
-            model_provider,
-            is_stream,
             [fn_call_1],
             {fn_call_1.id: None},
             "my user details are ...",
-            remove_prev_tool_calls,
             self.get_edge_schema(CHANGE_FLIGHT_GRAPH_SCHEMA.start_node_schema),
             self.get_next_conv_node_schema(
                 CHANGE_FLIGHT_GRAPH_SCHEMA.start_node_schema
@@ -246,13 +242,9 @@ class TestRequest(BaseTest):
         next_next_node_schema = self.get_next_conv_node_schema(next_node_schema)
 
         turnzzz22 = self.build_transition_turns(
-            agent_executor,
-            model_provider,
-            is_stream,
             [fn_call_1],
             {fn_call_1.id: None},
             "my reservation details are ...",
-            remove_prev_tool_calls,
             self.get_edge_schema(next_node_schema),
             next_next_node_schema,
             "customer wants to change a flight",
@@ -282,13 +274,9 @@ class TestRequest(BaseTest):
             next_next_node_schema
         )
         turnzzz33 = self.build_transition_turns(
-            agent_executor,
-            model_provider,
-            is_stream,
             [fn_call_1, fn_call_2, fn_call_3],
             {fn_call_1.id: None, fn_call_2.id: None, fn_call_3.id: None},
             "the new flight is ...",
-            remove_prev_tool_calls,
             self.get_edge_schema(next_next_node_schema),
             next_next_next_node_schema,
             "customer wants to change a flight",
@@ -305,13 +293,9 @@ class TestRequest(BaseTest):
         )
 
         turnzzz44 = self.build_transition_turns(
-            agent_executor,
-            model_provider,
-            is_stream,
             [fn_call_1],
             {fn_call_1.id: None},
             "the payment method is ...",
-            remove_prev_tool_calls,
             self.get_edge_schema(next_next_next_node_schema),
             next_next_next_next_node_schema,
             "customer wants to change a flight",
