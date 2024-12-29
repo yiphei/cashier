@@ -1,7 +1,7 @@
 import pytest
 
 from cashier.model.model_turn import NodeSystemTurn
-from data.graph.airline import (
+from data.graph.airline_book_flight import (
     AIRLINE_REQUEST_SCHEMA,
     BOOK_FLIGHT_GRAPH_SCHEMA,
     get_user_id_node_schema,
