@@ -1,7 +1,7 @@
 import pytest
 from polyfactory.factories.pydantic_factory import ModelFactory
 
-from cashier.model.model_turn import AssistantTurn, NodeSystemTurn
+from cashier.model.model_turn import AssistantTurn
 from cashier.model.model_util import FunctionCall
 from cashier.tool.function_call_context import StateUpdateError, ToolExceptionWrapper
 from data.graph.airline_book_flight import (
@@ -11,12 +11,7 @@ from data.graph.airline_book_flight import (
 )
 from data.graph.airline_request import AIRLINE_REQUEST_SCHEMA
 from data.types.airline import FlightInfo, UserDetails
-from tests.base_test import (
-    BaseTest,
-    TurnArgs,
-    assert_number_of_tests,
-    get_fn_names_fixture,
-)
+from tests.base_test import BaseTest, assert_number_of_tests, get_fn_names_fixture
 
 
 class TestAndGraph(BaseTest):
@@ -36,6 +31,11 @@ class TestAndGraph(BaseTest):
             )
             self.edge_schema_id_to_to_cov_node_schema_id[edge_schema.id] = node_schema
 
+    def get_edge_schema(self, curr_node_schema):
+        return self.graph_schema.from_conv_node_schema_id_to_edge_schema[
+            curr_node_schema.id
+        ]
+
     def get_next_conv_node_schema(self, curr_node_schema):
         edge_schema = self.graph_schema.from_conv_node_schema_id_to_edge_schema[
             curr_node_schema.id
@@ -49,39 +49,22 @@ class TestAndGraph(BaseTest):
             "customer wants to book flight",
         )
         second_node_schema = self.start_conv_node_schema
-        turns = [
-            TurnArgs(
-                turn=NodeSystemTurn(
-                    msg_content=AIRLINE_REQUEST_SCHEMA.start_node_schema.node_system_prompt(
-                        node_prompt=AIRLINE_REQUEST_SCHEMA.start_node_schema.node_prompt,
-                        input=None,
-                        node_input_json_schema=None,
-                        state_json_schema=None,
-                        last_msg=None,
-                        curr_request=None,
-                    ),
-                    node_id=1,
-                ),
-            ),
-            ut,
-            TurnArgs(
-                turn=NodeSystemTurn(
-                    msg_content=second_node_schema.node_system_prompt(
-                        node_prompt=second_node_schema.node_prompt,
-                        input=None,
-                        node_input_json_schema=None,
-                        state_json_schema=second_node_schema.state_schema.model_json_schema(),
-                        last_msg="i want to book flight",
-                        curr_request="customer wants to book flight",
-                    ),
-                    node_id=2,
-                ),
-            ),
-        ]
 
-        self.build_messages_from_turn(turns[0])
-        self.build_messages_from_turn(turns[2])
-        return turns
+        node_turn_1 = self.add_node_turn(
+            AIRLINE_REQUEST_SCHEMA.start_node_schema,
+            None,
+            None,
+            None,
+        )
+
+        node_turn_2 = self.add_node_turn(
+            second_node_schema,
+            None,
+            "i want to book flight",
+            "customer wants to book flight",
+        )
+
+        return [node_turn_1, ut, node_turn_2]
 
     @pytest.fixture(params=get_fn_names_fixture(get_user_id_node_schema))
     def first_into_second_transition_turns(
@@ -113,25 +96,17 @@ class TestAndGraph(BaseTest):
 
         next_node_schema = self.get_next_conv_node_schema(self.start_conv_node_schema)
 
-        input_schema, input = (
+        _, input = (
             agent_executor.graph.curr_node.curr_node.state.get_set_schema_and_fields()
         )
-        node_turn = TurnArgs(
-            turn=NodeSystemTurn(
-                msg_content=next_node_schema.node_system_prompt(
-                    node_prompt=next_node_schema.node_prompt,
-                    input=input.model_dump_json(),
-                    node_input_json_schema=input_schema.model_json_schema(),
-                    state_json_schema=next_node_schema.state_schema.model_json_schema(),
-                    last_msg="my username is ...",
-                    curr_request="customer wants to book flight",
-                ),
-                node_id=3,
-            ),
+
+        node_turn = self.add_node_turn(
+            next_node_schema,
+            input,
+            "my username is ...",
+            "customer wants to book flight",
         )
-        self.build_messages_from_turn(
-            node_turn,
-        )
+
         return [t1, t2, t3, t4, node_turn]
 
     def test_graph_initialization(self, start_turns):
@@ -293,22 +268,11 @@ class TestAndGraph(BaseTest):
             skip_node_schema_id=self.start_conv_node_schema.id,
         )
 
-        node_turn_2 = TurnArgs(
-            turn=NodeSystemTurn(
-                msg_content=self.start_conv_node_schema.node_system_prompt(
-                    node_prompt=self.start_conv_node_schema.node_prompt,
-                    input=None,
-                    node_input_json_schema=self.start_conv_node_schema.input_from_state_schema,  # just to test that its None
-                    state_json_schema=self.start_conv_node_schema.state_schema.model_json_schema(),
-                    last_msg="what flight do you want?",
-                    curr_request="customer wants to book flight",
-                ),
-                node_id=4,
-            ),
-            kwargs={"is_skip": True},
-        )
-        self.build_messages_from_turn(
-            node_turn_2,
+        node_turn_2 = self.add_node_turn(
+            self.start_conv_node_schema,
+            None,
+            "what flight do you want?",
+            "customer wants to book flight",
             is_skip=True,
         )
 
@@ -355,50 +319,26 @@ class TestAndGraph(BaseTest):
             "what flight do you want?",
         )
 
-        t6 = self.add_user_turn(
-            "i want flight from ... to ... on ...",
-        )
-        self.run_message_dict_assertions()
-
         flight_info = ModelFactory.create_factory(FlightInfo).build()
-
         fn_call_1 = FunctionCall.create(
             api_id_model_provider=model_provider,
             api_id=FunctionCall.generate_fake_id(model_provider),
             name="update_state_flight_infos",
             args={"flight_infos": [flight_info.model_dump()]},
         )
-        third_fn_calls = [fn_call_1]
-        third_fn_calls_fn_call_id_to_fn_output = {
-            fn_call.id: None for fn_call in third_fn_calls
-        }
-        t7 = self.add_assistant_turn(
-            None,
-            third_fn_calls,
-            third_fn_calls_fn_call_id_to_fn_output,
-        )
 
         next_next_node_schema = self.get_next_conv_node_schema(find_flight_node_schema)
 
-        input_schema, input = (
-            agent_executor.graph.curr_node.curr_node.state.get_set_schema_and_fields()
+        turnzzz = self.build_transition_turns(
+            [fn_call_1],
+            {fn_call_1.id: None},
+            "i want flight from ... to ... on ...",
+            self.get_edge_schema(find_flight_node_schema),
+            next_next_node_schema,
+            "customer wants to book flight",
+            is_and_graph=True,
         )
-        node_turn_2 = TurnArgs(
-            turn=NodeSystemTurn(
-                msg_content=next_next_node_schema.node_system_prompt(
-                    node_prompt=next_next_node_schema.node_prompt,
-                    input=input.model_dump_json(),
-                    node_input_json_schema=input_schema.model_json_schema(),
-                    state_json_schema=next_next_node_schema.state_schema.model_json_schema(),
-                    last_msg="i want flight from ... to ... on ...",
-                    curr_request="customer wants to book flight",
-                ),
-                node_id=4,
-            ),
-        )
-        self.build_messages_from_turn(
-            node_turn_2,
-        )
+
         t8 = self.add_assistant_turn(
             "thanks for confirming flights, now lets move on to ...",
         )
@@ -409,25 +349,15 @@ class TestAndGraph(BaseTest):
             False,
             skip_node_schema_id=self.start_conv_node_schema.id,
         )
-        start_node_schema = self.start_conv_node_schema
-        node_turn_3 = TurnArgs(
-            turn=NodeSystemTurn(
-                msg_content=start_node_schema.node_system_prompt(
-                    node_prompt=start_node_schema.node_prompt,
-                    input=None,
-                    node_input_json_schema=start_node_schema.input_from_state_schema,
-                    state_json_schema=start_node_schema.state_schema.model_json_schema(),
-                    last_msg="thanks for confirming flights, now lets move on to ...",
-                    curr_request="customer wants to book flight",
-                ),
-                node_id=5,
-            ),
-            kwargs={"is_skip": True},
-        )
-        self.build_messages_from_turn(
-            node_turn_3,
+
+        node_turn_3 = self.add_node_turn(
+            self.start_conv_node_schema,
+            None,
+            "thanks for confirming flights, now lets move on to ...",
+            "customer wants to book flight",
             is_skip=True,
         )
+
         get_state_fn_call = self.recreate_fake_single_fn_call("get_state", {})
         t10 = AssistantTurn(
             msg_content=None,
@@ -449,26 +379,17 @@ class TestAndGraph(BaseTest):
             False,
             skip_node_schema_id=find_flight_node_schema.id,
         )
-        node_turn_4 = TurnArgs(
-            turn=NodeSystemTurn(
-                msg_content=find_flight_node_schema.node_system_prompt(
-                    node_prompt=find_flight_node_schema.node_prompt,
-                    input=find_flight_node_schema.input_from_state_schema(
-                        **agent_executor.graph.curr_node.curr_node.state.model_dump_fields_set()
-                    ).model_dump_json(),
-                    node_input_json_schema=find_flight_node_schema.input_from_state_schema.model_json_schema(),
-                    state_json_schema=find_flight_node_schema.state_schema.model_json_schema(),
-                    last_msg="what do you want to change?",
-                    curr_request="customer wants to book flight",
-                ),
-                node_id=6,
+
+        node_turn_4 = self.add_node_turn(
+            find_flight_node_schema,
+            find_flight_node_schema.input_from_state_schema(
+                **agent_executor.graph.curr_node.curr_node.state.model_dump_fields_set()
             ),
-            kwargs={"is_skip": True},
-        )
-        self.build_messages_from_turn(
-            node_turn_4,
+            "what do you want to change?",
+            "customer wants to book flight",
             is_skip=True,
         )
+
         get_state_fn_call = self.recreate_fake_single_fn_call("get_state", {})
         t13 = AssistantTurn(
             msg_content=None,
@@ -486,9 +407,7 @@ class TestAndGraph(BaseTest):
                 *start_turns,
                 *first_into_second_transition_turns,
                 t5,
-                t6,
-                t7,
-                node_turn_2,
+                *turnzzz,
                 t8,
                 t9,
                 node_turn_3,

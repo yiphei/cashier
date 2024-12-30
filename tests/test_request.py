@@ -1,7 +1,6 @@
 import pytest
 from polyfactory.factories.pydantic_factory import ModelFactory
 
-from cashier.model.model_turn import NodeSystemTurn
 from cashier.model.model_util import FunctionCall
 from data.graph.airline_change_baggage import (
     CHANGE_BAGGAGE_GRAPH_SCHEMA,
@@ -21,12 +20,7 @@ from data.graph.airline_change_flight import (
 )
 from data.graph.airline_request import AIRLINE_REQUEST_SCHEMA
 from data.types.airline import FlightInfo, ReservationDetails, UserDetails
-from tests.base_test import (
-    BaseTest,
-    TurnArgs,
-    assert_number_of_tests,
-    get_fn_names_fixture,
-)
+from tests.base_test import BaseTest, assert_number_of_tests, get_fn_names_fixture
 
 
 class TestRequest(BaseTest):
@@ -59,24 +53,13 @@ class TestRequest(BaseTest):
 
     @pytest.fixture
     def start_turns(self, setup_message_dicts, model_provider):
-        turns = [
-            TurnArgs(
-                turn=NodeSystemTurn(
-                    msg_content=AIRLINE_REQUEST_SCHEMA.start_node_schema.node_system_prompt(
-                        node_prompt=AIRLINE_REQUEST_SCHEMA.start_node_schema.node_prompt,
-                        input=None,
-                        node_input_json_schema=None,
-                        state_json_schema=None,
-                        last_msg=None,
-                        curr_request=None,
-                    ),
-                    node_id=1,
-                ),
-            ),
-        ]
-
-        self.build_messages_from_turn(turns[0])
-        return turns
+        turn = self.add_node_turn(
+            AIRLINE_REQUEST_SCHEMA.start_node_schema,
+            None,
+            None,
+            None,
+        )
+        return [turn]
 
     @pytest.fixture
     def into_graph_transition_turns(self, agent_executor, start_turns):
@@ -84,21 +67,12 @@ class TestRequest(BaseTest):
             "i want to change flight",
             "customer wants to change a flight",
         )
-        node_turn = TurnArgs(
-            turn=NodeSystemTurn(
-                msg_content=get_user_id_node_schema.node_system_prompt(
-                    node_prompt=get_user_id_node_schema.node_prompt,
-                    input=None,
-                    node_input_json_schema=None,
-                    state_json_schema=get_user_id_node_schema.state_schema.model_json_schema(),
-                    last_msg="i want to change flight",
-                    curr_request="customer wants to change a flight",
-                ),
-                node_id=2,
-            ),
-        )
-        self.build_messages_from_turn(
-            node_turn,
+
+        node_turn = self.add_node_turn(
+            get_user_id_node_schema,
+            None,
+            "i want to change flight",
+            "customer wants to change a flight",
         )
         return [t1, node_turn]
 
@@ -311,61 +285,32 @@ class TestRequest(BaseTest):
         # --------------------------------
 
         a_node_schema = luggage_get_user_id_node_schema
-        node_turn_6_a = TurnArgs(
-            turn=NodeSystemTurn(
-                msg_content=a_node_schema.node_system_prompt(
-                    node_prompt=a_node_schema.node_prompt,
-                    input=None,
-                    node_input_json_schema=None,
-                    state_json_schema=a_node_schema.state_schema.model_json_schema(),
-                    last_msg="the payment method is ...",  # TODO: fix this. the last message should be "finished task"
-                    curr_request="change baggage",
-                ),
-                node_id=3,
-            ),
-        )
-        self.build_messages_from_turn(
-            node_turn_6_a,
+        node_turn_6_a = self.add_node_turn(
+            a_node_schema,
+            None,
+            "the payment method is ...",
+            "change baggage",
         )
 
         b_node_schema = luggage_get_reservation_details_node_schema
         input = b_node_schema.get_input(agent_executor.graph.curr_node.state, edge_1)
-        node_turn_6_b = TurnArgs(
-            turn=NodeSystemTurn(
-                msg_content=b_node_schema.node_system_prompt(
-                    node_prompt=b_node_schema.node_prompt,
-                    input=input.model_dump_json(),
-                    node_input_json_schema=b_node_schema.input_schema.model_json_schema(),
-                    state_json_schema=b_node_schema.state_schema.model_json_schema(),
-                    last_msg="the payment method is ...",
-                    curr_request="change baggage",
-                ),
-                node_id=3,
-            ),
-        )
-        self.build_messages_from_turn(
-            node_turn_6_b,
+        node_turn_6_b = self.add_node_turn(
+            b_node_schema,
+            input,
+            "the payment method is ...",
+            "change baggage",
         )
 
         # --------------------------------
 
         new_node_schema = luggage_node_schema
         input = new_node_schema.get_input(agent_executor.graph.curr_node.state, edge_2)
-        node_turn_6 = TurnArgs(
-            turn=NodeSystemTurn(
-                msg_content=new_node_schema.node_system_prompt(
-                    node_prompt=new_node_schema.node_prompt,
-                    input=input.model_dump_json(),
-                    node_input_json_schema=new_node_schema.input_schema.model_json_schema(),
-                    state_json_schema=new_node_schema.state_schema.model_json_schema(),
-                    last_msg="the payment method is ...",
-                    curr_request="change baggage",
-                ),
-                node_id=3,
-            ),
-        )
-        self.build_messages_from_turn(
-            node_turn_6,
+
+        node_turn_6 = self.add_node_turn(
+            new_node_schema,
+            input,
+            "the payment method is ...",
+            "change baggage",
         )
 
         TC = self.create_turn_container(

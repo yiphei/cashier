@@ -613,6 +613,35 @@ class BaseTest:
         else:
             raise ValueError(f"Unknown turn type: {type(turn)}")
 
+    def add_node_turn(self, node_schema, input, last_msg, curr_request, is_skip=False):
+        node_turn = TurnArgs(
+            turn=NodeSystemTurn(
+                msg_content=node_schema.node_system_prompt(
+                    node_prompt=node_schema.node_prompt,
+                    input=input.model_dump_json() if input is not None else None,
+                    node_input_json_schema=(
+                        node_schema.input_schema.model_json_schema()
+                        if node_schema.input_schema is not None
+                        else None
+                    ),
+                    state_json_schema=(
+                        node_schema.state_schema.model_json_schema()
+                        if node_schema.state_schema
+                        else None
+                    ),
+                    last_msg=last_msg,
+                    curr_request=curr_request,
+                ),
+                node_id=3,
+            ),
+            kwargs={"is_skip": is_skip},
+        )
+        self.build_messages_from_turn(
+            node_turn,
+            is_skip=is_skip,
+        )
+        return node_turn
+
     def build_transition_turns(
         self,
         fn_calls,
@@ -621,44 +650,32 @@ class BaseTest:
         edge_schema,
         next_node_schema,
         curr_request,
+        last_assistant_msg="good, lets move on to ...",
+        is_and_graph=False,
     ):
-        t2 = self.add_user_turn(user_msg)
-        t3 = self.add_assistant_turn(
+        t1 = self.add_user_turn(user_msg)
+        t2 = self.add_assistant_turn(
             None,
             fn_calls,
             fn_call_id_to_fn_output,
         )
 
-        input = next_node_schema.get_input(
-            self.fixtures.agent_executor.graph.curr_node.state, edge_schema
+        state = (
+            self.fixtures.agent_executor.graph.curr_node.curr_node.state
+            if is_and_graph
+            else self.fixtures.agent_executor.graph.curr_node.state
+        )
+        input = next_node_schema.get_input(state, edge_schema)
+
+        node_turn = self.add_node_turn(
+            next_node_schema,
+            input,
+            user_msg,
+            curr_request,
         )
 
-        node_turn_2 = TurnArgs(
-            turn=NodeSystemTurn(
-                msg_content=next_node_schema.node_system_prompt(
-                    node_prompt=next_node_schema.node_prompt,
-                    input=input.model_dump_json() if input is not None else None,
-                    node_input_json_schema=(
-                        next_node_schema.input_schema.model_json_schema()
-                        if next_node_schema.input_schema is not None
-                        else None
-                    ),
-                    state_json_schema=(
-                        next_node_schema.state_schema.model_json_schema()
-                        if next_node_schema.state_schema
-                        else None
-                    ),
-                    last_msg=user_msg,
-                    curr_request=curr_request,
-                ),
-                node_id=3,
-            ),
-        )
-        self.build_messages_from_turn(
-            node_turn_2,
-        )
-
-        return [t2, t3, node_turn_2]
+        t3 = self.add_assistant_turn(last_assistant_msg)
+        return [t1, t2, node_turn, t3]
 
 
 def assert_number_of_tests(test_class, absolute_path, request, expected_test_count):
