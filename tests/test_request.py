@@ -250,6 +250,13 @@ class TestRequest(BaseTest):
             "customer wants to change a flight",
         )
 
+        t_zzz = self.add_new_task(
+            ["customer wants to change a flight"],
+            [CHANGE_FLIGHT_GRAPH_SCHEMA],
+            "change baggage",
+            CHANGE_BAGGAGE_GRAPH_SCHEMA,
+        )
+
         res_details = ModelFactory.create_factory(ReservationDetails).build()
         fn_call = FunctionCall.create(
             api_id_model_provider=model_provider,
@@ -332,13 +339,42 @@ class TestRequest(BaseTest):
             {fn_call.id: None},
         )
 
-        agent_executor.graph.requests.append("change baggage")
-        agent_executor.graph.graph_schema_sequence.append(CHANGE_BAGGAGE_GRAPH_SCHEMA)
-        agent_executor.graph.graph_schema_id_to_task[CHANGE_BAGGAGE_GRAPH_SCHEMA.id] = (
-            "change baggage"
+        fake_fn_call = self.recreate_fake_single_fn_call(
+            "think",
+            {
+                "thought": "I just completed the current request. The next request to be addressed is: change baggage. I must explicitly inform the customer that the current request is completed and that I will address the next request right away. Only after I informed the customer do I receive the tools to address the next request."
+            },
+        )
+        t5aaa = self.add_assistant_turn(
+            None,
+            [fake_fn_call],
+            {fake_fn_call.id: None},
         )
 
+        # agent_executor.graph.requests.append("change baggage")
+        # agent_executor.graph.graph_schema_sequence.append(CHANGE_BAGGAGE_GRAPH_SCHEMA)
+        # agent_executor.graph.graph_schema_id_to_task[CHANGE_BAGGAGE_GRAPH_SCHEMA.id] = (
+        #     "change baggage"
+        # )
+
         # --------------------------------
+
+
+        # fake_fn_call = self.recreate_fake_single_fn_call(
+        #     "think",
+        #     {
+        #         "thought": "I just completed the current request. The next request to be addressed is: change baggage. I must explicitly inform the customer that the current request is completed and that I will address the next request right away. Only after I informed the customer do I receive the tools to address the next request."
+        #     },
+        # )
+
+        # t6aa = AssistantTurn(
+        #     msg_content=None,
+        #     model_provider=self.fixtures.model_provider,
+        #     tool_registry=self.fixtures.agent_executor.graph.curr_conversation_node.schema.tool_registry,
+        #     fn_calls=[fake_fn_call],
+        #     fn_call_id_to_fn_output={fake_fn_call.id: None},
+        # )
+        # self.add_messages_from_turn(t6aa)
 
         t6 = self.add_assistant_turn(
             "finished task",
@@ -380,11 +416,14 @@ class TestRequest(BaseTest):
                 *start_turns,
                 *into_graph_transition_turns,
                 *t_turns_1,
+                *t_zzz,
                 *t_turns_2,
                 *t_turns_3,
                 *t_turns_4,
                 t5,
-                t6,
+                t5aaa,
+                                t6,
+
                 t7,
                 t8,
                 t9,
