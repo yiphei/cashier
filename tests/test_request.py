@@ -76,7 +76,7 @@ class TestRequest(BaseTest):
         t2 = AssistantTurn(
             msg_content=None,
             model_provider=self.fixtures.model_provider,
-            tool_registry=self.graph_schema.start_node_schema.tool_registry,
+            tool_registry=self.fixtures.agent_executor.graph.curr_conversation_node.schema.tool_registry,
             fn_calls=[fake_fn_call],
             fn_call_id_to_fn_output={fake_fn_call.id: None},
         )
