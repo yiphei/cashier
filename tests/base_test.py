@@ -25,6 +25,9 @@ from cashier.model.model_util import (
     ModelProvider,
     generate_random_string,
 )
+from cashier.prompts.graph_schema_addition import (
+    AgentSelection as AdditionAgentSelection,
+)
 from cashier.prompts.graph_schema_selection import AgentSelection
 from cashier.tool.function_call_context import (
     InexistentFunctionError,
@@ -159,6 +162,7 @@ class BaseTest:
     def create_mock_model_completion(
         self,
         message=None,
+        use_message_prop=False,
         message_prop=None,
         prob=None,
         fn_calls=None,
@@ -184,9 +188,7 @@ class BaseTest:
         model_completion.get_fn_calls = Mock(return_value=iter(fn_calls))
         model_completion.stream_fn_calls = Mock(return_value=iter(fn_calls))
         model_completion.fn_calls = fn_calls
-        if message_prop is not None:
-            if message_prop == "null":  # TODO: fix this
-                message_prop = None
+        if use_message_prop:
             model_completion.get_message_prop = Mock(return_value=message_prop)
             if self.fixtures.model_provider == ModelProvider.OPENAI:
                 model_completion.get_prob = Mock(return_value=prob)
@@ -263,35 +265,46 @@ class BaseTest:
         is_on_topic=True,
         wait_node_schema_id=None,
         skip_node_schema_id=None,
+        new_task=None,
+        task_schema_id=None,
     ):
         model_chat_side_effects = []
 
         is_on_topic_model_completion = self.create_mock_model_completion(
-            None, is_on_topic, 0.5
+            None, True, is_on_topic, 0.5
         )
         model_chat_side_effects.append(is_on_topic_model_completion)
         if not is_on_topic:
             agent_addition_completion = self.create_mock_model_completion(
-                None, "null", 0.5
-            )
-            model_chat_side_effects.append(agent_addition_completion)
-
-            is_wait_model_completion = self.create_mock_model_completion(
                 None,
-                wait_node_schema_id
-                or self.fixtures.agent_executor.graph.curr_conversation_node.schema.id,
+                True,
+                (
+                    None
+                    if new_task is None
+                    else AdditionAgentSelection(agent_id=task_schema_id, task=new_task)
+                ),
                 0.5,
             )
-            model_chat_side_effects.append(is_wait_model_completion)
-
-            if wait_node_schema_id is None:
-                skip_model_completion = self.create_mock_model_completion(
+            model_chat_side_effects.append(agent_addition_completion)
+            if new_task is None:
+                is_wait_model_completion = self.create_mock_model_completion(
                     None,
-                    skip_node_schema_id
+                    True,
+                    wait_node_schema_id
                     or self.fixtures.agent_executor.graph.curr_conversation_node.schema.id,
                     0.5,
                 )
-                model_chat_side_effects.append(skip_model_completion)
+                model_chat_side_effects.append(is_wait_model_completion)
+
+                if wait_node_schema_id is None:
+                    skip_model_completion = self.create_mock_model_completion(
+                        None,
+                        True,
+                        skip_node_schema_id
+                        or self.fixtures.agent_executor.graph.curr_conversation_node.schema.id,
+                        0.5,
+                    )
+                    model_chat_side_effects.append(skip_model_completion)
 
         self.model_chat.side_effect = model_chat_side_effects
         with self.generate_random_string_context():
@@ -316,7 +329,7 @@ class BaseTest:
             ]
 
         graph_schema_selection_completion = self.create_mock_model_completion(
-            None, agent_selections, 0.5
+            None, True, agent_selections, 0.5
         )
         self.model_chat.side_effect = [graph_schema_selection_completion]
         with self.generate_random_string_context():
@@ -391,7 +404,8 @@ class BaseTest:
                     )
                 )
 
-            self.fixtures.agent_executor.add_assistant_turn(model_completion)
+            with self.generate_random_string_context():
+                self.fixtures.agent_executor.add_assistant_turn(model_completion)
 
             visited_fn_call_ids = set()
             for fn_call in fn_calls:
