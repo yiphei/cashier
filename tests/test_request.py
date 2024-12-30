@@ -159,7 +159,6 @@ class TestRequest(BaseTest):
 
         self.run_assertions(TC, get_user_id_node_schema.tool_registry)
 
-
     def test_add_new_task(
         self,
         start_turns,
@@ -167,10 +166,17 @@ class TestRequest(BaseTest):
         into_graph_transition_turns,
         model_provider,
     ):
-        
+
         assert agent_executor.graph.requests == ["customer wants to change a flight"]
-        assert agent_executor.graph.graph_schema_sequence == [CHANGE_FLIGHT_GRAPH_SCHEMA]
-        t1 = self.add_user_turn("I also want to change baggage", False, new_task="customer wants to change baggage", task_schema_id=CHANGE_BAGGAGE_GRAPH_SCHEMA.id)
+        assert agent_executor.graph.graph_schema_sequence == [
+            CHANGE_FLIGHT_GRAPH_SCHEMA
+        ]
+        t1 = self.add_user_turn(
+            "I also want to change baggage",
+            False,
+            new_task="customer wants to change baggage",
+            task_schema_id=CHANGE_BAGGAGE_GRAPH_SCHEMA.id,
+        )
         fake_fn_call = self.recreate_fake_single_fn_call(
             "think",
             {
@@ -187,8 +193,14 @@ class TestRequest(BaseTest):
         )
         self.add_messages_from_turn(t2)
 
-        assert agent_executor.graph.requests == ["customer wants to change a flight", "customer wants to change baggage"]
-        assert agent_executor.graph.graph_schema_sequence == [CHANGE_FLIGHT_GRAPH_SCHEMA, CHANGE_BAGGAGE_GRAPH_SCHEMA]
+        assert agent_executor.graph.requests == [
+            "customer wants to change a flight",
+            "customer wants to change baggage",
+        ]
+        assert agent_executor.graph.graph_schema_sequence == [
+            CHANGE_FLIGHT_GRAPH_SCHEMA,
+            CHANGE_BAGGAGE_GRAPH_SCHEMA,
+        ]
 
         TC = self.create_turn_container(
             [
