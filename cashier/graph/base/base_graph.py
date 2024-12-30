@@ -422,18 +422,6 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
                 new_node_schema = self.check_transition(function_call, is_success)
                 if new_node_schema is not None:
                     self.new_node_schema = new_node_schema
-                    if isinstance(self, RequestGraph):
-                        if (
-                            self.curr_node is not None
-                            and not isinstance(self.curr_node, ConversationNode)
-                            and self.curr_node.status == Status.TRANSITIONING
-                            and self.current_graph_schema_idx < len(self.requests) - 1
-                        ):
-                            fake_fn_call = create_think_fn_call(
-                                f"I just completed the current request. The next request to be addressed is: {self.requests[self.current_graph_schema_idx + 1]}. I must explicitly inform the customer that the current request is completed and that I will address the next request right away. Only after I informed the customer do I receive the tools to address the next request."
-                            )
-                            fn_id_to_output[fake_fn_call.id] = None
-                            fn_calls.append(fake_fn_call)
                     break
 
         TC.add_assistant_turn(
@@ -454,5 +442,24 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
                 None,
             )
             self.new_node_schema = None
+
+        if (
+            isinstance(self, RequestGraph)
+            and self.new_node_schema
+            and self.curr_node is not None
+            and not isinstance(self.curr_node, ConversationNode)
+            and self.curr_node.status == Status.TRANSITIONING
+            and self.current_graph_schema_idx < len(self.requests) - 1
+        ):
+            fake_fn_call = create_think_fn_call(
+                f"I just completed the current request. The next request to be addressed is: {self.requests[self.current_graph_schema_idx + 1]}. I must explicitly inform the customer that the current request is completed and that I will address the next request right away. Only after I informed the customer do I receive the tools to address the next request."
+            )
+            TC.add_assistant_turn(
+                None,
+                model_completion.model_provider,
+                self.curr_conversation_node.schema.tool_registry,
+                [fake_fn_call],
+                {fake_fn_call.id: None},
+            )
 
         return need_user_input

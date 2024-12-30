@@ -404,7 +404,8 @@ class BaseTest:
                     )
                 )
 
-            self.fixtures.agent_executor.add_assistant_turn(model_completion)
+            with self.generate_random_string_context():
+                self.fixtures.agent_executor.add_assistant_turn(model_completion)
 
             visited_fn_call_ids = set()
             for fn_call in fn_calls:
