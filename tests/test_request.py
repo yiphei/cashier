@@ -51,6 +51,35 @@ class TestRequest(BaseTest):
             curr_node_schema.id
         ]
         return self.edge_schema_id_to_to_cov_node_schema_id[edge_schema.id]
+    
+    def add_new_task(self, current_tasks, current_graph_schema_sequence, new_task, new_graph_schema):
+        assert self.fixtures.agent_executor.graph.requests == current_tasks
+        assert self.fixtures.agent_executor.graph.graph_schema_sequence == current_graph_schema_sequence
+        t1 = self.add_user_turn(
+            "I also want to ...",
+            False,
+            new_task=new_task,
+            task_schema_id=new_graph_schema.id,
+        )
+        fake_fn_call = self.recreate_fake_single_fn_call(
+            "think",
+            {
+                "thought": "At least part of the customer request/question is off-topic for the current conversation and will actually be addressed later. According to the policies, I must tell the customer that 1) their off-topic request/question will be addressed later and 2) we must finish the current business before we can get to it. I must refuse to engage with the off-topic request/question in any way."
+            },
+        )
+
+        t2 = AssistantTurn(
+            msg_content=None,
+            model_provider=self.fixtures.model_provider,
+            tool_registry=self.graph_schema.start_node_schema.tool_registry,
+            fn_calls=[fake_fn_call],
+            fn_call_id_to_fn_output={fake_fn_call.id: None},
+        )
+        self.add_messages_from_turn(t2)
+
+        assert self.fixtures.agent_executor.graph.requests == (current_tasks + [new_task])
+        assert self.fixtures.agent_executor.graph.graph_schema_sequence == (current_graph_schema_sequence + [new_graph_schema])
+        return [t1, t2]
 
     @pytest.fixture
     def start_turns(self, setup_message_dicts, model_provider):
@@ -159,55 +188,24 @@ class TestRequest(BaseTest):
 
         self.run_assertions(TC, get_user_id_node_schema.tool_registry)
 
+    @pytest.mark.usefixtures("agent_executor")
     def test_add_new_task(
         self,
         start_turns,
-        agent_executor,
         into_graph_transition_turns,
-        model_provider,
     ):
-
-        assert agent_executor.graph.requests == ["customer wants to change a flight"]
-        assert agent_executor.graph.graph_schema_sequence == [
-            CHANGE_FLIGHT_GRAPH_SCHEMA
-        ]
-        t1 = self.add_user_turn(
-            "I also want to change baggage",
-            False,
-            new_task="customer wants to change baggage",
-            task_schema_id=CHANGE_BAGGAGE_GRAPH_SCHEMA.id,
-        )
-        fake_fn_call = self.recreate_fake_single_fn_call(
-            "think",
-            {
-                "thought": "At least part of the customer request/question is off-topic for the current conversation and will actually be addressed later. According to the policies, I must tell the customer that 1) their off-topic request/question will be addressed later and 2) we must finish the current business before we can get to it. I must refuse to engage with the off-topic request/question in any way."
-            },
-        )
-
-        t2 = AssistantTurn(
-            msg_content=None,
-            model_provider=model_provider,
-            tool_registry=self.graph_schema.start_node_schema.tool_registry,
-            fn_calls=[fake_fn_call],
-            fn_call_id_to_fn_output={fake_fn_call.id: None},
-        )
-        self.add_messages_from_turn(t2)
-
-        assert agent_executor.graph.requests == [
-            "customer wants to change a flight",
+        t_turns_1 = self.add_new_task(
+            ["customer wants to change a flight"],
+            [CHANGE_FLIGHT_GRAPH_SCHEMA],
             "customer wants to change baggage",
-        ]
-        assert agent_executor.graph.graph_schema_sequence == [
-            CHANGE_FLIGHT_GRAPH_SCHEMA,
             CHANGE_BAGGAGE_GRAPH_SCHEMA,
-        ]
+        )
 
         TC = self.create_turn_container(
             [
                 *start_turns,
                 *into_graph_transition_turns,
-                t1,
-                t2,
+                *t_turns_1,
             ],
         )
         self.run_assertions(TC, get_user_id_node_schema.tool_registry)
