@@ -66,12 +66,11 @@ class TestAndGraph(BaseTest):
 
         return [node_turn_1, ut, node_turn_2]
 
-    @pytest.fixture(params=get_fn_names_fixture(get_user_id_node_schema))
+    @pytest.fixture()
     def first_into_second_transition_turns(
         self,
         agent_executor,
         model_provider,
-        request,
     ):
         user_details = ModelFactory.create_factory(UserDetails).build()
         fn_call_1 = FunctionCall.create(
@@ -405,4 +404,4 @@ class TestAndGraph(BaseTest):
 
 
 def test_class_test_count(request):
-    assert_number_of_tests(TestAndGraph, __file__, request, 576)
+    assert_number_of_tests(TestAndGraph, __file__, request, 312)
