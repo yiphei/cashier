@@ -546,7 +546,7 @@ class BaseTest:
                             uri=MessageList.get_tool_output_uri_from_tool_id(tool_id),
                         )
 
-    def build_node_turn_messages(
+    def add_node_turn_messages(
         self,
         node_turn,
         remove_prev_fn_return_schema,
@@ -605,7 +605,7 @@ class BaseTest:
         elif isinstance(turn, AssistantTurn):
             self.build_assistant_turn_messages(turn)
         elif isinstance(turn, NodeSystemTurn):
-            self.build_node_turn_messages(
+            self.add_node_turn_messages(
                 turn,
                 remove_prev_fn_return_schema,
                 is_skip,
