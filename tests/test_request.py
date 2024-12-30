@@ -363,7 +363,6 @@ class TestRequest(BaseTest):
 
         # --------------------------------
 
-
         # fake_fn_call = self.recreate_fake_single_fn_call(
         #     "think",
         #     {
@@ -426,8 +425,7 @@ class TestRequest(BaseTest):
                 *t_turns_4,
                 t5,
                 t5aaa,
-                                t6,
-
+                t6,
                 t7,
                 t8,
                 t9,
