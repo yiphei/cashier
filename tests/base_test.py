@@ -613,7 +613,7 @@ class BaseTest:
         else:
             raise ValueError(f"Unknown turn type: {type(turn)}")
 
-    def build_node_turn(
+    def add_node_turn(
         self, node_schema, input, last_msg, curr_request, is_skip=False
     ):
         node_turn = TurnArgs(
@@ -669,7 +669,7 @@ class BaseTest:
         )
         input = next_node_schema.get_input(state, edge_schema)
 
-        node_turn = self.build_node_turn(
+        node_turn = self.add_node_turn(
             next_node_schema,
             input,
             user_msg,

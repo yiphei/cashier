@@ -53,7 +53,7 @@ class TestRequest(BaseTest):
 
     @pytest.fixture
     def start_turns(self, setup_message_dicts, model_provider):
-        turn = self.build_node_turn(
+        turn = self.add_node_turn(
             AIRLINE_REQUEST_SCHEMA.start_node_schema,
             None,
             None,
@@ -68,7 +68,7 @@ class TestRequest(BaseTest):
             "customer wants to change a flight",
         )
 
-        node_turn = self.build_node_turn(
+        node_turn = self.add_node_turn(
             get_user_id_node_schema,
             None,
             "i want to change flight",
@@ -285,7 +285,7 @@ class TestRequest(BaseTest):
         # --------------------------------
 
         a_node_schema = luggage_get_user_id_node_schema
-        node_turn_6_a = self.build_node_turn(
+        node_turn_6_a = self.add_node_turn(
             a_node_schema,
             None,
             "the payment method is ...",
@@ -294,7 +294,7 @@ class TestRequest(BaseTest):
 
         b_node_schema = luggage_get_reservation_details_node_schema
         input = b_node_schema.get_input(agent_executor.graph.curr_node.state, edge_1)
-        node_turn_6_b = self.build_node_turn(
+        node_turn_6_b = self.add_node_turn(
             b_node_schema,
             input,
             "the payment method is ...",
@@ -306,7 +306,7 @@ class TestRequest(BaseTest):
         new_node_schema = luggage_node_schema
         input = new_node_schema.get_input(agent_executor.graph.curr_node.state, edge_2)
 
-        node_turn_6 = self.build_node_turn(
+        node_turn_6 = self.add_node_turn(
             new_node_schema,
             input,
             "the payment method is ...",

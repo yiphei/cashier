@@ -50,14 +50,14 @@ class TestAndGraph(BaseTest):
         )
         second_node_schema = self.start_conv_node_schema
 
-        node_turn_1 = self.build_node_turn(
+        node_turn_1 = self.add_node_turn(
             AIRLINE_REQUEST_SCHEMA.start_node_schema,
             None,
             None,
             None,
         )
 
-        node_turn_2 = self.build_node_turn(
+        node_turn_2 = self.add_node_turn(
             second_node_schema,
             None,
             "i want to book flight",
@@ -100,7 +100,7 @@ class TestAndGraph(BaseTest):
             agent_executor.graph.curr_node.curr_node.state.get_set_schema_and_fields()
         )
 
-        node_turn = self.build_node_turn(
+        node_turn = self.add_node_turn(
             next_node_schema,
             input,
             "my username is ...",
@@ -268,7 +268,7 @@ class TestAndGraph(BaseTest):
             skip_node_schema_id=self.start_conv_node_schema.id,
         )
 
-        node_turn_2 = self.build_node_turn(
+        node_turn_2 = self.add_node_turn(
             self.start_conv_node_schema,
             None,
             "what flight do you want?",
@@ -350,7 +350,7 @@ class TestAndGraph(BaseTest):
             skip_node_schema_id=self.start_conv_node_schema.id,
         )
 
-        node_turn_3 = self.build_node_turn(
+        node_turn_3 = self.add_node_turn(
             self.start_conv_node_schema,
             None,
             "thanks for confirming flights, now lets move on to ...",
@@ -380,7 +380,7 @@ class TestAndGraph(BaseTest):
             skip_node_schema_id=find_flight_node_schema.id,
         )
 
-        node_turn_4 = self.build_node_turn(
+        node_turn_4 = self.add_node_turn(
             find_flight_node_schema,
             find_flight_node_schema.input_from_state_schema(
                 **agent_executor.graph.curr_node.curr_node.state.model_dump_fields_set()
