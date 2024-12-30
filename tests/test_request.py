@@ -623,6 +623,25 @@ class TestRequest(BaseTest):
             "change baggage",
         )
 
+        fn_call = FunctionCall.create(
+            api_id_model_provider=model_provider,
+            api_id=FunctionCall.generate_fake_id(model_provider),
+            name="update_reservation_baggages",
+            args={"args": "1"},
+        )
+        t14 = self.add_assistant_turn(
+            None,
+            [fn_call],
+            {fn_call.id: None},
+        )
+
+        t15 = self.add_node_turn(
+            AIRLINE_REQUEST_SCHEMA.default_node_schema,
+            None,
+            "the payment method is ...",
+            None,
+        )
+
         TC = self.create_turn_container(
             [
                 *start_turns,
@@ -640,12 +659,14 @@ class TestRequest(BaseTest):
                 t11,
                 *t_turns_12,
                 *t_turns_13,
+                t14,
+                t15,
             ],
         )
 
         self.run_assertions(
             TC,
-            book_flight_node_schema.tool_registry,
+            AIRLINE_REQUEST_SCHEMA.default_node_schema.tool_registry,
         )
 
 

@@ -145,12 +145,12 @@ class RequestGraphSchema(BaseGraphSchema):
     ):
         self.start_node_schema = ConversationNodeSchema(node_prompt, node_system_prompt)
         self.graph_node_schemas = node_schemas
-        super().__init__(description, node_schemas + [self.start_node_schema])
-        self.edge_schemas = edge_schemas
         self.default_node_schema = ConversationNodeSchema(
             "You have just finished helping the customer with their requests. Ask if they need anything else.",
             node_system_prompt,
         )
+        super().__init__(description, node_schemas + [self.start_node_schema, self.default_node_schema])
+        self.edge_schemas = edge_schemas
 
 
 class GraphEdgeSchema(BaseEdgeSchema, HasIdMixin, metaclass=AutoMixinInit):
