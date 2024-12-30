@@ -1,7 +1,7 @@
 import pytest
 from polyfactory.factories.pydantic_factory import ModelFactory
 
-from cashier.model.model_turn import AssistantTurn, NodeSystemTurn
+from cashier.model.model_turn import AssistantTurn
 from cashier.model.model_util import FunctionCall
 from cashier.tool.function_call_context import StateUpdateError, ToolExceptionWrapper
 from data.graph.airline_book_flight import (
@@ -13,7 +13,6 @@ from data.graph.airline_request import AIRLINE_REQUEST_SCHEMA
 from data.types.airline import FlightInfo, UserDetails
 from tests.base_test import (
     BaseTest,
-    TurnArgs,
     assert_number_of_tests,
     get_fn_names_fixture,
 )
@@ -363,7 +362,6 @@ class TestAndGraph(BaseTest):
             is_skip=True,
         )
 
-
         get_state_fn_call = self.recreate_fake_single_fn_call("get_state", {})
         t10 = AssistantTurn(
             msg_content=None,
@@ -389,8 +387,8 @@ class TestAndGraph(BaseTest):
         node_turn_4 = self.build_node_turn(
             find_flight_node_schema,
             find_flight_node_schema.input_from_state_schema(
-                        **agent_executor.graph.curr_node.curr_node.state.model_dump_fields_set()
-                    ),
+                **agent_executor.graph.curr_node.curr_node.state.model_dump_fields_set()
+            ),
             "what do you want to change?",
             "customer wants to book flight",
             is_skip=True,
