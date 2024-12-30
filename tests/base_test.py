@@ -419,7 +419,7 @@ class BaseTest:
             fn_calls=fn_calls,
             fn_call_id_to_fn_output=fn_call_id_to_fn_output or {},
         )
-        self.build_assistant_turn_messages(at)
+        self.add_assistant_turn_messages(at)
         return at
 
     @pytest.fixture
@@ -473,7 +473,7 @@ class BaseTest:
             MessageList.ItemType.USER,
         )
 
-    def build_assistant_turn_messages(self, assistant_turn):
+    def add_assistant_turn_messages(self, assistant_turn):
         messages = assistant_turn.build_messages(self.fixtures.model_provider)
         if self.fixtures.model_provider == ModelProvider.OPENAI:
             for message in messages:
@@ -603,7 +603,7 @@ class BaseTest:
         if isinstance(turn, UserTurn):
             self.build_user_turn_messages(turn)
         elif isinstance(turn, AssistantTurn):
-            self.build_assistant_turn_messages(turn)
+            self.add_assistant_turn_messages(turn)
         elif isinstance(turn, NodeSystemTurn):
             self.add_node_turn_messages(
                 turn,
