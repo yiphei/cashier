@@ -329,7 +329,7 @@ class TestAndGraph(BaseTest):
 
         next_next_node_schema = self.get_next_conv_node_schema(find_flight_node_schema)
 
-        turnzzz = self.build_transition_turns(
+        turnzzz = self.add_transition_turns(
             [fn_call_1],
             {fn_call_1.id: None},
             "i want flight from ... to ... on ...",

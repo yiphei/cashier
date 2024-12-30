@@ -642,7 +642,7 @@ class BaseTest:
         )
         return node_turn
 
-    def build_transition_turns(
+    def add_transition_turns(
         self,
         fn_calls,
         fn_call_id_to_fn_output,
