@@ -250,7 +250,7 @@ class TestRequest(BaseTest):
             "customer wants to change a flight",
         )
 
-        t_zzz = self.add_new_task(
+        t_turns_2 = self.add_new_task(
             ["customer wants to change a flight"],
             [CHANGE_FLIGHT_GRAPH_SCHEMA],
             "change baggage",
@@ -267,7 +267,7 @@ class TestRequest(BaseTest):
 
         next_next_node_schema = self.get_next_conv_node_schema(next_node_schema)
 
-        t_turns_2 = self.add_transition_turns(
+        t_turns_3 = self.add_transition_turns(
             [fn_call],
             {fn_call.id: None},
             "my reservation details are ...",
@@ -299,7 +299,7 @@ class TestRequest(BaseTest):
         next_next_next_node_schema = self.get_next_conv_node_schema(
             next_next_node_schema
         )
-        t_turns_3 = self.add_transition_turns(
+        t_turns_4 = self.add_transition_turns(
             [fn_call, fn_call_2, fn_call_3],
             {fn_call.id: None, fn_call_2.id: None, fn_call_3.id: None},
             "the new flight is ...",
@@ -318,7 +318,7 @@ class TestRequest(BaseTest):
             next_next_next_node_schema
         )
 
-        t_turns_4 = self.add_transition_turns(
+        t_turns_5 = self.add_transition_turns(
             [fn_call],
             {fn_call.id: None},
             "the payment method is ...",
@@ -333,7 +333,7 @@ class TestRequest(BaseTest):
             name="update_reservation_flights",
             args={"args": "1"},
         )
-        t5 = self.add_assistant_turn(
+        t6 = self.add_assistant_turn(
             None,
             [fn_call],
             {fn_call.id: None},
@@ -346,22 +346,22 @@ class TestRequest(BaseTest):
             },
         )
 
-        t5aaa = AssistantTurn(
+        t7 = AssistantTurn(
             msg_content=None,
             model_provider=self.fixtures.model_provider,
             tool_registry=self.fixtures.agent_executor.graph.curr_conversation_node.schema.tool_registry,
             fn_calls=[fake_fn_call],
             fn_call_id_to_fn_output={fake_fn_call.id: None},
         )
-        self.add_messages_from_turn(t5aaa)
+        self.add_messages_from_turn(t7)
 
-        t6 = self.add_assistant_turn(
+        t8 = self.add_assistant_turn(
             "finished task",
         )
 
         # --------------------------------
 
-        t7 = self.add_node_turn(
+        t9 = self.add_node_turn(
             luggage_get_user_id_node_schema,
             None,
             "the payment method is ...",
@@ -371,7 +371,7 @@ class TestRequest(BaseTest):
         input = luggage_get_reservation_details_node_schema.get_input(
             agent_executor.graph.curr_node.state, edge_1
         )
-        t8 = self.add_node_turn(
+        t10 = self.add_node_turn(
             luggage_get_reservation_details_node_schema,
             input,
             "the payment method is ...",
@@ -383,7 +383,7 @@ class TestRequest(BaseTest):
         new_node_schema = luggage_node_schema
         input = new_node_schema.get_input(agent_executor.graph.curr_node.state, edge_2)
 
-        t9 = self.add_node_turn(
+        t11 = self.add_node_turn(
             new_node_schema,
             input,
             "the payment method is ...",
@@ -395,16 +395,16 @@ class TestRequest(BaseTest):
                 *start_turns,
                 *into_graph_transition_turns,
                 *t_turns_1,
-                *t_zzz,
                 *t_turns_2,
                 *t_turns_3,
                 *t_turns_4,
-                t5,
-                t5aaa,
+                *t_turns_5,
                 t6,
                 t7,
                 t8,
                 t9,
+                t10,
+                t11,
             ],
         )
 
