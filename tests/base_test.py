@@ -300,7 +300,7 @@ class BaseTest:
             )
 
         ut = UserTurn(msg_content=message)
-        self.build_messages_from_turn(ut)
+        self.add_messages_from_turn(ut)
         return ut
 
     def add_request_user_turn(
@@ -325,7 +325,7 @@ class BaseTest:
             )
 
         ut = UserTurn(msg_content=message)
-        self.build_messages_from_turn(ut)
+        self.add_messages_from_turn(ut)
         return ut
 
     def add_assistant_turn(
@@ -591,7 +591,7 @@ class BaseTest:
             else:
                 self.message_dicts.track_idx(MessageList.ItemType.NODE)
 
-    def build_messages_from_turn(
+    def add_messages_from_turn(
         self,
         turn,
         remove_prev_fn_return_schema=None,
@@ -636,7 +636,7 @@ class BaseTest:
             ),
             kwargs={"is_skip": is_skip},
         )
-        self.build_messages_from_turn(
+        self.add_messages_from_turn(
             node_turn,
             is_skip=is_skip,
         )

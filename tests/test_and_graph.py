@@ -124,7 +124,7 @@ class TestAndGraph(BaseTest):
             fn_calls=[fake_fn_call],
             fn_call_id_to_fn_output={fake_fn_call.id: None},
         )
-        self.build_messages_from_turn(assistant_turn)
+        self.add_messages_from_turn(assistant_turn)
 
         TC = self.create_turn_container([*start_turns, user_turn, assistant_turn])
 
@@ -268,7 +268,7 @@ class TestAndGraph(BaseTest):
                 get_state_fn_call.id: agent_executor.graph.curr_conversation_node.state
             },
         )
-        self.build_messages_from_turn(t4)
+        self.add_messages_from_turn(t4)
 
         TC = self.create_turn_container(
             [
@@ -346,7 +346,7 @@ class TestAndGraph(BaseTest):
                 get_state_fn_call.id: agent_executor.graph.curr_conversation_node.state
             },
         )
-        self.build_messages_from_turn(t6)
+        self.add_messages_from_turn(t6)
         t7 = self.add_assistant_turn(
             "what do you want to change?",
         )
@@ -378,7 +378,7 @@ class TestAndGraph(BaseTest):
                 get_state_fn_call.id: agent_executor.graph.curr_conversation_node.state
             },
         )
-        self.build_messages_from_turn(t10)
+        self.add_messages_from_turn(t10)
 
         TC = self.create_turn_container(
             [
