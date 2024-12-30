@@ -667,15 +667,15 @@ class BaseTest:
         )
         input = next_node_schema.get_input(state, edge_schema)
 
-        node_turn = self.add_node_turn(
+        t3 = self.add_node_turn(
             next_node_schema,
             input,
             user_msg,
             curr_request,
         )
 
-        t3 = self.add_assistant_turn(last_assistant_msg)
-        return [t1, t2, node_turn, t3]
+        t4 = self.add_assistant_turn(last_assistant_msg)
+        return [t1, t2, t3, t4]
 
 
 def assert_number_of_tests(test_class, absolute_path, request, expected_test_count):
