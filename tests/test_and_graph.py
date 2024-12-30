@@ -292,7 +292,6 @@ class TestAndGraph(BaseTest):
             is_skip=True,
         )
 
-
         # node_turn_2 = self.build_node_turn(
         #     self.start_conv_node_schema,
         #     None,
