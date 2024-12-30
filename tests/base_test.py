@@ -317,7 +317,7 @@ class BaseTest:
             ]
 
         graph_schema_selection_completion = self.create_mock_model_completion(
-            None,True, agent_selections, 0.5
+            None, True, agent_selections, 0.5
         )
         self.model_chat.side_effect = [graph_schema_selection_completion]
         with self.generate_random_string_context():
