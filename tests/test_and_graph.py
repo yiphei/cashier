@@ -54,39 +54,22 @@ class TestAndGraph(BaseTest):
             "customer wants to book flight",
         )
         second_node_schema = self.start_conv_node_schema
-        turns = [
-            TurnArgs(
-                turn=NodeSystemTurn(
-                    msg_content=AIRLINE_REQUEST_SCHEMA.start_node_schema.node_system_prompt(
-                        node_prompt=AIRLINE_REQUEST_SCHEMA.start_node_schema.node_prompt,
-                        input=None,
-                        node_input_json_schema=None,
-                        state_json_schema=None,
-                        last_msg=None,
-                        curr_request=None,
-                    ),
-                    node_id=1,
-                ),
-            ),
-            ut,
-            TurnArgs(
-                turn=NodeSystemTurn(
-                    msg_content=second_node_schema.node_system_prompt(
-                        node_prompt=second_node_schema.node_prompt,
-                        input=None,
-                        node_input_json_schema=None,
-                        state_json_schema=second_node_schema.state_schema.model_json_schema(),
-                        last_msg="i want to book flight",
-                        curr_request="customer wants to book flight",
-                    ),
-                    node_id=2,
-                ),
-            ),
-        ]
 
-        self.build_messages_from_turn(turns[0])
-        self.build_messages_from_turn(turns[2])
-        return turns
+        node_turn_1 = self.build_node_turn(
+            AIRLINE_REQUEST_SCHEMA.start_node_schema,
+            None,
+            None,
+            None,
+        )
+
+        node_turn_2 = self.build_node_turn(
+            second_node_schema,
+            None,
+            "i want to book flight",
+            "customer wants to book flight",
+        )
+
+        return [node_turn_1, ut, node_turn_2]
 
     @pytest.fixture(params=get_fn_names_fixture(get_user_id_node_schema))
     def first_into_second_transition_turns(
@@ -118,25 +101,17 @@ class TestAndGraph(BaseTest):
 
         next_node_schema = self.get_next_conv_node_schema(self.start_conv_node_schema)
 
-        input_schema, input = (
+        _, input = (
             agent_executor.graph.curr_node.curr_node.state.get_set_schema_and_fields()
         )
-        node_turn = TurnArgs(
-            turn=NodeSystemTurn(
-                msg_content=next_node_schema.node_system_prompt(
-                    node_prompt=next_node_schema.node_prompt,
-                    input=input.model_dump_json(),
-                    node_input_json_schema=input_schema.model_json_schema(),
-                    state_json_schema=next_node_schema.state_schema.model_json_schema(),
-                    last_msg="my username is ...",
-                    curr_request="customer wants to book flight",
-                ),
-                node_id=3,
-            ),
+
+        node_turn = self.build_node_turn(
+            next_node_schema,
+            input,
+            "my username is ...",
+            "customer wants to book flight",
         )
-        self.build_messages_from_turn(
-            node_turn,
-        )
+
         return [t1, t2, t3, t4, node_turn]
 
     def test_graph_initialization(self, start_turns):
@@ -316,6 +291,14 @@ class TestAndGraph(BaseTest):
             node_turn_2,
             is_skip=True,
         )
+
+
+        # node_turn_2 = self.build_node_turn(
+        #     self.start_conv_node_schema,
+        #     None,
+        #     "what flight do you want?",
+        #     "customer wants to book flight",
+        # )
 
         get_state_fn_call = self.recreate_fake_single_fn_call(
             "get_state",
