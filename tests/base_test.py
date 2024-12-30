@@ -612,29 +612,29 @@ class BaseTest:
             )
         else:
             raise ValueError(f"Unknown turn type: {type(turn)}")
-        
+
     def build_node_turn(self, node_schema, input, last_msg, curr_request):
         node_turn = TurnArgs(
-                    turn=NodeSystemTurn(
-                        msg_content=node_schema.node_system_prompt(
-                            node_prompt=node_schema.node_prompt,
-                            input=input.model_dump_json() if input is not None else None,
-                            node_input_json_schema=(
-                                node_schema.input_schema.model_json_schema()
-                                if node_schema.input_schema is not None
-                                else None
-                            ),
-                            state_json_schema=(
-                                node_schema.state_schema.model_json_schema()
-                                if node_schema.state_schema
-                                else None
-                            ),
-                            last_msg=last_msg,
-                            curr_request=curr_request,
-                        ),
-                        node_id=3,
+            turn=NodeSystemTurn(
+                msg_content=node_schema.node_system_prompt(
+                    node_prompt=node_schema.node_prompt,
+                    input=input.model_dump_json() if input is not None else None,
+                    node_input_json_schema=(
+                        node_schema.input_schema.model_json_schema()
+                        if node_schema.input_schema is not None
+                        else None
                     ),
-                )
+                    state_json_schema=(
+                        node_schema.state_schema.model_json_schema()
+                        if node_schema.state_schema
+                        else None
+                    ),
+                    last_msg=last_msg,
+                    curr_request=curr_request,
+                ),
+                node_id=3,
+            ),
+        )
         self.build_messages_from_turn(
             node_turn,
         )

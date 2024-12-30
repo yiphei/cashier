@@ -20,11 +20,7 @@ from data.graph.airline_change_flight import (
 )
 from data.graph.airline_request import AIRLINE_REQUEST_SCHEMA
 from data.types.airline import FlightInfo, ReservationDetails, UserDetails
-from tests.base_test import (
-    BaseTest,
-    assert_number_of_tests,
-    get_fn_names_fixture,
-)
+from tests.base_test import BaseTest, assert_number_of_tests, get_fn_names_fixture
 
 
 class TestRequest(BaseTest):
