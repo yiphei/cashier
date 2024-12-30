@@ -44,43 +44,31 @@ class TestAndGraph(BaseTest):
 
     @pytest.fixture
     def start_turns(self, agent_executor, model_provider, setup_message_dicts):
-        ut = self.add_request_user_turn(
-            "i want to book flight",
-            "customer wants to book flight",
-        )
         second_node_schema = self.start_conv_node_schema
-
-        node_turn_1 = self.add_node_turn(
+        t1 = self.add_node_turn(
             AIRLINE_REQUEST_SCHEMA.start_node_schema,
             None,
             None,
             None,
         )
-
-        node_turn_2 = self.add_node_turn(
+        t2 = self.add_request_user_turn(
+            "i want to book flight",
+            "customer wants to book flight",
+        )
+        t3 = self.add_node_turn(
             second_node_schema,
             None,
             "i want to book flight",
             "customer wants to book flight",
         )
+        return [t1, t2, t3]
 
-        return [node_turn_1, ut, node_turn_2]
-
-    @pytest.fixture(params=get_fn_names_fixture(get_user_id_node_schema))
+    @pytest.fixture()
     def first_into_second_transition_turns(
         self,
         agent_executor,
         model_provider,
-        request,
     ):
-        t1 = self.add_user_turn("hello")
-        t2 = self.add_assistant_turn(
-            None,
-            tool_names=request.param,
-        )
-        t3 = self.add_user_turn("my username is ...")
-        self.run_message_dict_assertions()
-
         user_details = ModelFactory.create_factory(UserDetails).build()
         fn_call_1 = FunctionCall.create(
             api_id_model_provider=model_provider,
@@ -88,26 +76,16 @@ class TestAndGraph(BaseTest):
             name="update_state_user_details",
             args={"user_details": user_details.model_dump()},
         )
-        t4 = self.add_assistant_turn(
-            None,
+
+        return self.add_transition_turns(
             [fn_call_1],
             {fn_call_1.id: None},
-        )
-
-        next_node_schema = self.get_next_conv_node_schema(self.start_conv_node_schema)
-
-        _, input = (
-            agent_executor.graph.curr_node.curr_node.state.get_set_schema_and_fields()
-        )
-
-        node_turn = self.add_node_turn(
-            next_node_schema,
-            input,
             "my username is ...",
+            self.get_edge_schema(self.start_conv_node_schema),
+            self.get_next_conv_node_schema(self.start_conv_node_schema),
             "customer wants to book flight",
+            is_and_graph=True,
         )
-
-        return [t1, t2, t3, t4, node_turn]
 
     def test_graph_initialization(self, start_turns):
         TC = self.create_turn_container(start_turns)
@@ -146,7 +124,7 @@ class TestAndGraph(BaseTest):
             fn_calls=[fake_fn_call],
             fn_call_id_to_fn_output={fake_fn_call.id: None},
         )
-        self.build_messages_from_turn(assistant_turn)
+        self.add_messages_from_turn(assistant_turn)
 
         TC = self.create_turn_container([*start_turns, user_turn, assistant_turn])
 
@@ -257,18 +235,18 @@ class TestAndGraph(BaseTest):
         start_turns,
         first_into_second_transition_turns,
     ):
-        t5 = self.add_assistant_turn(
+        t1 = self.add_assistant_turn(
             "what flight do you want?",
         )
         self.run_message_dict_assertions()
 
-        t6 = self.add_user_turn(
+        t2 = self.add_user_turn(
             "i want to change my user details",
             False,
             skip_node_schema_id=self.start_conv_node_schema.id,
         )
 
-        node_turn_2 = self.add_node_turn(
+        t3 = self.add_node_turn(
             self.start_conv_node_schema,
             None,
             "what flight do you want?",
@@ -281,7 +259,7 @@ class TestAndGraph(BaseTest):
             {},
         )
 
-        t7 = AssistantTurn(
+        t4 = AssistantTurn(
             msg_content=None,
             model_provider=model_provider,
             tool_registry=self.start_conv_node_schema.tool_registry,
@@ -290,16 +268,16 @@ class TestAndGraph(BaseTest):
                 get_state_fn_call.id: agent_executor.graph.curr_conversation_node.state
             },
         )
-        self.build_messages_from_turn(t7)
+        self.add_messages_from_turn(t4)
 
         TC = self.create_turn_container(
             [
                 *start_turns,
                 *first_into_second_transition_turns,
-                t5,
-                t6,
-                node_turn_2,
-                t7,
+                t1,
+                t2,
+                t3,
+                t4,
             ],
         )
 
@@ -315,12 +293,12 @@ class TestAndGraph(BaseTest):
         start_turns,
         first_into_second_transition_turns,
     ):
-        t5 = self.add_assistant_turn(
+        t1 = self.add_assistant_turn(
             "what flight do you want?",
         )
 
         flight_info = ModelFactory.create_factory(FlightInfo).build()
-        fn_call_1 = FunctionCall.create(
+        fn_call = FunctionCall.create(
             api_id_model_provider=model_provider,
             api_id=FunctionCall.generate_fake_id(model_provider),
             name="update_state_flight_infos",
@@ -329,9 +307,9 @@ class TestAndGraph(BaseTest):
 
         next_next_node_schema = self.get_next_conv_node_schema(find_flight_node_schema)
 
-        turnzzz = self.build_transition_turns(
-            [fn_call_1],
-            {fn_call_1.id: None},
+        t_turns_2 = self.add_transition_turns(
+            [fn_call],
+            {fn_call.id: None},
             "i want flight from ... to ... on ...",
             self.get_edge_schema(find_flight_node_schema),
             next_next_node_schema,
@@ -339,18 +317,18 @@ class TestAndGraph(BaseTest):
             is_and_graph=True,
         )
 
-        t8 = self.add_assistant_turn(
+        t3 = self.add_assistant_turn(
             "thanks for confirming flights, now lets move on to ...",
         )
         self.run_message_dict_assertions()
 
-        t9 = self.add_user_turn(
+        t4 = self.add_user_turn(
             "actually, i want to change my user details",
             False,
             skip_node_schema_id=self.start_conv_node_schema.id,
         )
 
-        node_turn_3 = self.add_node_turn(
+        t5 = self.add_node_turn(
             self.start_conv_node_schema,
             None,
             "thanks for confirming flights, now lets move on to ...",
@@ -359,7 +337,7 @@ class TestAndGraph(BaseTest):
         )
 
         get_state_fn_call = self.recreate_fake_single_fn_call("get_state", {})
-        t10 = AssistantTurn(
+        t6 = AssistantTurn(
             msg_content=None,
             model_provider=model_provider,
             tool_registry=self.start_conv_node_schema.tool_registry,
@@ -368,19 +346,19 @@ class TestAndGraph(BaseTest):
                 get_state_fn_call.id: agent_executor.graph.curr_conversation_node.state
             },
         )
-        self.build_messages_from_turn(t10)
-        t11 = self.add_assistant_turn(
+        self.add_messages_from_turn(t6)
+        t7 = self.add_assistant_turn(
             "what do you want to change?",
         )
         self.run_message_dict_assertions()
 
-        t12 = self.add_user_turn(
+        t8 = self.add_user_turn(
             "nvm, nothing",
             False,
             skip_node_schema_id=find_flight_node_schema.id,
         )
 
-        node_turn_4 = self.add_node_turn(
+        t9 = self.add_node_turn(
             find_flight_node_schema,
             find_flight_node_schema.input_from_state_schema(
                 **agent_executor.graph.curr_node.curr_node.state.model_dump_fields_set()
@@ -391,7 +369,7 @@ class TestAndGraph(BaseTest):
         )
 
         get_state_fn_call = self.recreate_fake_single_fn_call("get_state", {})
-        t13 = AssistantTurn(
+        t10 = AssistantTurn(
             msg_content=None,
             model_provider=model_provider,
             tool_registry=find_flight_node_schema.tool_registry,
@@ -400,22 +378,22 @@ class TestAndGraph(BaseTest):
                 get_state_fn_call.id: agent_executor.graph.curr_conversation_node.state
             },
         )
-        self.build_messages_from_turn(t13)
+        self.add_messages_from_turn(t10)
 
         TC = self.create_turn_container(
             [
                 *start_turns,
                 *first_into_second_transition_turns,
+                t1,
+                *t_turns_2,
+                t3,
+                t4,
                 t5,
-                *turnzzz,
+                t6,
+                t7,
                 t8,
                 t9,
-                node_turn_3,
                 t10,
-                t11,
-                t12,
-                node_turn_4,
-                t13,
             ],
         )
 
@@ -423,4 +401,4 @@ class TestAndGraph(BaseTest):
 
 
 def test_class_test_count(request):
-    assert_number_of_tests(TestAndGraph, __file__, request, 576)
+    assert_number_of_tests(TestAndGraph, __file__, request, 312)

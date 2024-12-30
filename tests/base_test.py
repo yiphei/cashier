@@ -300,7 +300,7 @@ class BaseTest:
             )
 
         ut = UserTurn(msg_content=message)
-        self.build_messages_from_turn(ut)
+        self.add_messages_from_turn(ut)
         return ut
 
     def add_request_user_turn(
@@ -325,7 +325,7 @@ class BaseTest:
             )
 
         ut = UserTurn(msg_content=message)
-        self.build_messages_from_turn(ut)
+        self.add_messages_from_turn(ut)
         return ut
 
     def add_assistant_turn(
@@ -419,7 +419,7 @@ class BaseTest:
             fn_calls=fn_calls,
             fn_call_id_to_fn_output=fn_call_id_to_fn_output or {},
         )
-        self.build_assistant_turn_messages(at)
+        self.add_assistant_turn_messages(at)
         return at
 
     @pytest.fixture
@@ -459,7 +459,7 @@ class BaseTest:
         self.fixtures.is_stream = request.param
         return request.param
 
-    def build_user_turn_messages(self, user_turn):
+    def add_user_turn_messages(self, user_turn):
         self.message_dicts.extend(
             user_turn.build_messages(self.fixtures.model_provider),
             MessageList.ItemType.USER,
@@ -473,7 +473,7 @@ class BaseTest:
             MessageList.ItemType.USER,
         )
 
-    def build_assistant_turn_messages(self, assistant_turn):
+    def add_assistant_turn_messages(self, assistant_turn):
         messages = assistant_turn.build_messages(self.fixtures.model_provider)
         if self.fixtures.model_provider == ModelProvider.OPENAI:
             for message in messages:
@@ -546,7 +546,7 @@ class BaseTest:
                             uri=MessageList.get_tool_output_uri_from_tool_id(tool_id),
                         )
 
-    def build_node_turn_messages(
+    def add_node_turn_messages(
         self,
         node_turn,
         remove_prev_fn_return_schema,
@@ -591,7 +591,7 @@ class BaseTest:
             else:
                 self.message_dicts.track_idx(MessageList.ItemType.NODE)
 
-    def build_messages_from_turn(
+    def add_messages_from_turn(
         self,
         turn,
         remove_prev_fn_return_schema=None,
@@ -601,11 +601,11 @@ class BaseTest:
             turn = turn.turn
 
         if isinstance(turn, UserTurn):
-            self.build_user_turn_messages(turn)
+            self.add_user_turn_messages(turn)
         elif isinstance(turn, AssistantTurn):
-            self.build_assistant_turn_messages(turn)
+            self.add_assistant_turn_messages(turn)
         elif isinstance(turn, NodeSystemTurn):
-            self.build_node_turn_messages(
+            self.add_node_turn_messages(
                 turn,
                 remove_prev_fn_return_schema,
                 is_skip,
@@ -636,13 +636,13 @@ class BaseTest:
             ),
             kwargs={"is_skip": is_skip},
         )
-        self.build_messages_from_turn(
+        self.add_messages_from_turn(
             node_turn,
             is_skip=is_skip,
         )
         return node_turn
 
-    def build_transition_turns(
+    def add_transition_turns(
         self,
         fn_calls,
         fn_call_id_to_fn_output,
@@ -667,15 +667,15 @@ class BaseTest:
         )
         input = next_node_schema.get_input(state, edge_schema)
 
-        node_turn = self.add_node_turn(
+        t3 = self.add_node_turn(
             next_node_schema,
             input,
             user_msg,
             curr_request,
         )
 
-        t3 = self.add_assistant_turn(last_assistant_msg)
-        return [t1, t2, node_turn, t3]
+        t4 = self.add_assistant_turn(last_assistant_msg)
+        return [t1, t2, t3, t4]
 
 
 def assert_number_of_tests(test_class, absolute_path, request, expected_test_count):
