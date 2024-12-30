@@ -273,31 +273,13 @@ class TestAndGraph(BaseTest):
             skip_node_schema_id=self.start_conv_node_schema.id,
         )
 
-        node_turn_2 = TurnArgs(
-            turn=NodeSystemTurn(
-                msg_content=self.start_conv_node_schema.node_system_prompt(
-                    node_prompt=self.start_conv_node_schema.node_prompt,
-                    input=None,
-                    node_input_json_schema=self.start_conv_node_schema.input_from_state_schema,  # just to test that its None
-                    state_json_schema=self.start_conv_node_schema.state_schema.model_json_schema(),
-                    last_msg="what flight do you want?",
-                    curr_request="customer wants to book flight",
-                ),
-                node_id=4,
-            ),
-            kwargs={"is_skip": True},
-        )
-        self.build_messages_from_turn(
-            node_turn_2,
+        node_turn_2 = self.build_node_turn(
+            self.start_conv_node_schema,
+            None,
+            "what flight do you want?",
+            "customer wants to book flight",
             is_skip=True,
         )
-
-        # node_turn_2 = self.build_node_turn(
-        #     self.start_conv_node_schema,
-        #     None,
-        #     "what flight do you want?",
-        #     "customer wants to book flight",
-        # )
 
         get_state_fn_call = self.recreate_fake_single_fn_call(
             "get_state",
@@ -372,25 +354,16 @@ class TestAndGraph(BaseTest):
             False,
             skip_node_schema_id=self.start_conv_node_schema.id,
         )
-        start_node_schema = self.start_conv_node_schema
-        node_turn_3 = TurnArgs(
-            turn=NodeSystemTurn(
-                msg_content=start_node_schema.node_system_prompt(
-                    node_prompt=start_node_schema.node_prompt,
-                    input=None,
-                    node_input_json_schema=start_node_schema.input_from_state_schema,
-                    state_json_schema=start_node_schema.state_schema.model_json_schema(),
-                    last_msg="thanks for confirming flights, now lets move on to ...",
-                    curr_request="customer wants to book flight",
-                ),
-                node_id=5,
-            ),
-            kwargs={"is_skip": True},
-        )
-        self.build_messages_from_turn(
-            node_turn_3,
+
+        node_turn_3 = self.build_node_turn(
+            self.start_conv_node_schema,
+            None,
+            "thanks for confirming flights, now lets move on to ...",
+            "customer wants to book flight",
             is_skip=True,
         )
+
+
         get_state_fn_call = self.recreate_fake_single_fn_call("get_state", {})
         t10 = AssistantTurn(
             msg_content=None,
@@ -412,26 +385,17 @@ class TestAndGraph(BaseTest):
             False,
             skip_node_schema_id=find_flight_node_schema.id,
         )
-        node_turn_4 = TurnArgs(
-            turn=NodeSystemTurn(
-                msg_content=find_flight_node_schema.node_system_prompt(
-                    node_prompt=find_flight_node_schema.node_prompt,
-                    input=find_flight_node_schema.input_from_state_schema(
+
+        node_turn_4 = self.build_node_turn(
+            find_flight_node_schema,
+            find_flight_node_schema.input_from_state_schema(
                         **agent_executor.graph.curr_node.curr_node.state.model_dump_fields_set()
-                    ).model_dump_json(),
-                    node_input_json_schema=find_flight_node_schema.input_from_state_schema.model_json_schema(),
-                    state_json_schema=find_flight_node_schema.state_schema.model_json_schema(),
-                    last_msg="what do you want to change?",
-                    curr_request="customer wants to book flight",
-                ),
-                node_id=6,
-            ),
-            kwargs={"is_skip": True},
-        )
-        self.build_messages_from_turn(
-            node_turn_4,
+                    ),
+            "what do you want to change?",
+            "customer wants to book flight",
             is_skip=True,
         )
+
         get_state_fn_call = self.recreate_fake_single_fn_call("get_state", {})
         t13 = AssistantTurn(
             msg_content=None,
