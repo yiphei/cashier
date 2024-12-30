@@ -292,7 +292,9 @@ class TestRequest(BaseTest):
             "change baggage",
         )
 
-        input = luggage_get_reservation_details_node_schema.get_input(agent_executor.graph.curr_node.state, edge_1)
+        input = luggage_get_reservation_details_node_schema.get_input(
+            agent_executor.graph.curr_node.state, edge_1
+        )
         t8 = self.add_node_turn(
             luggage_get_reservation_details_node_schema,
             input,
