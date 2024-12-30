@@ -26,6 +26,7 @@ from cashier.model.model_util import (
     generate_random_string,
 )
 from cashier.prompts.graph_schema_selection import AgentSelection
+from cashier.prompts.graph_schema_addition import AgentSelection as AdditionAgentSelection
 from cashier.tool.function_call_context import (
     InexistentFunctionError,
     ToolExceptionWrapper,
@@ -262,6 +263,8 @@ class BaseTest:
         is_on_topic=True,
         wait_node_schema_id=None,
         skip_node_schema_id=None,
+        new_task = None,
+        task_schema_id = None,
     ):
         model_chat_side_effects = []
 
@@ -270,29 +273,35 @@ class BaseTest:
         )
         model_chat_side_effects.append(is_on_topic_model_completion)
         if not is_on_topic:
-            agent_addition_completion = self.create_mock_model_completion(
-                None, True, None, 0.5
-            )
-            model_chat_side_effects.append(agent_addition_completion)
+            if new_task is not None:
+                agent_addition_completion = self.create_mock_model_completion(
+                    None, True, AdditionAgentSelection(agent_id=task_schema_id, task=new_task), 0.5
+                )
+                model_chat_side_effects.append(agent_addition_completion)
+            else:
+                agent_addition_completion = self.create_mock_model_completion(
+                    None, True, None, 0.5
+                )
+                model_chat_side_effects.append(agent_addition_completion)
 
-            is_wait_model_completion = self.create_mock_model_completion(
-                None,
-                True,
-                wait_node_schema_id
-                or self.fixtures.agent_executor.graph.curr_conversation_node.schema.id,
-                0.5,
-            )
-            model_chat_side_effects.append(is_wait_model_completion)
-
-            if wait_node_schema_id is None:
-                skip_model_completion = self.create_mock_model_completion(
+                is_wait_model_completion = self.create_mock_model_completion(
                     None,
                     True,
-                    skip_node_schema_id
+                    wait_node_schema_id
                     or self.fixtures.agent_executor.graph.curr_conversation_node.schema.id,
                     0.5,
                 )
-                model_chat_side_effects.append(skip_model_completion)
+                model_chat_side_effects.append(is_wait_model_completion)
+
+                if wait_node_schema_id is None:
+                    skip_model_completion = self.create_mock_model_completion(
+                        None,
+                        True,
+                        skip_node_schema_id
+                        or self.fixtures.agent_executor.graph.curr_conversation_node.schema.id,
+                        0.5,
+                    )
+                    model_chat_side_effects.append(skip_model_completion)
 
         self.model_chat.side_effect = model_chat_side_effects
         with self.generate_random_string_context():
