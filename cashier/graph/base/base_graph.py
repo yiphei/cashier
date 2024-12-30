@@ -432,6 +432,17 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
             fn_id_to_output,
         )
 
+        if self.top_most_transition_node and (
+            not self.top_most_transition_node.schema.run_assistant_turn_before_transition
+            or self.top_most_transition_node.has_run_assistant_turn_before_transition
+        ):
+            self.init_next_node(
+                self.new_node_schema,
+                TC,
+                None,
+            )
+            self.new_node_schema = None
+
         if (
             isinstance(self, RequestGraph) and self.new_node_schema and
             self.curr_node is not None
@@ -449,16 +460,5 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
                 [fake_fn_call],
                 {fake_fn_call.id: None},
             )
-
-        if self.top_most_transition_node and (
-            not self.top_most_transition_node.schema.run_assistant_turn_before_transition
-            or self.top_most_transition_node.has_run_assistant_turn_before_transition
-        ):
-            self.init_next_node(
-                self.new_node_schema,
-                TC,
-                None,
-            )
-            self.new_node_schema = None
 
         return need_user_input

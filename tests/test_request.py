@@ -345,11 +345,15 @@ class TestRequest(BaseTest):
                 "thought": "I just completed the current request. The next request to be addressed is: change baggage. I must explicitly inform the customer that the current request is completed and that I will address the next request right away. Only after I informed the customer do I receive the tools to address the next request."
             },
         )
-        t5aaa = self.add_assistant_turn(
-            None,
-            [fake_fn_call],
-            {fake_fn_call.id: None},
+
+        t5aaa = AssistantTurn(
+            msg_content=None,
+            model_provider=self.fixtures.model_provider,
+            tool_registry=self.fixtures.agent_executor.graph.curr_conversation_node.schema.tool_registry,
+            fn_calls=[fake_fn_call],
+            fn_call_id_to_fn_output={fake_fn_call.id: None},
         )
+        self.add_messages_from_turn(t5aaa)
 
         # agent_executor.graph.requests.append("change baggage")
         # agent_executor.graph.graph_schema_sequence.append(CHANGE_BAGGAGE_GRAPH_SCHEMA)
