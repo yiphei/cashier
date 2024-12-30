@@ -443,6 +443,7 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
             )
             self.new_node_schema = None
 
+        # TODO: refactor this
         if (
             isinstance(self, RequestGraph)
             and self.new_node_schema
