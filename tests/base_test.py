@@ -459,7 +459,7 @@ class BaseTest:
         self.fixtures.is_stream = request.param
         return request.param
 
-    def build_user_turn_messages(self, user_turn):
+    def add_user_turn_messages(self, user_turn):
         self.message_dicts.extend(
             user_turn.build_messages(self.fixtures.model_provider),
             MessageList.ItemType.USER,
@@ -601,7 +601,7 @@ class BaseTest:
             turn = turn.turn
 
         if isinstance(turn, UserTurn):
-            self.build_user_turn_messages(turn)
+            self.add_user_turn_messages(turn)
         elif isinstance(turn, AssistantTurn):
             self.add_assistant_turn_messages(turn)
         elif isinstance(turn, NodeSystemTurn):
