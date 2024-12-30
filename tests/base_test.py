@@ -622,7 +622,7 @@ class BaseTest:
         next_node_schema,
         curr_request,
         last_assistant_msg="good, lets move on to ...",
-        is_and_graph = False
+        is_and_graph=False,
     ):
         t1 = self.add_user_turn(user_msg)
         t2 = self.add_assistant_turn(
@@ -631,10 +631,12 @@ class BaseTest:
             fn_call_id_to_fn_output,
         )
 
-        state = self.fixtures.agent_executor.graph.curr_node.curr_node.state if is_and_graph else self.fixtures.agent_executor.graph.curr_node.state
-        input = next_node_schema.get_input(
-            state, edge_schema
+        state = (
+            self.fixtures.agent_executor.graph.curr_node.curr_node.state
+            if is_and_graph
+            else self.fixtures.agent_executor.graph.curr_node.state
         )
+        input = next_node_schema.get_input(state, edge_schema)
 
         node_turn = TurnArgs(
             turn=NodeSystemTurn(
