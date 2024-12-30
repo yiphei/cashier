@@ -51,10 +51,15 @@ class TestRequest(BaseTest):
             curr_node_schema.id
         ]
         return self.edge_schema_id_to_to_cov_node_schema_id[edge_schema.id]
-    
-    def add_new_task(self, current_tasks, current_graph_schema_sequence, new_task, new_graph_schema):
+
+    def add_new_task(
+        self, current_tasks, current_graph_schema_sequence, new_task, new_graph_schema
+    ):
         assert self.fixtures.agent_executor.graph.requests == current_tasks
-        assert self.fixtures.agent_executor.graph.graph_schema_sequence == current_graph_schema_sequence
+        assert (
+            self.fixtures.agent_executor.graph.graph_schema_sequence
+            == current_graph_schema_sequence
+        )
         t1 = self.add_user_turn(
             "I also want to ...",
             False,
@@ -77,8 +82,12 @@ class TestRequest(BaseTest):
         )
         self.add_messages_from_turn(t2)
 
-        assert self.fixtures.agent_executor.graph.requests == (current_tasks + [new_task])
-        assert self.fixtures.agent_executor.graph.graph_schema_sequence == (current_graph_schema_sequence + [new_graph_schema])
+        assert self.fixtures.agent_executor.graph.requests == (
+            current_tasks + [new_task]
+        )
+        assert self.fixtures.agent_executor.graph.graph_schema_sequence == (
+            current_graph_schema_sequence + [new_graph_schema]
+        )
         return [t1, t2]
 
     @pytest.fixture
