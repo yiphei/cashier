@@ -1,6 +1,7 @@
 import pytest
 from polyfactory.factories.pydantic_factory import ModelFactory
 
+from cashier.model.model_turn import AssistantTurn
 from cashier.model.model_util import FunctionCall
 from data.graph.airline_change_baggage import (
     CHANGE_BAGGAGE_GRAPH_SCHEMA,
@@ -156,6 +157,47 @@ class TestRequest(BaseTest):
             ],
         )
 
+        self.run_assertions(TC, get_user_id_node_schema.tool_registry)
+
+
+    def test_add_new_task(
+        self,
+        start_turns,
+        agent_executor,
+        into_graph_transition_turns,
+        model_provider,
+    ):
+        
+        assert agent_executor.graph.requests == ["customer wants to change a flight"]
+        assert agent_executor.graph.graph_schema_sequence == [CHANGE_FLIGHT_GRAPH_SCHEMA]
+        t1 = self.add_user_turn("I also want to change baggage", False, new_task="customer wants to change baggage", task_schema_id=CHANGE_BAGGAGE_GRAPH_SCHEMA.id)
+        fake_fn_call = self.recreate_fake_single_fn_call(
+            "think",
+            {
+                "thought": "At least part of the customer request/question is off-topic for the current conversation and will actually be addressed later. According to the policies, I must tell the customer that 1) their off-topic request/question will be addressed later and 2) we must finish the current business before we can get to it. I must refuse to engage with the off-topic request/question in any way."
+            },
+        )
+
+        t2 = AssistantTurn(
+            msg_content=None,
+            model_provider=model_provider,
+            tool_registry=self.graph_schema.start_node_schema.tool_registry,
+            fn_calls=[fake_fn_call],
+            fn_call_id_to_fn_output={fake_fn_call.id: None},
+        )
+        self.add_messages_from_turn(t2)
+
+        assert agent_executor.graph.requests == ["customer wants to change a flight", "customer wants to change baggage"]
+        assert agent_executor.graph.graph_schema_sequence == [CHANGE_FLIGHT_GRAPH_SCHEMA, CHANGE_BAGGAGE_GRAPH_SCHEMA]
+
+        TC = self.create_turn_container(
+            [
+                *start_turns,
+                *into_graph_transition_turns,
+                t1,
+                t2,
+            ],
+        )
         self.run_assertions(TC, get_user_id_node_schema.tool_registry)
 
     def test_graph_transition(
@@ -337,4 +379,4 @@ class TestRequest(BaseTest):
 
 
 def test_class_test_count(request):
-    assert_number_of_tests(TestRequest, __file__, request, 56)
+    assert_number_of_tests(TestRequest, __file__, request, 64)
