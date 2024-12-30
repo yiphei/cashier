@@ -5,12 +5,11 @@ from cashier.model.model_turn import AssistantTurn
 from cashier.model.model_util import FunctionCall
 from data.graph.airline_change_baggage import (
     CHANGE_BAGGAGE_GRAPH_SCHEMA,
+    book_flight_node_schema,
     edge_1,
     edge_2,
     edge_3,
     edge_4,
-    payment_node_schema,
-    book_flight_node_schema
 )
 from data.graph.airline_change_baggage import (
     get_reservation_details_node_schema as luggage_get_reservation_details_node_schema,
@@ -18,7 +17,7 @@ from data.graph.airline_change_baggage import (
 from data.graph.airline_change_baggage import (
     get_user_id_node_schema as luggage_get_user_id_node_schema,
 )
-from data.graph.airline_change_baggage import luggage_node_schema
+from data.graph.airline_change_baggage import luggage_node_schema, payment_node_schema
 from data.graph.airline_change_flight import (
     CHANGE_FLIGHT_GRAPH_SCHEMA,
     get_user_id_node_schema,
@@ -417,8 +416,6 @@ class TestRequest(BaseTest):
             new_node_schema.tool_registry,
         )
 
-
-
     def test_default_node(
         self,
         model_provider,
@@ -590,7 +587,6 @@ class TestRequest(BaseTest):
             "change baggage",
         )
 
-
         fn_call = FunctionCall.create(
             api_id_model_provider=model_provider,
             api_id=FunctionCall.generate_fake_id(model_provider),
@@ -651,7 +647,6 @@ class TestRequest(BaseTest):
             TC,
             book_flight_node_schema.tool_registry,
         )
-
 
 
 def test_class_test_count(request):
