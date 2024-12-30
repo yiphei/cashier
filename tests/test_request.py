@@ -53,12 +53,14 @@ class TestRequest(BaseTest):
 
     @pytest.fixture
     def start_turns(self, setup_message_dicts, model_provider):
-        return [ self.add_node_turn(
-            AIRLINE_REQUEST_SCHEMA.start_node_schema,
-            None,
-            None,
-            None,
-        )]
+        return [
+            self.add_node_turn(
+                AIRLINE_REQUEST_SCHEMA.start_node_schema,
+                None,
+                None,
+                None,
+            )
+        ]
 
     @pytest.fixture
     def into_graph_transition_turns(self, agent_executor, start_turns):
