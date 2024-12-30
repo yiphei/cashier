@@ -73,14 +73,6 @@ class TestAndGraph(BaseTest):
         model_provider,
         request,
     ):
-        t1 = self.add_user_turn("hello")
-        t2 = self.add_assistant_turn(
-            None,
-            tool_names=request.param,
-        )
-        t3 = self.add_user_turn("my username is ...")
-        self.run_message_dict_assertions()
-
         user_details = ModelFactory.create_factory(UserDetails).build()
         fn_call_1 = FunctionCall.create(
             api_id_model_provider=model_provider,
@@ -88,26 +80,16 @@ class TestAndGraph(BaseTest):
             name="update_state_user_details",
             args={"user_details": user_details.model_dump()},
         )
-        t4 = self.add_assistant_turn(
-            None,
+
+        return self.add_transition_turns(
             [fn_call_1],
             {fn_call_1.id: None},
-        )
-
-        next_node_schema = self.get_next_conv_node_schema(self.start_conv_node_schema)
-
-        _, input = (
-            agent_executor.graph.curr_node.curr_node.state.get_set_schema_and_fields()
-        )
-
-        node_turn = self.add_node_turn(
-            next_node_schema,
-            input,
             "my username is ...",
+            self.get_edge_schema(self.start_conv_node_schema),
+            self.get_next_conv_node_schema(self.start_conv_node_schema),
             "customer wants to book flight",
+            is_and_graph=True,
         )
-
-        return [t1, t2, t3, t4, node_turn]
 
     def test_graph_initialization(self, start_turns):
         TC = self.create_turn_container(start_turns)
