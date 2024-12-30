@@ -25,8 +25,10 @@ from cashier.model.model_util import (
     ModelProvider,
     generate_random_string,
 )
+from cashier.prompts.graph_schema_addition import (
+    AgentSelection as AdditionAgentSelection,
+)
 from cashier.prompts.graph_schema_selection import AgentSelection
-from cashier.prompts.graph_schema_addition import AgentSelection as AdditionAgentSelection
 from cashier.tool.function_call_context import (
     InexistentFunctionError,
     ToolExceptionWrapper,
@@ -263,8 +265,8 @@ class BaseTest:
         is_on_topic=True,
         wait_node_schema_id=None,
         skip_node_schema_id=None,
-        new_task = None,
-        task_schema_id = None,
+        new_task=None,
+        task_schema_id=None,
     ):
         model_chat_side_effects = []
 
@@ -275,7 +277,10 @@ class BaseTest:
         if not is_on_topic:
             if new_task is not None:
                 agent_addition_completion = self.create_mock_model_completion(
-                    None, True, AdditionAgentSelection(agent_id=task_schema_id, task=new_task), 0.5
+                    None,
+                    True,
+                    AdditionAgentSelection(agent_id=task_schema_id, task=new_task),
+                    0.5,
                 )
                 model_chat_side_effects.append(agent_addition_completion)
             else:
