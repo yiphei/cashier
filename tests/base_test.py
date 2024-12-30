@@ -276,7 +276,14 @@ class BaseTest:
         model_chat_side_effects.append(is_on_topic_model_completion)
         if not is_on_topic:
             agent_addition_completion = self.create_mock_model_completion(
-                None, True, None if new_task is None else AdditionAgentSelection(agent_id=task_schema_id, task=new_task), 0.5
+                None,
+                True,
+                (
+                    None
+                    if new_task is None
+                    else AdditionAgentSelection(agent_id=task_schema_id, task=new_task)
+                ),
+                0.5,
             )
             model_chat_side_effects.append(agent_addition_completion)
             if new_task is None:
