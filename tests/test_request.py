@@ -285,18 +285,16 @@ class TestRequest(BaseTest):
 
         # --------------------------------
 
-        a_node_schema = luggage_get_user_id_node_schema
         t7 = self.add_node_turn(
-            a_node_schema,
+            luggage_get_user_id_node_schema,
             None,
             "the payment method is ...",
             "change baggage",
         )
 
-        b_node_schema = luggage_get_reservation_details_node_schema
-        input = b_node_schema.get_input(agent_executor.graph.curr_node.state, edge_1)
+        input = luggage_get_reservation_details_node_schema.get_input(agent_executor.graph.curr_node.state, edge_1)
         t8 = self.add_node_turn(
-            b_node_schema,
+            luggage_get_reservation_details_node_schema,
             input,
             "the payment method is ...",
             "change baggage",
