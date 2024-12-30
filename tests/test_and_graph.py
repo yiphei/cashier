@@ -11,11 +11,7 @@ from data.graph.airline_book_flight import (
 )
 from data.graph.airline_request import AIRLINE_REQUEST_SCHEMA
 from data.types.airline import FlightInfo, UserDetails
-from tests.base_test import (
-    BaseTest,
-    assert_number_of_tests,
-    get_fn_names_fixture,
-)
+from tests.base_test import BaseTest, assert_number_of_tests, get_fn_names_fixture
 
 
 class TestAndGraph(BaseTest):
