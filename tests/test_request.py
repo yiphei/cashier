@@ -207,7 +207,6 @@ class TestRequest(BaseTest):
             "finished task",
         )
 
-
         self.curr_request = "change baggage"
 
         # --------------------------------
