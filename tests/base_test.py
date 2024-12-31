@@ -362,6 +362,7 @@ class BaseTest:
         message,
         fn_calls=None,
         fn_call_id_to_fn_output=None,
+        tool_registry = None,
     ):
         if fn_calls is not None and fn_call_id_to_fn_output is None:
             fn_call_id_to_fn_output = {fn_call.id: None for fn_call in fn_calls}
@@ -369,7 +370,7 @@ class BaseTest:
         at = AssistantTurn(
             msg_content=message,
             model_provider=self.fixtures.model_provider,
-            tool_registry=self.fixtures.agent_executor.graph.curr_conversation_node.schema.tool_registry,
+            tool_registry=tool_registry or self.fixtures.agent_executor.graph.curr_conversation_node.schema.tool_registry,
             fn_calls=fn_calls,
             fn_call_id_to_fn_output=fn_call_id_to_fn_output,
         )
@@ -461,14 +462,12 @@ class BaseTest:
                 else:
                     patched_fn.assert_has_calls(expected_calls_map[fn_call.name])
 
-        at = AssistantTurn(
-            msg_content=message,
-            model_provider=self.fixtures.model_provider,
-            tool_registry=tool_registry,
-            fn_calls=fn_calls,
-            fn_call_id_to_fn_output=fn_call_id_to_fn_output or {},
+        at = self.add_direct_assistant_turn(
+            message,
+            fn_calls,
+            fn_call_id_to_fn_output  or {},
+            tool_registry,
         )
-        self.add_assistant_turn_messages(at)
         return at
 
     @pytest.fixture
