@@ -16,33 +16,33 @@ from data.prompt.airline import AirlineNodeSystemPrompt
 from data.types.airline import FlightInfo, UserDetails
 from tests.base_test import BaseTest, assert_number_of_tests, get_fn_names_fixture
 
-REQUEST_SCHEMA = RequestGraphSchema(
-    node_schemas=[BOOK_FLIGHT_NORMAL_GRAPH_SCHEMA],
+@pytest.mark.parametrize("graph_schema", [BOOK_FLIGHT_NORMAL_GRAPH_SCHEMA])
+@pytest.mark.parametrize("start_conv_node_schema", [normal_get_user_id_node_schema])
+class TestAndGraph(BaseTest):
+    @pytest.fixture(autouse=True)
+    def request_schema_input(self, graph_schema):
+        return RequestGraphSchema(
+    node_schemas=[graph_schema],
     edge_schemas=[],
     node_prompt="You are a helpful assistant that helps customers with flight-related requests.",
     node_system_prompt=AirlineNodeSystemPrompt,
     description="Help customers change flights and baggage information for a reservation.",
 )
 
-
-class TestAndGraph(BaseTest):
     @pytest.fixture(autouse=True)
-    def request_schema_input(self):
-        return REQUEST_SCHEMA
-
-    @pytest.fixture(autouse=True)
-    def setup(self):
-        self.start_conv_node_schema = normal_get_user_id_node_schema
-        self.graph_schema = BOOK_FLIGHT_NORMAL_GRAPH_SCHEMA
+    def setup(self, request_schema_input, graph_schema, start_conv_node_schema):
+        self.start_conv_node_schema = start_conv_node_schema
+        self.graph_schema = graph_schema
+        self.request_schema = request_schema_input
         self.edge_schema_id_to_to_cov_node_schema_id = {}
         for (
             node_schema_id,
             edge_schema,
         ) in (
-            BOOK_FLIGHT_NORMAL_GRAPH_SCHEMA.to_conv_node_schema_id_to_edge_schema.items()
+            graph_schema.to_conv_node_schema_id_to_edge_schema.items()
         ):
             node_schema = (
-                BOOK_FLIGHT_NORMAL_GRAPH_SCHEMA.conv_node_schema_id_to_conv_node_schema[
+                graph_schema.conv_node_schema_id_to_conv_node_schema[
                     node_schema_id
                 ]
             )
@@ -69,10 +69,10 @@ class TestAndGraph(BaseTest):
         return self.edge_schema_id_to_to_cov_node_schema_id[edge_schema.id]
 
     @pytest.fixture
-    def start_turns(self, agent_executor, model_provider, setup_message_dicts):
+    def start_turns(self, setup, agent_executor, model_provider, setup_message_dicts):
         second_node_schema = self.start_conv_node_schema
         t1 = self.add_node_turn(
-            AIRLINE_REQUEST_SCHEMA.start_node_schema,
+            self.request_schema.start_node_schema,
             None,
             None,
         )
