@@ -671,4 +671,4 @@ class TestRequest(BaseTest):
 
 
 def test_class_test_count(request):
-    assert_number_of_tests(TestRequest, __file__, request, 64)
+    assert_number_of_tests(TestRequest, __file__, request, 72)

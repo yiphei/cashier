@@ -122,6 +122,8 @@ class RequestGraph(BaseGraph):
         return False
 
     def check_node_transition(self, fn_call, is_fn_call_success):
+        if self.curr_node.schema == self.schema.start_node_schema: # TODO: refactor this
+            return None
         new_edge_schema = self.from_node_schema_id_to_edge_schema.get(
             self.curr_node.schema.id, None
         )
