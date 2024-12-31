@@ -2,7 +2,6 @@ import pytest
 from polyfactory.factories.pydantic_factory import ModelFactory
 
 from cashier.model.model_turn import AssistantTurn
-from cashier.model.model_util import FunctionCall
 from data.graph.airline_change_baggage import (
     CHANGE_BAGGAGE_GRAPH_SCHEMA,
     book_flight_node_schema,
@@ -197,12 +196,7 @@ class TestRequest(BaseTest):
             "customer wants to change a flight",
         )
 
-        fn_call = FunctionCall.create(
-            api_id_model_provider=self.fixtures.model_provider,
-            api_id=FunctionCall.generate_fake_id(self.fixtures.model_provider),
-            name="update_reservation_flights",
-            args={"args": "1"},
-        )
+        fn_call = self.create_fn_call("update_reservation_flights", {"args": "1"})
         t6 = self.add_assistant_turn(
             None,
             [fn_call],
@@ -428,12 +422,7 @@ class TestRequest(BaseTest):
             "change baggage",
         )
 
-        fn_call = FunctionCall.create(
-            api_id_model_provider=model_provider,
-            api_id=FunctionCall.generate_fake_id(model_provider),
-            name="update_reservation_baggages",
-            args={"args": "1"},
-        )
+        fn_call = self.create_fn_call("update_reservation_baggages", {"args": "1"})
         t14 = self.add_assistant_turn(
             None,
             [fn_call],
