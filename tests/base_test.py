@@ -62,6 +62,7 @@ class BaseTest:
         self.model_chat = self.model_chat_patcher.start()
         self.fixtures = Fixtures()
         self.curr_request = None
+        self.curr_conversation_node_schema = None
 
         yield
 
@@ -143,7 +144,8 @@ class BaseTest:
             ].node_conversation_dicts,
         )
 
-    def run_assertions(self, TC, tool_registry):
+    def run_assertions(self, turns, tool_registry):
+        TC = self.create_turn_container(turns)
         self.run_message_dict_assertions()
         assert not DeepDiff(
             self.fixtures.agent_executor.get_model_completion_kwargs(),
@@ -307,8 +309,7 @@ class BaseTest:
                 is_wait_model_completion = self.create_mock_model_completion(
                     None,
                     True,
-                    wait_node_schema_id
-                    or self.fixtures.agent_executor.graph.curr_conversation_node.schema.id,
+                    wait_node_schema_id or self.curr_conversation_node_schema.id,
                     0.5,
                 )
                 model_chat_side_effects.append(is_wait_model_completion)
@@ -317,8 +318,7 @@ class BaseTest:
                     skip_model_completion = self.create_mock_model_completion(
                         None,
                         True,
-                        skip_node_schema_id
-                        or self.fixtures.agent_executor.graph.curr_conversation_node.schema.id,
+                        skip_node_schema_id or self.curr_conversation_node_schema.id,
                         0.5,
                     )
                     model_chat_side_effects.append(skip_model_completion)
@@ -383,7 +383,7 @@ class BaseTest:
             msg_content=message,
             model_provider=self.fixtures.model_provider,
             tool_registry=tool_registry
-            or self.fixtures.agent_executor.graph.curr_conversation_node.schema.tool_registry,
+            or self.curr_conversation_node_schema.tool_registry,
             fn_calls=fn_calls,
             fn_call_id_to_fn_output=fn_call_id_to_fn_output,
         )
@@ -421,9 +421,7 @@ class BaseTest:
             else []
         )
 
-        tool_registry = (
-            self.fixtures.agent_executor.graph.curr_conversation_node.schema.tool_registry
-        )
+        tool_registry = self.curr_conversation_node_schema.tool_registry
 
         fn_calls = fn_calls or []
         expected_calls_map = defaultdict(list)
@@ -441,18 +439,18 @@ class BaseTest:
             if get_state_fn_call is not None:
                 stack.enter_context(
                     patch.object(
-                        self.fixtures.agent_executor.graph.curr_conversation_node,
+                        curr_node,
                         "get_state",
-                        wraps=self.fixtures.agent_executor.graph.curr_conversation_node.get_state,
+                        wraps=curr_node.get_state,
                     )
                 )
 
             if update_state_fn_calls:
                 stack.enter_context(
                     patch.object(
-                        self.fixtures.agent_executor.graph.curr_conversation_node,
+                        curr_node,
                         "update_state",
-                        wraps=self.fixtures.agent_executor.graph.curr_conversation_node.update_state,
+                        wraps=curr_node.update_state,
                     )
                 )
 
@@ -704,6 +702,7 @@ class BaseTest:
             node_turn,
             is_skip=is_skip,
         )
+        self.curr_conversation_node_schema = node_schema
         return node_turn
 
     def add_transition_turns(

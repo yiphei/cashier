@@ -62,6 +62,7 @@ class TestAndGraph(BaseTest):
     @pytest.fixture()
     def first_into_second_transition_turns(
         self,
+        start_turns,
         agent_executor,
         model_provider,
     ):
@@ -69,7 +70,7 @@ class TestAndGraph(BaseTest):
             "user_details", pydantic_model=UserDetails
         )
 
-        return self.add_transition_turns(
+        return start_turns + self.add_transition_turns(
             [fn_call],
             "my username is ...",
             self.get_edge_schema(self.start_conv_node_schema),
@@ -78,18 +79,16 @@ class TestAndGraph(BaseTest):
         )
 
     def test_graph_initialization(self, start_turns):
-        TC = self.create_turn_container(start_turns)
         self.run_assertions(
-            TC,
+            start_turns,
             self.start_conv_node_schema.tool_registry,
         )
 
     def test_add_user_turn(self, start_turns):
         user_turn = self.add_user_turn("hello")
 
-        TC = self.create_turn_container([*start_turns, user_turn])
         self.run_assertions(
-            TC,
+            [*start_turns, user_turn],
             self.start_conv_node_schema.tool_registry,
         )
 
@@ -112,10 +111,8 @@ class TestAndGraph(BaseTest):
             [fake_fn_call],
         )
 
-        TC = self.create_turn_container([*start_turns, user_turn, assistant_turn])
-
         self.run_assertions(
-            TC,
+            [*start_turns, user_turn, assistant_turn],
             self.start_conv_node_schema.tool_registry,
         )
 
@@ -126,10 +123,8 @@ class TestAndGraph(BaseTest):
         user_turn = self.add_user_turn("hello")
         assistant_turn = self.add_assistant_turn("hello back")
 
-        TC = self.create_turn_container([*start_turns, user_turn, assistant_turn])
-
         self.run_assertions(
-            TC,
+            [*start_turns, user_turn, assistant_turn],
             self.start_conv_node_schema.tool_registry,
         )
 
@@ -153,10 +148,8 @@ class TestAndGraph(BaseTest):
             assistant_turn = self.add_assistant_turn(None, tool_names=tool_names)
             a_turns.append(assistant_turn)
 
-        TC = self.create_turn_container([*start_turns, user_turn, *a_turns])
-
         self.run_assertions(
-            TC,
+            [*start_turns, user_turn, *a_turns],
             self.start_conv_node_schema.tool_registry,
         )
 
@@ -191,32 +184,23 @@ class TestAndGraph(BaseTest):
             fn_call_id_to_fn_output,
         )
 
-        TC = self.create_turn_container([*start_turns, assistant_turn])
-
         self.run_assertions(
-            TC,
+            [*start_turns, assistant_turn],
             self.start_conv_node_schema.tool_registry,
         )
 
     def test_node_transition(
         self,
-        start_turns,
         first_into_second_transition_turns,
     ):
-        TC = self.create_turn_container(
-            [
-                *start_turns,
-                *first_into_second_transition_turns,
-            ],
+        self.run_assertions(
+            first_into_second_transition_turns, find_flight_node_schema.tool_registry
         )
-
-        self.run_assertions(TC, find_flight_node_schema.tool_registry)
 
     def test_backward_node_skip(
         self,
         model_provider,
         agent_executor,
-        start_turns,
         first_into_second_transition_turns,
     ):
         t1 = self.add_assistant_turn(
@@ -239,19 +223,14 @@ class TestAndGraph(BaseTest):
 
         t4 = self.add_direct_get_state_turn()
 
-        TC = self.create_turn_container(
+        self.run_assertions(
             [
-                *start_turns,
                 *first_into_second_transition_turns,
                 t1,
                 t2,
                 t3,
                 t4,
             ],
-        )
-
-        self.run_assertions(
-            TC,
             self.start_conv_node_schema.tool_registry,
         )
 
@@ -259,7 +238,6 @@ class TestAndGraph(BaseTest):
         self,
         model_provider,
         agent_executor,
-        start_turns,
         first_into_second_transition_turns,
     ):
         t1 = self.add_assistant_turn(
@@ -323,9 +301,8 @@ class TestAndGraph(BaseTest):
 
         t10 = self.add_direct_get_state_turn()
 
-        TC = self.create_turn_container(
+        self.run_assertions(
             [
-                *start_turns,
                 *first_into_second_transition_turns,
                 t1,
                 *t_turns_2,
@@ -338,9 +315,8 @@ class TestAndGraph(BaseTest):
                 t9,
                 t10,
             ],
+            find_flight_node_schema.tool_registry,
         )
-
-        self.run_assertions(TC, find_flight_node_schema.tool_registry)
 
 
 def test_class_test_count(request):

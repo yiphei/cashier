@@ -109,7 +109,7 @@ class TestRequest(BaseTest):
             None,
             "i want to change flight",
         )
-        return [t1, node_turn]
+        return [*start_turns, t1, node_turn]
 
     @pytest.fixture
     def into_second_graph_transition_turns(
@@ -233,6 +233,7 @@ class TestRequest(BaseTest):
             "the payment method is ...",
         )
         return [
+            *into_graph_transition_turns,
             *t_turns_1,
             *t_turns_2,
             *t_turns_3,
@@ -248,19 +249,16 @@ class TestRequest(BaseTest):
 
     @pytest.mark.usefixtures("agent_executor")
     def test_graph_initialization(self, start_turns):
-        TC = self.create_turn_container(start_turns)
         self.run_assertions(
-            TC,
+            start_turns,
             self.start_conv_node_schema.tool_registry,
         )
 
     @pytest.mark.usefixtures("agent_executor")
     def test_add_user_turn(self, start_turns):
         user_turn = self.add_request_user_turn("hello")
-
-        TC = self.create_turn_container([*start_turns, user_turn])
         self.run_assertions(
-            TC,
+            [*start_turns, user_turn],
             self.start_conv_node_schema.tool_registry,
         )
 
@@ -272,10 +270,8 @@ class TestRequest(BaseTest):
         user_turn = self.add_request_user_turn("hello")
         assistant_turn = self.add_assistant_turn("hello back")
 
-        TC = self.create_turn_container([*start_turns, user_turn, assistant_turn])
-
         self.run_assertions(
-            TC,
+            [*start_turns, user_turn, assistant_turn],
             self.start_conv_node_schema.tool_registry,
         )
 
@@ -305,32 +301,23 @@ class TestRequest(BaseTest):
             assistant_turn = self.add_assistant_turn(None, tool_names=tool_names)
             a_turns.append(assistant_turn)
 
-        TC = self.create_turn_container([*start_turns, user_turn, *a_turns])
-
         self.run_assertions(
-            TC,
+            [*start_turns, user_turn, *a_turns],
             self.start_conv_node_schema.tool_registry,
         )
 
     @pytest.mark.usefixtures("agent_executor")
     def test_node_transition(
         self,
-        start_turns,
         into_graph_transition_turns,
     ):
-        TC = self.create_turn_container(
-            [
-                *start_turns,
-                *into_graph_transition_turns,
-            ],
+        self.run_assertions(
+            into_graph_transition_turns, get_user_id_node_schema.tool_registry
         )
-
-        self.run_assertions(TC, get_user_id_node_schema.tool_registry)
 
     @pytest.mark.usefixtures("agent_executor")
     def test_add_new_task(
         self,
-        start_turns,
         into_graph_transition_turns,
     ):
         t_turns_1 = self.add_new_task(
@@ -340,35 +327,21 @@ class TestRequest(BaseTest):
             CHANGE_BAGGAGE_GRAPH_SCHEMA,
         )
 
-        TC = self.create_turn_container(
-            [
-                *start_turns,
-                *into_graph_transition_turns,
-                *t_turns_1,
-            ],
+        self.run_assertions(
+            into_graph_transition_turns + t_turns_1,
+            get_user_id_node_schema.tool_registry,
         )
-        self.run_assertions(TC, get_user_id_node_schema.tool_registry)
 
     def test_graph_transition(
         self,
         model_provider,
         agent_executor,
-        start_turns,
-        into_graph_transition_turns,
         into_second_graph_transition_turns,
     ):
         new_node_schema = luggage_node_schema
 
-        TC = self.create_turn_container(
-            [
-                *start_turns,
-                *into_graph_transition_turns,
-                *into_second_graph_transition_turns,
-            ],
-        )
-
         self.run_assertions(
-            TC,
+            into_second_graph_transition_turns,
             new_node_schema.tool_registry,
         )
 
@@ -376,8 +349,6 @@ class TestRequest(BaseTest):
         self,
         model_provider,
         agent_executor,
-        start_turns,
-        into_graph_transition_turns,
         into_second_graph_transition_turns,
     ):
         fn_call = self.create_state_update_fn_call("total_baggages", 1)
@@ -410,20 +381,14 @@ class TestRequest(BaseTest):
             "the payment method is ...",
         )
 
-        TC = self.create_turn_container(
+        self.run_assertions(
             [
-                *start_turns,
-                *into_graph_transition_turns,
                 *into_second_graph_transition_turns,
                 *t_turns_12,
                 *t_turns_13,
                 t14,
                 t15,
             ],
-        )
-
-        self.run_assertions(
-            TC,
             AIRLINE_REQUEST_SCHEMA.default_node_schema.tool_registry,
         )
 
