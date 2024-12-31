@@ -241,7 +241,6 @@ class TestAndGraph(BaseTest):
             is_skip=True,
         )
 
-
         t4 = self.add_direct_get_state_turn()
 
         TC = self.create_turn_container(
