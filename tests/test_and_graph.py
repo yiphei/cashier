@@ -207,14 +207,12 @@ class TestAndGraph(BaseTest):
             "what flight do you want?",
         )
 
-        t_turns_2 = self.add_skip_transition_turns(self.start_conv_node_schema, None, "what flight do you want?")
+        t_turns_2 = self.add_skip_transition_turns(
+            self.start_conv_node_schema, None, "what flight do you want?"
+        )
 
         self.run_assertions(
-            [
-                *first_into_second_transition_turns,
-                t1,
-                *t_turns_2
-            ],
+            [*first_into_second_transition_turns, t1, *t_turns_2],
             self.start_conv_node_schema.tool_registry,
         )
 
@@ -247,14 +245,21 @@ class TestAndGraph(BaseTest):
             "thanks for confirming flights, now lets move on to ...",
         )
 
-        t_turns_4 = self.add_skip_transition_turns(self.start_conv_node_schema, None, "thanks for confirming flights, now lets move on to ...")
-
+        t_turns_4 = self.add_skip_transition_turns(
+            self.start_conv_node_schema,
+            None,
+            "thanks for confirming flights, now lets move on to ...",
+        )
 
         self.run_message_dict_assertions()
 
-        t_turns_5 = self.add_skip_transition_turns(find_flight_node_schema, find_flight_node_schema.input_from_state_schema(
+        t_turns_5 = self.add_skip_transition_turns(
+            find_flight_node_schema,
+            find_flight_node_schema.input_from_state_schema(
                 **agent_executor.graph.curr_node.curr_node.state.model_dump_fields_set()
-            ), "what do you want to change?")
+            ),
+            "what do you want to change?",
+        )
 
         self.run_assertions(
             [
@@ -263,7 +268,7 @@ class TestAndGraph(BaseTest):
                 *t_turns_2,
                 t3,
                 *t_turns_4,
-                *t_turns_5
+                *t_turns_5,
             ],
             find_flight_node_schema.tool_registry,
         )
