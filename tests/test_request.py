@@ -109,7 +109,7 @@ class TestRequest(BaseTest):
             None,
             "i want to change flight",
         )
-        return [t1, node_turn]
+        return [*start_turns, t1, node_turn]
 
     @pytest.fixture
     def into_second_graph_transition_turns(
@@ -233,6 +233,7 @@ class TestRequest(BaseTest):
             "the payment method is ...",
         )
         return [
+            *into_graph_transition_turns,
             *t_turns_1,
             *t_turns_2,
             *t_turns_3,
@@ -315,12 +316,10 @@ class TestRequest(BaseTest):
     @pytest.mark.usefixtures("agent_executor")
     def test_node_transition(
         self,
-        start_turns,
         into_graph_transition_turns,
     ):
         TC = self.create_turn_container(
             [
-                *start_turns,
                 *into_graph_transition_turns,
             ],
         )
@@ -330,7 +329,6 @@ class TestRequest(BaseTest):
     @pytest.mark.usefixtures("agent_executor")
     def test_add_new_task(
         self,
-        start_turns,
         into_graph_transition_turns,
     ):
         t_turns_1 = self.add_new_task(
@@ -342,7 +340,6 @@ class TestRequest(BaseTest):
 
         TC = self.create_turn_container(
             [
-                *start_turns,
                 *into_graph_transition_turns,
                 *t_turns_1,
             ],
@@ -353,16 +350,12 @@ class TestRequest(BaseTest):
         self,
         model_provider,
         agent_executor,
-        start_turns,
-        into_graph_transition_turns,
         into_second_graph_transition_turns,
     ):
         new_node_schema = luggage_node_schema
 
         TC = self.create_turn_container(
             [
-                *start_turns,
-                *into_graph_transition_turns,
                 *into_second_graph_transition_turns,
             ],
         )
@@ -376,8 +369,6 @@ class TestRequest(BaseTest):
         self,
         model_provider,
         agent_executor,
-        start_turns,
-        into_graph_transition_turns,
         into_second_graph_transition_turns,
     ):
         fn_call = self.create_state_update_fn_call("total_baggages", 1)
@@ -412,8 +403,6 @@ class TestRequest(BaseTest):
 
         TC = self.create_turn_container(
             [
-                *start_turns,
-                *into_graph_transition_turns,
                 *into_second_graph_transition_turns,
                 *t_turns_12,
                 *t_turns_13,
