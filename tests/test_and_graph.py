@@ -4,7 +4,6 @@ from polyfactory.factories.pydantic_factory import ModelFactory
 from cashier.tool.function_call_context import StateUpdateError, ToolExceptionWrapper
 from data.graph.airline_book_flight import (
     BOOK_FLIGHT_GRAPH_SCHEMA,
-    find_flight_node_schema,
     get_user_id_node_schema,
 )
 from data.graph.airline_request import AIRLINE_REQUEST_SCHEMA
@@ -29,10 +28,21 @@ class TestAndGraph(BaseTest):
             )
             self.edge_schema_id_to_to_cov_node_schema_id[edge_schema.id] = node_schema
 
+        self.ordered_conv_node_schemas = [self.start_conv_node_schema]
+        edge_schema = self.get_edge_schema(self.start_conv_node_schema)
+        while edge_schema:
+            next_node_schema = self.edge_schema_id_to_to_cov_node_schema_id[edge_schema.id]
+            self.ordered_conv_node_schemas.append(
+                next_node_schema
+            )
+            edge_schema = self.get_edge_schema(
+                next_node_schema
+            )
+
     def get_edge_schema(self, curr_node_schema):
-        return self.graph_schema.from_conv_node_schema_id_to_edge_schema[
+        return self.graph_schema.from_conv_node_schema_id_to_edge_schema.get(
             curr_node_schema.id
-        ]
+        , None)
 
     def get_next_conv_node_schema(self, curr_node_schema):
         edge_schema = self.graph_schema.from_conv_node_schema_id_to_edge_schema[
@@ -101,7 +111,7 @@ class TestAndGraph(BaseTest):
         model_provider,
         start_turns,
     ):
-        user_turn = self.add_user_turn("hello", False, find_flight_node_schema.id)
+        user_turn = self.add_user_turn("hello", False, self.ordered_conv_node_schemas[1].id)
 
         fake_fn_call = self.recreate_fake_single_fn_call(
             "think",
@@ -200,7 +210,7 @@ class TestAndGraph(BaseTest):
         t_turns_1 = self.add_chat_turns()
         self.run_assertions(
             first_into_second_transition_turns + t_turns_1,
-            find_flight_node_schema.tool_registry,
+            self.curr_conversation_node_schema.tool_registry,
         )
 
     def test_backward_node_skip(
@@ -239,12 +249,12 @@ class TestAndGraph(BaseTest):
             "flight_infos", [flight_info.model_dump()]
         )
 
-        next_next_node_schema = self.get_next_conv_node_schema(find_flight_node_schema)
+        next_next_node_schema = self.get_next_conv_node_schema(self.ordered_conv_node_schemas[1])
 
         t_turns_3 = self.add_transition_turns(
             [fn_call],
             "i want flight from ... to ... on ...",
-            self.get_edge_schema(find_flight_node_schema),
+            self.get_edge_schema(self.ordered_conv_node_schemas[1]),
             next_next_node_schema,
             is_and_graph=True,
         )
@@ -262,8 +272,8 @@ class TestAndGraph(BaseTest):
         )
 
         t_turns_7 = self.add_skip_transition_turns(
-            find_flight_node_schema,
-            find_flight_node_schema.input_from_state_schema(
+            self.ordered_conv_node_schemas[1],
+            self.ordered_conv_node_schemas[1].input_from_state_schema(
                 **agent_executor.graph.curr_node.curr_node.state.model_dump_fields_set()
             ),
             "what do you want to change?",  # TODO: this is from the default assistant message in add_skip_transition_turns. refactor this
@@ -280,7 +290,7 @@ class TestAndGraph(BaseTest):
                 *t_turns_6,
                 *t_turns_7,
             ],
-            find_flight_node_schema.tool_registry,
+            self.ordered_conv_node_schemas[1].tool_registry,
         )
 
 
