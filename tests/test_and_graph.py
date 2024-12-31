@@ -256,7 +256,7 @@ class TestAndGraph(BaseTest):
             find_flight_node_schema.input_from_state_schema(
                 **agent_executor.graph.curr_node.curr_node.state.model_dump_fields_set()
             ),
-            "what do you want to change?",
+            "what do you want to change?", # TODO: this is from the default assistant message in add_skip_transition_turns. refactor this
         )
 
         self.run_assertions(
