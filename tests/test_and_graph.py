@@ -219,7 +219,7 @@ class TestAndGraph(BaseTest):
         )
 
         self.run_assertions(
-            [*first_into_second_transition_turns, *t_turns_1,  t2, *t_turns_3],
+            [*first_into_second_transition_turns, *t_turns_1, t2, *t_turns_3],
             self.start_conv_node_schema.tool_registry,
         )
 
