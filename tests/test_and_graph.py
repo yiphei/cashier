@@ -62,6 +62,7 @@ class TestAndGraph(BaseTest):
     @pytest.fixture()
     def first_into_second_transition_turns(
         self,
+        start_turns,
         agent_executor,
         model_provider,
     ):
@@ -69,7 +70,7 @@ class TestAndGraph(BaseTest):
             "user_details", pydantic_model=UserDetails
         )
 
-        return self.add_transition_turns(
+        return start_turns + self.add_transition_turns(
             [fn_call],
             "my username is ...",
             self.get_edge_schema(self.start_conv_node_schema),
@@ -200,12 +201,10 @@ class TestAndGraph(BaseTest):
 
     def test_node_transition(
         self,
-        start_turns,
         first_into_second_transition_turns,
     ):
         TC = self.create_turn_container(
             [
-                *start_turns,
                 *first_into_second_transition_turns,
             ],
         )
@@ -216,7 +215,6 @@ class TestAndGraph(BaseTest):
         self,
         model_provider,
         agent_executor,
-        start_turns,
         first_into_second_transition_turns,
     ):
         t1 = self.add_assistant_turn(
@@ -241,7 +239,6 @@ class TestAndGraph(BaseTest):
 
         TC = self.create_turn_container(
             [
-                *start_turns,
                 *first_into_second_transition_turns,
                 t1,
                 t2,
@@ -259,7 +256,6 @@ class TestAndGraph(BaseTest):
         self,
         model_provider,
         agent_executor,
-        start_turns,
         first_into_second_transition_turns,
     ):
         t1 = self.add_assistant_turn(
@@ -325,7 +321,6 @@ class TestAndGraph(BaseTest):
 
         TC = self.create_turn_container(
             [
-                *start_turns,
                 *first_into_second_transition_turns,
                 t1,
                 *t_turns_2,
