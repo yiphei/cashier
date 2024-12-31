@@ -356,6 +356,14 @@ class BaseTest:
         ut = UserTurn(msg_content=message)
         self.add_messages_from_turn(ut)
         return ut
+    
+    def add_direct_get_state_turn(self):
+        get_state_fn_call = self.recreate_fake_single_fn_call("get_state", {})
+        return self.add_direct_assistant_turn(
+            None,
+            [get_state_fn_call],
+            {get_state_fn_call.id: self.fixtures.agent_executor.graph.curr_conversation_node.state},
+        )
 
     def add_direct_assistant_turn(
         self,

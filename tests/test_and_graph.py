@@ -241,16 +241,8 @@ class TestAndGraph(BaseTest):
             is_skip=True,
         )
 
-        get_state_fn_call = self.recreate_fake_single_fn_call(
-            "get_state",
-            {},
-        )
 
-        t4 = self.add_direct_assistant_turn(
-            None,
-            [get_state_fn_call],
-            {get_state_fn_call.id: agent_executor.graph.curr_conversation_node.state},
-        )
+        t4 = self.add_direct_get_state_turn()
 
         TC = self.create_turn_container(
             [
@@ -314,12 +306,7 @@ class TestAndGraph(BaseTest):
             is_skip=True,
         )
 
-        get_state_fn_call = self.recreate_fake_single_fn_call("get_state", {})
-        t6 = self.add_direct_assistant_turn(
-            None,
-            [get_state_fn_call],
-            {get_state_fn_call.id: agent_executor.graph.curr_conversation_node.state},
-        )
+        t6 = self.add_direct_get_state_turn()
 
         t7 = self.add_assistant_turn(
             "what do you want to change?",
@@ -342,12 +329,7 @@ class TestAndGraph(BaseTest):
             is_skip=True,
         )
 
-        get_state_fn_call = self.recreate_fake_single_fn_call("get_state", {})
-        t10 = self.add_direct_assistant_turn(
-            None,
-            [get_state_fn_call],
-            {get_state_fn_call.id: agent_executor.graph.curr_conversation_node.state},
-        )
+        t10 = self.add_direct_get_state_turn()
 
         TC = self.create_turn_container(
             [
