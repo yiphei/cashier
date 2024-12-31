@@ -4,6 +4,7 @@ from collections import defaultdict, deque
 from contextlib import ExitStack, contextmanager
 from typing import Any, Dict, Optional
 from unittest.mock import Mock, call, patch
+from abc import ABC, abstractmethod
 
 import pytest
 from deepdiff import DeepDiff
@@ -35,7 +36,6 @@ from cashier.tool.function_call_context import (
     ToolExceptionWrapper,
 )
 from cashier.turn_container import TurnContainer
-from data.graph.airline_request import AIRLINE_REQUEST_SCHEMA
 
 
 class TurnArgs(BaseModel):
@@ -52,9 +52,14 @@ class Fixtures(BaseModel):
     agent_executor: Optional[AgentExecutor] = None
 
 
-class BaseTest:
+class BaseTest(ABC):
+    @abstractmethod
     @pytest.fixture(autouse=True)
-    def base_setup(self):
+    def request_schema_input(self):
+        raise NotImplementedError
+
+    @pytest.fixture(autouse=True)
+    def base_setup(self, request_schema_input):
 
         self.rand_tool_ids = deque()
         self.rand_uuids = deque()
@@ -63,7 +68,7 @@ class BaseTest:
         self.fixtures = Fixtures()
         self.curr_request = None
         self.curr_conversation_node_schema = None
-
+        self.request_schema = request_schema_input
         yield
 
         self.fixtures = None
@@ -487,7 +492,7 @@ class BaseTest:
     @pytest.fixture
     def agent_executor(self, base_setup, remove_prev_tool_calls):
         ae = AgentExecutor(
-            graph_schema=AIRLINE_REQUEST_SCHEMA,
+            graph_schema=self.request_schema,
             audio_output=False,
             remove_prev_tool_calls=remove_prev_tool_calls,
         )

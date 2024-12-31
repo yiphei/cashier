@@ -27,6 +27,10 @@ from tests.base_test import BaseTest, assert_number_of_tests, get_fn_names_fixtu
 
 class TestRequest(BaseTest):
     @pytest.fixture(autouse=True)
+    def request_schema_input(self):
+        return AIRLINE_REQUEST_SCHEMA
+
+    @pytest.fixture(autouse=True)
     def setup(self):
         self.start_conv_node_schema = AIRLINE_REQUEST_SCHEMA.start_node_schema
         self.graph_schema = CHANGE_FLIGHT_GRAPH_SCHEMA
