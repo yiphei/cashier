@@ -391,6 +391,9 @@ class BaseTest:
                 self.fixtures.agent_executor.graph.curr_conversation_node,
             )
 
+        if fn_calls is not None and fn_call_id_to_fn_output is None:
+            fn_call_id_to_fn_output = {fn_call.id: None for fn_call in fn_calls}
+
         model_completion = self.create_mock_model_completion(
             message,
             fn_calls=fn_calls,
@@ -694,7 +697,6 @@ class BaseTest:
     def add_transition_turns(
         self,
         fn_calls,
-        fn_call_id_to_fn_output,
         user_msg,
         edge_schema,
         next_node_schema,
@@ -706,7 +708,6 @@ class BaseTest:
         t2 = self.add_assistant_turn(
             None,
             fn_calls,
-            fn_call_id_to_fn_output,
         )
 
         state = (
