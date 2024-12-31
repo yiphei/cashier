@@ -191,7 +191,6 @@ class TestRequest(BaseTest):
         t6 = self.add_assistant_turn(
             None,
             [fn_call],
-            {fn_call.id: None},
         )
 
         fake_fn_call = self.recreate_fake_single_fn_call(
@@ -411,7 +410,6 @@ class TestRequest(BaseTest):
         t14 = self.add_assistant_turn(
             None,
             [fn_call],
-            {fn_call.id: None},
         )
 
         t15 = self.add_node_turn(
