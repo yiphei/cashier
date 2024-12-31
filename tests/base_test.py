@@ -739,26 +739,26 @@ class BaseTest:
 
     def add_skip_transition_turns(self, skip_node_schema, input, last_msg):
         self.run_message_dict_assertions()
-        t4 = self.add_user_turn(
+        t1 = self.add_user_turn(
             "actually, i want to change ...",
             False,
             skip_node_schema_id=skip_node_schema.id,
         )
 
-        t5 = self.add_node_turn(
+        t2 = self.add_node_turn(
             skip_node_schema,
             input,
             last_msg,
             is_skip=True,
         )
-        t6 = self.add_direct_get_state_turn()
+        t3 = self.add_direct_get_state_turn()
         self.run_message_dict_assertions()
 
-        t7 = self.add_assistant_turn(
+        t4 = self.add_assistant_turn(
             "what do you want to change?",
         )
 
-        return [t4, t5, t6, t7]
+        return [t1, t2, t3, t4]
 
 
 def assert_number_of_tests(test_class, absolute_path, request, expected_test_count):
