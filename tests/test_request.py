@@ -75,14 +75,10 @@ class TestRequest(BaseTest):
             },
         )
 
-        t2 = AssistantTurn(
-            msg_content=None,
-            model_provider=self.fixtures.model_provider,
-            tool_registry=self.fixtures.agent_executor.graph.curr_conversation_node.schema.tool_registry,
-            fn_calls=[fake_fn_call],
-            fn_call_id_to_fn_output={fake_fn_call.id: None},
+        t2 = self.add_direct_assistant_turn(
+            None,
+            [fake_fn_call],
         )
-        self.add_messages_from_turn(t2)
 
         assert self.fixtures.agent_executor.graph.requests == (
             current_tasks + [new_task]
@@ -210,14 +206,10 @@ class TestRequest(BaseTest):
             },
         )
 
-        t7 = AssistantTurn(
-            msg_content=None,
-            model_provider=self.fixtures.model_provider,
-            tool_registry=self.fixtures.agent_executor.graph.curr_conversation_node.schema.tool_registry,
-            fn_calls=[fake_fn_call],
-            fn_call_id_to_fn_output={fake_fn_call.id: None},
+        t7 = self.add_direct_assistant_turn(
+            None,
+            [fake_fn_call],
         )
-        self.add_messages_from_turn(t7)
 
         t8 = self.add_assistant_turn(
             "finished task",
