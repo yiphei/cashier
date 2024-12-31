@@ -193,7 +193,9 @@ class TestAndGraph(BaseTest):
         self,
         first_into_second_transition_turns,
     ):
-        self.run_assertions(first_into_second_transition_turns, find_flight_node_schema.tool_registry)
+        self.run_assertions(
+            first_into_second_transition_turns, find_flight_node_schema.tool_registry
+        )
 
     def test_backward_node_skip(
         self,
@@ -299,7 +301,8 @@ class TestAndGraph(BaseTest):
 
         t10 = self.add_direct_get_state_turn()
 
-        self.run_assertions([
+        self.run_assertions(
+            [
                 *first_into_second_transition_turns,
                 t1,
                 *t_turns_2,
@@ -311,7 +314,9 @@ class TestAndGraph(BaseTest):
                 t8,
                 t9,
                 t10,
-            ], find_flight_node_schema.tool_registry)
+            ],
+            find_flight_node_schema.tool_registry,
+        )
 
 
 def test_class_test_count(request):

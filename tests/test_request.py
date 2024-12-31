@@ -311,7 +311,9 @@ class TestRequest(BaseTest):
         self,
         into_graph_transition_turns,
     ):
-        self.run_assertions(into_graph_transition_turns, get_user_id_node_schema.tool_registry)
+        self.run_assertions(
+            into_graph_transition_turns, get_user_id_node_schema.tool_registry
+        )
 
     @pytest.mark.usefixtures("agent_executor")
     def test_add_new_task(
@@ -325,7 +327,10 @@ class TestRequest(BaseTest):
             CHANGE_BAGGAGE_GRAPH_SCHEMA,
         )
 
-        self.run_assertions(into_graph_transition_turns + t_turns_1, get_user_id_node_schema.tool_registry)
+        self.run_assertions(
+            into_graph_transition_turns + t_turns_1,
+            get_user_id_node_schema.tool_registry,
+        )
 
     def test_graph_transition(
         self,
