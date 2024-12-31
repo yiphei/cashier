@@ -320,7 +320,8 @@ class TestRequest(BaseTest):
     ):
         t_turns_1 = self.add_chat_turns()
         self.run_assertions(
-            into_graph_transition_turns + t_turns_1, get_user_id_node_schema.tool_registry
+            into_graph_transition_turns + t_turns_1,
+            get_user_id_node_schema.tool_registry,
         )
 
     @pytest.mark.usefixtures("agent_executor")
