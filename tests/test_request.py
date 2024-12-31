@@ -115,6 +115,7 @@ class TestRequest(BaseTest):
     def into_second_graph_transition_turns(
         self, agent_executor, into_graph_transition_turns
     ):
+        t_turns_a = self.add_chat_turns()
         fn_call = self.create_state_update_fn_call(
             "user_details", pydantic_model=UserDetails
         )
@@ -131,6 +132,7 @@ class TestRequest(BaseTest):
                 CHANGE_FLIGHT_GRAPH_SCHEMA.start_node_schema
             ),
         )
+        t_turns_b = self.add_chat_turns()
 
         t_turns_2 = self.add_new_task(
             ["customer wants to change a flight"],
@@ -151,6 +153,7 @@ class TestRequest(BaseTest):
             self.get_edge_schema(next_node_schema),
             next_next_node_schema,
         )
+        t_turns_c = self.add_chat_turns()
 
         flight_info = ModelFactory.create_factory(FlightInfo).build()
         fn_call = self.create_state_update_fn_call(
@@ -168,7 +171,7 @@ class TestRequest(BaseTest):
             self.get_edge_schema(next_next_node_schema),
             next_next_next_node_schema,
         )
-
+        t_turns_d = self.add_chat_turns()
         fn_call = self.create_state_update_fn_call("payment_id", "123")
         next_next_next_next_node_schema = self.get_next_conv_node_schema(
             next_next_next_node_schema
@@ -234,10 +237,14 @@ class TestRequest(BaseTest):
         )
         return [
             *into_graph_transition_turns,
+            *t_turns_a,
             *t_turns_1,
+            *t_turns_b,
             *t_turns_2,
             *t_turns_3,
+            *t_turns_c,
             *t_turns_4,
+            *t_turns_d,
             *t_turns_5,
             t6,
             t7,
@@ -311,8 +318,9 @@ class TestRequest(BaseTest):
         self,
         into_graph_transition_turns,
     ):
+        t_turns_1 = self.add_chat_turns()
         self.run_assertions(
-            into_graph_transition_turns, get_user_id_node_schema.tool_registry
+            into_graph_transition_turns + t_turns_1, get_user_id_node_schema.tool_registry
         )
 
     @pytest.mark.usefixtures("agent_executor")
@@ -338,11 +346,10 @@ class TestRequest(BaseTest):
         agent_executor,
         into_second_graph_transition_turns,
     ):
-        new_node_schema = luggage_node_schema
-
+        t_turns_1 = self.add_chat_turns()
         self.run_assertions(
-            into_second_graph_transition_turns,
-            new_node_schema.tool_registry,
+            into_second_graph_transition_turns + t_turns_1,
+            luggage_node_schema.tool_registry,
         )
 
     def test_default_node(
@@ -351,6 +358,7 @@ class TestRequest(BaseTest):
         agent_executor,
         into_second_graph_transition_turns,
     ):
+        t_turns_a = self.add_chat_turns()
         fn_call = self.create_state_update_fn_call("total_baggages", 1)
         fn_call_2 = self.create_state_update_fn_call("nonfree_baggages", 1)
         t_turns_12 = self.add_transition_turns(
@@ -359,6 +367,7 @@ class TestRequest(BaseTest):
             edge_3,
             payment_node_schema,
         )
+        t_turns_b = self.add_chat_turns()
 
         fn_call = self.create_state_update_fn_call("payment_id", "asd")
         t_turns_13 = self.add_transition_turns(
@@ -367,6 +376,7 @@ class TestRequest(BaseTest):
             edge_4,
             book_flight_node_schema,
         )
+        # t_turns_c = self.add_chat_turns()
 
         fn_call = self.create_fn_call("update_reservation_baggages")
         t14 = self.add_assistant_turn(
@@ -380,14 +390,18 @@ class TestRequest(BaseTest):
             None,
             "the payment method is ...",
         )
-
+        # t_turns_d = self.add_chat_turns()
         self.run_assertions(
             [
                 *into_second_graph_transition_turns,
+                *t_turns_a,
                 *t_turns_12,
+                *t_turns_b,
                 *t_turns_13,
+                # *t_turns_c,
                 t14,
                 t15,
+                # *t_turns_d,
             ],
             AIRLINE_REQUEST_SCHEMA.default_node_schema.tool_registry,
         )
