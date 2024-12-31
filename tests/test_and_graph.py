@@ -209,16 +209,17 @@ class TestAndGraph(BaseTest):
         agent_executor,
         first_into_second_transition_turns,
     ):
-        t1 = self.add_assistant_turn(
+        t_turns_1 = self.add_chat_turns()
+        t2 = self.add_assistant_turn(
             "what flight do you want?",
         )
 
-        t_turns_2 = self.add_skip_transition_turns(
+        t_turns_3 = self.add_skip_transition_turns(
             self.start_conv_node_schema, None, "what flight do you want?"
         )
 
         self.run_assertions(
-            [*first_into_second_transition_turns, t1, *t_turns_2],
+            [*first_into_second_transition_turns, *t_turns_1,  t2, *t_turns_3],
             self.start_conv_node_schema.tool_registry,
         )
 
@@ -228,6 +229,7 @@ class TestAndGraph(BaseTest):
         agent_executor,
         first_into_second_transition_turns,
     ):
+        t_turns_a = self.add_chat_turns()
         t1 = self.add_assistant_turn(
             "what flight do you want?",
         )
@@ -246,6 +248,8 @@ class TestAndGraph(BaseTest):
             next_next_node_schema,
             is_and_graph=True,
         )
+
+        t_turns_b = self.add_chat_turns()
 
         t3 = self.add_assistant_turn(
             "thanks for confirming flights, now lets move on to ...",
@@ -268,8 +272,10 @@ class TestAndGraph(BaseTest):
         self.run_assertions(
             [
                 *first_into_second_transition_turns,
+                *t_turns_a,
                 t1,
                 *t_turns_2,
+                *t_turns_b,
                 t3,
                 *t_turns_4,
                 *t_turns_5,
