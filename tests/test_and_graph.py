@@ -162,9 +162,7 @@ class TestAndGraph(BaseTest):
             self.start_conv_node_schema.tool_registry,
         )
 
-    @pytest.mark.parametrize(
-        "fn_names", get_fn_names_fixture(get_user_id_node_schema)
-    )
+    @pytest.mark.parametrize("fn_names", get_fn_names_fixture(get_user_id_node_schema))
     @pytest.mark.parametrize("separate_fn_calls", [True, False])
     def test_add_assistant_turn_with_tool_calls(
         self,
@@ -191,8 +189,7 @@ class TestAndGraph(BaseTest):
 
     @pytest.mark.parametrize(
         "fn_names",
-        get_fn_names_fixture(get_user_id_node_schema, exclude_update_fn=True)
-        + [[]],
+        get_fn_names_fixture(get_user_id_node_schema, exclude_update_fn=True) + [[]],
     )
     def test_state_update_before_user_turn(
         self,
