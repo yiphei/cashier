@@ -712,7 +712,6 @@ class BaseTest:
         user_msg,
         edge_schema,
         next_node_schema,
-        curr_request,
         last_assistant_msg="good, lets move on to ...",
         is_and_graph=False,
     ):

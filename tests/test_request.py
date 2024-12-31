@@ -130,7 +130,6 @@ class TestRequest(BaseTest):
             self.get_next_conv_node_schema(
                 CHANGE_FLIGHT_GRAPH_SCHEMA.start_node_schema
             ),
-            "customer wants to change a flight",
         )
 
         t_turns_2 = self.add_new_task(
@@ -151,7 +150,6 @@ class TestRequest(BaseTest):
             "my reservation details are ...",
             self.get_edge_schema(next_node_schema),
             next_next_node_schema,
-            "customer wants to change a flight",
         )
 
         flight_info = ModelFactory.create_factory(FlightInfo).build()
@@ -169,7 +167,6 @@ class TestRequest(BaseTest):
             "the new flight is ...",
             self.get_edge_schema(next_next_node_schema),
             next_next_next_node_schema,
-            "customer wants to change a flight",
         )
 
         fn_call = self.create_state_update_fn_call("payment_id", "123")
@@ -182,7 +179,6 @@ class TestRequest(BaseTest):
             "the payment method is ...",
             self.get_edge_schema(next_next_next_node_schema),
             next_next_next_next_node_schema,
-            "customer wants to change a flight",
         )
 
         fn_call = self.create_fn_call("update_reservation_flights")
@@ -391,7 +387,6 @@ class TestRequest(BaseTest):
             "the luggage is ...",
             edge_3,
             payment_node_schema,
-            "change baggage",
         )
 
         fn_call = self.create_state_update_fn_call("payment_id", "asd")
@@ -400,7 +395,6 @@ class TestRequest(BaseTest):
             "the payment method is ...",
             edge_4,
             book_flight_node_schema,
-            "change baggage",
         )
 
         fn_call = self.create_fn_call("update_reservation_baggages")

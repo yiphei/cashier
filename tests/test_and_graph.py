@@ -74,7 +74,6 @@ class TestAndGraph(BaseTest):
             "my username is ...",
             self.get_edge_schema(self.start_conv_node_schema),
             self.get_next_conv_node_schema(self.start_conv_node_schema),
-            "customer wants to book flight",
             is_and_graph=True,
         )
 
@@ -279,7 +278,6 @@ class TestAndGraph(BaseTest):
             "i want flight from ... to ... on ...",
             self.get_edge_schema(find_flight_node_schema),
             next_next_node_schema,
-            "customer wants to book flight",
             is_and_graph=True,
         )
 
