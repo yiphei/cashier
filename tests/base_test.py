@@ -4,6 +4,7 @@ from collections import defaultdict, deque
 from contextlib import ExitStack, contextmanager
 from typing import Any, Dict, Optional
 from unittest.mock import Mock, call, patch
+from polyfactory.factories.pydantic_factory import ModelFactory
 
 import pytest
 from deepdiff import DeepDiff
@@ -215,7 +216,11 @@ class BaseTest:
         fn.model_fields_set.remove("id")
         return fn
 
-    def create_state_update_fn_call(self, field, value):
+    def create_state_update_fn_call(self, field, value=None, pydantic_model=None):
+        assert bool(value is not None) ^ bool(pydantic_model is not None)
+        value = value
+        if pydantic_model is not None:
+            value = ModelFactory.create_factory(pydantic_model).build().model_dump()
         return FunctionCall.create(
             api_id_model_provider=self.fixtures.model_provider,
             api_id=FunctionCall.generate_fake_id(self.fixtures.model_provider),

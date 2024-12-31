@@ -123,13 +123,7 @@ class TestRequest(BaseTest):
     def into_second_graph_transition_turns(
         self, agent_executor, into_graph_transition_turns
     ):
-        user_details = ModelFactory.create_factory(UserDetails).build()
-        fn_call = FunctionCall.create(
-            api_id_model_provider=self.fixtures.model_provider,
-            api_id=FunctionCall.generate_fake_id(self.fixtures.model_provider),
-            name="update_state_user_details",
-            args={"user_details": user_details.model_dump()},
-        )
+        fn_call = self.create_state_update_fn_call("user_details", pydantic_model= UserDetails)
 
         next_node_schema = self.get_next_conv_node_schema(
             CHANGE_FLIGHT_GRAPH_SCHEMA.start_node_schema
@@ -153,13 +147,14 @@ class TestRequest(BaseTest):
             CHANGE_BAGGAGE_GRAPH_SCHEMA,
         )
 
-        res_details = ModelFactory.create_factory(ReservationDetails).build()
-        fn_call = FunctionCall.create(
-            api_id_model_provider=self.fixtures.model_provider,
-            api_id=FunctionCall.generate_fake_id(self.fixtures.model_provider),
-            name="update_state_reservation_details",
-            args={"reservation_details": res_details.model_dump()},
-        )
+        # res_details = ModelFactory.create_factory(ReservationDetails).build()
+        # fn_call = FunctionCall.create(
+        #     api_id_model_provider=self.fixtures.model_provider,
+        #     api_id=FunctionCall.generate_fake_id(self.fixtures.model_provider),
+        #     name="update_state_reservation_details",
+        #     args={"reservation_details": res_details.model_dump()},
+        # )
+        fn_call = self.create_state_update_fn_call("reservation_details", pydantic_model= ReservationDetails)
 
         next_next_node_schema = self.get_next_conv_node_schema(next_node_schema)
 
@@ -173,25 +168,10 @@ class TestRequest(BaseTest):
         )
 
         flight_info = ModelFactory.create_factory(FlightInfo).build()
-        fn_call = FunctionCall.create(
-            api_id_model_provider=self.fixtures.model_provider,
-            api_id=FunctionCall.generate_fake_id(self.fixtures.model_provider),
-            name="update_state_flight_infos",
-            args={"flight_infos": [flight_info.model_dump()]},
-        )
-        fn_call_2 = FunctionCall.create(
-            api_id_model_provider=self.fixtures.model_provider,
-            api_id=FunctionCall.generate_fake_id(self.fixtures.model_provider),
-            name="update_state_net_new_cost",
-            args={"net_new_cost": 0},
-        )
-        fn_call_3 = FunctionCall.create(
-            api_id_model_provider=self.fixtures.model_provider,
-            api_id=FunctionCall.generate_fake_id(self.fixtures.model_provider),
-            name="update_state_has_confirmed_new_flights",
-            args={"has_confirmed_new_flights": True},
-        )
+        fn_call = self.create_state_update_fn_call("flight_infos",[flight_info.model_dump()])
+        fn_call_2 = self.create_state_update_fn_call("net_new_cost", 0)
 
+        fn_call_3 = self.create_state_update_fn_call("has_confirmed_new_flights", True)
         next_next_next_node_schema = self.get_next_conv_node_schema(
             next_next_node_schema
         )
@@ -204,12 +184,7 @@ class TestRequest(BaseTest):
             "customer wants to change a flight",
         )
 
-        fn_call = FunctionCall.create(
-            api_id_model_provider=self.fixtures.model_provider,
-            api_id=FunctionCall.generate_fake_id(self.fixtures.model_provider),
-            name="update_state_payment_id",
-            args={"payment_id": "123"},
-        )
+        fn_call = self.create_state_update_fn_call("payment_id", "123")
         next_next_next_next_node_schema = self.get_next_conv_node_schema(
             next_next_next_node_schema
         )
@@ -433,18 +408,21 @@ class TestRequest(BaseTest):
         into_graph_transition_turns,
         into_second_graph_transition_turns,
     ):
-        fn_call = FunctionCall.create(
-            api_id_model_provider=model_provider,
-            api_id=FunctionCall.generate_fake_id(model_provider),
-            name="update_state_total_baggages",
-            args={"total_baggages": 1},
-        )
-        fn_call_2 = FunctionCall.create(
-            api_id_model_provider=model_provider,
-            api_id=FunctionCall.generate_fake_id(model_provider),
-            name="update_state_nonfree_baggages",
-            args={"nonfree_baggages": 1},
-        )
+        # fn_call = FunctionCall.create(
+        #     api_id_model_provider=model_provider,
+        #     api_id=FunctionCall.generate_fake_id(model_provider),
+        #     name="update_state_total_baggages",
+        #     args={"total_baggages": 1},
+        # )
+        fn_call = self.create_state_update_fn_call("total_baggages", 1)
+
+        fn_call_2 = self.create_state_update_fn_call("nonfree_baggages", 1)
+        # fn_call_2 = FunctionCall.create(
+        #     api_id_model_provider=model_provider,
+        #     api_id=FunctionCall.generate_fake_id(model_provider),
+        #     name="update_state_nonfree_baggages",
+        #     args={"nonfree_baggages": 1},
+        # )
         t_turns_12 = self.add_transition_turns(
             [fn_call, fn_call_2],
             {fn_call.id: None, fn_call_2.id: None},
