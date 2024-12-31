@@ -4,10 +4,10 @@ from collections import defaultdict, deque
 from contextlib import ExitStack, contextmanager
 from typing import Any, Dict, Optional
 from unittest.mock import Mock, call, patch
-from polyfactory.factories.pydantic_factory import ModelFactory
 
 import pytest
 from deepdiff import DeepDiff
+from polyfactory.factories.pydantic_factory import ModelFactory
 from pydantic import BaseModel, ConfigDict, Field
 
 from cashier.agent_executor import AgentExecutor

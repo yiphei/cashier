@@ -123,7 +123,9 @@ class TestRequest(BaseTest):
     def into_second_graph_transition_turns(
         self, agent_executor, into_graph_transition_turns
     ):
-        fn_call = self.create_state_update_fn_call("user_details", pydantic_model= UserDetails)
+        fn_call = self.create_state_update_fn_call(
+            "user_details", pydantic_model=UserDetails
+        )
 
         next_node_schema = self.get_next_conv_node_schema(
             CHANGE_FLIGHT_GRAPH_SCHEMA.start_node_schema
@@ -154,7 +156,9 @@ class TestRequest(BaseTest):
         #     name="update_state_reservation_details",
         #     args={"reservation_details": res_details.model_dump()},
         # )
-        fn_call = self.create_state_update_fn_call("reservation_details", pydantic_model= ReservationDetails)
+        fn_call = self.create_state_update_fn_call(
+            "reservation_details", pydantic_model=ReservationDetails
+        )
 
         next_next_node_schema = self.get_next_conv_node_schema(next_node_schema)
 
@@ -168,7 +172,9 @@ class TestRequest(BaseTest):
         )
 
         flight_info = ModelFactory.create_factory(FlightInfo).build()
-        fn_call = self.create_state_update_fn_call("flight_infos",[flight_info.model_dump()])
+        fn_call = self.create_state_update_fn_call(
+            "flight_infos", [flight_info.model_dump()]
+        )
         fn_call_2 = self.create_state_update_fn_call("net_new_cost", 0)
 
         fn_call_3 = self.create_state_update_fn_call("has_confirmed_new_flights", True)
