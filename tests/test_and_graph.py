@@ -2,7 +2,6 @@ import pytest
 from polyfactory.factories.pydantic_factory import ModelFactory
 
 from cashier.model.model_turn import AssistantTurn
-from cashier.model.model_util import FunctionCall
 from cashier.tool.function_call_context import StateUpdateError, ToolExceptionWrapper
 from data.graph.airline_book_flight import (
     BOOK_FLIGHT_GRAPH_SCHEMA,
@@ -69,7 +68,9 @@ class TestAndGraph(BaseTest):
         agent_executor,
         model_provider,
     ):
-        fn_call = self.create_state_update_fn_call("user_details", pydantic_model= UserDetails)
+        fn_call = self.create_state_update_fn_call(
+            "user_details", pydantic_model=UserDetails
+        )
 
         return self.add_transition_turns(
             [fn_call],
@@ -182,7 +183,9 @@ class TestAndGraph(BaseTest):
         fn_calls, fn_call_id_to_fn_output = self.create_fake_fn_calls(
             fn_names, agent_executor.graph.curr_conversation_node
         )
-        fn_call = self.create_state_update_fn_call("user_details", pydantic_model= UserDetails)
+        fn_call = self.create_state_update_fn_call(
+            "user_details", pydantic_model=UserDetails
+        )
 
         fn_calls.append(fn_call)
         fn_call_id_to_fn_output[fn_call.id] = ToolExceptionWrapper(
@@ -288,7 +291,9 @@ class TestAndGraph(BaseTest):
         )
 
         flight_info = ModelFactory.create_factory(FlightInfo).build()
-        fn_call = self.create_state_update_fn_call("flight_infos", [flight_info.model_dump()])
+        fn_call = self.create_state_update_fn_call(
+            "flight_infos", [flight_info.model_dump()]
+        )
 
         next_next_node_schema = self.get_next_conv_node_schema(find_flight_node_schema)
 
