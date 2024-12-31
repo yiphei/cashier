@@ -73,7 +73,6 @@ class TestAndGraph(BaseTest):
 
         return self.add_transition_turns(
             [fn_call],
-            {fn_call.id: None},
             "my username is ...",
             self.get_edge_schema(self.start_conv_node_schema),
             self.get_next_conv_node_schema(self.start_conv_node_schema),
@@ -242,16 +241,7 @@ class TestAndGraph(BaseTest):
             is_skip=True,
         )
 
-        get_state_fn_call = self.recreate_fake_single_fn_call(
-            "get_state",
-            {},
-        )
-
-        t4 = self.add_direct_assistant_turn(
-            None,
-            [get_state_fn_call],
-            {get_state_fn_call.id: agent_executor.graph.curr_conversation_node.state},
-        )
+        t4 = self.add_direct_get_state_turn()
 
         TC = self.create_turn_container(
             [
@@ -289,7 +279,6 @@ class TestAndGraph(BaseTest):
 
         t_turns_2 = self.add_transition_turns(
             [fn_call],
-            {fn_call.id: None},
             "i want flight from ... to ... on ...",
             self.get_edge_schema(find_flight_node_schema),
             next_next_node_schema,
@@ -316,12 +305,7 @@ class TestAndGraph(BaseTest):
             is_skip=True,
         )
 
-        get_state_fn_call = self.recreate_fake_single_fn_call("get_state", {})
-        t6 = self.add_direct_assistant_turn(
-            None,
-            [get_state_fn_call],
-            {get_state_fn_call.id: agent_executor.graph.curr_conversation_node.state},
-        )
+        t6 = self.add_direct_get_state_turn()
 
         t7 = self.add_assistant_turn(
             "what do you want to change?",
@@ -344,12 +328,7 @@ class TestAndGraph(BaseTest):
             is_skip=True,
         )
 
-        get_state_fn_call = self.recreate_fake_single_fn_call("get_state", {})
-        t10 = self.add_direct_assistant_turn(
-            None,
-            [get_state_fn_call],
-            {get_state_fn_call.id: agent_executor.graph.curr_conversation_node.state},
-        )
+        t10 = self.add_direct_get_state_turn()
 
         TC = self.create_turn_container(
             [

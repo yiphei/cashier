@@ -357,6 +357,16 @@ class BaseTest:
         self.add_messages_from_turn(ut)
         return ut
 
+    def add_direct_get_state_turn(self):
+        get_state_fn_call = self.recreate_fake_single_fn_call("get_state", {})
+        return self.add_direct_assistant_turn(
+            None,
+            [get_state_fn_call],
+            {
+                get_state_fn_call.id: self.fixtures.agent_executor.graph.curr_conversation_node.state
+            },
+        )
+
     def add_direct_assistant_turn(
         self,
         message,
@@ -390,6 +400,9 @@ class BaseTest:
                 tool_names,
                 self.fixtures.agent_executor.graph.curr_conversation_node,
             )
+
+        if fn_calls is not None and fn_call_id_to_fn_output is None:
+            fn_call_id_to_fn_output = {fn_call.id: None for fn_call in fn_calls}
 
         model_completion = self.create_mock_model_completion(
             message,
@@ -466,7 +479,7 @@ class BaseTest:
         at = self.add_direct_assistant_turn(
             message,
             fn_calls,
-            fn_call_id_to_fn_output or {},
+            fn_call_id_to_fn_output,
             tool_registry,
         )
         return at
@@ -694,7 +707,6 @@ class BaseTest:
     def add_transition_turns(
         self,
         fn_calls,
-        fn_call_id_to_fn_output,
         user_msg,
         edge_schema,
         next_node_schema,
@@ -706,7 +718,6 @@ class BaseTest:
         t2 = self.add_assistant_turn(
             None,
             fn_calls,
-            fn_call_id_to_fn_output,
         )
 
         state = (

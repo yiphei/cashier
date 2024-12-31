@@ -127,7 +127,6 @@ class TestRequest(BaseTest):
 
         t_turns_1 = self.add_transition_turns(
             [fn_call],
-            {fn_call.id: None},
             "my user details are ...",
             self.get_edge_schema(CHANGE_FLIGHT_GRAPH_SCHEMA.start_node_schema),
             self.get_next_conv_node_schema(
@@ -151,7 +150,6 @@ class TestRequest(BaseTest):
 
         t_turns_3 = self.add_transition_turns(
             [fn_call],
-            {fn_call.id: None},
             "my reservation details are ...",
             self.get_edge_schema(next_node_schema),
             next_next_node_schema,
@@ -170,7 +168,6 @@ class TestRequest(BaseTest):
         )
         t_turns_4 = self.add_transition_turns(
             [fn_call, fn_call_2, fn_call_3],
-            {fn_call.id: None, fn_call_2.id: None, fn_call_3.id: None},
             "the new flight is ...",
             self.get_edge_schema(next_next_node_schema),
             next_next_next_node_schema,
@@ -184,7 +181,6 @@ class TestRequest(BaseTest):
 
         t_turns_5 = self.add_transition_turns(
             [fn_call],
-            {fn_call.id: None},
             "the payment method is ...",
             self.get_edge_schema(next_next_next_node_schema),
             next_next_next_next_node_schema,
@@ -195,7 +191,6 @@ class TestRequest(BaseTest):
         t6 = self.add_assistant_turn(
             None,
             [fn_call],
-            {fn_call.id: None},
         )
 
         fake_fn_call = self.recreate_fake_single_fn_call(
@@ -396,7 +391,6 @@ class TestRequest(BaseTest):
         fn_call_2 = self.create_state_update_fn_call("nonfree_baggages", 1)
         t_turns_12 = self.add_transition_turns(
             [fn_call, fn_call_2],
-            {fn_call.id: None, fn_call_2.id: None},
             "the luggage is ...",
             edge_3,
             payment_node_schema,
@@ -406,7 +400,6 @@ class TestRequest(BaseTest):
         fn_call = self.create_state_update_fn_call("payment_id", "asd")
         t_turns_13 = self.add_transition_turns(
             [fn_call],
-            {fn_call.id: None},
             "the payment method is ...",
             edge_4,
             book_flight_node_schema,
@@ -417,7 +410,6 @@ class TestRequest(BaseTest):
         t14 = self.add_assistant_turn(
             None,
             [fn_call],
-            {fn_call.id: None},
         )
 
         t15 = self.add_node_turn(
