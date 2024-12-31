@@ -106,7 +106,6 @@ class TestAndGraph(BaseTest):
                 "my username is ...",
                 self.get_edge_schema(self.start_conv_node_schema),
                 self.get_next_conv_node_schema(self.start_conv_node_schema),
-                is_and_graph=True,
             )
         )
 
@@ -276,7 +275,6 @@ class TestAndGraph(BaseTest):
             "i want flight from ... to ... on ...",
             self.get_edge_schema(self.ordered_conv_node_schemas[1]),
             self.ordered_conv_node_schemas[2],
-            is_and_graph=True,
         )
 
         t_turns_4 = self.add_chat_turns()
