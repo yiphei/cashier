@@ -377,7 +377,6 @@ class TestRequest(BaseTest):
             edge_4,
             book_flight_node_schema,
         )
-        # t_turns_c = self.add_chat_turns()
 
         fn_call = self.create_fn_call("update_reservation_baggages")
         t14 = self.add_assistant_turn(
@@ -391,7 +390,6 @@ class TestRequest(BaseTest):
             None,
             "the payment method is ...",
         )
-        # t_turns_d = self.add_chat_turns()
         self.run_assertions(
             [
                 *into_second_graph_transition_turns,
@@ -399,10 +397,8 @@ class TestRequest(BaseTest):
                 *t_turns_12,
                 *t_turns_b,
                 *t_turns_13,
-                # *t_turns_c,
                 t14,
                 t15,
-                # *t_turns_d,
             ],
             AIRLINE_REQUEST_SCHEMA.default_node_schema.tool_registry,
         )
