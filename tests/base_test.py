@@ -12,6 +12,7 @@ from polyfactory.factories.pydantic_factory import ModelFactory
 from pydantic import BaseModel, ConfigDict, Field
 
 from cashier.agent_executor import AgentExecutor
+from cashier.graph.base.base_graph import BaseGraph
 from cashier.model.message_list import MessageList
 from cashier.model.model_completion import AnthropicModelOutput, OAIModelOutput
 from cashier.model.model_turn import (
@@ -717,7 +718,6 @@ class BaseTest(ABC):
         edge_schema,
         next_node_schema,
         last_assistant_msg="good, lets move on to ...",
-        is_and_graph=False,
     ):
         t1 = self.add_user_turn(user_msg)
         self.run_message_dict_assertions()
@@ -726,11 +726,11 @@ class BaseTest(ABC):
             fn_calls,
         )
 
-        state = (
-            self.fixtures.agent_executor.graph.curr_node.curr_node.state
-            if is_and_graph
-            else self.fixtures.agent_executor.graph.curr_node.state
-        )
+        curr_node = self.fixtures.agent_executor.graph.curr_node
+        while isinstance(curr_node.curr_node, BaseGraph):
+            curr_node = curr_node.curr_node
+
+        state = curr_node.state
         input = next_node_schema.get_input(state, edge_schema)
 
         t3 = self.add_node_turn(
