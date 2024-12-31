@@ -2,7 +2,6 @@ from typing import List, Optional
 
 from pydantic import BaseModel, Field
 
-from cashier.graph.and_graph_schema import ANDGraphSchema
 from cashier.graph.base.base_edge_schema import (
     FunctionState,
     FunctionTransitionConfig,
@@ -215,8 +214,10 @@ edge_5 = EdgeSchema(
     to_node_schema=payment_node_schema,
     transition_config=StateTransitionConfig(
         need_user_msg=False,
-        state_check_fn_map={"total_baggages": lambda val: val is not None,
-                            "nonfree_baggages": lambda val: val is not None,},
+        state_check_fn_map={
+            "total_baggages": lambda val: val is not None,
+            "nonfree_baggages": lambda val: val is not None,
+        },
     ),
 )
 
