@@ -1,7 +1,6 @@
 import pytest
 from polyfactory.factories.pydantic_factory import ModelFactory
 
-from cashier.model.model_turn import AssistantTurn
 from cashier.tool.function_call_context import StateUpdateError, ToolExceptionWrapper
 from data.graph.airline_book_flight import (
     BOOK_FLIGHT_GRAPH_SCHEMA,
@@ -112,14 +111,19 @@ class TestAndGraph(BaseTest):
             },
         )
 
-        assistant_turn = AssistantTurn(
-            msg_content=None,
-            model_provider=model_provider,
-            tool_registry=self.start_conv_node_schema.tool_registry,
-            fn_calls=[fake_fn_call],
-            fn_call_id_to_fn_output={fake_fn_call.id: None},
+        # assistant_turn = AssistantTurn(
+        #     msg_content=None,
+        #     model_provider=model_provider,
+        #     tool_registry=self.start_conv_node_schema.tool_registry,
+        #     fn_calls=[fake_fn_call],
+        #     fn_call_id_to_fn_output={fake_fn_call.id: None},
+        # )
+        # self.add_messages_from_turn(assistant_turn)
+
+        assistant_turn = self.add_direct_assistant_turn(
+            None,
+            [fake_fn_call],
         )
-        self.add_messages_from_turn(assistant_turn)
 
         TC = self.create_turn_container([*start_turns, user_turn, assistant_turn])
 
@@ -252,16 +256,22 @@ class TestAndGraph(BaseTest):
             {},
         )
 
-        t4 = AssistantTurn(
-            msg_content=None,
-            model_provider=model_provider,
-            tool_registry=self.start_conv_node_schema.tool_registry,
-            fn_calls=[get_state_fn_call],
-            fn_call_id_to_fn_output={
-                get_state_fn_call.id: agent_executor.graph.curr_conversation_node.state
-            },
+        # t4 = AssistantTurn(
+        #     msg_content=None,
+        #     model_provider=model_provider,
+        #     tool_registry=self.start_conv_node_schema.tool_registry,
+        #     fn_calls=[get_state_fn_call],
+        #     fn_call_id_to_fn_output={
+        #         get_state_fn_call.id: agent_executor.graph.curr_conversation_node.state
+        #     },
+        # )
+        # self.add_messages_from_turn(t4)
+
+        t4 = self.add_direct_assistant_turn(
+            None,
+            [get_state_fn_call],
+            {get_state_fn_call.id: agent_executor.graph.curr_conversation_node.state},
         )
-        self.add_messages_from_turn(t4)
 
         TC = self.create_turn_container(
             [
@@ -327,16 +337,22 @@ class TestAndGraph(BaseTest):
         )
 
         get_state_fn_call = self.recreate_fake_single_fn_call("get_state", {})
-        t6 = AssistantTurn(
-            msg_content=None,
-            model_provider=model_provider,
-            tool_registry=self.start_conv_node_schema.tool_registry,
-            fn_calls=[get_state_fn_call],
-            fn_call_id_to_fn_output={
-                get_state_fn_call.id: agent_executor.graph.curr_conversation_node.state
-            },
+        # t6 = AssistantTurn(
+        #     msg_content=None,
+        #     model_provider=model_provider,
+        #     tool_registry=self.start_conv_node_schema.tool_registry,
+        #     fn_calls=[get_state_fn_call],
+        #     fn_call_id_to_fn_output={
+        #         get_state_fn_call.id: agent_executor.graph.curr_conversation_node.state
+        #     },
+        # )
+        # self.add_messages_from_turn(t6)
+        t6 = self.add_direct_assistant_turn(
+            None,
+            [get_state_fn_call],
+            {get_state_fn_call.id: agent_executor.graph.curr_conversation_node.state},
         )
-        self.add_messages_from_turn(t6)
+
         t7 = self.add_assistant_turn(
             "what do you want to change?",
         )
@@ -359,16 +375,11 @@ class TestAndGraph(BaseTest):
         )
 
         get_state_fn_call = self.recreate_fake_single_fn_call("get_state", {})
-        t10 = AssistantTurn(
-            msg_content=None,
-            model_provider=model_provider,
-            tool_registry=find_flight_node_schema.tool_registry,
-            fn_calls=[get_state_fn_call],
-            fn_call_id_to_fn_output={
-                get_state_fn_call.id: agent_executor.graph.curr_conversation_node.state
-            },
+        t10 = self.add_direct_assistant_turn(
+            None,
+            [get_state_fn_call],
+            {get_state_fn_call.id: agent_executor.graph.curr_conversation_node.state},
         )
-        self.add_messages_from_turn(t10)
 
         TC = self.create_turn_container(
             [
