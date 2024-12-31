@@ -122,6 +122,10 @@ class RequestGraph(BaseGraph):
         return False
 
     def check_node_transition(self, fn_call, is_fn_call_success):
+        if (
+            self.curr_node.schema == self.schema.start_node_schema
+        ):  # TODO: refactor this
+            return None
         new_edge_schema = self.from_node_schema_id_to_edge_schema.get(
             self.curr_node.schema.id, None
         )
@@ -145,12 +149,15 @@ class RequestGraphSchema(BaseGraphSchema):
     ):
         self.start_node_schema = ConversationNodeSchema(node_prompt, node_system_prompt)
         self.graph_node_schemas = node_schemas
-        super().__init__(description, node_schemas + [self.start_node_schema])
-        self.edge_schemas = edge_schemas
         self.default_node_schema = ConversationNodeSchema(
             "You have just finished helping the customer with their requests. Ask if they need anything else.",
             node_system_prompt,
         )
+        super().__init__(
+            description,
+            node_schemas + [self.start_node_schema, self.default_node_schema],
+        )
+        self.edge_schemas = edge_schemas
 
 
 class GraphEdgeSchema(BaseEdgeSchema, HasIdMixin, metaclass=AutoMixinInit):
