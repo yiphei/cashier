@@ -221,11 +221,14 @@ class BaseTest:
         value = value
         if pydantic_model is not None:
             value = ModelFactory.create_factory(pydantic_model).build().model_dump()
+        return self.create_fn_call(f"update_state_{field}", {field: value})
+    
+    def create_fn_call(self, fn_name, args):
         return FunctionCall.create(
             api_id_model_provider=self.fixtures.model_provider,
             api_id=FunctionCall.generate_fake_id(self.fixtures.model_provider),
-            name=f"update_state_{field}",
-            args={field: value},
+            name=fn_name,
+            args=args,
         )
 
     def create_fake_fn_calls(self, fn_names, node):
