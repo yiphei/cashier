@@ -222,7 +222,7 @@ class BaseTest:
         if pydantic_model is not None:
             value = ModelFactory.create_factory(pydantic_model).build().model_dump()
         return self.create_fn_call(f"update_state_{field}", {field: value})
-    
+
     def create_fn_call(self, fn_name, args):
         return FunctionCall.create(
             api_id_model_provider=self.fixtures.model_provider,
