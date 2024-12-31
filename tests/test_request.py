@@ -94,7 +94,6 @@ class TestRequest(BaseTest):
                 AIRLINE_REQUEST_SCHEMA.start_node_schema,
                 None,
                 None,
-                None,
             )
         ]
 
@@ -109,7 +108,6 @@ class TestRequest(BaseTest):
             get_user_id_node_schema,
             None,
             "i want to change flight",
-            "customer wants to change a flight",
         )
         return [t1, node_turn]
 
@@ -209,13 +207,15 @@ class TestRequest(BaseTest):
             "finished task",
         )
 
+
+        self.curr_request = "change baggage"
+
         # --------------------------------
 
         t9 = self.add_node_turn(
             luggage_get_user_id_node_schema,
             None,
             "the payment method is ...",
-            "change baggage",
         )
 
         input = luggage_get_reservation_details_node_schema.get_input(
@@ -225,7 +225,6 @@ class TestRequest(BaseTest):
             luggage_get_reservation_details_node_schema,
             input,
             "the payment method is ...",
-            "change baggage",
         )
 
         # --------------------------------
@@ -237,7 +236,6 @@ class TestRequest(BaseTest):
             new_node_schema,
             input,
             "the payment method is ...",
-            "change baggage",
         )
         return [
             *t_turns_1,
@@ -411,12 +409,12 @@ class TestRequest(BaseTest):
             None,
             [fn_call],
         )
+        self.curr_request = None
 
         t15 = self.add_node_turn(
             AIRLINE_REQUEST_SCHEMA.default_node_schema,
             None,
             "the payment method is ...",
-            None,
         )
 
         TC = self.create_turn_container(

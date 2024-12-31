@@ -47,7 +47,6 @@ class TestAndGraph(BaseTest):
             AIRLINE_REQUEST_SCHEMA.start_node_schema,
             None,
             None,
-            None,
         )
         t2 = self.add_request_user_turn(
             "i want to book flight",
@@ -57,7 +56,6 @@ class TestAndGraph(BaseTest):
             second_node_schema,
             None,
             "i want to book flight",
-            "customer wants to book flight",
         )
         return [t1, t2, t3]
 
@@ -237,7 +235,6 @@ class TestAndGraph(BaseTest):
             self.start_conv_node_schema,
             None,
             "what flight do you want?",
-            "customer wants to book flight",
             is_skip=True,
         )
 
@@ -301,7 +298,6 @@ class TestAndGraph(BaseTest):
             self.start_conv_node_schema,
             None,
             "thanks for confirming flights, now lets move on to ...",
-            "customer wants to book flight",
             is_skip=True,
         )
 
@@ -324,7 +320,6 @@ class TestAndGraph(BaseTest):
                 **agent_executor.graph.curr_node.curr_node.state.model_dump_fields_set()
             ),
             "what do you want to change?",
-            "customer wants to book flight",
             is_skip=True,
         )
 
