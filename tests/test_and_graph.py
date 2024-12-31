@@ -11,14 +11,12 @@ from data.graph.airline_book_flight_normal_graph import BOOK_FLIGHT_NORMAL_GRAPH
 from data.graph.airline_book_flight_normal_graph import (
     get_user_id_node_schema as normal_get_user_id_node_schema,
 )
-from data.graph.airline_request import AIRLINE_REQUEST_SCHEMA
 from data.prompt.airline import AirlineNodeSystemPrompt
 from data.types.airline import FlightInfo, UserDetails
 from tests.base_test import BaseTest, assert_number_of_tests, get_fn_names_fixture
 
 
-@pytest.mark.parametrize("graph_schema", [BOOK_FLIGHT_NORMAL_GRAPH_SCHEMA])
-@pytest.mark.parametrize("start_conv_node_schema", [normal_get_user_id_node_schema])
+@pytest.mark.parametrize("graph_schema, start_conv_node_schema", [(BOOK_FLIGHT_NORMAL_GRAPH_SCHEMA, normal_get_user_id_node_schema), (BOOK_FLIGHT_GRAPH_SCHEMA, get_user_id_node_schema)])
 class TestAndGraph(BaseTest):
     @pytest.fixture(autouse=True)
     def request_schema_input(self, graph_schema):
@@ -310,4 +308,4 @@ class TestAndGraph(BaseTest):
 
 
 def test_class_test_count(request):
-    assert_number_of_tests(TestAndGraph, __file__, request, 312)
+    assert_number_of_tests(TestAndGraph, __file__, request, 312 * 2)
