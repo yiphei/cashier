@@ -733,7 +733,6 @@ class BaseTest:
             next_node_schema,
             input,
             user_msg,
-            # curr_request,
         )
 
         t4 = self.add_assistant_turn(last_assistant_msg)
