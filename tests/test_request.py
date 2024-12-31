@@ -118,10 +118,11 @@ class TestRequest(BaseTest):
             "customer wants to change a flight",
         )
         return [t1, node_turn]
-    
 
     @pytest.fixture
-    def into_second_graph_transition_turns(self, agent_executor, into_graph_transition_turns):
+    def into_second_graph_transition_turns(
+        self, agent_executor, into_graph_transition_turns
+    ):
         user_details = ModelFactory.create_factory(UserDetails).build()
         fn_call = FunctionCall.create(
             api_id_model_provider=self.fixtures.model_provider,
@@ -285,18 +286,17 @@ class TestRequest(BaseTest):
             "change baggage",
         )
         return [
-
-                            *t_turns_1,
-                *t_turns_2,
-                *t_turns_3,
-                *t_turns_4,
-                *t_turns_5,
-                t6,
-                t7,
-                t8,
-                t9,
-                t10,
-                t11,
+            *t_turns_1,
+            *t_turns_2,
+            *t_turns_3,
+            *t_turns_4,
+            *t_turns_5,
+            t6,
+            t7,
+            t8,
+            t9,
+            t10,
+            t11,
         ]
 
     @pytest.mark.usefixtures("agent_executor")
@@ -416,7 +416,7 @@ class TestRequest(BaseTest):
             [
                 *start_turns,
                 *into_graph_transition_turns,
-                *into_second_graph_transition_turns
+                *into_second_graph_transition_turns,
             ],
         )
 
