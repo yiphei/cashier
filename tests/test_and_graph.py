@@ -1,20 +1,20 @@
 import pytest
 from polyfactory.factories.pydantic_factory import ModelFactory
 
+from cashier.graph.request_graph import RequestGraphSchema
 from cashier.tool.function_call_context import StateUpdateError, ToolExceptionWrapper
 from data.graph.airline_book_flight import (
     BOOK_FLIGHT_GRAPH_SCHEMA,
     get_user_id_node_schema,
 )
+from data.graph.airline_book_flight_normal_graph import BOOK_FLIGHT_NORMAL_GRAPH_SCHEMA
 from data.graph.airline_book_flight_normal_graph import (
-    BOOK_FLIGHT_NORMAL_GRAPH_SCHEMA,
     get_user_id_node_schema as normal_get_user_id_node_schema,
 )
 from data.graph.airline_request import AIRLINE_REQUEST_SCHEMA
 from data.prompt.airline import AirlineNodeSystemPrompt
 from data.types.airline import FlightInfo, UserDetails
 from tests.base_test import BaseTest, assert_number_of_tests, get_fn_names_fixture
-from cashier.graph.request_graph import RequestGraphSchema
 
 REQUEST_SCHEMA = RequestGraphSchema(
     node_schemas=[BOOK_FLIGHT_NORMAL_GRAPH_SCHEMA],
@@ -23,6 +23,7 @@ REQUEST_SCHEMA = RequestGraphSchema(
     node_system_prompt=AirlineNodeSystemPrompt,
     description="Help customers change flights and baggage information for a reservation.",
 )
+
 
 class TestAndGraph(BaseTest):
     @pytest.fixture(autouse=True)
@@ -37,7 +38,9 @@ class TestAndGraph(BaseTest):
         for (
             node_schema_id,
             edge_schema,
-        ) in BOOK_FLIGHT_NORMAL_GRAPH_SCHEMA.to_conv_node_schema_id_to_edge_schema.items():
+        ) in (
+            BOOK_FLIGHT_NORMAL_GRAPH_SCHEMA.to_conv_node_schema_id_to_edge_schema.items()
+        ):
             node_schema = (
                 BOOK_FLIGHT_NORMAL_GRAPH_SCHEMA.conv_node_schema_id_to_conv_node_schema[
                     node_schema_id
@@ -159,7 +162,9 @@ class TestAndGraph(BaseTest):
             self.start_conv_node_schema.tool_registry,
         )
 
-    @pytest.mark.parametrize("fn_names", get_fn_names_fixture(normal_get_user_id_node_schema))
+    @pytest.mark.parametrize(
+        "fn_names", get_fn_names_fixture(normal_get_user_id_node_schema)
+    )
     @pytest.mark.parametrize("separate_fn_calls", [True, False])
     def test_add_assistant_turn_with_tool_calls(
         self,
@@ -186,7 +191,8 @@ class TestAndGraph(BaseTest):
 
     @pytest.mark.parametrize(
         "fn_names",
-        get_fn_names_fixture(normal_get_user_id_node_schema, exclude_update_fn=True) + [[]],
+        get_fn_names_fixture(normal_get_user_id_node_schema, exclude_update_fn=True)
+        + [[]],
     )
     def test_state_update_before_user_turn(
         self,
