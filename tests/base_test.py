@@ -62,6 +62,7 @@ class BaseTest:
         self.model_chat = self.model_chat_patcher.start()
         self.fixtures = Fixtures()
         self.curr_request = None
+        self.curr_conversation_node = None
 
         yield
 
@@ -704,6 +705,7 @@ class BaseTest:
             node_turn,
             is_skip=is_skip,
         )
+        self.curr_conversation_node = node_schema
         return node_turn
 
     def add_transition_turns(
