@@ -13,7 +13,6 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from cashier.agent_executor import AgentExecutor
 from cashier.graph.base.base_graph import BaseGraph
-from cashier.graph.graph_schema import Graph
 from cashier.model.message_list import MessageList
 from cashier.model.model_completion import AnthropicModelOutput, OAIModelOutput
 from cashier.model.model_turn import (
