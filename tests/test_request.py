@@ -454,12 +454,13 @@ class TestRequest(BaseTest):
             "change baggage",
         )
 
-        fn_call = FunctionCall.create(
-            api_id_model_provider=model_provider,
-            api_id=FunctionCall.generate_fake_id(model_provider),
-            name="update_state_payment_id",
-            args={"payment_id": "asd"},
-        )
+        # fn_call = FunctionCall.create(
+        #     api_id_model_provider=model_provider,
+        #     api_id=FunctionCall.generate_fake_id(model_provider),
+        #     name="update_state_payment_id",
+        #     args={"payment_id": "asd"},
+        # )
+        fn_call = self.create_state_update_fn_call("payment_id", "asd")
         t_turns_13 = self.add_transition_turns(
             [fn_call],
             {fn_call.id: None},
