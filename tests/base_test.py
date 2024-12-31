@@ -214,7 +214,7 @@ class BaseTest:
         )
         fn.model_fields_set.remove("id")
         return fn
-    
+
     def create_state_update_fn_call(self, field, value):
         return FunctionCall.create(
             api_id_model_provider=self.fixtures.model_provider,
