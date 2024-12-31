@@ -16,18 +16,19 @@ from data.prompt.airline import AirlineNodeSystemPrompt
 from data.types.airline import FlightInfo, UserDetails
 from tests.base_test import BaseTest, assert_number_of_tests, get_fn_names_fixture
 
+
 @pytest.mark.parametrize("graph_schema", [BOOK_FLIGHT_NORMAL_GRAPH_SCHEMA])
 @pytest.mark.parametrize("start_conv_node_schema", [normal_get_user_id_node_schema])
 class TestAndGraph(BaseTest):
     @pytest.fixture(autouse=True)
     def request_schema_input(self, graph_schema):
         return RequestGraphSchema(
-    node_schemas=[graph_schema],
-    edge_schemas=[],
-    node_prompt="You are a helpful assistant that helps customers with flight-related requests.",
-    node_system_prompt=AirlineNodeSystemPrompt,
-    description="Help customers change flights and baggage information for a reservation.",
-)
+            node_schemas=[graph_schema],
+            edge_schemas=[],
+            node_prompt="You are a helpful assistant that helps customers with flight-related requests.",
+            node_system_prompt=AirlineNodeSystemPrompt,
+            description="Help customers change flights and baggage information for a reservation.",
+        )
 
     @pytest.fixture(autouse=True)
     def setup(self, request_schema_input, graph_schema, start_conv_node_schema):
@@ -38,14 +39,10 @@ class TestAndGraph(BaseTest):
         for (
             node_schema_id,
             edge_schema,
-        ) in (
-            graph_schema.to_conv_node_schema_id_to_edge_schema.items()
-        ):
-            node_schema = (
-                graph_schema.conv_node_schema_id_to_conv_node_schema[
-                    node_schema_id
-                ]
-            )
+        ) in graph_schema.to_conv_node_schema_id_to_edge_schema.items():
+            node_schema = graph_schema.conv_node_schema_id_to_conv_node_schema[
+                node_schema_id
+            ]
             self.edge_schema_id_to_to_cov_node_schema_id[edge_schema.id] = node_schema
 
         self.ordered_conv_node_schemas = [self.start_conv_node_schema]
