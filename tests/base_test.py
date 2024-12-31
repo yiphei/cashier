@@ -738,6 +738,7 @@ class BaseTest:
         return [t1, t2, t3, t4]
 
     def add_skip_transition_turns(self, skip_node_schema, input, last_msg):
+        self.run_message_dict_assertions()
         t4 = self.add_user_turn(
             "actually, i want to change ...",
             False,
@@ -750,8 +751,8 @@ class BaseTest:
             last_msg,
             is_skip=True,
         )
-
         t6 = self.add_direct_get_state_turn()
+        self.run_message_dict_assertions()
 
         t7 = self.add_assistant_turn(
             "what do you want to change?",

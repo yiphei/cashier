@@ -251,8 +251,6 @@ class TestAndGraph(BaseTest):
             "thanks for confirming flights, now lets move on to ...",
         )
 
-        self.run_message_dict_assertions()
-
         t_turns_5 = self.add_skip_transition_turns(
             find_flight_node_schema,
             find_flight_node_schema.input_from_state_schema(
