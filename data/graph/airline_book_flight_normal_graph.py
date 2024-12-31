@@ -262,7 +262,7 @@ class StateSchema(BaseStateModel):
     payments: List[PaymentMethod] = Field(default_factory=list)
 
 
-BOOK_FLIGHT_GRAPH_SCHEMA = GraphSchema(
+BOOK_FLIGHT_NORMAL_GRAPH_SCHEMA = GraphSchema(
     description="Help customers books flights",
     start_node_schema=get_user_id_node_schema,
     output_schema=GraphOutputSchema,
