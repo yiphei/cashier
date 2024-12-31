@@ -15,7 +15,7 @@ class TestAndGraph(BaseTest):
     @pytest.fixture(autouse=True)
     def request_schema_input(self):
         return AIRLINE_REQUEST_SCHEMA
-    
+
     @pytest.fixture(autouse=True)
     def setup(self):
         self.start_conv_node_schema = get_user_id_node_schema
