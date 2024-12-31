@@ -61,6 +61,7 @@ class BaseTest:
         self.model_chat_patcher = patch("cashier.model.model_completion.Model.chat")
         self.model_chat = self.model_chat_patcher.start()
         self.fixtures = Fixtures()
+        self.curr_request = None
 
         yield
 
@@ -223,12 +224,12 @@ class BaseTest:
             value = ModelFactory.create_factory(pydantic_model).build().model_dump()
         return self.create_fn_call(f"update_state_{field}", {field: value})
 
-    def create_fn_call(self, fn_name, args):
+    def create_fn_call(self, fn_name, args=None):
         return FunctionCall.create(
             api_id_model_provider=self.fixtures.model_provider,
             api_id=FunctionCall.generate_fake_id(self.fixtures.model_provider),
             name=fn_name,
-            args=args,
+            args=args or {},
         )
 
     def create_fake_fn_calls(self, fn_names, node):
@@ -343,6 +344,7 @@ class BaseTest:
             agent_selections = [
                 AgentSelection(agent_id=self.graph_schema.id, task=task)
             ]
+            self.curr_request = task
 
         graph_schema_selection_completion = self.create_mock_model_completion(
             None, True, agent_selections, 0.5
@@ -675,7 +677,7 @@ class BaseTest:
         else:
             raise ValueError(f"Unknown turn type: {type(turn)}")
 
-    def add_node_turn(self, node_schema, input, last_msg, curr_request, is_skip=False):
+    def add_node_turn(self, node_schema, input, last_msg, is_skip=False):
         node_turn = TurnArgs(
             turn=NodeSystemTurn(
                 msg_content=node_schema.node_system_prompt(
@@ -692,7 +694,7 @@ class BaseTest:
                         else None
                     ),
                     last_msg=last_msg,
-                    curr_request=curr_request,
+                    curr_request=self.curr_request,
                 ),
                 node_id=3,
             ),
@@ -710,7 +712,6 @@ class BaseTest:
         user_msg,
         edge_schema,
         next_node_schema,
-        curr_request,
         last_assistant_msg="good, lets move on to ...",
         is_and_graph=False,
     ):
@@ -731,7 +732,6 @@ class BaseTest:
             next_node_schema,
             input,
             user_msg,
-            curr_request,
         )
 
         t4 = self.add_assistant_turn(last_assistant_msg)

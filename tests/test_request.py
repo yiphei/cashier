@@ -94,7 +94,6 @@ class TestRequest(BaseTest):
                 AIRLINE_REQUEST_SCHEMA.start_node_schema,
                 None,
                 None,
-                None,
             )
         ]
 
@@ -109,7 +108,6 @@ class TestRequest(BaseTest):
             get_user_id_node_schema,
             None,
             "i want to change flight",
-            "customer wants to change a flight",
         )
         return [t1, node_turn]
 
@@ -132,7 +130,6 @@ class TestRequest(BaseTest):
             self.get_next_conv_node_schema(
                 CHANGE_FLIGHT_GRAPH_SCHEMA.start_node_schema
             ),
-            "customer wants to change a flight",
         )
 
         t_turns_2 = self.add_new_task(
@@ -153,7 +150,6 @@ class TestRequest(BaseTest):
             "my reservation details are ...",
             self.get_edge_schema(next_node_schema),
             next_next_node_schema,
-            "customer wants to change a flight",
         )
 
         flight_info = ModelFactory.create_factory(FlightInfo).build()
@@ -171,7 +167,6 @@ class TestRequest(BaseTest):
             "the new flight is ...",
             self.get_edge_schema(next_next_node_schema),
             next_next_next_node_schema,
-            "customer wants to change a flight",
         )
 
         fn_call = self.create_state_update_fn_call("payment_id", "123")
@@ -184,10 +179,9 @@ class TestRequest(BaseTest):
             "the payment method is ...",
             self.get_edge_schema(next_next_next_node_schema),
             next_next_next_next_node_schema,
-            "customer wants to change a flight",
         )
 
-        fn_call = self.create_fn_call("update_reservation_flights", {"args": "1"})
+        fn_call = self.create_fn_call("update_reservation_flights")
         t6 = self.add_assistant_turn(
             None,
             [fn_call],
@@ -209,13 +203,14 @@ class TestRequest(BaseTest):
             "finished task",
         )
 
+        self.curr_request = "change baggage"
+
         # --------------------------------
 
         t9 = self.add_node_turn(
             luggage_get_user_id_node_schema,
             None,
             "the payment method is ...",
-            "change baggage",
         )
 
         input = luggage_get_reservation_details_node_schema.get_input(
@@ -225,7 +220,6 @@ class TestRequest(BaseTest):
             luggage_get_reservation_details_node_schema,
             input,
             "the payment method is ...",
-            "change baggage",
         )
 
         # --------------------------------
@@ -237,7 +231,6 @@ class TestRequest(BaseTest):
             new_node_schema,
             input,
             "the payment method is ...",
-            "change baggage",
         )
         return [
             *t_turns_1,
@@ -394,7 +387,6 @@ class TestRequest(BaseTest):
             "the luggage is ...",
             edge_3,
             payment_node_schema,
-            "change baggage",
         )
 
         fn_call = self.create_state_update_fn_call("payment_id", "asd")
@@ -403,20 +395,19 @@ class TestRequest(BaseTest):
             "the payment method is ...",
             edge_4,
             book_flight_node_schema,
-            "change baggage",
         )
 
-        fn_call = self.create_fn_call("update_reservation_baggages", {"args": "1"})
+        fn_call = self.create_fn_call("update_reservation_baggages")
         t14 = self.add_assistant_turn(
             None,
             [fn_call],
         )
+        self.curr_request = None
 
         t15 = self.add_node_turn(
             AIRLINE_REQUEST_SCHEMA.default_node_schema,
             None,
             "the payment method is ...",
-            None,
         )
 
         TC = self.create_turn_container(
