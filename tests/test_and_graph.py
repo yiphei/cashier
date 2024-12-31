@@ -31,18 +31,16 @@ class TestAndGraph(BaseTest):
         self.ordered_conv_node_schemas = [self.start_conv_node_schema]
         edge_schema = self.get_edge_schema(self.start_conv_node_schema)
         while edge_schema:
-            next_node_schema = self.edge_schema_id_to_to_cov_node_schema_id[edge_schema.id]
-            self.ordered_conv_node_schemas.append(
-                next_node_schema
-            )
-            edge_schema = self.get_edge_schema(
-                next_node_schema
-            )
+            next_node_schema = self.edge_schema_id_to_to_cov_node_schema_id[
+                edge_schema.id
+            ]
+            self.ordered_conv_node_schemas.append(next_node_schema)
+            edge_schema = self.get_edge_schema(next_node_schema)
 
     def get_edge_schema(self, curr_node_schema):
         return self.graph_schema.from_conv_node_schema_id_to_edge_schema.get(
-            curr_node_schema.id
-        , None)
+            curr_node_schema.id, None
+        )
 
     def get_next_conv_node_schema(self, curr_node_schema):
         edge_schema = self.graph_schema.from_conv_node_schema_id_to_edge_schema[
@@ -111,7 +109,9 @@ class TestAndGraph(BaseTest):
         model_provider,
         start_turns,
     ):
-        user_turn = self.add_user_turn("hello", False, self.ordered_conv_node_schemas[1].id)
+        user_turn = self.add_user_turn(
+            "hello", False, self.ordered_conv_node_schemas[1].id
+        )
 
         fake_fn_call = self.recreate_fake_single_fn_call(
             "think",
@@ -249,7 +249,9 @@ class TestAndGraph(BaseTest):
             "flight_infos", [flight_info.model_dump()]
         )
 
-        next_next_node_schema = self.get_next_conv_node_schema(self.ordered_conv_node_schemas[1])
+        next_next_node_schema = self.get_next_conv_node_schema(
+            self.ordered_conv_node_schemas[1]
+        )
 
         t_turns_3 = self.add_transition_turns(
             [fn_call],
