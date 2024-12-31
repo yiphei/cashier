@@ -118,6 +118,186 @@ class TestRequest(BaseTest):
             "customer wants to change a flight",
         )
         return [t1, node_turn]
+    
+
+    @pytest.fixture
+    def into_second_graph_transition_turns(self, agent_executor, into_graph_transition_turns):
+        user_details = ModelFactory.create_factory(UserDetails).build()
+        fn_call = FunctionCall.create(
+            api_id_model_provider=self.fixtures.model_provider,
+            api_id=FunctionCall.generate_fake_id(self.fixtures.model_provider),
+            name="update_state_user_details",
+            args={"user_details": user_details.model_dump()},
+        )
+
+        next_node_schema = self.get_next_conv_node_schema(
+            CHANGE_FLIGHT_GRAPH_SCHEMA.start_node_schema
+        )
+
+        t_turns_1 = self.add_transition_turns(
+            [fn_call],
+            {fn_call.id: None},
+            "my user details are ...",
+            self.get_edge_schema(CHANGE_FLIGHT_GRAPH_SCHEMA.start_node_schema),
+            self.get_next_conv_node_schema(
+                CHANGE_FLIGHT_GRAPH_SCHEMA.start_node_schema
+            ),
+            "customer wants to change a flight",
+        )
+
+        t_turns_2 = self.add_new_task(
+            ["customer wants to change a flight"],
+            [CHANGE_FLIGHT_GRAPH_SCHEMA],
+            "change baggage",
+            CHANGE_BAGGAGE_GRAPH_SCHEMA,
+        )
+
+        res_details = ModelFactory.create_factory(ReservationDetails).build()
+        fn_call = FunctionCall.create(
+            api_id_model_provider=self.fixtures.model_provider,
+            api_id=FunctionCall.generate_fake_id(self.fixtures.model_provider),
+            name="update_state_reservation_details",
+            args={"reservation_details": res_details.model_dump()},
+        )
+
+        next_next_node_schema = self.get_next_conv_node_schema(next_node_schema)
+
+        t_turns_3 = self.add_transition_turns(
+            [fn_call],
+            {fn_call.id: None},
+            "my reservation details are ...",
+            self.get_edge_schema(next_node_schema),
+            next_next_node_schema,
+            "customer wants to change a flight",
+        )
+
+        flight_info = ModelFactory.create_factory(FlightInfo).build()
+        fn_call = FunctionCall.create(
+            api_id_model_provider=self.fixtures.model_provider,
+            api_id=FunctionCall.generate_fake_id(self.fixtures.model_provider),
+            name="update_state_flight_infos",
+            args={"flight_infos": [flight_info.model_dump()]},
+        )
+        fn_call_2 = FunctionCall.create(
+            api_id_model_provider=self.fixtures.model_provider,
+            api_id=FunctionCall.generate_fake_id(self.fixtures.model_provider),
+            name="update_state_net_new_cost",
+            args={"net_new_cost": 0},
+        )
+        fn_call_3 = FunctionCall.create(
+            api_id_model_provider=self.fixtures.model_provider,
+            api_id=FunctionCall.generate_fake_id(self.fixtures.model_provider),
+            name="update_state_has_confirmed_new_flights",
+            args={"has_confirmed_new_flights": True},
+        )
+
+        next_next_next_node_schema = self.get_next_conv_node_schema(
+            next_next_node_schema
+        )
+        t_turns_4 = self.add_transition_turns(
+            [fn_call, fn_call_2, fn_call_3],
+            {fn_call.id: None, fn_call_2.id: None, fn_call_3.id: None},
+            "the new flight is ...",
+            self.get_edge_schema(next_next_node_schema),
+            next_next_next_node_schema,
+            "customer wants to change a flight",
+        )
+
+        fn_call = FunctionCall.create(
+            api_id_model_provider=self.fixtures.model_provider,
+            api_id=FunctionCall.generate_fake_id(self.fixtures.model_provider),
+            name="update_state_payment_id",
+            args={"payment_id": "123"},
+        )
+        next_next_next_next_node_schema = self.get_next_conv_node_schema(
+            next_next_next_node_schema
+        )
+
+        t_turns_5 = self.add_transition_turns(
+            [fn_call],
+            {fn_call.id: None},
+            "the payment method is ...",
+            self.get_edge_schema(next_next_next_node_schema),
+            next_next_next_next_node_schema,
+            "customer wants to change a flight",
+        )
+
+        fn_call = FunctionCall.create(
+            api_id_model_provider=self.fixtures.model_provider,
+            api_id=FunctionCall.generate_fake_id(self.fixtures.model_provider),
+            name="update_reservation_flights",
+            args={"args": "1"},
+        )
+        t6 = self.add_assistant_turn(
+            None,
+            [fn_call],
+            {fn_call.id: None},
+        )
+
+        fake_fn_call = self.recreate_fake_single_fn_call(
+            "think",
+            {
+                "thought": "I just completed the current request. The next request to be addressed is: change baggage. I must explicitly inform the customer that the current request is completed and that I will address the next request right away. Only after I informed the customer do I receive the tools to address the next request."
+            },
+        )
+
+        t7 = AssistantTurn(
+            msg_content=None,
+            model_provider=self.fixtures.model_provider,
+            tool_registry=self.fixtures.agent_executor.graph.curr_conversation_node.schema.tool_registry,
+            fn_calls=[fake_fn_call],
+            fn_call_id_to_fn_output={fake_fn_call.id: None},
+        )
+        self.add_messages_from_turn(t7)
+
+        t8 = self.add_assistant_turn(
+            "finished task",
+        )
+
+        # --------------------------------
+
+        t9 = self.add_node_turn(
+            luggage_get_user_id_node_schema,
+            None,
+            "the payment method is ...",
+            "change baggage",
+        )
+
+        input = luggage_get_reservation_details_node_schema.get_input(
+            agent_executor.graph.curr_node.state, edge_1
+        )
+        t10 = self.add_node_turn(
+            luggage_get_reservation_details_node_schema,
+            input,
+            "the payment method is ...",
+            "change baggage",
+        )
+
+        # --------------------------------
+
+        new_node_schema = luggage_node_schema
+        input = new_node_schema.get_input(agent_executor.graph.curr_node.state, edge_2)
+
+        t11 = self.add_node_turn(
+            new_node_schema,
+            input,
+            "the payment method is ...",
+            "change baggage",
+        )
+        return [
+
+                            *t_turns_1,
+                *t_turns_2,
+                *t_turns_3,
+                *t_turns_4,
+                *t_turns_5,
+                t6,
+                t7,
+                t8,
+                t9,
+                t10,
+                t11,
+        ]
 
     @pytest.mark.usefixtures("agent_executor")
     def test_graph_initialization(self, start_turns):
@@ -228,186 +408,15 @@ class TestRequest(BaseTest):
         agent_executor,
         start_turns,
         into_graph_transition_turns,
+        into_second_graph_transition_turns,
     ):
-
-        user_details = ModelFactory.create_factory(UserDetails).build()
-        fn_call = FunctionCall.create(
-            api_id_model_provider=model_provider,
-            api_id=FunctionCall.generate_fake_id(model_provider),
-            name="update_state_user_details",
-            args={"user_details": user_details.model_dump()},
-        )
-
-        next_node_schema = self.get_next_conv_node_schema(
-            CHANGE_FLIGHT_GRAPH_SCHEMA.start_node_schema
-        )
-
-        t_turns_1 = self.add_transition_turns(
-            [fn_call],
-            {fn_call.id: None},
-            "my user details are ...",
-            self.get_edge_schema(CHANGE_FLIGHT_GRAPH_SCHEMA.start_node_schema),
-            self.get_next_conv_node_schema(
-                CHANGE_FLIGHT_GRAPH_SCHEMA.start_node_schema
-            ),
-            "customer wants to change a flight",
-        )
-
-        t_turns_2 = self.add_new_task(
-            ["customer wants to change a flight"],
-            [CHANGE_FLIGHT_GRAPH_SCHEMA],
-            "change baggage",
-            CHANGE_BAGGAGE_GRAPH_SCHEMA,
-        )
-
-        res_details = ModelFactory.create_factory(ReservationDetails).build()
-        fn_call = FunctionCall.create(
-            api_id_model_provider=model_provider,
-            api_id=FunctionCall.generate_fake_id(model_provider),
-            name="update_state_reservation_details",
-            args={"reservation_details": res_details.model_dump()},
-        )
-
-        next_next_node_schema = self.get_next_conv_node_schema(next_node_schema)
-
-        t_turns_3 = self.add_transition_turns(
-            [fn_call],
-            {fn_call.id: None},
-            "my reservation details are ...",
-            self.get_edge_schema(next_node_schema),
-            next_next_node_schema,
-            "customer wants to change a flight",
-        )
-
-        flight_info = ModelFactory.create_factory(FlightInfo).build()
-        fn_call = FunctionCall.create(
-            api_id_model_provider=model_provider,
-            api_id=FunctionCall.generate_fake_id(model_provider),
-            name="update_state_flight_infos",
-            args={"flight_infos": [flight_info.model_dump()]},
-        )
-        fn_call_2 = FunctionCall.create(
-            api_id_model_provider=model_provider,
-            api_id=FunctionCall.generate_fake_id(model_provider),
-            name="update_state_net_new_cost",
-            args={"net_new_cost": 0},
-        )
-        fn_call_3 = FunctionCall.create(
-            api_id_model_provider=model_provider,
-            api_id=FunctionCall.generate_fake_id(model_provider),
-            name="update_state_has_confirmed_new_flights",
-            args={"has_confirmed_new_flights": True},
-        )
-
-        next_next_next_node_schema = self.get_next_conv_node_schema(
-            next_next_node_schema
-        )
-        t_turns_4 = self.add_transition_turns(
-            [fn_call, fn_call_2, fn_call_3],
-            {fn_call.id: None, fn_call_2.id: None, fn_call_3.id: None},
-            "the new flight is ...",
-            self.get_edge_schema(next_next_node_schema),
-            next_next_next_node_schema,
-            "customer wants to change a flight",
-        )
-
-        fn_call = FunctionCall.create(
-            api_id_model_provider=model_provider,
-            api_id=FunctionCall.generate_fake_id(model_provider),
-            name="update_state_payment_id",
-            args={"payment_id": "123"},
-        )
-        next_next_next_next_node_schema = self.get_next_conv_node_schema(
-            next_next_next_node_schema
-        )
-
-        t_turns_5 = self.add_transition_turns(
-            [fn_call],
-            {fn_call.id: None},
-            "the payment method is ...",
-            self.get_edge_schema(next_next_next_node_schema),
-            next_next_next_next_node_schema,
-            "customer wants to change a flight",
-        )
-
-        fn_call = FunctionCall.create(
-            api_id_model_provider=model_provider,
-            api_id=FunctionCall.generate_fake_id(model_provider),
-            name="update_reservation_flights",
-            args={"args": "1"},
-        )
-        t6 = self.add_assistant_turn(
-            None,
-            [fn_call],
-            {fn_call.id: None},
-        )
-
-        fake_fn_call = self.recreate_fake_single_fn_call(
-            "think",
-            {
-                "thought": "I just completed the current request. The next request to be addressed is: change baggage. I must explicitly inform the customer that the current request is completed and that I will address the next request right away. Only after I informed the customer do I receive the tools to address the next request."
-            },
-        )
-
-        t7 = AssistantTurn(
-            msg_content=None,
-            model_provider=self.fixtures.model_provider,
-            tool_registry=self.fixtures.agent_executor.graph.curr_conversation_node.schema.tool_registry,
-            fn_calls=[fake_fn_call],
-            fn_call_id_to_fn_output={fake_fn_call.id: None},
-        )
-        self.add_messages_from_turn(t7)
-
-        t8 = self.add_assistant_turn(
-            "finished task",
-        )
-
-        # --------------------------------
-
-        t9 = self.add_node_turn(
-            luggage_get_user_id_node_schema,
-            None,
-            "the payment method is ...",
-            "change baggage",
-        )
-
-        input = luggage_get_reservation_details_node_schema.get_input(
-            agent_executor.graph.curr_node.state, edge_1
-        )
-        t10 = self.add_node_turn(
-            luggage_get_reservation_details_node_schema,
-            input,
-            "the payment method is ...",
-            "change baggage",
-        )
-
-        # --------------------------------
-
         new_node_schema = luggage_node_schema
-        input = new_node_schema.get_input(agent_executor.graph.curr_node.state, edge_2)
-
-        t11 = self.add_node_turn(
-            new_node_schema,
-            input,
-            "the payment method is ...",
-            "change baggage",
-        )
 
         TC = self.create_turn_container(
             [
                 *start_turns,
                 *into_graph_transition_turns,
-                *t_turns_1,
-                *t_turns_2,
-                *t_turns_3,
-                *t_turns_4,
-                *t_turns_5,
-                t6,
-                t7,
-                t8,
-                t9,
-                t10,
-                t11,
+                *into_second_graph_transition_turns
             ],
         )
 
@@ -422,171 +431,8 @@ class TestRequest(BaseTest):
         agent_executor,
         start_turns,
         into_graph_transition_turns,
+        into_second_graph_transition_turns,
     ):
-
-        user_details = ModelFactory.create_factory(UserDetails).build()
-        fn_call = FunctionCall.create(
-            api_id_model_provider=model_provider,
-            api_id=FunctionCall.generate_fake_id(model_provider),
-            name="update_state_user_details",
-            args={"user_details": user_details.model_dump()},
-        )
-
-        next_node_schema = self.get_next_conv_node_schema(
-            CHANGE_FLIGHT_GRAPH_SCHEMA.start_node_schema
-        )
-
-        t_turns_1 = self.add_transition_turns(
-            [fn_call],
-            {fn_call.id: None},
-            "my user details are ...",
-            self.get_edge_schema(CHANGE_FLIGHT_GRAPH_SCHEMA.start_node_schema),
-            self.get_next_conv_node_schema(
-                CHANGE_FLIGHT_GRAPH_SCHEMA.start_node_schema
-            ),
-            "customer wants to change a flight",
-        )
-
-        t_turns_2 = self.add_new_task(
-            ["customer wants to change a flight"],
-            [CHANGE_FLIGHT_GRAPH_SCHEMA],
-            "change baggage",
-            CHANGE_BAGGAGE_GRAPH_SCHEMA,
-        )
-
-        res_details = ModelFactory.create_factory(ReservationDetails).build()
-        fn_call = FunctionCall.create(
-            api_id_model_provider=model_provider,
-            api_id=FunctionCall.generate_fake_id(model_provider),
-            name="update_state_reservation_details",
-            args={"reservation_details": res_details.model_dump()},
-        )
-
-        next_next_node_schema = self.get_next_conv_node_schema(next_node_schema)
-
-        t_turns_3 = self.add_transition_turns(
-            [fn_call],
-            {fn_call.id: None},
-            "my reservation details are ...",
-            self.get_edge_schema(next_node_schema),
-            next_next_node_schema,
-            "customer wants to change a flight",
-        )
-
-        flight_info = ModelFactory.create_factory(FlightInfo).build()
-        fn_call = FunctionCall.create(
-            api_id_model_provider=model_provider,
-            api_id=FunctionCall.generate_fake_id(model_provider),
-            name="update_state_flight_infos",
-            args={"flight_infos": [flight_info.model_dump()]},
-        )
-        fn_call_2 = FunctionCall.create(
-            api_id_model_provider=model_provider,
-            api_id=FunctionCall.generate_fake_id(model_provider),
-            name="update_state_net_new_cost",
-            args={"net_new_cost": 0},
-        )
-        fn_call_3 = FunctionCall.create(
-            api_id_model_provider=model_provider,
-            api_id=FunctionCall.generate_fake_id(model_provider),
-            name="update_state_has_confirmed_new_flights",
-            args={"has_confirmed_new_flights": True},
-        )
-
-        next_next_next_node_schema = self.get_next_conv_node_schema(
-            next_next_node_schema
-        )
-        t_turns_4 = self.add_transition_turns(
-            [fn_call, fn_call_2, fn_call_3],
-            {fn_call.id: None, fn_call_2.id: None, fn_call_3.id: None},
-            "the new flight is ...",
-            self.get_edge_schema(next_next_node_schema),
-            next_next_next_node_schema,
-            "customer wants to change a flight",
-        )
-
-        fn_call = FunctionCall.create(
-            api_id_model_provider=model_provider,
-            api_id=FunctionCall.generate_fake_id(model_provider),
-            name="update_state_payment_id",
-            args={"payment_id": "123"},
-        )
-        next_next_next_next_node_schema = self.get_next_conv_node_schema(
-            next_next_next_node_schema
-        )
-
-        t_turns_5 = self.add_transition_turns(
-            [fn_call],
-            {fn_call.id: None},
-            "the payment method is ...",
-            self.get_edge_schema(next_next_next_node_schema),
-            next_next_next_next_node_schema,
-            "customer wants to change a flight",
-        )
-
-        fn_call = FunctionCall.create(
-            api_id_model_provider=model_provider,
-            api_id=FunctionCall.generate_fake_id(model_provider),
-            name="update_reservation_flights",
-            args={"args": "1"},
-        )
-        t6 = self.add_assistant_turn(
-            None,
-            [fn_call],
-            {fn_call.id: None},
-        )
-
-        fake_fn_call = self.recreate_fake_single_fn_call(
-            "think",
-            {
-                "thought": "I just completed the current request. The next request to be addressed is: change baggage. I must explicitly inform the customer that the current request is completed and that I will address the next request right away. Only after I informed the customer do I receive the tools to address the next request."
-            },
-        )
-
-        t7 = AssistantTurn(
-            msg_content=None,
-            model_provider=self.fixtures.model_provider,
-            tool_registry=self.fixtures.agent_executor.graph.curr_conversation_node.schema.tool_registry,
-            fn_calls=[fake_fn_call],
-            fn_call_id_to_fn_output={fake_fn_call.id: None},
-        )
-        self.add_messages_from_turn(t7)
-
-        t8 = self.add_assistant_turn(
-            "finished task",
-        )
-
-        # --------------------------------
-
-        t9 = self.add_node_turn(
-            luggage_get_user_id_node_schema,
-            None,
-            "the payment method is ...",
-            "change baggage",
-        )
-
-        input = luggage_get_reservation_details_node_schema.get_input(
-            agent_executor.graph.curr_node.state, edge_1
-        )
-        t10 = self.add_node_turn(
-            luggage_get_reservation_details_node_schema,
-            input,
-            "the payment method is ...",
-            "change baggage",
-        )
-
-        # --------------------------------
-
-        new_node_schema = luggage_node_schema
-        input = new_node_schema.get_input(agent_executor.graph.curr_node.state, edge_2)
-
-        t11 = self.add_node_turn(
-            new_node_schema,
-            input,
-            "the payment method is ...",
-            "change baggage",
-        )
-
         fn_call = FunctionCall.create(
             api_id_model_provider=model_provider,
             api_id=FunctionCall.generate_fake_id(model_provider),
@@ -646,17 +492,7 @@ class TestRequest(BaseTest):
             [
                 *start_turns,
                 *into_graph_transition_turns,
-                *t_turns_1,
-                *t_turns_2,
-                *t_turns_3,
-                *t_turns_4,
-                *t_turns_5,
-                t6,
-                t7,
-                t8,
-                t9,
-                t10,
-                t11,
+                *into_second_graph_transition_turns,
                 *t_turns_12,
                 *t_turns_13,
                 t14,
