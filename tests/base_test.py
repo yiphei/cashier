@@ -308,8 +308,7 @@ class BaseTest:
                 is_wait_model_completion = self.create_mock_model_completion(
                     None,
                     True,
-                    wait_node_schema_id
-                    or self.curr_conversation_node_schema.id,
+                    wait_node_schema_id or self.curr_conversation_node_schema.id,
                     0.5,
                 )
                 model_chat_side_effects.append(is_wait_model_completion)
@@ -318,8 +317,7 @@ class BaseTest:
                     skip_model_completion = self.create_mock_model_completion(
                         None,
                         True,
-                        skip_node_schema_id
-                        or self.curr_conversation_node_schema.id,
+                        skip_node_schema_id or self.curr_conversation_node_schema.id,
                         0.5,
                     )
                     model_chat_side_effects.append(skip_model_completion)
@@ -422,9 +420,7 @@ class BaseTest:
             else []
         )
 
-        tool_registry = (
-            self.curr_conversation_node_schema.tool_registry
-        )
+        tool_registry = self.curr_conversation_node_schema.tool_registry
 
         fn_calls = fn_calls or []
         expected_calls_map = defaultdict(list)
