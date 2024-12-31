@@ -41,10 +41,6 @@ get_user_id_node_schema = ConversationNodeSchema(
     state_schema=UserState,
     tool_registry_or_tool_defs=AIRLINE_TOOL_REGISTRY,
     tool_names=["get_user_details", "calculate"],
-    completion_config=StateTransitionConfig(
-        need_user_msg=False,
-        state_check_fn_map={"user_details": lambda val: val is not None},
-    ),
 )
 
 # ---------------------------------------------------------
@@ -66,10 +62,6 @@ find_flight_node_schema = ConversationNodeSchema(
         "calculate",
         "get_reservation_details",
     ],
-    completion_config=StateTransitionConfig(
-        need_user_msg=False,
-        state_check_fn_map={"flight_infos": lambda val: val and len(val) > 0},
-    ),
 )
 
 
@@ -92,10 +84,6 @@ get_passanger_info_schema = ConversationNodeSchema(
     state_schema=PassengerState,
     tool_registry_or_tool_defs=AIRLINE_TOOL_REGISTRY,
     tool_names=["calculate"],
-    completion_config=StateTransitionConfig(
-        need_user_msg=False,
-        state_check_fn_map={"passengers": lambda val: val and len(val) > 0},
-    ),
 )
 
 
@@ -115,10 +103,6 @@ ask_for_insurance_node_schema = ConversationNodeSchema(
     state_schema=InsuranceState,
     tool_registry_or_tool_defs=AIRLINE_TOOL_REGISTRY,
     tool_names=["calculate"],
-    completion_config=StateTransitionConfig(
-        need_user_msg=False,
-        state_check_fn_map={"add_insurance": lambda val: val is not None},
-    ),
 )
 
 # ------------------------------------------
@@ -139,13 +123,6 @@ luggage_node_schema = ConversationNodeSchema(
     state_schema=LuggageState,
     tool_registry_or_tool_defs=AIRLINE_TOOL_REGISTRY,
     tool_names=["calculate"],
-    completion_config=StateTransitionConfig(
-        need_user_msg=False,
-        state_check_fn_map={
-            "total_baggages": lambda val: val is not None,
-            "nonfree_baggages": lambda val: val is not None,
-        },
-    ),
 )
 
 # ---------------------------------------------------------
@@ -178,14 +155,6 @@ payment_node_schema = ConversationNodeSchema(
     state_schema=PaymentState,
     tool_registry_or_tool_defs=AIRLINE_TOOL_REGISTRY,
     tool_names=["calculate"],
-    completion_config=StateTransitionConfig(
-        need_user_msg=False,
-        state_check_fn_map={
-            "is_payment_finalized": lambda val: val is True,
-            "has_explained_payment_policy_to_customer": lambda val: val is True,
-            "payments": lambda val: val and len(val) > 0,
-        },
-    ),
 )
 
 
