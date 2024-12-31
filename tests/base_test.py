@@ -309,7 +309,7 @@ class BaseTest:
                     None,
                     True,
                     wait_node_schema_id
-                    or self.fixtures.agent_executor.graph.curr_conversation_node.schema.id,
+                    or self.curr_conversation_node_schema.id,
                     0.5,
                 )
                 model_chat_side_effects.append(is_wait_model_completion)
@@ -319,7 +319,7 @@ class BaseTest:
                         None,
                         True,
                         skip_node_schema_id
-                        or self.fixtures.agent_executor.graph.curr_conversation_node.schema.id,
+                        or self.curr_conversation_node_schema.id,
                         0.5,
                     )
                     model_chat_side_effects.append(skip_model_completion)
@@ -384,7 +384,7 @@ class BaseTest:
             msg_content=message,
             model_provider=self.fixtures.model_provider,
             tool_registry=tool_registry
-            or self.fixtures.agent_executor.graph.curr_conversation_node.schema.tool_registry,
+            or self.curr_conversation_node_schema.tool_registry,
             fn_calls=fn_calls,
             fn_call_id_to_fn_output=fn_call_id_to_fn_output,
         )
@@ -423,7 +423,7 @@ class BaseTest:
         )
 
         tool_registry = (
-            self.fixtures.agent_executor.graph.curr_conversation_node.schema.tool_registry
+            self.curr_conversation_node_schema.tool_registry
         )
 
         fn_calls = fn_calls or []
