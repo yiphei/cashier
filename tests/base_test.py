@@ -356,16 +356,16 @@ class BaseTest:
         ut = UserTurn(msg_content=message)
         self.add_messages_from_turn(ut)
         return ut
-    
+
     def add_direct_assistant_turn(
-        self,          
+        self,
         message,
         fn_calls=None,
         fn_call_id_to_fn_output=None,
-        ):
+    ):
         if fn_calls is not None and fn_call_id_to_fn_output is None:
             fn_call_id_to_fn_output = {fn_call.id: None for fn_call in fn_calls}
-        
+
         at = AssistantTurn(
             msg_content=message,
             model_provider=self.fixtures.model_provider,

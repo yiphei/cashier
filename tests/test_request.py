@@ -1,7 +1,6 @@
 import pytest
 from polyfactory.factories.pydantic_factory import ModelFactory
 
-from cashier.model.model_turn import AssistantTurn
 from data.graph.airline_change_baggage import (
     CHANGE_BAGGAGE_GRAPH_SCHEMA,
     book_flight_node_schema,
