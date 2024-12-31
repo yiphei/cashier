@@ -2,7 +2,6 @@ import pytest
 from polyfactory.factories.pydantic_factory import ModelFactory
 
 from cashier.model.model_turn import AssistantTurn
-from cashier.model.model_util import FunctionCall
 from cashier.tool.function_call_context import StateUpdateError, ToolExceptionWrapper
 from data.graph.airline_book_flight import (
     BOOK_FLIGHT_GRAPH_SCHEMA,
@@ -69,17 +68,13 @@ class TestAndGraph(BaseTest):
         agent_executor,
         model_provider,
     ):
-        user_details = ModelFactory.create_factory(UserDetails).build()
-        fn_call_1 = FunctionCall.create(
-            api_id_model_provider=model_provider,
-            api_id=FunctionCall.generate_fake_id(model_provider),
-            name="update_state_user_details",
-            args={"user_details": user_details.model_dump()},
+        fn_call = self.create_state_update_fn_call(
+            "user_details", pydantic_model=UserDetails
         )
 
         return self.add_transition_turns(
-            [fn_call_1],
-            {fn_call_1.id: None},
+            [fn_call],
+            {fn_call.id: None},
             "my username is ...",
             self.get_edge_schema(self.start_conv_node_schema),
             self.get_next_conv_node_schema(self.start_conv_node_schema),
@@ -188,12 +183,10 @@ class TestAndGraph(BaseTest):
         fn_calls, fn_call_id_to_fn_output = self.create_fake_fn_calls(
             fn_names, agent_executor.graph.curr_conversation_node
         )
-        fn_call = FunctionCall.create(
-            name="update_state_user_details",
-            args={"user_details": None},
-            api_id_model_provider=model_provider,
-            api_id=FunctionCall.generate_fake_id(model_provider),
+        fn_call = self.create_state_update_fn_call(
+            "user_details", pydantic_model=UserDetails
         )
+
         fn_calls.append(fn_call)
         fn_call_id_to_fn_output[fn_call.id] = ToolExceptionWrapper(
             StateUpdateError(
@@ -298,11 +291,8 @@ class TestAndGraph(BaseTest):
         )
 
         flight_info = ModelFactory.create_factory(FlightInfo).build()
-        fn_call = FunctionCall.create(
-            api_id_model_provider=model_provider,
-            api_id=FunctionCall.generate_fake_id(model_provider),
-            name="update_state_flight_infos",
-            args={"flight_infos": [flight_info.model_dump()]},
+        fn_call = self.create_state_update_fn_call(
+            "flight_infos", [flight_info.model_dump()]
         )
 
         next_next_node_schema = self.get_next_conv_node_schema(find_flight_node_schema)

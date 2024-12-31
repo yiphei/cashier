@@ -7,6 +7,7 @@ from unittest.mock import Mock, call, patch
 
 import pytest
 from deepdiff import DeepDiff
+from polyfactory.factories.pydantic_factory import ModelFactory
 from pydantic import BaseModel, ConfigDict, Field
 
 from cashier.agent_executor import AgentExecutor
@@ -214,6 +215,18 @@ class BaseTest:
         )
         fn.model_fields_set.remove("id")
         return fn
+
+    def create_state_update_fn_call(self, field, value=None, pydantic_model=None):
+        assert bool(value is not None) ^ bool(pydantic_model is not None)
+        value = value
+        if pydantic_model is not None:
+            value = ModelFactory.create_factory(pydantic_model).build().model_dump()
+        return FunctionCall.create(
+            api_id_model_provider=self.fixtures.model_provider,
+            api_id=FunctionCall.generate_fake_id(self.fixtures.model_provider),
+            name=f"update_state_{field}",
+            args={field: value},
+        )
 
     def create_fake_fn_calls(self, fn_names, node):
         fn_calls = []
