@@ -715,6 +715,7 @@ class BaseTest:
         is_and_graph=False,
     ):
         t1 = self.add_user_turn(user_msg)
+        self.run_message_dict_assertions()
         t2 = self.add_assistant_turn(
             None,
             fn_calls,
@@ -732,7 +733,7 @@ class BaseTest:
             input,
             user_msg,
         )
-
+        self.run_message_dict_assertions()
         t4 = self.add_assistant_turn(last_assistant_msg)
         return [t1, t2, t3, t4]
 

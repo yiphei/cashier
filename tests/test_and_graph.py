@@ -206,7 +206,6 @@ class TestAndGraph(BaseTest):
         t1 = self.add_assistant_turn(
             "what flight do you want?",
         )
-        self.run_message_dict_assertions()
 
         t2 = self.add_user_turn(
             "i want to change my user details",
@@ -262,7 +261,6 @@ class TestAndGraph(BaseTest):
         t3 = self.add_assistant_turn(
             "thanks for confirming flights, now lets move on to ...",
         )
-        self.run_message_dict_assertions()
 
         t4 = self.add_user_turn(
             "actually, i want to change my user details",
