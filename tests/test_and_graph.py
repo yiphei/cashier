@@ -70,12 +70,16 @@ class TestAndGraph(BaseTest):
             "user_details", pydantic_model=UserDetails
         )
 
-        return start_turns + self.add_chat_turns() + self.add_transition_turns(
-            [fn_call],
-            "my username is ...",
-            self.get_edge_schema(self.start_conv_node_schema),
-            self.get_next_conv_node_schema(self.start_conv_node_schema),
-            is_and_graph=True,
+        return (
+            start_turns
+            + self.add_chat_turns()
+            + self.add_transition_turns(
+                [fn_call],
+                "my username is ...",
+                self.get_edge_schema(self.start_conv_node_schema),
+                self.get_next_conv_node_schema(self.start_conv_node_schema),
+                is_and_graph=True,
+            )
         )
 
     def test_graph_initialization(self, start_turns):
@@ -195,7 +199,8 @@ class TestAndGraph(BaseTest):
     ):
         t_turns_1 = self.add_chat_turns()
         self.run_assertions(
-            first_into_second_transition_turns + t_turns_1, find_flight_node_schema.tool_registry
+            first_into_second_transition_turns + t_turns_1,
+            find_flight_node_schema.tool_registry,
         )
 
     def test_backward_node_skip(

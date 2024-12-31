@@ -736,18 +736,14 @@ class BaseTest:
         self.run_message_dict_assertions()
         t4 = self.add_assistant_turn(last_assistant_msg)
         return [t1, t2, t3, t4]
-    
+
     def add_chat_turns(self):
-        t1 = self.add_user_turn(
-            "hello, ..."
+        t1 = self.add_user_turn("hello, ...")
+        t2 = self.add_assistant_turn("hello back")
+        t3 = self.add_user_turn("i want ...")
+        tool_names = list(
+            self.curr_conversation_node_schema.tool_registry.openai_tool_name_to_tool_def.keys()
         )
-        t2 = self.add_assistant_turn(
-            "hello back"
-        )
-        t3 = self.add_user_turn(
-            "i want ..."
-        )
-        tool_names = list(self.curr_conversation_node_schema.tool_registry.openai_tool_name_to_tool_def.keys())
         if tool_names:
             tool_name = tool_names[0]
             if tool_name == "think" and len(tool_names) > 1:
@@ -757,9 +753,7 @@ class BaseTest:
                 tool_names=[tool_name],
             )
         else:
-            t4 = self.add_assistant_turn(
-                "ok, let me ..."
-            )
+            t4 = self.add_assistant_turn("ok, let me ...")
         return [t1, t2, t3, t4]
 
     def add_skip_transition_turns(self, skip_node_schema, input, last_msg):
