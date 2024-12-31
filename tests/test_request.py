@@ -187,7 +187,7 @@ class TestRequest(BaseTest):
             "customer wants to change a flight",
         )
 
-        fn_call = self.create_fn_call("update_reservation_flights", {"args": "1"})
+        fn_call = self.create_fn_call("update_reservation_flights")
         t6 = self.add_assistant_turn(
             None,
             [fn_call],
@@ -406,7 +406,7 @@ class TestRequest(BaseTest):
             "change baggage",
         )
 
-        fn_call = self.create_fn_call("update_reservation_baggages", {"args": "1"})
+        fn_call = self.create_fn_call("update_reservation_baggages")
         t14 = self.add_assistant_turn(
             None,
             [fn_call],
