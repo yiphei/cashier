@@ -469,7 +469,7 @@ class BaseTest:
         at = self.add_direct_assistant_turn(
             message,
             fn_calls,
-            fn_call_id_to_fn_output or {},
+            fn_call_id_to_fn_output,
             tool_registry,
         )
         return at
