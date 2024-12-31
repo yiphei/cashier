@@ -115,6 +115,7 @@ class TestRequest(BaseTest):
     def into_second_graph_transition_turns(
         self, agent_executor, into_graph_transition_turns
     ):
+        t_turns_1 = self.add_chat_turns()
         fn_call = self.create_state_update_fn_call(
             "user_details", pydantic_model=UserDetails
         )
@@ -123,7 +124,7 @@ class TestRequest(BaseTest):
             CHANGE_FLIGHT_GRAPH_SCHEMA.start_node_schema
         )
 
-        t_turns_1 = self.add_transition_turns(
+        t_turns_2 = self.add_transition_turns(
             [fn_call],
             "my user details are ...",
             self.get_edge_schema(CHANGE_FLIGHT_GRAPH_SCHEMA.start_node_schema),
@@ -131,8 +132,9 @@ class TestRequest(BaseTest):
                 CHANGE_FLIGHT_GRAPH_SCHEMA.start_node_schema
             ),
         )
+        t_turns_3 = self.add_chat_turns()
 
-        t_turns_2 = self.add_new_task(
+        t_turns_4 = self.add_new_task(
             ["customer wants to change a flight"],
             [CHANGE_FLIGHT_GRAPH_SCHEMA],
             "change baggage",
@@ -145,12 +147,13 @@ class TestRequest(BaseTest):
 
         next_next_node_schema = self.get_next_conv_node_schema(next_node_schema)
 
-        t_turns_3 = self.add_transition_turns(
+        t_turns_5 = self.add_transition_turns(
             [fn_call],
             "my reservation details are ...",
             self.get_edge_schema(next_node_schema),
             next_next_node_schema,
         )
+        t_turns_6 = self.add_chat_turns()
 
         flight_info = ModelFactory.create_factory(FlightInfo).build()
         fn_call = self.create_state_update_fn_call(
@@ -162,19 +165,19 @@ class TestRequest(BaseTest):
         next_next_next_node_schema = self.get_next_conv_node_schema(
             next_next_node_schema
         )
-        t_turns_4 = self.add_transition_turns(
+        t_turns_7 = self.add_transition_turns(
             [fn_call, fn_call_2, fn_call_3],
             "the new flight is ...",
             self.get_edge_schema(next_next_node_schema),
             next_next_next_node_schema,
         )
-
+        t_turns_8 = self.add_chat_turns()
         fn_call = self.create_state_update_fn_call("payment_id", "123")
         next_next_next_next_node_schema = self.get_next_conv_node_schema(
             next_next_next_node_schema
         )
 
-        t_turns_5 = self.add_transition_turns(
+        t_turns_9 = self.add_transition_turns(
             [fn_call],
             "the payment method is ...",
             self.get_edge_schema(next_next_next_node_schema),
@@ -182,7 +185,7 @@ class TestRequest(BaseTest):
         )
 
         fn_call = self.create_fn_call("update_reservation_flights")
-        t6 = self.add_assistant_turn(
+        t10 = self.add_assistant_turn(
             None,
             [fn_call],
         )
@@ -194,12 +197,12 @@ class TestRequest(BaseTest):
             },
         )
 
-        t7 = self.add_direct_assistant_turn(
+        t11 = self.add_direct_assistant_turn(
             None,
             [fake_fn_call],
         )
 
-        t8 = self.add_assistant_turn(
+        t12 = self.add_assistant_turn(
             "finished task",
         )
 
@@ -207,7 +210,7 @@ class TestRequest(BaseTest):
 
         # --------------------------------
 
-        t9 = self.add_node_turn(
+        t13 = self.add_node_turn(
             luggage_get_user_id_node_schema,
             None,
             "the payment method is ...",
@@ -216,7 +219,7 @@ class TestRequest(BaseTest):
         input = luggage_get_reservation_details_node_schema.get_input(
             agent_executor.graph.curr_node.state, edge_1
         )
-        t10 = self.add_node_turn(
+        t14 = self.add_node_turn(
             luggage_get_reservation_details_node_schema,
             input,
             "the payment method is ...",
@@ -227,7 +230,7 @@ class TestRequest(BaseTest):
         new_node_schema = luggage_node_schema
         input = new_node_schema.get_input(agent_executor.graph.curr_node.state, edge_2)
 
-        t11 = self.add_node_turn(
+        t15 = self.add_node_turn(
             new_node_schema,
             input,
             "the payment method is ...",
@@ -239,12 +242,16 @@ class TestRequest(BaseTest):
             *t_turns_3,
             *t_turns_4,
             *t_turns_5,
-            t6,
-            t7,
-            t8,
-            t9,
+            *t_turns_6,
+            *t_turns_7,
+            *t_turns_8,
+            *t_turns_9,
             t10,
             t11,
+            t12,
+            t13,
+            t14,
+            t15,
         ]
 
     @pytest.mark.usefixtures("agent_executor")
@@ -311,8 +318,10 @@ class TestRequest(BaseTest):
         self,
         into_graph_transition_turns,
     ):
+        t_turns_1 = self.add_chat_turns()
         self.run_assertions(
-            into_graph_transition_turns, get_user_id_node_schema.tool_registry
+            into_graph_transition_turns + t_turns_1,
+            get_user_id_node_schema.tool_registry,
         )
 
     @pytest.mark.usefixtures("agent_executor")
@@ -338,11 +347,10 @@ class TestRequest(BaseTest):
         agent_executor,
         into_second_graph_transition_turns,
     ):
-        new_node_schema = luggage_node_schema
-
+        t_turns_1 = self.add_chat_turns()
         self.run_assertions(
-            into_second_graph_transition_turns,
-            new_node_schema.tool_registry,
+            into_second_graph_transition_turns + t_turns_1,
+            luggage_node_schema.tool_registry,
         )
 
     def test_default_node(
@@ -351,17 +359,19 @@ class TestRequest(BaseTest):
         agent_executor,
         into_second_graph_transition_turns,
     ):
+        t_turns_1 = self.add_chat_turns()
         fn_call = self.create_state_update_fn_call("total_baggages", 1)
         fn_call_2 = self.create_state_update_fn_call("nonfree_baggages", 1)
-        t_turns_12 = self.add_transition_turns(
+        t_turns_2 = self.add_transition_turns(
             [fn_call, fn_call_2],
             "the luggage is ...",
             edge_3,
             payment_node_schema,
         )
+        t_turns_3 = self.add_chat_turns()
 
         fn_call = self.create_state_update_fn_call("payment_id", "asd")
-        t_turns_13 = self.add_transition_turns(
+        t_turns_4 = self.add_transition_turns(
             [fn_call],
             "the payment method is ...",
             edge_4,
@@ -369,25 +379,26 @@ class TestRequest(BaseTest):
         )
 
         fn_call = self.create_fn_call("update_reservation_baggages")
-        t14 = self.add_assistant_turn(
+        t5 = self.add_assistant_turn(
             None,
             [fn_call],
         )
         self.curr_request = None
 
-        t15 = self.add_node_turn(
+        t6 = self.add_node_turn(
             AIRLINE_REQUEST_SCHEMA.default_node_schema,
             None,
             "the payment method is ...",
         )
-
         self.run_assertions(
             [
                 *into_second_graph_transition_turns,
-                *t_turns_12,
-                *t_turns_13,
-                t14,
-                t15,
+                *t_turns_1,
+                *t_turns_2,
+                *t_turns_3,
+                *t_turns_4,
+                t5,
+                t6,
             ],
             AIRLINE_REQUEST_SCHEMA.default_node_schema.tool_registry,
         )
