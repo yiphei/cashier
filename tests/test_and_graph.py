@@ -248,16 +248,11 @@ class TestAndGraph(BaseTest):
         fn_call = self.create_state_update_fn_call(
             "flight_infos", [flight_info.model_dump()]
         )
-
-        next_next_node_schema = self.get_next_conv_node_schema(
-            self.ordered_conv_node_schemas[1]
-        )
-
         t_turns_3 = self.add_transition_turns(
             [fn_call],
             "i want flight from ... to ... on ...",
             self.get_edge_schema(self.ordered_conv_node_schemas[1]),
-            next_next_node_schema,
+            self.ordered_conv_node_schemas[2],
             is_and_graph=True,
         )
 
