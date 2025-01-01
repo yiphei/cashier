@@ -363,11 +363,9 @@ class TestRequest(BaseTest):
             "hello",
         )
 
-        assert (
-            self.fixtures.agent_executor.graph.curr_conversation_node.state.model_dump() == {
-                "reservation_details": self.fixtures.agent_executor.graph.curr_node.state.reservation_details.model_dump()
-            }
-        )
+        assert self.fixtures.agent_executor.graph.curr_conversation_node.state.model_dump() == {
+            "reservation_details": self.fixtures.agent_executor.graph.curr_node.state.reservation_details.model_dump()
+        }
 
         self.run_assertions(
             into_second_graph_transition_turns + t_turns_1 + [t_turns_2] + t_turns_3,
