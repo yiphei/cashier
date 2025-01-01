@@ -347,8 +347,6 @@ class TestRequest(BaseTest):
 
     def test_graph_transition(
         self,
-        model_provider,
-        agent_executor,
         into_second_graph_transition_turns,
     ):
         t_turns_1 = self.add_chat_turns()
@@ -359,8 +357,6 @@ class TestRequest(BaseTest):
 
     def test_default_node(
         self,
-        model_provider,
-        agent_executor,
         into_second_graph_transition_turns,
     ):
         t_turns_1 = self.add_chat_turns()

@@ -125,7 +125,6 @@ class TestAndGraph(BaseTest):
 
     def test_add_user_turn_with_wait(
         self,
-        model_provider,
         start_turns,
     ):
         user_turn = self.add_user_turn(
@@ -192,7 +191,6 @@ class TestAndGraph(BaseTest):
     )
     def test_state_update_before_user_turn(
         self,
-        model_provider,
         fn_names,
         agent_executor,
         start_turns,
@@ -234,8 +232,6 @@ class TestAndGraph(BaseTest):
 
     def test_backward_node_skip(
         self,
-        model_provider,
-        agent_executor,
         first_into_second_transition_turns,
     ):
         t_turns_1 = self.add_chat_turns()
@@ -254,7 +250,6 @@ class TestAndGraph(BaseTest):
 
     def test_forward_node_skip(
         self,
-        model_provider,
         agent_executor,
         first_into_second_transition_turns,
     ):
