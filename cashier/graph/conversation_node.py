@@ -218,7 +218,9 @@ class ConversationNodeSchema(
                 self.input_schema.model_json_schema() if self.input_schema else None
             ),
             state_json_schema=(
-                self.state_schema.model_json_schema(mode='serialization') if self.state_schema else None
+                self.state_schema.model_json_schema(mode="serialization")
+                if self.state_schema
+                else None
             ),
             last_msg=last_msg,
             curr_request=curr_request,
