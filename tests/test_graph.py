@@ -12,7 +12,13 @@ from data.graph.airline_book_flight_and_graph import (
     get_user_id_node_schema,
 )
 from data.prompt.airline import AirlineNodeSystemPrompt
-from data.types.airline import FlightInfo, InsuranceValue, PassengerInfo, PaymentMethod, UserDetails
+from data.types.airline import (
+    FlightInfo,
+    InsuranceValue,
+    PassengerInfo,
+    PaymentMethod,
+    UserDetails,
+)
 from tests.base_test import BaseTest, assert_number_of_tests, get_fn_names_fixture
 
 
@@ -356,8 +362,12 @@ class TestGraph(BaseTest):
         t_turns_10 = self.add_chat_turns()
 
         payment_method = ModelFactory.create_factory(PaymentMethod).build()
-        fn_call = self.create_state_update_fn_call("payments", [payment_method.model_dump()])
-        fn_call_2 = self.create_state_update_fn_call("has_explained_payment_policy_to_customer", True)
+        fn_call = self.create_state_update_fn_call(
+            "payments", [payment_method.model_dump()]
+        )
+        fn_call_2 = self.create_state_update_fn_call(
+            "has_explained_payment_policy_to_customer", True
+        )
         fn_call_3 = self.create_state_update_fn_call("is_payment_finalized", True)
         t_turns_11 = self.add_transition_turns(
             [fn_call, fn_call_2, fn_call_3],
