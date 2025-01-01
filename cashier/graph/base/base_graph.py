@@ -301,6 +301,10 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
         if isinstance(node_schema, BaseGraphSchema):
             next_node_schema = self.curr_node.get_next_node_schema_to_init()
             while next_node_schema is not None:
+                # TODO: refactor this
+                if self.curr_node.curr_node is not None:
+                    self.curr_node.curr_node.first_user_message = True
+                    self.curr_node.curr_node.update_state_from_parent(self.curr_node)
                 self.curr_node.init_next_node(
                     next_node_schema, TC, None
                 )  # TODO: this can be shortcutted to use init_next_node_parent directly
