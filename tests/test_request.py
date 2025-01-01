@@ -365,7 +365,10 @@ class TestRequest(BaseTest):
         )
 
         # this is not passing right now
-        assert self.fixtures.agent_executor.graph.curr_conversation_node.state.reservation_details is not None
+        assert (
+            self.fixtures.agent_executor.graph.curr_conversation_node.state.reservation_details
+            is not None
+        )
 
         self.run_assertions(
             into_second_graph_transition_turns + t_turns_1 + [t_turns_a] + t_turns_2,
