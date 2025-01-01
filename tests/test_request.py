@@ -357,20 +357,20 @@ class TestRequest(BaseTest):
         into_second_graph_transition_turns,
     ):
         t_turns_1 = self.add_chat_turns()
-        t_turns_a = self.add_assistant_turn("hello")
-
-        t_turns_2 = self.add_skip_transition_turns(
+        t_turns_2 = self.add_assistant_turn("hello")
+        t_turns_3 = self.add_skip_transition_turns(
             luggage_get_reservation_details_node_schema,
             "hello",
         )
 
         assert (
-            self.fixtures.agent_executor.graph.curr_conversation_node.state.reservation_details
-            is not None
+            self.fixtures.agent_executor.graph.curr_conversation_node.state.model_dump() == {
+                "reservation_details": self.fixtures.agent_executor.graph.curr_node.state.reservation_details.model_dump()
+            }
         )
 
         self.run_assertions(
-            into_second_graph_transition_turns + t_turns_1 + [t_turns_a] + t_turns_2,
+            into_second_graph_transition_turns + t_turns_1 + [t_turns_2] + t_turns_3,
             luggage_get_reservation_details_node_schema.tool_registry,
         )
 
@@ -423,4 +423,4 @@ class TestRequest(BaseTest):
 
 
 def test_class_test_count(request):
-    assert_number_of_tests(TestRequest, __file__, request, 72)
+    assert_number_of_tests(TestRequest, __file__, request, 80)
