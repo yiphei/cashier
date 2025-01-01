@@ -23,7 +23,7 @@ from tests.base_test import BaseTest, assert_number_of_tests, get_fn_names_fixtu
         (BOOK_FLIGHT_AND_GRAPH_SCHEMA, get_user_id_node_schema),
     ],
 )
-class TestAndGraph(BaseTest):
+class TestGraph(BaseTest):
     @pytest.fixture(autouse=True)
     def request_schema_input(self, graph_schema):
         return RequestGraphSchema(
@@ -91,8 +91,6 @@ class TestAndGraph(BaseTest):
     def first_into_second_transition_turns(
         self,
         start_turns,
-        agent_executor,
-        model_provider,
     ):
         fn_call = self.create_state_update_fn_call(
             "user_details", pydantic_model=UserDetails
@@ -125,7 +123,6 @@ class TestAndGraph(BaseTest):
 
     def test_add_user_turn_with_wait(
         self,
-        model_provider,
         start_turns,
     ):
         user_turn = self.add_user_turn(
@@ -192,7 +189,6 @@ class TestAndGraph(BaseTest):
     )
     def test_state_update_before_user_turn(
         self,
-        model_provider,
         fn_names,
         agent_executor,
         start_turns,
@@ -234,8 +230,6 @@ class TestAndGraph(BaseTest):
 
     def test_backward_node_skip(
         self,
-        model_provider,
-        agent_executor,
         first_into_second_transition_turns,
     ):
         t_turns_1 = self.add_chat_turns()
@@ -254,7 +248,6 @@ class TestAndGraph(BaseTest):
 
     def test_forward_node_skip(
         self,
-        model_provider,
         agent_executor,
         first_into_second_transition_turns,
     ):
@@ -310,4 +303,4 @@ class TestAndGraph(BaseTest):
 
 
 def test_class_test_count(request):
-    assert_number_of_tests(TestAndGraph, __file__, request, 312 * 2)
+    assert_number_of_tests(TestGraph, __file__, request, 312 * 2)
