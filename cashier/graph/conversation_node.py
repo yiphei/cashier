@@ -210,6 +210,8 @@ class ConversationNodeSchema(
         state = ConversationNode.init_state(
             self.state_schema, prev_node, edge_schema, direction, input
         )
+        if state is not None:
+            state._input = input
 
         prompt = self.node_system_prompt(
             node_prompt=self.node_prompt,
