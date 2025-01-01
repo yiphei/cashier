@@ -112,7 +112,7 @@ class TestGraph(BaseTest):
                 self.get_next_conv_node_schema(self.start_conv_node_schema),
             )
         )
-    
+
     @pytest.fixture()
     def first_into_last_node_turns(
         self,
@@ -419,10 +419,7 @@ class TestGraph(BaseTest):
             self.ordered_conv_node_schemas[5].tool_registry,
         )
 
-    def test_forward_node_skip_special(
-        self,
-        first_into_last_node_turns
-    ):
+    def test_forward_node_skip_special(self, first_into_last_node_turns):
 
         t_turns_12 = self.add_skip_transition_turns(
             self.ordered_conv_node_schemas[1],
