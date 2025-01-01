@@ -3,12 +3,13 @@ from __future__ import annotations
 import copy
 from typing import ClassVar, List, Optional
 
-from pydantic import BaseModel, ConfigDict, create_model
+from pydantic import BaseModel, ConfigDict, PrivateAttr, create_model
 
 
 class BaseStateModel(BaseModel):
     resettable_fields: ClassVar[Optional[List[str]]] = None
     model_config = ConfigDict(extra="forbid", revalidate_instances="always")
+    _input: Optional[BaseModel] = PrivateAttr(default=None)
 
     def copy_resume(self) -> BaseStateModel:
         new_data = copy.deepcopy(dict(self))
