@@ -377,7 +377,6 @@ class TestGraph(BaseTest):
 
         t_turn_13 = self.add_assistant_turn(None, tool_names=["get_state"])
 
-
         parent_node = self.fixtures.agent_executor.graph.curr_node.conv_node_schema_id_to_parent_node[
             self.ordered_conv_node_schemas[5].id
         ]
