@@ -364,7 +364,6 @@ class TestRequest(BaseTest):
             "hello",
         )
 
-        # this is not passing right now
         assert (
             self.fixtures.agent_executor.graph.curr_conversation_node.state.reservation_details
             is not None
