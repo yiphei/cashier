@@ -3,13 +3,13 @@ from polyfactory.factories.pydantic_factory import ModelFactory
 
 from cashier.graph.request_graph import RequestGraphSchema
 from cashier.tool.function_call_context import StateUpdateError, ToolExceptionWrapper
-from data.graph.airline_book_flight_and_graph import (
-    BOOK_FLIGHT_AND_GRAPH_SCHEMA,
-    get_user_id_node_schema,
-)
 from data.graph.airline_book_flight import BOOK_FLIGHT_GRAPH_SCHEMA
 from data.graph.airline_book_flight import (
     get_user_id_node_schema as normal_get_user_id_node_schema,
+)
+from data.graph.airline_book_flight_and_graph import (
+    BOOK_FLIGHT_AND_GRAPH_SCHEMA,
+    get_user_id_node_schema,
 )
 from data.prompt.airline import AirlineNodeSystemPrompt
 from data.types.airline import FlightInfo, UserDetails
