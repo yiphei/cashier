@@ -12,7 +12,9 @@ class BaseStateModel(BaseModel):
     _input: Optional[BaseModel] = PrivateAttr(default=None)
 
     def copy_resume(self) -> BaseStateModel:
-        new_data = copy.deepcopy(dict(self)) # dict(self) naturally excludes computed fields, unlike model_dump()
+        new_data = copy.deepcopy(
+            dict(self)
+        )  # dict(self) naturally excludes computed fields, unlike model_dump()
 
         # Iterate through fields and reset those marked as resettable
         if self.resettable_fields:
