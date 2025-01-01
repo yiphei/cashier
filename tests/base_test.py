@@ -289,7 +289,7 @@ class BaseTest(ABC):
         message,
         is_on_topic=True,
         wait_node_schema_id=None,
-        run_wait_node_schema = True,
+        run_wait_node_schema=True,
         skip_node_schema_id=None,
         new_task=None,
         task_schema_id=None,
@@ -763,7 +763,9 @@ class BaseTest(ABC):
             t4 = self.add_assistant_turn("ok, let me ...")
         return [t1, t2, t3, t4]
 
-    def add_skip_transition_turns(self, skip_node_schema, last_msg, run_wait_node_schema=True):
+    def add_skip_transition_turns(
+        self, skip_node_schema, last_msg, run_wait_node_schema=True
+    ):
         self.run_message_dict_assertions()
         t1 = self.add_user_turn(
             "actually, i want to change ...",
