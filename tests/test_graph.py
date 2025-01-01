@@ -304,7 +304,6 @@ class TestGraph(BaseTest):
 
     def test_forward_node_skip_special(
         self,
-        agent_executor,
         first_into_second_transition_turns,
     ):
         t_turns_1 = self.add_chat_turns()
