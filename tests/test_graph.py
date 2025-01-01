@@ -402,4 +402,4 @@ class TestGraph(BaseTest):
 
 
 def test_class_test_count(request):
-    assert_number_of_tests(TestGraph, __file__, request, 312 * 2)
+    assert_number_of_tests(TestGraph, __file__, request, 320 * 2)
