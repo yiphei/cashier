@@ -3,12 +3,12 @@ from polyfactory.factories.pydantic_factory import ModelFactory
 
 from cashier.graph.request_graph import RequestGraphSchema
 from cashier.tool.function_call_context import StateUpdateError, ToolExceptionWrapper
-from data.graph.airline_book_flight import (
-    BOOK_FLIGHT_GRAPH_SCHEMA,
+from data.graph.airline_book_flight_and_graph import (
+    BOOK_FLIGHT_AND_GRAPH_SCHEMA,
     get_user_id_node_schema,
 )
-from data.graph.airline_book_flight_normal_graph import BOOK_FLIGHT_NORMAL_GRAPH_SCHEMA
-from data.graph.airline_book_flight_normal_graph import (
+from data.graph.airline_book_flight import BOOK_FLIGHT_GRAPH_SCHEMA
+from data.graph.airline_book_flight import (
     get_user_id_node_schema as normal_get_user_id_node_schema,
 )
 from data.prompt.airline import AirlineNodeSystemPrompt
@@ -19,8 +19,8 @@ from tests.base_test import BaseTest, assert_number_of_tests, get_fn_names_fixtu
 @pytest.mark.parametrize(
     "graph_schema, start_conv_node_schema",
     [
-        (BOOK_FLIGHT_NORMAL_GRAPH_SCHEMA, normal_get_user_id_node_schema),
-        (BOOK_FLIGHT_GRAPH_SCHEMA, get_user_id_node_schema),
+        (BOOK_FLIGHT_GRAPH_SCHEMA, normal_get_user_id_node_schema),
+        (BOOK_FLIGHT_AND_GRAPH_SCHEMA, get_user_id_node_schema),
     ],
 )
 class TestAndGraph(BaseTest):

@@ -1,5 +1,5 @@
 from cashier.graph.request_graph import GraphEdgeSchema, RequestGraphSchema
-from data.graph.airline_book_flight import BOOK_FLIGHT_GRAPH_SCHEMA
+from data.graph.airline_book_flight_and_graph import BOOK_FLIGHT_AND_GRAPH_SCHEMA
 from data.graph.airline_change_baggage import (
     CHANGE_BAGGAGE_GRAPH_SCHEMA,
     ChangeBaggageGraphStateSchema,
@@ -17,7 +17,7 @@ GRAPH_EDGE_SCHEMA_1 = GraphEdgeSchema(
 
 AIRLINE_REQUEST_SCHEMA = RequestGraphSchema(
     node_schemas=[
-        BOOK_FLIGHT_GRAPH_SCHEMA,
+        BOOK_FLIGHT_AND_GRAPH_SCHEMA,
         CHANGE_FLIGHT_GRAPH_SCHEMA,
         CHANGE_BAGGAGE_GRAPH_SCHEMA,
     ],
