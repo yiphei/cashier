@@ -135,7 +135,6 @@ class TestGraph(BaseTest):
             add_chat_turns=True,
         )
 
-
         passenger_info = ModelFactory.create_factory(PassengerInfo).build()
         fn_call = self.create_state_update_fn_call(
             "passengers", [passenger_info.model_dump()]
