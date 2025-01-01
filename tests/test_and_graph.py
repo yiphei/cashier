@@ -1,31 +1,51 @@
 import pytest
 from polyfactory.factories.pydantic_factory import ModelFactory
 
+from cashier.graph.request_graph import RequestGraphSchema
 from cashier.tool.function_call_context import StateUpdateError, ToolExceptionWrapper
 from data.graph.airline_book_flight import (
     BOOK_FLIGHT_GRAPH_SCHEMA,
     get_user_id_node_schema,
 )
-from data.graph.airline_request import AIRLINE_REQUEST_SCHEMA
+from data.graph.airline_book_flight_normal_graph import BOOK_FLIGHT_NORMAL_GRAPH_SCHEMA
+from data.graph.airline_book_flight_normal_graph import (
+    get_user_id_node_schema as normal_get_user_id_node_schema,
+)
+from data.prompt.airline import AirlineNodeSystemPrompt
 from data.types.airline import FlightInfo, UserDetails
 from tests.base_test import BaseTest, assert_number_of_tests, get_fn_names_fixture
 
 
+@pytest.mark.parametrize(
+    "graph_schema, start_conv_node_schema",
+    [
+        (BOOK_FLIGHT_NORMAL_GRAPH_SCHEMA, normal_get_user_id_node_schema),
+        (BOOK_FLIGHT_GRAPH_SCHEMA, get_user_id_node_schema),
+    ],
+)
 class TestAndGraph(BaseTest):
     @pytest.fixture(autouse=True)
-    def setup(self):
-        self.start_conv_node_schema = get_user_id_node_schema
-        self.graph_schema = BOOK_FLIGHT_GRAPH_SCHEMA
+    def request_schema_input(self, graph_schema):
+        return RequestGraphSchema(
+            node_schemas=[graph_schema],
+            edge_schemas=[],
+            node_prompt="You are a helpful assistant that helps customers with flight-related requests.",
+            node_system_prompt=AirlineNodeSystemPrompt,
+            description="Help customers change flights and baggage information for a reservation.",
+        )
+
+    @pytest.fixture(autouse=True)
+    def setup(self, graph_schema, start_conv_node_schema):
+        self.start_conv_node_schema = start_conv_node_schema
+        self.graph_schema = graph_schema
         self.edge_schema_id_to_to_cov_node_schema_id = {}
         for (
             node_schema_id,
             edge_schema,
-        ) in BOOK_FLIGHT_GRAPH_SCHEMA.to_conv_node_schema_id_to_edge_schema.items():
-            node_schema = (
-                BOOK_FLIGHT_GRAPH_SCHEMA.conv_node_schema_id_to_conv_node_schema[
-                    node_schema_id
-                ]
-            )
+        ) in graph_schema.to_conv_node_schema_id_to_edge_schema.items():
+            node_schema = graph_schema.conv_node_schema_id_to_conv_node_schema[
+                node_schema_id
+            ]
             self.edge_schema_id_to_to_cov_node_schema_id[edge_schema.id] = node_schema
 
         self.ordered_conv_node_schemas = [self.start_conv_node_schema]
@@ -52,7 +72,7 @@ class TestAndGraph(BaseTest):
     def start_turns(self, agent_executor, model_provider, setup_message_dicts):
         second_node_schema = self.start_conv_node_schema
         t1 = self.add_node_turn(
-            AIRLINE_REQUEST_SCHEMA.start_node_schema,
+            self.request_schema.start_node_schema,
             None,
             None,
         )
@@ -86,7 +106,6 @@ class TestAndGraph(BaseTest):
                 "my username is ...",
                 self.get_edge_schema(self.start_conv_node_schema),
                 self.get_next_conv_node_schema(self.start_conv_node_schema),
-                is_and_graph=True,
             )
         )
 
@@ -253,7 +272,6 @@ class TestAndGraph(BaseTest):
             "i want flight from ... to ... on ...",
             self.get_edge_schema(self.ordered_conv_node_schemas[1]),
             self.ordered_conv_node_schemas[2],
-            is_and_graph=True,
         )
 
         t_turns_4 = self.add_chat_turns()
@@ -292,4 +310,4 @@ class TestAndGraph(BaseTest):
 
 
 def test_class_test_count(request):
-    assert_number_of_tests(TestAndGraph, __file__, request, 312)
+    assert_number_of_tests(TestAndGraph, __file__, request, 312 * 2)

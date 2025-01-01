@@ -1,5 +1,6 @@
 import os
 import uuid
+from abc import ABC, abstractmethod
 from collections import defaultdict, deque
 from contextlib import ExitStack, contextmanager
 from typing import Any, Dict, Optional
@@ -11,6 +12,7 @@ from polyfactory.factories.pydantic_factory import ModelFactory
 from pydantic import BaseModel, ConfigDict, Field
 
 from cashier.agent_executor import AgentExecutor
+from cashier.graph.base.base_graph import BaseGraph
 from cashier.model.message_list import MessageList
 from cashier.model.model_completion import AnthropicModelOutput, OAIModelOutput
 from cashier.model.model_turn import (
@@ -35,7 +37,6 @@ from cashier.tool.function_call_context import (
     ToolExceptionWrapper,
 )
 from cashier.turn_container import TurnContainer
-from data.graph.airline_request import AIRLINE_REQUEST_SCHEMA
 
 
 class TurnArgs(BaseModel):
@@ -52,9 +53,14 @@ class Fixtures(BaseModel):
     agent_executor: Optional[AgentExecutor] = None
 
 
-class BaseTest:
+class BaseTest(ABC):
+    @abstractmethod
     @pytest.fixture(autouse=True)
-    def base_setup(self):
+    def request_schema_input(self):
+        raise NotImplementedError
+
+    @pytest.fixture(autouse=True)
+    def base_setup(self, request_schema_input):
 
         self.rand_tool_ids = deque()
         self.rand_uuids = deque()
@@ -63,7 +69,7 @@ class BaseTest:
         self.fixtures = Fixtures()
         self.curr_request = None
         self.curr_conversation_node_schema = None
-
+        self.request_schema = request_schema_input
         yield
 
         self.fixtures = None
@@ -487,7 +493,7 @@ class BaseTest:
     @pytest.fixture
     def agent_executor(self, base_setup, remove_prev_tool_calls):
         ae = AgentExecutor(
-            graph_schema=AIRLINE_REQUEST_SCHEMA,
+            graph_schema=self.request_schema,
             audio_output=False,
             remove_prev_tool_calls=remove_prev_tool_calls,
         )
@@ -712,7 +718,6 @@ class BaseTest:
         edge_schema,
         next_node_schema,
         last_assistant_msg="good, lets move on to ...",
-        is_and_graph=False,
     ):
         t1 = self.add_user_turn(user_msg)
         self.run_message_dict_assertions()
@@ -721,11 +726,11 @@ class BaseTest:
             fn_calls,
         )
 
-        state = (
-            self.fixtures.agent_executor.graph.curr_node.curr_node.state
-            if is_and_graph
-            else self.fixtures.agent_executor.graph.curr_node.state
-        )
+        curr_node = self.fixtures.agent_executor.graph.curr_node
+        while isinstance(curr_node.curr_node, BaseGraph):
+            curr_node = curr_node.curr_node
+
+        state = curr_node.state
         input = next_node_schema.get_input(state, edge_schema)
 
         t3 = self.add_node_turn(
