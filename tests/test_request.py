@@ -135,8 +135,8 @@ class TestRequest(BaseTest):
             self.get_next_conv_node_schema(
                 CHANGE_FLIGHT_GRAPH_SCHEMA.start_node_schema
             ),
+            add_chat_turns=True,
         )
-        t_turns_3 = self.add_chat_turns()
 
         t_turns_4 = self.add_new_task(
             ["customer wants to change a flight"],
@@ -156,8 +156,8 @@ class TestRequest(BaseTest):
             "my reservation details are ...",
             self.get_edge_schema(next_node_schema),
             next_next_node_schema,
+            add_chat_turns=True,
         )
-        t_turns_6 = self.add_chat_turns()
 
         flight_info = ModelFactory.create_factory(FlightInfo).build()
         fn_call = self.create_state_update_fn_call(
@@ -174,8 +174,8 @@ class TestRequest(BaseTest):
             "the new flight is ...",
             self.get_edge_schema(next_next_node_schema),
             next_next_next_node_schema,
+            add_chat_turns=True,
         )
-        t_turns_8 = self.add_chat_turns()
         fn_call = self.create_state_update_fn_call("payment_id", "123")
         next_next_next_next_node_schema = self.get_next_conv_node_schema(
             next_next_next_node_schema
@@ -243,12 +243,9 @@ class TestRequest(BaseTest):
             *into_graph_transition_turns,
             *t_turns_1,
             *t_turns_2,
-            *t_turns_3,
             *t_turns_4,
             *t_turns_5,
-            *t_turns_6,
             *t_turns_7,
-            *t_turns_8,
             *t_turns_9,
             t10,
             t11,
@@ -367,8 +364,8 @@ class TestRequest(BaseTest):
             "the luggage is ...",
             edge_3,
             payment_node_schema,
+            add_chat_turns=True,
         )
-        t_turns_3 = self.add_chat_turns()
 
         fn_call = self.create_state_update_fn_call("payment_id", "asd")
         t_turns_4 = self.add_transition_turns(
@@ -395,7 +392,6 @@ class TestRequest(BaseTest):
                 *into_second_graph_transition_turns,
                 *t_turns_1,
                 *t_turns_2,
-                *t_turns_3,
                 *t_turns_4,
                 t5,
                 t6,
