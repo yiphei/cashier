@@ -178,14 +178,6 @@ payment_node_schema = ConversationNodeSchema(
     state_schema=PaymentState,
     tool_registry_or_tool_defs=AIRLINE_TOOL_REGISTRY,
     tool_names=["calculate"],
-    completion_config=StateTransitionConfig(
-        need_user_msg=False,
-        state_check_fn_map={
-            "is_payment_finalized": lambda val: val is True,
-            "has_explained_payment_policy_to_customer": lambda val: val is True,
-            "payments": lambda val: val and len(val) > 0,
-        },
-    ),
 )
 
 
@@ -213,7 +205,6 @@ class ANDStateSchema(BaseStateModel):
     add_insurance: Optional[InsuranceValue] = None
     total_baggages: Optional[int] = None
     nonfree_baggages: Optional[int] = None
-    payments: List[PaymentMethod] = Field(default_factory=list)
 
 
 AND_GRAPH_SCHEMA = ANDGraphSchema(
@@ -224,19 +215,34 @@ AND_GRAPH_SCHEMA = ANDGraphSchema(
         get_passanger_info_schema,
         ask_for_insurance_node_schema,
         luggage_node_schema,
-        payment_node_schema,
     ],
     state_schema=ANDStateSchema,
     default_start_node_schema=get_user_id_node_schema,
 )
 
 
-edge_6 = EdgeSchema(
+edge_5 = EdgeSchema(
     from_node_schema=AND_GRAPH_SCHEMA,
+    to_node_schema=payment_node_schema,
+    transition_config=StateTransitionConfig(
+        need_user_msg=False,
+        state_check_fn_map={
+            "total_baggages": lambda val: val is not None,
+            "nonfree_baggages": lambda val: val is not None,
+        },
+    ),
+)
+
+edge_6 = EdgeSchema(
+    from_node_schema=payment_node_schema,
     to_node_schema=book_flight_node_schema,
     transition_config=StateTransitionConfig(
         need_user_msg=True,
-        state_check_fn_map={"payments": lambda val: val and len(val) > 0},
+        state_check_fn_map={
+            "is_payment_finalized": lambda val: val is True,
+            "has_explained_payment_policy_to_customer": lambda val: val is True,
+            "payments": lambda val: val and len(val) > 0,
+        },
     ),
 )
 # --------------------
@@ -273,9 +279,10 @@ BOOK_FLIGHT_GRAPH_SCHEMA = GraphSchema(
     start_node_schema=AND_GRAPH_SCHEMA,
     output_schema=GraphOutputSchema,
     end_node_schema=book_flight_node_schema,
-    edge_schemas=[edge_6],
+    edge_schemas=[edge_5,edge_6],
     node_schemas=[
         AND_GRAPH_SCHEMA,
+        payment_node_schema,
         book_flight_node_schema,
     ],
     completion_config=FunctionTransitionConfig(
