@@ -769,7 +769,9 @@ class BaseTest(ABC):
             skip_node_schema_id=skip_node_schema.id,
         )
 
-        parent_node = self.fixtures.agent_executor.graph.curr_node.conv_node_schema_id_to_parent_node[skip_node_schema.id]
+        parent_node = self.fixtures.agent_executor.graph.curr_node.conv_node_schema_id_to_parent_node[
+            skip_node_schema.id
+        ]
         prev_node = parent_node.get_prev_node(skip_node_schema)
         t2 = self.add_node_turn(
             skip_node_schema,
