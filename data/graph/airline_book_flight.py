@@ -279,7 +279,7 @@ BOOK_FLIGHT_GRAPH_SCHEMA = GraphSchema(
     start_node_schema=AND_GRAPH_SCHEMA,
     output_schema=GraphOutputSchema,
     end_node_schema=book_flight_node_schema,
-    edge_schemas=[edge_5,edge_6],
+    edge_schemas=[edge_5, edge_6],
     node_schemas=[
         AND_GRAPH_SCHEMA,
         payment_node_schema,
