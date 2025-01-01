@@ -23,7 +23,7 @@ from tests.base_test import BaseTest, assert_number_of_tests, get_fn_names_fixtu
         (BOOK_FLIGHT_AND_GRAPH_SCHEMA, get_user_id_node_schema),
     ],
 )
-class TestAndGraph(BaseTest):
+class TestGraph(BaseTest):
     @pytest.fixture(autouse=True)
     def request_schema_input(self, graph_schema):
         return RequestGraphSchema(
@@ -303,4 +303,4 @@ class TestAndGraph(BaseTest):
 
 
 def test_class_test_count(request):
-    assert_number_of_tests(TestAndGraph, __file__, request, 312 * 2)
+    assert_number_of_tests(TestGraph, __file__, request, 312 * 2)
