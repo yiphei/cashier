@@ -164,12 +164,20 @@ class TestRequest(BaseTest):
             "flight_infos", [flight_info.model_dump()]
         )
         special_t = self.add_assistant_turn(None, [fn_call])
-        assert self.fixtures.agent_executor.graph.curr_conversation_node.state.flight_infos == [flight_info]
-        res_details = self.fixtures.agent_executor.graph.curr_conversation_node.input.reservation_details
+        assert (
+            self.fixtures.agent_executor.graph.curr_conversation_node.state.flight_infos
+            == [flight_info]
+        )
+        res_details = (
+            self.fixtures.agent_executor.graph.curr_conversation_node.input.reservation_details
+        )
         old_cost = sum([flight.price for flight in res_details.flights])
         new_cost = flight_info.price
         expected_net_new_cost = new_cost - old_cost
-        assert self.fixtures.agent_executor.graph.curr_conversation_node.state.net_new_cost == expected_net_new_cost
+        assert (
+            self.fixtures.agent_executor.graph.curr_conversation_node.state.net_new_cost
+            == expected_net_new_cost
+        )
 
         fn_call_3 = self.create_state_update_fn_call("has_confirmed_new_flights", True)
         next_next_next_node_schema = self.get_next_conv_node_schema(
