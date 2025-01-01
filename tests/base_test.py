@@ -761,7 +761,7 @@ class BaseTest(ABC):
             t4 = self.add_assistant_turn("ok, let me ...")
         return [t1, t2, t3, t4]
 
-    def add_skip_transition_turns(self, skip_node_schema, input, last_msg):
+    def add_skip_transition_turns(self, skip_node_schema, last_msg):
         self.run_message_dict_assertions()
         t1 = self.add_user_turn(
             "actually, i want to change ...",
@@ -769,9 +769,11 @@ class BaseTest(ABC):
             skip_node_schema_id=skip_node_schema.id,
         )
 
+        parent_node = self.fixtures.agent_executor.graph.curr_node.conv_node_schema_id_to_parent_node[skip_node_schema.id]
+        prev_node = parent_node.get_prev_node(skip_node_schema)
         t2 = self.add_node_turn(
             skip_node_schema,
-            input,
+            prev_node.input,
             last_msg,
             is_skip=True,
         )

@@ -244,7 +244,7 @@ class TestGraph(BaseTest):
         )
 
         t_turns_3 = self.add_skip_transition_turns(
-            self.start_conv_node_schema, None, "what flight do you want?"
+            self.start_conv_node_schema, "what flight do you want?"
         )
 
         self.run_assertions(
@@ -254,7 +254,6 @@ class TestGraph(BaseTest):
 
     def test_forward_node_skip(
         self,
-        agent_executor,
         first_into_second_transition_turns,
     ):
         t_turns_1 = self.add_chat_turns()
@@ -281,15 +280,11 @@ class TestGraph(BaseTest):
 
         t_turns_6 = self.add_skip_transition_turns(
             self.start_conv_node_schema,
-            None,
             "thanks for confirming flights, now lets move on to ...",
         )
 
         t_turns_7 = self.add_skip_transition_turns(
             self.ordered_conv_node_schemas[1],
-            self.ordered_conv_node_schemas[1].input_from_state_schema(
-                **agent_executor.graph.curr_node.curr_node.state.model_dump_fields_set()
-            ),
             "what do you want to change?",  # TODO: this is from the default assistant message in add_skip_transition_turns. refactor this
         )
 
