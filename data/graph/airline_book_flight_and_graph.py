@@ -2,6 +2,7 @@ from typing import List, Optional
 
 from pydantic import BaseModel, Field
 
+from cashier.graph.and_graph_schema import ANDGraphSchema
 from cashier.graph.base.base_edge_schema import (
     FunctionState,
     FunctionTransitionConfig,
@@ -40,6 +41,10 @@ get_user_id_node_schema = ConversationNodeSchema(
     state_schema=UserState,
     tool_registry_or_tool_defs=AIRLINE_TOOL_REGISTRY,
     tool_names=["get_user_details", "calculate"],
+    completion_config=StateTransitionConfig(
+        need_user_msg=False,
+        state_check_fn_map={"user_details": lambda val: val is not None},
+    ),
 )
 
 # ---------------------------------------------------------
@@ -61,6 +66,10 @@ find_flight_node_schema = ConversationNodeSchema(
         "calculate",
         "get_reservation_details",
     ],
+    completion_config=StateTransitionConfig(
+        need_user_msg=False,
+        state_check_fn_map={"flight_infos": lambda val: val and len(val) > 0},
+    ),
 )
 
 
@@ -83,6 +92,10 @@ get_passanger_info_schema = ConversationNodeSchema(
     state_schema=PassengerState,
     tool_registry_or_tool_defs=AIRLINE_TOOL_REGISTRY,
     tool_names=["calculate"],
+    completion_config=StateTransitionConfig(
+        need_user_msg=False,
+        state_check_fn_map={"passengers": lambda val: val and len(val) > 0},
+    ),
 )
 
 
@@ -102,6 +115,10 @@ ask_for_insurance_node_schema = ConversationNodeSchema(
     state_schema=InsuranceState,
     tool_registry_or_tool_defs=AIRLINE_TOOL_REGISTRY,
     tool_names=["calculate"],
+    completion_config=StateTransitionConfig(
+        need_user_msg=False,
+        state_check_fn_map={"add_insurance": lambda val: val is not None},
+    ),
 )
 
 # ------------------------------------------
@@ -122,6 +139,13 @@ luggage_node_schema = ConversationNodeSchema(
     state_schema=LuggageState,
     tool_registry_or_tool_defs=AIRLINE_TOOL_REGISTRY,
     tool_names=["calculate"],
+    completion_config=StateTransitionConfig(
+        need_user_msg=False,
+        state_check_fn_map={
+            "total_baggages": lambda val: val is not None,
+            "nonfree_baggages": lambda val: val is not None,
+        },
+    ),
 )
 
 # ---------------------------------------------------------
@@ -173,44 +197,32 @@ book_flight_node_schema = ConversationNodeSchema(
 
 # ---------------------------------------------------------
 
-edge_1 = EdgeSchema(
-    from_node_schema=get_user_id_node_schema,
-    to_node_schema=find_flight_node_schema,
-    transition_config=StateTransitionConfig(
-        need_user_msg=False,
-        state_check_fn_map={"user_details": lambda val: val is not None},
-    ),
+
+class ANDStateSchema(BaseStateModel):
+    user_details: Optional[UserDetails] = None
+    flight_infos: List[FlightInfo] = Field(default_factory=list)
+    passengers: List[PassengerInfo] = Field(default_factory=list)
+    add_insurance: Optional[InsuranceValue] = None
+    total_baggages: Optional[int] = None
+    nonfree_baggages: Optional[int] = None
+
+
+AND_GRAPH_SCHEMA = ANDGraphSchema(
+    description="Help customers gather info to book flights",
+    node_schemas=[
+        get_user_id_node_schema,
+        find_flight_node_schema,
+        get_passanger_info_schema,
+        ask_for_insurance_node_schema,
+        luggage_node_schema,
+    ],
+    state_schema=ANDStateSchema,
+    default_start_node_schema=get_user_id_node_schema,
 )
 
-edge_2 = EdgeSchema(
-    from_node_schema=find_flight_node_schema,
-    to_node_schema=get_passanger_info_schema,
-    transition_config=StateTransitionConfig(
-        need_user_msg=False,
-        state_check_fn_map={"flight_infos": lambda val: val and len(val) > 0},
-    ),
-)
-
-edge_3 = EdgeSchema(
-    from_node_schema=get_passanger_info_schema,
-    to_node_schema=ask_for_insurance_node_schema,
-    transition_config=StateTransitionConfig(
-        need_user_msg=False,
-        state_check_fn_map={"passengers": lambda val: val and len(val) > 0},
-    ),
-)
-
-edge_4 = EdgeSchema(
-    from_node_schema=ask_for_insurance_node_schema,
-    to_node_schema=luggage_node_schema,
-    transition_config=StateTransitionConfig(
-        need_user_msg=False,
-        state_check_fn_map={"add_insurance": lambda val: val is not None},
-    ),
-)
 
 edge_5 = EdgeSchema(
-    from_node_schema=luggage_node_schema,
+    from_node_schema=AND_GRAPH_SCHEMA,
     to_node_schema=payment_node_schema,
     transition_config=StateTransitionConfig(
         need_user_msg=False,
@@ -262,18 +274,14 @@ class StateSchema(BaseStateModel):
     payments: List[PaymentMethod] = Field(default_factory=list)
 
 
-BOOK_FLIGHT_NORMAL_GRAPH_SCHEMA = GraphSchema(
+BOOK_FLIGHT_AND_GRAPH_SCHEMA = GraphSchema(
     description="Help customers books flights",
-    start_node_schema=get_user_id_node_schema,
+    start_node_schema=AND_GRAPH_SCHEMA,
     output_schema=GraphOutputSchema,
     end_node_schema=book_flight_node_schema,
-    edge_schemas=[edge_1, edge_2, edge_3, edge_4, edge_5, edge_6],
+    edge_schemas=[edge_5, edge_6],
     node_schemas=[
-        get_user_id_node_schema,
-        find_flight_node_schema,
-        get_passanger_info_schema,
-        ask_for_insurance_node_schema,
-        luggage_node_schema,
+        AND_GRAPH_SCHEMA,
         payment_node_schema,
         book_flight_node_schema,
     ],
