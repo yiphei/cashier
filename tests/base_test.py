@@ -151,8 +151,15 @@ class BaseTest(ABC):
         )
 
     def run_assertions(self, turns, tool_registry):
+        print("--------------------------------")
+        print(len(turns))
+        print(len(self.fixtures.agent_executor.TC.turns))
+        print("--------------------------------")
         TC = self.create_turn_container(turns)
         self.run_message_dict_assertions()
+        print(TC.turns)
+        print("--------------------------------")
+        print(self.fixtures.agent_executor.TC.turns)
         assert not DeepDiff(
             self.fixtures.agent_executor.get_model_completion_kwargs(),
             {

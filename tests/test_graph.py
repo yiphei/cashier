@@ -302,6 +302,114 @@ class TestGraph(BaseTest):
             self.ordered_conv_node_schemas[1].tool_registry,
         )
 
+    def test_forward_node_skip_special_a(
+        self,
+        first_into_second_transition_turns,
+    ):
+        t_turns_1 = self.add_chat_turns()
+        t2 = self.add_assistant_turn(
+            "what flight do you want?",
+        )
+
+        flight_info = ModelFactory.create_factory(FlightInfo).build()
+        fn_call = self.create_state_update_fn_call(
+            "flight_infos", [flight_info.model_dump()]
+        )
+        t_turns_3 = self.add_transition_turns(
+            [fn_call],
+            "i want flight from ... to ... on ...",
+            self.get_edge_schema(self.ordered_conv_node_schemas[1]),
+            self.ordered_conv_node_schemas[2],
+        )
+
+        t_turns_4 = self.add_chat_turns()
+
+        passenger_info = ModelFactory.create_factory(PassengerInfo).build()
+        fn_call = self.create_state_update_fn_call(
+            "passengers", [passenger_info.model_dump()]
+        )
+        t_turns_5 = self.add_transition_turns(
+            [fn_call],
+            "the passengers are ...",
+            self.get_edge_schema(self.ordered_conv_node_schemas[2]),
+            self.ordered_conv_node_schemas[3],
+        )
+        t_turns_6 = self.add_chat_turns()
+
+        fn_call = self.create_state_update_fn_call("add_insurance", InsuranceValue.YES)
+        t_turns_7 = self.add_transition_turns(
+            [fn_call],
+            "the insurance is ...",
+            self.get_edge_schema(self.ordered_conv_node_schemas[3]),
+            self.ordered_conv_node_schemas[4],
+        )
+        t_turns_8 = self.add_chat_turns()
+
+        fn_call = self.create_state_update_fn_call("total_baggages", 1)
+        fn_call_2 = self.create_state_update_fn_call("nonfree_baggages", 1)
+        t_turns_9 = self.add_transition_turns(
+            [fn_call, fn_call_2],
+            "the luggage is ...",
+            self.get_edge_schema(self.ordered_conv_node_schemas[4]),
+            self.ordered_conv_node_schemas[5],
+        )
+        t_turns_10 = self.add_chat_turns()
+
+        payment_method = ModelFactory.create_factory(PaymentMethod).build()
+        fn_call = self.create_state_update_fn_call(
+            "payments", [payment_method.model_dump()]
+        )
+        fn_call_2 = self.create_state_update_fn_call(
+            "has_explained_payment_policy_to_customer", True
+        )
+        fn_call_3 = self.create_state_update_fn_call("is_payment_finalized", True)
+        t_turns_11 = self.add_transition_turns(
+            [fn_call, fn_call_2, fn_call_3],
+            "the payment is ...",
+            self.get_edge_schema(self.ordered_conv_node_schemas[5]),
+            self.ordered_conv_node_schemas[6],
+        )
+        t_turns_12 = self.add_skip_transition_turns(
+            self.ordered_conv_node_schemas[1],
+            "good, lets move on to ...",
+            run_wait_node_schema=False,
+        )
+
+        t_turn_13 = self.add_assistant_turn(None, tool_names=["get_state"])
+
+
+        parent_node = self.fixtures.agent_executor.graph.curr_node.conv_node_schema_id_to_parent_node[
+            self.ordered_conv_node_schemas[5].id
+        ]
+        prev_node = parent_node.get_prev_node(self.ordered_conv_node_schemas[5])
+        t_14 = self.add_node_turn(
+            self.ordered_conv_node_schemas[5],
+            prev_node.input,
+            "actually, i want to change ...",
+        )
+
+        self.run_message_dict_assertions()
+        self.run_assertions(
+            [
+                *first_into_second_transition_turns,
+                *t_turns_1,
+                t2,
+                *t_turns_3,
+                *t_turns_4,
+                *t_turns_5,
+                *t_turns_6,
+                *t_turns_7,
+                *t_turns_8,
+                *t_turns_9,
+                *t_turns_10,
+                *t_turns_11,
+                *t_turns_12,
+                t_turn_13,
+                t_14,
+            ],
+            self.ordered_conv_node_schemas[5].tool_registry,
+        )
+
     def test_forward_node_skip_special(
         self,
         first_into_second_transition_turns,
@@ -401,4 +509,4 @@ class TestGraph(BaseTest):
 
 
 def test_class_test_count(request):
-    assert_number_of_tests(TestGraph, __file__, request, 320 * 2)
+    assert_number_of_tests(TestGraph, __file__, request, 328 * 2)
