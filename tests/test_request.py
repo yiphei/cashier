@@ -159,15 +159,15 @@ class TestRequest(BaseTest):
             add_chat_turns=True,
         )
 
+        assert (
+            self.fixtures.agent_executor.graph.curr_conversation_node.state.net_new_cost
+            is None
+        )
         flight_info = ModelFactory.create_factory(FlightInfo).build()
         fn_call = self.create_state_update_fn_call(
             "flight_infos", [flight_info.model_dump()]
         )
         special_t = self.add_assistant_turn(None, [fn_call])
-        assert (
-            self.fixtures.agent_executor.graph.curr_conversation_node.state.flight_infos
-            == [flight_info]
-        )
         res_details = (
             self.fixtures.agent_executor.graph.curr_conversation_node.input.reservation_details
         )
