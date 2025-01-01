@@ -53,7 +53,9 @@ class BaseExecutable(ABC, HasStatusMixin):
         state = parent.state
         state_dict = state.model_dump(exclude=state.resettable_fields)
         filtered_state = {
-            k: v for k, v in state_dict.items() if k in self.state.__class__.model_fields
+            k: v
+            for k, v in state_dict.items()
+            if k in self.state.__class__.model_fields
         }
         self.update_state(**filtered_state)
 
