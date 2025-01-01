@@ -301,7 +301,6 @@ class TestGraph(BaseTest):
             self.ordered_conv_node_schemas[1].tool_registry,
         )
 
-
     def test_forward_node_skip_special(
         self,
         agent_executor,
@@ -337,9 +336,7 @@ class TestGraph(BaseTest):
         )
         t_turns_6 = self.add_chat_turns()
 
-        fn_call = self.create_state_update_fn_call(
-            "add_insurance", InsuranceValue.YES
-        )
+        fn_call = self.create_state_update_fn_call("add_insurance", InsuranceValue.YES)
         t_turns_7 = self.add_transition_turns(
             [fn_call],
             "the insurance is ...",
@@ -348,12 +345,8 @@ class TestGraph(BaseTest):
         )
         t_turns_8 = self.add_chat_turns()
 
-        fn_call = self.create_state_update_fn_call(
-            "total_baggages", 1
-        )
-        fn_call_2 = self.create_state_update_fn_call(
-            "nonfree_baggages", 1
-        )
+        fn_call = self.create_state_update_fn_call("total_baggages", 1)
+        fn_call_2 = self.create_state_update_fn_call("nonfree_baggages", 1)
         t_turns_9 = self.add_transition_turns(
             [fn_call, fn_call_2],
             "the luggage is ...",
