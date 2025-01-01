@@ -91,8 +91,6 @@ class TestAndGraph(BaseTest):
     def first_into_second_transition_turns(
         self,
         start_turns,
-        agent_executor,
-        model_provider,
     ):
         fn_call = self.create_state_update_fn_call(
             "user_details", pydantic_model=UserDetails
