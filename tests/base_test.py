@@ -695,7 +695,7 @@ class BaseTest(ABC):
                         else None
                     ),
                     state_json_schema=(
-                        node_schema.state_schema.model_json_schema()
+                        node_schema.state_schema.model_json_schema(mode='serialization')
                         if node_schema.state_schema
                         else None
                     ),

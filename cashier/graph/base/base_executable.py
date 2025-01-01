@@ -38,12 +38,14 @@ class BaseExecutable(ABC, HasStatusMixin):
         raise NotImplementedError()
 
     def update_state(self, **kwargs: Any) -> None:
-        old_state = self.state.model_dump()
+        old_state = self.state.model_dump(exclude=self.state.__class__.model_computed_fields.keys())
+        input = self.state._input
         old_state_fields_set = self.state.model_fields_set
         new_state = old_state | kwargs
         new_state_fields_set = old_state_fields_set | kwargs.keys()
         self.state = self.state.__class__(**new_state)
         self.state.__pydantic_fields_set__ = new_state_fields_set
+        self.state._input = input
 
     def update_state_from_executable(self, executable):
         state = executable.state
