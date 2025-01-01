@@ -132,9 +132,9 @@ class TestGraph(BaseTest):
             "i want flight from ... to ... on ...",
             self.get_edge_schema(self.ordered_conv_node_schemas[1]),
             self.ordered_conv_node_schemas[2],
+            add_chat_turns=True,
         )
 
-        t_turns_4 = self.add_chat_turns()
 
         passenger_info = ModelFactory.create_factory(PassengerInfo).build()
         fn_call = self.create_state_update_fn_call(
@@ -145,8 +145,8 @@ class TestGraph(BaseTest):
             "the passengers are ...",
             self.get_edge_schema(self.ordered_conv_node_schemas[2]),
             self.ordered_conv_node_schemas[3],
+            add_chat_turns=True,
         )
-        t_turns_6 = self.add_chat_turns()
 
         fn_call = self.create_state_update_fn_call("add_insurance", InsuranceValue.YES)
         t_turns_7 = self.add_transition_turns(
@@ -154,8 +154,8 @@ class TestGraph(BaseTest):
             "the insurance is ...",
             self.get_edge_schema(self.ordered_conv_node_schemas[3]),
             self.ordered_conv_node_schemas[4],
+            add_chat_turns=True,
         )
-        t_turns_8 = self.add_chat_turns()
 
         fn_call = self.create_state_update_fn_call("total_baggages", 1)
         fn_call_2 = self.create_state_update_fn_call("nonfree_baggages", 1)
@@ -164,8 +164,8 @@ class TestGraph(BaseTest):
             "the luggage is ...",
             self.get_edge_schema(self.ordered_conv_node_schemas[4]),
             self.ordered_conv_node_schemas[5],
+            add_chat_turns=True,
         )
-        t_turns_10 = self.add_chat_turns()
 
         payment_method = ModelFactory.create_factory(PaymentMethod).build()
         fn_call = self.create_state_update_fn_call(
@@ -187,13 +187,9 @@ class TestGraph(BaseTest):
             *t_turns_1,
             t2,
             *t_turns_3,
-            *t_turns_4,
             *t_turns_5,
-            *t_turns_6,
             *t_turns_7,
-            *t_turns_8,
             *t_turns_9,
-            *t_turns_10,
             *t_turns_11,
         ]
 
@@ -354,9 +350,8 @@ class TestGraph(BaseTest):
             "i want flight from ... to ... on ...",
             self.get_edge_schema(self.ordered_conv_node_schemas[1]),
             self.ordered_conv_node_schemas[2],
+            add_chat_turns=True,
         )
-
-        t_turns_4 = self.add_chat_turns()
 
         t5 = self.add_assistant_turn(
             "thanks for confirming flights, now lets move on to ...",
@@ -378,7 +373,6 @@ class TestGraph(BaseTest):
                 *t_turns_1,
                 t2,
                 *t_turns_3,
-                *t_turns_4,
                 t5,
                 *t_turns_6,
                 *t_turns_7,

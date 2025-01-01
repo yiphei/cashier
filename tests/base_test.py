@@ -720,6 +720,7 @@ class BaseTest(ABC):
         edge_schema,
         next_node_schema,
         last_assistant_msg="good, lets move on to ...",
+        add_chat_turns=False,
     ):
         t1 = self.add_user_turn(user_msg)
         self.run_message_dict_assertions()
@@ -742,7 +743,11 @@ class BaseTest(ABC):
         )
         self.run_message_dict_assertions()
         t4 = self.add_assistant_turn(last_assistant_msg)
-        return [t1, t2, t3, t4]
+
+        t_turns_5 = []
+        if add_chat_turns:
+            t_turns_5 = self.add_chat_turns()
+        return [t1, t2, t3, t4, *t_turns_5]
 
     def add_chat_turns(self):
         t1 = self.add_user_turn("hello, ...")
