@@ -289,6 +289,7 @@ class BaseTest(ABC):
         message,
         is_on_topic=True,
         wait_node_schema_id=None,
+        run_wait_node_schema = True,
         skip_node_schema_id=None,
         new_task=None,
         task_schema_id=None,
@@ -312,13 +313,14 @@ class BaseTest(ABC):
             )
             model_chat_side_effects.append(agent_addition_completion)
             if new_task is None:
-                is_wait_model_completion = self.create_mock_model_completion(
-                    None,
-                    True,
-                    wait_node_schema_id or self.curr_conversation_node_schema.id,
-                    0.5,
-                )
-                model_chat_side_effects.append(is_wait_model_completion)
+                if run_wait_node_schema:
+                    is_wait_model_completion = self.create_mock_model_completion(
+                        None,
+                        True,
+                        wait_node_schema_id or self.curr_conversation_node_schema.id,
+                        0.5,
+                    )
+                    model_chat_side_effects.append(is_wait_model_completion)
 
                 if wait_node_schema_id is None:
                     skip_model_completion = self.create_mock_model_completion(
@@ -761,12 +763,13 @@ class BaseTest(ABC):
             t4 = self.add_assistant_turn("ok, let me ...")
         return [t1, t2, t3, t4]
 
-    def add_skip_transition_turns(self, skip_node_schema, last_msg):
+    def add_skip_transition_turns(self, skip_node_schema, last_msg, run_wait_node_schema=True):
         self.run_message_dict_assertions()
         t1 = self.add_user_turn(
             "actually, i want to change ...",
             False,
             skip_node_schema_id=skip_node_schema.id,
+            run_wait_node_schema=run_wait_node_schema,
         )
 
         parent_node = self.fixtures.agent_executor.graph.curr_node.conv_node_schema_id_to_parent_node[

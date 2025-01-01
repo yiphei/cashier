@@ -370,6 +370,11 @@ class TestGraph(BaseTest):
             self.get_edge_schema(self.ordered_conv_node_schemas[5]),
             self.ordered_conv_node_schemas[6],
         )
+        t_turns_12 = self.add_skip_transition_turns(
+            self.ordered_conv_node_schemas[1],
+            "good, lets move on to ...",
+            run_wait_node_schema=False,
+        )
 
         self.run_assertions(
             [
@@ -385,8 +390,9 @@ class TestGraph(BaseTest):
                 *t_turns_9,
                 *t_turns_10,
                 *t_turns_11,
+                *t_turns_12,
             ],
-            self.ordered_conv_node_schemas[6].tool_registry,
+            self.ordered_conv_node_schemas[1].tool_registry,
         )
 
 
