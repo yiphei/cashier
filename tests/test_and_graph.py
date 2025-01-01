@@ -35,10 +35,9 @@ class TestAndGraph(BaseTest):
         )
 
     @pytest.fixture(autouse=True)
-    def setup(self, request_schema_input, graph_schema, start_conv_node_schema):
+    def setup(self, graph_schema, start_conv_node_schema):
         self.start_conv_node_schema = start_conv_node_schema
         self.graph_schema = graph_schema
-        self.request_schema = request_schema_input
         self.edge_schema_id_to_to_cov_node_schema_id = {}
         for (
             node_schema_id,
@@ -70,7 +69,7 @@ class TestAndGraph(BaseTest):
         return self.edge_schema_id_to_to_cov_node_schema_id[edge_schema.id]
 
     @pytest.fixture
-    def start_turns(self, setup, agent_executor, model_provider, setup_message_dicts):
+    def start_turns(self, agent_executor, model_provider, setup_message_dicts):
         second_node_schema = self.start_conv_node_schema
         t1 = self.add_node_turn(
             self.request_schema.start_node_schema,
