@@ -5,7 +5,7 @@ from enum import StrEnum
 from typing import Any, Callable, List, Literal, Optional, Type, Union, cast, overload
 
 from openai.types.chat.chat_completion_tool_param import ChatCompletionToolParam
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from cashier.graph.base.base_edge_schema import (
     BaseTransitionConfig,
@@ -115,6 +115,8 @@ class ConversationNode(BaseExecutable, HasIdMixin, metaclass=TupleMetaclass):
 
 
 class AlertConfig(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
     state_field: str
     alert_condition: Callable[[BaseModel, BaseModel], bool]
     alert_msg: BasePrompt
