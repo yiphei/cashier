@@ -109,7 +109,7 @@ class ConversationNode(BaseExecutable, HasIdMixin, metaclass=TupleMetaclass):
                 state_field, None
             )
             if alert_config is not None and alert_config.alert_condition(state, input):
-                return alert_config.alert_msg.run(state=state, input=input)
+                return alert_config.alert_msg(state=state, input=input)
 
         return None
 
