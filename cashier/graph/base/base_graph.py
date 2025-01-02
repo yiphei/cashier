@@ -422,7 +422,9 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
                 )
                 fn_calls.append(function_call)
                 parent_node = self.curr_conversation_node.parent
-                alert = self.curr_conversation_node.handle_alerts(function_call.name, parent_node.state, parent_node.input)
+                alert = self.curr_conversation_node.handle_alerts(
+                    function_call.name, parent_node.state, parent_node.input
+                )
                 if alert is not None:
                     fake_fn_call = create_think_fn_call(alert)
                     fn_calls.append(fake_fn_call)

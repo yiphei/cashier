@@ -101,11 +101,13 @@ class ConversationNode(BaseExecutable, HasIdMixin, metaclass=TupleMetaclass):
             if self.schema.completion_config is not None
             else True
         )
-    
-    def handle_alerts(self,fn_name, state, input):
+
+    def handle_alerts(self, fn_name, state, input):
         if fn_name.startswith("update_state_"):
             state_field = fn_name.split("update_state_")[1]
-            alert_config = self.schema.state_field_to_alert_config.get(state_field, None)
+            alert_config = self.schema.state_field_to_alert_config.get(
+                state_field, None
+            )
             if alert_config is not None and alert_config.alert_condition(state, input):
                 return alert_config.alert_msg.run(state, input)
 
