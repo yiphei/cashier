@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Callable, List, Optional, Set, Tuple, Type, Union
+from typing import Any, List, Optional, Set, Tuple, Type, Union
 
 from pydantic import BaseModel
 
@@ -16,7 +16,6 @@ from cashier.graph.edge_schema import EdgeSchema
 from cashier.graph.mixin.has_id_mixin import HasIdMixin
 from cashier.graph.mixin.has_status_mixin import Status
 from cashier.model.model_util import FunctionCall, create_think_fn_call
-from cashier.prompts.base_prompt import BasePrompt
 from cashier.prompts.node_schema_selection import NodeSchemaSelectionPrompt
 from cashier.turn_container import TurnContainer
 
