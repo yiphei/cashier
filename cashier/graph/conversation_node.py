@@ -119,7 +119,7 @@ class AlertConfig(BaseModel):
 
     state_field: str
     alert_condition: Callable[[BaseModel, BaseModel], bool]
-    alert_msg: BasePrompt
+    alert_msg: Type[BasePrompt]
 
 
 class ConversationNodeSchema(
