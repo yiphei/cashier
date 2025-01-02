@@ -37,12 +37,6 @@ def should_change_node_schema(
     )
 
 
-class AlertConfig(BaseModel):
-    state_field: str
-    alert_condition: Callable[[BaseModel, BaseModel], bool]
-    alert_msg: BasePrompt
-
-
 class BaseTerminableGraphSchema(HasIdMixin, BaseGraphSchema, BaseExecutableSchema):
     def __init__(
         self,
@@ -51,7 +45,6 @@ class BaseTerminableGraphSchema(HasIdMixin, BaseGraphSchema, BaseExecutableSchem
         state_schema: Type[BaseModel],
         run_assistant_turn_before_transition: bool = False,
         completion_config=None,
-        alert_configs: Optional[List[AlertConfig]] = None,
     ):
         HasIdMixin.__init__(self)
         BaseGraphSchema.__init__(self, description, node_schemas)
@@ -61,12 +54,6 @@ class BaseTerminableGraphSchema(HasIdMixin, BaseGraphSchema, BaseExecutableSchem
             completion_config=completion_config,
             run_assistant_turn_before_transition=run_assistant_turn_before_transition,
         )
-        self.alert_configs = alert_configs
-        self.state_field_to_alert_config = {}
-        if alert_configs is not None:
-            self.state_field_to_alert_config = {
-                alert_config.state_field: alert_config for alert_config in alert_configs
-            }
 
         self.all_conv_node_schemas = self.get_leaf_conv_node_schemas()
         self.conv_node_schema_id_to_conv_node_schema = {

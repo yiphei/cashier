@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from abc import ABCMeta
 from enum import StrEnum
-from typing import Any, List, Literal, Optional, Type, Union, cast, overload
+from typing import Any, Callable, List, Literal, Optional, Type, Union, cast, overload
 
 from openai.types.chat.chat_completion_tool_param import ChatCompletionToolParam
 from pydantic import BaseModel
@@ -18,6 +18,7 @@ from cashier.graph.edge_schema import EdgeSchema
 from cashier.graph.mixin.auto_mixin_init import AutoMixinInit
 from cashier.graph.mixin.has_id_mixin import HasIdMixin
 from cashier.model.model_turn import ModelTurn
+from cashier.prompts.base_prompt import BasePrompt
 from cashier.prompts.node_system import NodeSystemPrompt
 from cashier.tool.function_call_context import StateUpdateError
 from cashier.tool.tool_registry import ToolRegistry
@@ -102,6 +103,12 @@ class ConversationNode(BaseExecutable, HasIdMixin, metaclass=TupleMetaclass):
         )
 
 
+class AlertConfig(BaseModel):
+    state_field: str
+    alert_condition: Callable[[BaseModel, BaseModel], bool]
+    alert_msg: BasePrompt
+
+
 class ConversationNodeSchema(
     BaseExecutableSchema, HasIdMixin, metaclass=TupleMetaclass
 ):
@@ -118,6 +125,7 @@ class ConversationNodeSchema(
         run_assistant_turn_before_transition: bool = False,
         tool_names: Optional[List[str]] = None,
         completion_config: Optional[BaseTransitionConfig] = None,
+        alert_configs: Optional[List[AlertConfig]] = None,
     ):
         BaseExecutableSchema.__init__(
             self,
@@ -125,6 +133,12 @@ class ConversationNodeSchema(
             completion_config=completion_config,
             run_assistant_turn_before_transition=run_assistant_turn_before_transition,
         )
+        self.alert_configs = alert_configs
+        self.state_field_to_alert_config = {}
+        if alert_configs is not None:
+            self.state_field_to_alert_config = {
+                alert_config.state_field: alert_config for alert_config in alert_configs
+            }
         self.node_prompt = node_prompt
         self.node_system_prompt = node_system_prompt
         self.direct_input_schema = direct_input_schema
