@@ -1,6 +1,6 @@
 from typing import List, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, computed_field
 
 from cashier.graph.base.base_edge_schema import (
     FunctionState,
@@ -72,14 +72,24 @@ class FlightOrder(BaseStateModel):
         default_factory=list,
         descripion="An array of objects containing details about each piece of flight in the ENTIRE new reservation. Even if the a flight segment is not changed, it should still be included in the array.",
     )
-    net_new_cost: Optional[int] = Field(
-        default=None,
-        description="the total difference in cost between the old and new flights",
-    )
     has_confirmed_new_flights: bool = Field(
         default=False,
         descripion="this can only be set to true if the customer has explicitly confirmed the new flights",
     )
+
+    @computed_field(
+        description="the total difference in cost between the old and new flights"
+    )
+    @property
+    def net_new_cost(self) -> Optional[int]:
+        if self._input is not None and len(self.flight_infos) > 0:
+            old_cost = sum(
+                [flight.price for flight in self._input.reservation_details.flights]
+            )
+            new_cost = sum([flight.price for flight in self.flight_infos])
+            return new_cost - old_cost
+        else:
+            return None
 
 
 find_flight_node_schema = ConversationNodeSchema(
