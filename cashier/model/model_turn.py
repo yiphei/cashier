@@ -70,7 +70,7 @@ class AssistantTurn(ModelTurn):
     model_config = ConfigDict(arbitrary_types_allowed=True, protected_namespaces=())
 
     model_provider: ModelProvider
-    tool_registry: Optional[ToolRegistry] = None
+    tool_registry: Optional[ToolRegistry] = Field(default=None, exclude=True)
     msg_content: Optional[str]
     fn_calls: Optional[List[FunctionCall]] = Field(default_factory=list)
     fn_call_id_to_fn_output: Optional[Dict[str, Any]] = Field(default_factory=dict)
