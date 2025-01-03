@@ -108,7 +108,9 @@ class ConversationNode(BaseExecutable, HasIdMixin, metaclass=TupleMetaclass):
             alert_config = self.schema.state_field_to_alert_config.get(
                 state_field, None
             )
-            if alert_config is not None and alert_config.alert_condition(self.state, self.input):
+            if alert_config is not None and alert_config.alert_condition(
+                self.state, self.input
+            ):
                 return alert_config.alert_msg(state=self.state, input=self.input)
 
         return None
