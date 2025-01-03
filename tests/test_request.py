@@ -120,7 +120,7 @@ class TestRequest(BaseTest):
             "i want to change flight",
         )
         return [*start_turns, t1, node_turn]
-    
+
     @pytest.fixture
     def into_find_flight_node(self, agent_executor, into_graph_transition_turns):
         t_turns_1 = self.add_chat_turns()
@@ -162,12 +162,16 @@ class TestRequest(BaseTest):
             next_next_node_schema,
             add_chat_turns=True,
         )
-        return [*into_graph_transition_turns, *t_turns_1, *t_turns_2, *t_turns_4, *t_turns_5]
+        return [
+            *into_graph_transition_turns,
+            *t_turns_1,
+            *t_turns_2,
+            *t_turns_4,
+            *t_turns_5,
+        ]
 
     @pytest.fixture
-    def into_second_graph_transition_turns(
-        self, agent_executor, into_find_flight_node
-    ):
+    def into_second_graph_transition_turns(self, agent_executor, into_find_flight_node):
         next_next_node_schema = agent_executor.graph.curr_conversation_node.schema
         assert (
             self.fixtures.agent_executor.graph.curr_conversation_node.state.net_new_cost
