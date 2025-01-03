@@ -1,6 +1,6 @@
 import json
 from abc import abstractmethod
-from collections import defaultdict
+from collections import defaultdict, deque
 from typing import Any, Callable, List, Literal, Optional, Tuple, overload
 
 from colorama import Style
@@ -68,6 +68,7 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
         self.schema = schema
         self.request = request
         self.parent = None
+        self.force_tool_queue = deque()
 
         # graph schema
         self.edge_schemas = edge_schemas or []
@@ -417,6 +418,14 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
         fn_calls = []
         if self.new_node_schema is None:
             for function_call in model_completion.get_or_stream_fn_calls():
+                if self.curr_conversation_node.schema.state_schema.think_deep_fields and function_call.name in self.curr_conversation_node.schema.state_schema.think_deep_fields:
+                    if not self.force_tool_queue:
+                        self.force_tool_queue.append("think_deep")
+                        self.force_tool_queue.append(function_call.name)
+                        break
+                    else:
+                        self.force_tool_queue.clear()
+
                 fn_id_to_output[function_call.id], is_success = (
                     self.execute_function_call(function_call, fn_callback)
                 )

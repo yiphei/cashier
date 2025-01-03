@@ -8,6 +8,7 @@ from pydantic import BaseModel, ConfigDict, PrivateAttr, create_model
 
 class BaseStateModel(BaseModel):
     resettable_fields: ClassVar[Optional[List[str]]] = None
+    think_deep_fields: ClassVar[Optional[List[str]]] = None
     model_config = ConfigDict(extra="forbid", revalidate_instances="always")
     _input: Optional[BaseModel] = PrivateAttr(default=None)
 
