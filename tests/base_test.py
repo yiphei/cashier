@@ -383,6 +383,7 @@ class BaseTest(ABC):
         fn_calls=None,
         fn_call_id_to_fn_output=None,
         tool_registry=None,
+        add_turn_messages=True,
     ):
         if fn_calls is not None and fn_call_id_to_fn_output is None:
             fn_call_id_to_fn_output = {fn_call.id: None for fn_call in fn_calls}
@@ -395,7 +396,8 @@ class BaseTest(ABC):
             fn_calls=fn_calls,
             fn_call_id_to_fn_output=fn_call_id_to_fn_output,
         )
-        self.add_assistant_turn_messages(at)
+        if add_turn_messages:
+            self.add_assistant_turn_messages(at)
         return at
 
     def add_assistant_turn(
@@ -404,6 +406,7 @@ class BaseTest(ABC):
         fn_calls=None,
         fn_call_id_to_fn_output=None,
         tool_names=None,
+        add_turn_messages=True,
     ):
         if tool_names is not None:
             fn_calls, fn_call_id_to_fn_output = self.create_fake_fn_calls(
@@ -489,6 +492,7 @@ class BaseTest(ABC):
             fn_calls,
             fn_call_id_to_fn_output,
             tool_registry,
+            add_turn_messages=add_turn_messages,
         )
         return at
 

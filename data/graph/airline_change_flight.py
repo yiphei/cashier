@@ -8,10 +8,10 @@ from cashier.graph.base.base_edge_schema import (
     StateTransitionConfig,
 )
 from cashier.graph.base.base_state import BaseStateModel
-from cashier.graph.conversation_node import ConversationNodeSchema
+from cashier.graph.conversation_node import AlertConfig, ConversationNodeSchema
 from cashier.graph.edge_schema import EdgeSchema
 from cashier.graph.graph_schema import GraphSchema
-from data.prompt.airline import AirlineNodeSystemPrompt
+from data.prompt.airline import AirlineNodeSystemPrompt, NoAvailableSeatsPrompt
 from data.tool_registry.airline_tool_registry import AIRLINE_TOOL_REGISTRY
 from data.types.airline import (
     CabinType,
@@ -19,6 +19,7 @@ from data.types.airline import (
     FlightReservationInfo,
     FlightType,
     InsuranceValue,
+    NewFlightInfo,
     PassengerInfo,
     PaymentDetails,
     ReservationDetails,
@@ -67,7 +68,7 @@ get_reservation_details_node_schema = ConversationNodeSchema(
 
 
 class FlightOrder(BaseStateModel):
-    resettable_fields = ["has_confirmed_new_flights"]
+    resettable_fields = ["has_confirmed_new_flights", "new_flight_infos"]
     flight_infos: List[FlightInfo] = Field(
         default_factory=list,
         descripion="An array of objects containing details about each piece of flight in the ENTIRE new reservation. Even if the a flight segment is not changed, it should still be included in the array.",
@@ -75,6 +76,10 @@ class FlightOrder(BaseStateModel):
     has_confirmed_new_flights: bool = Field(
         default=False,
         descripion="this can only be set to true if the customer has explicitly confirmed the new flights",
+    )
+    new_flight_infos: List[NewFlightInfo] = Field(
+        default_factory=list,
+        descripion="An array of objects containing details about new flights only",
     )
 
     @computed_field(
@@ -91,6 +96,31 @@ class FlightOrder(BaseStateModel):
         else:
             return None
 
+
+def alert_check(state, input):
+    flight_infos = state.new_flight_infos
+    offending_flights = []
+    for flight_info in flight_infos:
+        if flight_info.cabin == CabinType.ECONOMY:
+            target_seat_numb = flight_info.available_seats_in_economy
+        elif flight_info.cabin == CabinType.BUSINESS:
+            target_seat_numb = flight_info.available_seats_in_business
+        elif flight_info.cabin == CabinType.BASIC_ECONOMY:
+            target_seat_numb = flight_info.available_seats_in_basic_economy
+        else:
+            raise ValueError(f"Unknown cabin type: {flight_info.cabin}")
+
+        if target_seat_numb == 0:
+            offending_flights.append(flight_info)
+
+    return len(offending_flights) > 0
+
+
+alert_config = AlertConfig(
+    state_field="new_flight_infos",
+    alert_condition=alert_check,
+    alert_msg=NoAvailableSeatsPrompt,
+)
 
 find_flight_node_schema = ConversationNodeSchema(
     node_prompt=PREAMBLE
@@ -112,6 +142,7 @@ find_flight_node_schema = ConversationNodeSchema(
         need_user_msg=False,
         state_check_fn_map={"has_confirmed_new_flights": lambda val: val is True},
     ),
+    alert_configs=[alert_config],
 )
 
 

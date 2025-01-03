@@ -421,6 +421,12 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
                     self.execute_function_call(function_call, fn_callback)
                 )
                 fn_calls.append(function_call)
+                alert = self.curr_conversation_node.handle_alerts(function_call.name)
+                if alert is not None:
+                    fake_fn_call = create_think_fn_call(alert)
+                    fn_calls.append(fake_fn_call)
+                    fn_id_to_output[fake_fn_call.id] = None
+
                 need_user_input = False
 
                 new_node_schema = self.check_transition(function_call, is_success)

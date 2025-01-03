@@ -21,7 +21,13 @@ from data.graph.airline_change_flight import (
     get_user_id_node_schema,
 )
 from data.graph.airline_request import AIRLINE_REQUEST_SCHEMA
-from data.types.airline import FlightInfo, ReservationDetails, UserDetails
+from data.types.airline import (
+    CabinType,
+    FlightInfo,
+    NewFlightInfo,
+    ReservationDetails,
+    UserDetails,
+)
 from tests.base_test import BaseTest, assert_number_of_tests, get_fn_names_fixture
 
 
@@ -116,9 +122,7 @@ class TestRequest(BaseTest):
         return [*start_turns, t1, node_turn]
 
     @pytest.fixture
-    def into_second_graph_transition_turns(
-        self, agent_executor, into_graph_transition_turns
-    ):
+    def into_find_flight_node(self, agent_executor, into_graph_transition_turns):
         t_turns_1 = self.add_chat_turns()
         fn_call = self.create_state_update_fn_call(
             "user_details", pydantic_model=UserDetails
@@ -158,21 +162,43 @@ class TestRequest(BaseTest):
             next_next_node_schema,
             add_chat_turns=True,
         )
+        return [
+            *into_graph_transition_turns,
+            *t_turns_1,
+            *t_turns_2,
+            *t_turns_4,
+            *t_turns_5,
+        ]
 
+    @pytest.fixture
+    def into_second_graph_transition_turns(self, agent_executor, into_find_flight_node):
+        next_next_node_schema = agent_executor.graph.curr_conversation_node.schema
         assert (
             self.fixtures.agent_executor.graph.curr_conversation_node.state.net_new_cost
             is None
         )
-        flight_info = ModelFactory.create_factory(FlightInfo).build()
+        new_flight_info = ModelFactory.create_factory(NewFlightInfo).build()
+        new_flight_info.cabin = CabinType.ECONOMY
+        new_flight_info.available_seats_in_economy = 1
         fn_call = self.create_state_update_fn_call(
+            "new_flight_infos", [new_flight_info.model_dump()]
+        )
+        flight_info = FlightInfo(
+            type=new_flight_info.type,
+            flight_number=new_flight_info.flight_number,
+            date=new_flight_info.date,
+            cabin=new_flight_info.cabin,
+            price=new_flight_info.price,
+        )
+        fn_call_2 = self.create_state_update_fn_call(
             "flight_infos", [flight_info.model_dump()]
         )
-        special_t = self.add_assistant_turn(None, [fn_call])
+        special_t = self.add_assistant_turn(None, [fn_call, fn_call_2])
         res_details = (
             self.fixtures.agent_executor.graph.curr_conversation_node.input.reservation_details
         )
         old_cost = sum([flight.price for flight in res_details.flights])
-        new_cost = flight_info.price
+        new_cost = new_flight_info.price
         expected_net_new_cost = new_cost - old_cost
         assert (
             self.fixtures.agent_executor.graph.curr_conversation_node.state.net_new_cost
@@ -254,11 +280,7 @@ class TestRequest(BaseTest):
             "the payment method is ...",
         )
         return [
-            *into_graph_transition_turns,
-            *t_turns_1,
-            *t_turns_2,
-            *t_turns_4,
-            *t_turns_5,
+            *into_find_flight_node,
             special_t,
             *t_turns_7,
             *t_turns_9,
@@ -357,6 +379,32 @@ class TestRequest(BaseTest):
             get_user_id_node_schema.tool_registry,
         )
 
+    def test_alert(
+        self,
+        agent_executor,
+        into_find_flight_node,
+    ):
+        new_flight_info = ModelFactory.create_factory(NewFlightInfo).build()
+        new_flight_info.cabin = CabinType.ECONOMY
+        new_flight_info.available_seats_in_economy = 0
+        fn_call = self.create_state_update_fn_call(
+            "new_flight_infos", [new_flight_info.model_dump()]
+        )
+        special_t = self.add_assistant_turn(None, [fn_call], add_turn_messages=False)
+        fake_fn_call = self.recreate_fake_single_fn_call(
+            "think",
+            {
+                "thought": f"I can only add new flights that have available seats in the chosen cabin. However, the following flights do not have available seats in the chosen cabin: {new_flight_info.flight_number} ({new_flight_info.cabin}). I need to choose different flights."
+            },
+        )
+        special_t.fn_calls.append(fake_fn_call)
+        special_t.fn_call_id_to_fn_output[fake_fn_call.id] = None
+        self.add_assistant_turn_messages(special_t)
+        self.run_assertions(
+            into_find_flight_node + [special_t],
+            agent_executor.graph.curr_conversation_node.schema.tool_registry,
+        )
+
     def test_graph_transition(
         self,
         into_second_graph_transition_turns,
@@ -436,4 +484,4 @@ class TestRequest(BaseTest):
 
 
 def test_class_test_count(request):
-    assert_number_of_tests(TestRequest, __file__, request, 80)
+    assert_number_of_tests(TestRequest, __file__, request, 88)
