@@ -132,11 +132,17 @@ class BaseTest(ABC):
         self,
     ):
         import json
+
         print(json.dumps(self.message_dicts, indent=4))
         print("--------------------------------")
-        print(json.dumps(self.fixtures.agent_executor.TC.model_provider_to_message_manager[
-                self.fixtures.model_provider
-            ].message_dicts, indent=4))
+        print(
+            json.dumps(
+                self.fixtures.agent_executor.TC.model_provider_to_message_manager[
+                    self.fixtures.model_provider
+                ].message_dicts,
+                indent=4,
+            )
+        )
         assert not DeepDiff(
             self.message_dicts,
             self.fixtures.agent_executor.TC.model_provider_to_message_manager[
