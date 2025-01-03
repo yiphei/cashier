@@ -92,6 +92,7 @@ class Model:
         logprobs: bool = False,
         response_format: Optional[Type[BaseModel]] = None,
         exclude_update_state_fns: bool = False,
+        tool_defs: Optional[List[Dict[str, Any]]] = None,
         **kwargs: Any,
     ) -> ModelOutput: ...
 
@@ -110,6 +111,7 @@ class Model:
         logprobs: bool = False,
         response_format: Optional[Type[BaseModel]] = None,
         exclude_update_state_fns: bool = False,
+        tool_defs: Optional[List[Dict[str, Any]]] = None,
         **kwargs: Any,
     ) -> ModelOutput: ...
 
@@ -128,6 +130,7 @@ class Model:
         logprobs: bool = False,
         response_format: Optional[Type[BaseModel]] = None,
         exclude_update_state_fns: bool = False,
+        tool_defs: Optional[List[Dict[str, Any]]] = None,
         **kwargs: Any,
     ) -> ModelOutput: ...
 
@@ -145,6 +148,7 @@ class Model:
         logprobs: bool = False,
         response_format: Optional[Type[BaseModel]] = None,
         exclude_update_state_fns: bool = False,
+        tool_defs: Optional[List[Dict[str, Any]]] = None,
         **kwargs: Any,
     ) -> ModelOutput:
         if model_name in cls.alias_to_model_name:
@@ -157,6 +161,8 @@ class Model:
                 model_provider=model_provider,
                 exclude_update_state_fns=exclude_update_state_fns,
             )
+        elif tool_defs is not None:
+            tools = tool_defs
 
         messages: Union[MessageList, List]
         message_manager = None
