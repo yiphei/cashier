@@ -109,16 +109,17 @@ def alert_check(state, input):
             target_seat_numb = flight_info.available_seats_in_basic_economy
         else:
             raise ValueError(f"Unknown cabin type: {flight_info.cabin}")
-        
+
         if target_seat_numb == 0:
             offending_flights.append(flight_info)
 
     return len(offending_flights) > 0
 
+
 alert_config = AlertConfig(
-    state_field = "new_flight_infos",
-    alert_condition = alert_check,
-    alert_msg = NoAvailableSeatsPrompt
+    state_field="new_flight_infos",
+    alert_condition=alert_check,
+    alert_msg=NoAvailableSeatsPrompt,
 )
 
 find_flight_node_schema = ConversationNodeSchema(
@@ -141,7 +142,7 @@ find_flight_node_schema = ConversationNodeSchema(
         need_user_msg=False,
         state_check_fn_map={"has_confirmed_new_flights": lambda val: val is True},
     ),
-    alert_configs = [alert_config]
+    alert_configs=[alert_config],
 )
 
 

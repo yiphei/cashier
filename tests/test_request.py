@@ -21,7 +21,13 @@ from data.graph.airline_change_flight import (
     get_user_id_node_schema,
 )
 from data.graph.airline_request import AIRLINE_REQUEST_SCHEMA
-from data.types.airline import CabinType, FlightInfo, NewFlightInfo, ReservationDetails, UserDetails
+from data.types.airline import (
+    CabinType,
+    FlightInfo,
+    NewFlightInfo,
+    ReservationDetails,
+    UserDetails,
+)
 from tests.base_test import BaseTest, assert_number_of_tests, get_fn_names_fixture
 
 
@@ -169,8 +175,16 @@ class TestRequest(BaseTest):
         fn_call = self.create_state_update_fn_call(
             "new_flight_infos", [new_flight_info.model_dump()]
         )
-        flight_info = FlightInfo(type=new_flight_info.type, flight_number=new_flight_info.flight_number, date=new_flight_info.date, cabin=new_flight_info.cabin, price=new_flight_info.price)
-        fn_call_2 = self.create_state_update_fn_call("flight_infos", [flight_info.model_dump()])
+        flight_info = FlightInfo(
+            type=new_flight_info.type,
+            flight_number=new_flight_info.flight_number,
+            date=new_flight_info.date,
+            cabin=new_flight_info.cabin,
+            price=new_flight_info.price,
+        )
+        fn_call_2 = self.create_state_update_fn_call(
+            "flight_infos", [flight_info.model_dump()]
+        )
         special_t = self.add_assistant_turn(None, [fn_call, fn_call_2])
         res_details = (
             self.fixtures.agent_executor.graph.curr_conversation_node.input.reservation_details
