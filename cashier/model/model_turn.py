@@ -73,7 +73,9 @@ class AssistantTurn(ModelTurn):
     tool_registry: Optional[ToolRegistry] = Field(default=None, exclude=True)
     msg_content: Optional[str]
     fn_calls: Optional[List[FunctionCall]] = Field(default_factory=list)
-    fn_call_id_to_fn_output: Optional[Dict[str, Any]] = Field(default_factory=dict, exclude=True)
+    fn_call_id_to_fn_output: Optional[Dict[str, Any]] = Field(
+        default_factory=dict, exclude=True
+    )
 
     @model_validator(mode="after")
     def check_function_args(self) -> AssistantTurn:
