@@ -379,6 +379,32 @@ class TestRequest(BaseTest):
             get_user_id_node_schema.tool_registry,
         )
 
+    def test_alert(
+        self,
+        agent_executor,
+        into_find_flight_node,
+    ):
+        new_flight_info = ModelFactory.create_factory(NewFlightInfo).build()
+        new_flight_info.cabin = CabinType.ECONOMY
+        new_flight_info.available_seats_in_economy = 0
+        fn_call = self.create_state_update_fn_call(
+            "new_flight_infos", [new_flight_info.model_dump()]
+        )
+        special_t = self.add_assistant_turn(None, [fn_call], add_turn_messages=False)
+        fake_fn_call = self.recreate_fake_single_fn_call(
+            "think",
+            {
+                "thought": f"I can only add new flights that have available seats in the chosen cabin. However, the following flights do not have available seats in the chosen cabin: {new_flight_info.flight_number} ({new_flight_info.cabin}). I need to choose different flights."
+            },
+        )
+        special_t.fn_calls.append(fake_fn_call)
+        special_t.fn_call_id_to_fn_output[fake_fn_call.id] = None
+        self.add_assistant_turn_messages(special_t)
+        self.run_assertions(
+            into_find_flight_node + [special_t],
+            agent_executor.graph.curr_conversation_node.schema.tool_registry,
+        )
+
     def test_graph_transition(
         self,
         into_second_graph_transition_turns,
@@ -458,4 +484,4 @@ class TestRequest(BaseTest):
 
 
 def test_class_test_count(request):
-    assert_number_of_tests(TestRequest, __file__, request, 80)
+    assert_number_of_tests(TestRequest, __file__, request, 88)
