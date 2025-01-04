@@ -420,6 +420,7 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
         if self.new_node_schema is None:
             for function_call in model_completion.get_or_stream_fn_calls():
                 if (
+                    self.curr_conversation_node.schema.state_schema and
                     self.curr_conversation_node.schema.state_schema.think_deep_fields
                     and function_call.name
                     in self.curr_conversation_node.schema.state_schema.think_deep_fields
