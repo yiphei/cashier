@@ -69,6 +69,7 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
         self.request = request
         self.parent = None
         self.force_tool_queue = deque()
+        self.is_forcing_tool = False
 
         # graph schema
         self.edge_schemas = edge_schemas or []
@@ -423,12 +424,14 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
                     and function_call.name
                     in self.curr_conversation_node.schema.state_schema.think_deep_fields
                 ):
-                    if not self.force_tool_queue:
+                    if not self.is_forcing_tool:
                         self.force_tool_queue.append("think_deep")
                         self.force_tool_queue.append(function_call.name)
+                        self.is_forcing_tool = True
                         break
                     else:
                         self.force_tool_queue.clear()
+                        self.is_forcing_tool = False
 
                 fn_id_to_output[function_call.id], is_success = (
                     self.execute_function_call(function_call, fn_callback)
