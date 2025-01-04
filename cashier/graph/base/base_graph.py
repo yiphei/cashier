@@ -436,8 +436,8 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
                     break
 
                 if (
-                    self.curr_conversation_node.schema.pre_alert_fn_names and
-                    function_call.name
+                    self.curr_conversation_node.schema.pre_alert_fn_names
+                    and function_call.name
                     in self.curr_conversation_node.schema.pre_alert_fn_names
                 ):
                     self.force_tool_queue.append("think_deep")
