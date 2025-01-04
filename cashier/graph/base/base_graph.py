@@ -451,13 +451,14 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
                     self.new_node_schema = new_node_schema
                     break
 
-        TC.add_assistant_turn(
-            model_completion.msg_content,
-            model_completion.model_provider,
-            self.curr_conversation_node.schema.tool_registry,
-            fn_calls,
-            fn_id_to_output,
-        )
+        if model_completion.msg_content is not None or fn_calls:
+            TC.add_assistant_turn(
+                model_completion.msg_content,
+                model_completion.model_provider,
+                self.curr_conversation_node.schema.tool_registry,
+                fn_calls,
+                fn_id_to_output,
+            )
 
         if self.top_most_transition_node and (
             not self.top_most_transition_node.schema.run_assistant_turn_before_transition
