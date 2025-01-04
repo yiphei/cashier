@@ -436,6 +436,7 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
                     break
 
                 if (
+                    self.curr_conversation_node.schema.pre_alert_fn_names and
                     function_call.name
                     in self.curr_conversation_node.schema.pre_alert_fn_names
                 ):
