@@ -141,6 +141,7 @@ class ConversationNodeSchema(
         tool_names: Optional[List[str]] = None,
         completion_config: Optional[BaseTransitionConfig] = None,
         alert_configs: Optional[List[AlertConfig]] = None,
+        pre_alert_fn_names: Optional[List[str]] = None,
     ):
         BaseExecutableSchema.__init__(
             self,
@@ -148,6 +149,7 @@ class ConversationNodeSchema(
             completion_config=completion_config,
             run_assistant_turn_before_transition=run_assistant_turn_before_transition,
         )
+        self.pre_alert_fn_names = pre_alert_fn_names
         self.alert_configs = alert_configs
         self.state_field_to_alert_config = {}
         if alert_configs is not None:
