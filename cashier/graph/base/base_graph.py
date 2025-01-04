@@ -439,7 +439,7 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
                     function_call.name
                     in self.curr_conversation_node.schema.pre_alert_fn_names
                 ):
-                    self.force_tool_queue.append(function_call.name)
+                    self.force_tool_queue.append("think_deep")
 
         TC.add_assistant_turn(
             model_completion.msg_content,
