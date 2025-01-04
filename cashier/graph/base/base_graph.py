@@ -422,7 +422,8 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
                 if (
                     self.curr_conversation_node.schema.state_schema
                     and self.curr_conversation_node.schema.state_schema.think_deep_fields
-                    and function_call.name
+                    and function_call.name.startswith("update_state_")
+                    and function_call.name.split("update_state_")[1]
                     in self.curr_conversation_node.schema.state_schema.think_deep_fields
                 ):
                     if not self.is_forcing_tool:
