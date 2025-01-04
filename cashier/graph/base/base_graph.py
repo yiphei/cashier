@@ -1,6 +1,6 @@
 import json
 from abc import abstractmethod
-from collections import defaultdict
+from collections import defaultdict, deque
 from typing import Any, Callable, List, Literal, Optional, Tuple, overload
 
 from colorama import Style
@@ -68,6 +68,7 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
         self.schema = schema
         self.request = request
         self.parent = None
+        self.force_tool_queue = deque()
 
         # graph schema
         self.edge_schemas = edge_schemas or []
@@ -433,6 +434,9 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
                 if new_node_schema is not None:
                     self.new_node_schema = new_node_schema
                     break
+
+                if function_call.name in self.curr_conversation_node.schema.pre_alert_fn_names:
+                    self.force_tool_queue.append(function_call.name)
 
         TC.add_assistant_turn(
             model_completion.msg_content,
