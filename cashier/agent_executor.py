@@ -61,6 +61,8 @@ class AgentExecutor:
     def get_model_completion_kwargs(self) -> Dict[str, Any]:
         force_tool_choice = self.force_tool_choice
         self.force_tool_choice = None
+        if self.graph.is_forcing_tool:
+            force_tool_choice = self.graph.force_tool_queue.popleft()
         return {
             "turn_container": self.TC,
             "tool_registry": (self.graph.curr_conversation_node.schema.tool_registry),

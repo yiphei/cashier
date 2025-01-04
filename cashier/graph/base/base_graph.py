@@ -1,6 +1,6 @@
 import json
 from abc import abstractmethod
-from collections import defaultdict
+from collections import defaultdict, deque
 from typing import Any, Callable, List, Literal, Optional, Tuple, overload
 
 from colorama import Style
@@ -68,6 +68,8 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
         self.schema = schema
         self.request = request
         self.parent = None
+        self.force_tool_queue = deque()
+        self.is_forcing_tool = False
 
         # graph schema
         self.edge_schemas = edge_schemas or []
@@ -417,6 +419,22 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
         fn_calls = []
         if self.new_node_schema is None:
             for function_call in model_completion.get_or_stream_fn_calls():
+                if (
+                    self.curr_conversation_node.schema.state_schema
+                    and self.curr_conversation_node.schema.state_schema.think_deep_fields
+                    and function_call.name.startswith("update_state_")
+                    and function_call.name.split("update_state_")[1]
+                    in self.curr_conversation_node.schema.state_schema.think_deep_fields
+                ):
+                    if not self.is_forcing_tool:
+                        self.force_tool_queue.append("think_deep")
+                        self.force_tool_queue.append(function_call.name)
+                        self.is_forcing_tool = True
+                        break
+                    else:
+                        self.force_tool_queue.clear()
+                        self.is_forcing_tool = False
+
                 fn_id_to_output[function_call.id], is_success = (
                     self.execute_function_call(function_call, fn_callback)
                 )
@@ -434,13 +452,14 @@ class BaseGraph(BaseGraphExecutable, HasIdMixin):
                     self.new_node_schema = new_node_schema
                     break
 
-        TC.add_assistant_turn(
-            model_completion.msg_content,
-            model_completion.model_provider,
-            self.curr_conversation_node.schema.tool_registry,
-            fn_calls,
-            fn_id_to_output,
-        )
+        if model_completion.msg_content is not None or fn_calls:
+            TC.add_assistant_turn(
+                model_completion.msg_content,
+                model_completion.model_provider,
+                self.curr_conversation_node.schema.tool_registry,
+                fn_calls,
+                fn_id_to_output,
+            )
 
         if self.top_most_transition_node and (
             not self.top_most_transition_node.schema.run_assistant_turn_before_transition
